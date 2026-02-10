@@ -1,0 +1,507 @@
+{
+  "patrons": {
+    "margaret_chen": {
+      "patron_id": "margaret_chen",
+      "name": "Margaret Chen",
+      "email": "margaret.chen@email.com",
+      "phone": "555-0101",
+      "address": "42 Elm Street, Springfield",
+      "membership_type": "standard",
+      "membership_expiry": "2026-12-31",
+      "active_loans": ["loan_chen_gatsby", "loan_chen_algorithms", "loan_chen_mockingbird", "loan_chen_brief_history", "loan_chen_charlottes_web", "loan_chen_pride_1", "loan_chen_pride_2", "loan_chen_selfish_gene", "loan_chen_goodnight_moon"],
+      "holds": ["hold_chen_quantum"],
+      "fines_owed": 12.50,
+      "borrowing_limit": 10
+    },
+    "james_rivera": {
+      "patron_id": "james_rivera",
+      "name": "James Rivera",
+      "email": "james.rivera@university.edu",
+      "phone": "555-0102",
+      "address": "118 College Ave, Springfield",
+      "membership_type": "student",
+      "membership_expiry": "2026-08-31",
+      "active_loans": ["loan_rivera_algorithms", "loan_rivera_organic_chem"],
+      "holds": [],
+      "fines_owed": 0.0,
+      "borrowing_limit": 15
+    },
+    "susan_park": {
+      "patron_id": "susan_park",
+      "name": "Susan Park",
+      "email": "susan.park@email.com",
+      "phone": "555-0103",
+      "address": "7 Oak Lane, Springfield",
+      "membership_type": "standard",
+      "membership_expiry": "2025-03-15",
+      "active_loans": [],
+      "holds": [],
+      "fines_owed": 0.0,
+      "borrowing_limit": 10
+    },
+    "harold_williams": {
+      "patron_id": "harold_williams",
+      "name": "Harold Williams",
+      "email": "harold.w@email.com",
+      "phone": "555-0104",
+      "address": "200 Pine Road, Springfield",
+      "membership_type": "senior",
+      "membership_expiry": "2026-06-30",
+      "active_loans": [],
+      "holds": [],
+      "fines_owed": 3.50,
+      "borrowing_limit": 10
+    },
+    "aisha_patel": {
+      "patron_id": "aisha_patel",
+      "name": "Dr. Aisha Patel",
+      "email": "a.patel@research.org",
+      "phone": "555-0105",
+      "address": "55 University Blvd, Springfield",
+      "membership_type": "standard",
+      "membership_expiry": "2026-11-30",
+      "active_loans": ["loan_patel_quantum"],
+      "holds": ["hold_patel_algorithms"],
+      "fines_owed": 0.0,
+      "borrowing_limit": 10
+    }
+  },
+  "books": {
+    "the_great_gatsby": {
+      "book_id": "the_great_gatsby",
+      "title": "The Great Gatsby",
+      "author": "F. Scott Fitzgerald",
+      "isbn": "978-0743273565",
+      "category": "fiction",
+      "copies": ["gatsby_springfield", "gatsby_westside"]
+    },
+    "intro_to_algorithms": {
+      "book_id": "intro_to_algorithms",
+      "title": "Introduction to Algorithms",
+      "author": "Thomas Cormen",
+      "isbn": "978-0262033848",
+      "category": "non-fiction",
+      "copies": ["algorithms_springfield", "algorithms_westside"]
+    },
+    "to_kill_a_mockingbird": {
+      "book_id": "to_kill_a_mockingbird",
+      "title": "To Kill a Mockingbird",
+      "author": "Harper Lee",
+      "isbn": "978-0061120084",
+      "category": "fiction",
+      "copies": ["mockingbird_springfield"]
+    },
+    "a_brief_history_of_time": {
+      "book_id": "a_brief_history_of_time",
+      "title": "A Brief History of Time",
+      "author": "Stephen Hawking",
+      "isbn": "978-0553380163",
+      "category": "science",
+      "copies": ["brief_history_springfield", "brief_history_westside"]
+    },
+    "charlottes_web": {
+      "book_id": "charlottes_web",
+      "title": "Charlotte's Web",
+      "author": "E.B. White",
+      "isbn": "978-0064400558",
+      "category": "children",
+      "copies": ["charlottes_web_springfield"]
+    },
+    "pride_and_prejudice": {
+      "book_id": "pride_and_prejudice",
+      "title": "Pride and Prejudice",
+      "author": "Jane Austen",
+      "isbn": "978-0141439518",
+      "category": "fiction",
+      "copies": ["pride_prejudice_springfield", "pride_prejudice_westside"]
+    },
+    "the_selfish_gene": {
+      "book_id": "the_selfish_gene",
+      "title": "The Selfish Gene",
+      "author": "Richard Dawkins",
+      "isbn": "978-0198788607",
+      "category": "science",
+      "copies": ["selfish_gene_springfield"]
+    },
+    "organic_chemistry": {
+      "book_id": "organic_chemistry",
+      "title": "Organic Chemistry",
+      "author": "Jonathan Clayden",
+      "isbn": "978-0199270293",
+      "category": "non-fiction",
+      "copies": ["organic_chem_springfield", "organic_chem_westside"]
+    },
+    "goodnight_moon": {
+      "book_id": "goodnight_moon",
+      "title": "Goodnight Moon",
+      "author": "Margaret Wise Brown",
+      "isbn": "978-0694003617",
+      "category": "children",
+      "copies": ["goodnight_moon_springfield"]
+    },
+    "quantum_computing": {
+      "book_id": "quantum_computing",
+      "title": "Quantum Computing: An Applied Approach",
+      "author": "Jack Hidary",
+      "isbn": "978-3030239220",
+      "category": "science",
+      "copies": ["quantum_computing_westside"]
+    }
+  },
+  "copies": {
+    "gatsby_springfield": {
+      "copy_id": "gatsby_springfield",
+      "book_id": "the_great_gatsby",
+      "branch_id": "springfield_central",
+      "status": "checked_out",
+      "due_date": "2026-02-01",
+      "borrower_id": "margaret_chen"
+    },
+    "gatsby_westside": {
+      "copy_id": "gatsby_westside",
+      "book_id": "the_great_gatsby",
+      "branch_id": "westside",
+      "status": "available",
+      "due_date": null,
+      "borrower_id": null
+    },
+    "algorithms_springfield": {
+      "copy_id": "algorithms_springfield",
+      "book_id": "intro_to_algorithms",
+      "branch_id": "springfield_central",
+      "status": "checked_out",
+      "due_date": "2026-03-01",
+      "borrower_id": "james_rivera"
+    },
+    "algorithms_westside": {
+      "copy_id": "algorithms_westside",
+      "book_id": "intro_to_algorithms",
+      "branch_id": "westside",
+      "status": "checked_out",
+      "due_date": "2026-02-20",
+      "borrower_id": "margaret_chen"
+    },
+    "mockingbird_springfield": {
+      "copy_id": "mockingbird_springfield",
+      "book_id": "to_kill_a_mockingbird",
+      "branch_id": "springfield_central",
+      "status": "checked_out",
+      "due_date": "2026-02-15",
+      "borrower_id": "margaret_chen"
+    },
+    "brief_history_springfield": {
+      "copy_id": "brief_history_springfield",
+      "book_id": "a_brief_history_of_time",
+      "branch_id": "springfield_central",
+      "status": "checked_out",
+      "due_date": "2026-02-25",
+      "borrower_id": "margaret_chen"
+    },
+    "brief_history_westside": {
+      "copy_id": "brief_history_westside",
+      "book_id": "a_brief_history_of_time",
+      "branch_id": "westside",
+      "status": "available",
+      "due_date": null,
+      "borrower_id": null
+    },
+    "charlottes_web_springfield": {
+      "copy_id": "charlottes_web_springfield",
+      "book_id": "charlottes_web",
+      "branch_id": "springfield_central",
+      "status": "checked_out",
+      "due_date": "2026-02-18",
+      "borrower_id": "margaret_chen"
+    },
+    "pride_prejudice_springfield": {
+      "copy_id": "pride_prejudice_springfield",
+      "book_id": "pride_and_prejudice",
+      "branch_id": "springfield_central",
+      "status": "checked_out",
+      "due_date": "2026-02-28",
+      "borrower_id": "margaret_chen"
+    },
+    "pride_prejudice_westside": {
+      "copy_id": "pride_prejudice_westside",
+      "book_id": "pride_and_prejudice",
+      "branch_id": "westside",
+      "status": "checked_out",
+      "due_date": "2026-03-05",
+      "borrower_id": "margaret_chen"
+    },
+    "selfish_gene_springfield": {
+      "copy_id": "selfish_gene_springfield",
+      "book_id": "the_selfish_gene",
+      "branch_id": "springfield_central",
+      "status": "checked_out",
+      "due_date": "2026-02-22",
+      "borrower_id": "margaret_chen"
+    },
+    "organic_chem_springfield": {
+      "copy_id": "organic_chem_springfield",
+      "book_id": "organic_chemistry",
+      "branch_id": "springfield_central",
+      "status": "checked_out",
+      "due_date": "2026-03-10",
+      "borrower_id": "james_rivera"
+    },
+    "organic_chem_westside": {
+      "copy_id": "organic_chem_westside",
+      "book_id": "organic_chemistry",
+      "branch_id": "westside",
+      "status": "available",
+      "due_date": null,
+      "borrower_id": null
+    },
+    "goodnight_moon_springfield": {
+      "copy_id": "goodnight_moon_springfield",
+      "book_id": "goodnight_moon",
+      "branch_id": "springfield_central",
+      "status": "checked_out",
+      "due_date": "2026-02-12",
+      "borrower_id": "margaret_chen"
+    },
+    "quantum_computing_westside": {
+      "copy_id": "quantum_computing_westside",
+      "book_id": "quantum_computing",
+      "branch_id": "westside",
+      "status": "checked_out",
+      "due_date": "2026-03-15",
+      "borrower_id": "aisha_patel"
+    }
+  },
+  "branches": {
+    "springfield_central": {
+      "branch_id": "springfield_central",
+      "name": "Springfield Central Library",
+      "address": "100 Main Street, Springfield",
+      "hours": "Mon-Sat 9AM-9PM, Sun 12PM-6PM",
+      "phone": "555-1000"
+    },
+    "westside": {
+      "branch_id": "westside",
+      "name": "Westside Branch Library",
+      "address": "450 West Avenue, Springfield",
+      "hours": "Mon-Fri 10AM-7PM, Sat 10AM-5PM",
+      "phone": "555-2000"
+    }
+  },
+  "loans": {
+    "loan_chen_gatsby": {
+      "loan_id": "loan_chen_gatsby",
+      "patron_id": "margaret_chen",
+      "copy_id": "gatsby_springfield",
+      "checkout_date": "2026-01-11",
+      "due_date": "2026-02-01",
+      "return_date": null,
+      "renewals_count": 0,
+      "fine_amount": 0.0
+    },
+    "loan_chen_algorithms": {
+      "loan_id": "loan_chen_algorithms",
+      "patron_id": "margaret_chen",
+      "copy_id": "algorithms_westside",
+      "checkout_date": "2026-01-30",
+      "due_date": "2026-02-20",
+      "return_date": null,
+      "renewals_count": 0,
+      "fine_amount": 0.0
+    },
+    "loan_chen_mockingbird": {
+      "loan_id": "loan_chen_mockingbird",
+      "patron_id": "margaret_chen",
+      "copy_id": "mockingbird_springfield",
+      "checkout_date": "2026-01-25",
+      "due_date": "2026-02-15",
+      "return_date": null,
+      "renewals_count": 0,
+      "fine_amount": 0.0
+    },
+    "loan_chen_brief_history": {
+      "loan_id": "loan_chen_brief_history",
+      "patron_id": "margaret_chen",
+      "copy_id": "brief_history_springfield",
+      "checkout_date": "2026-02-04",
+      "due_date": "2026-02-25",
+      "return_date": null,
+      "renewals_count": 0,
+      "fine_amount": 0.0
+    },
+    "loan_chen_charlottes_web": {
+      "loan_id": "loan_chen_charlottes_web",
+      "patron_id": "margaret_chen",
+      "copy_id": "charlottes_web_springfield",
+      "checkout_date": "2026-01-28",
+      "due_date": "2026-02-18",
+      "return_date": null,
+      "renewals_count": 0,
+      "fine_amount": 0.0
+    },
+    "loan_chen_pride_1": {
+      "loan_id": "loan_chen_pride_1",
+      "patron_id": "margaret_chen",
+      "copy_id": "pride_prejudice_springfield",
+      "checkout_date": "2026-02-07",
+      "due_date": "2026-02-28",
+      "return_date": null,
+      "renewals_count": 0,
+      "fine_amount": 0.0
+    },
+    "loan_chen_pride_2": {
+      "loan_id": "loan_chen_pride_2",
+      "patron_id": "margaret_chen",
+      "copy_id": "pride_prejudice_westside",
+      "checkout_date": "2026-02-05",
+      "due_date": "2026-03-05",
+      "return_date": null,
+      "renewals_count": 2,
+      "fine_amount": 0.0
+    },
+    "loan_chen_selfish_gene": {
+      "loan_id": "loan_chen_selfish_gene",
+      "patron_id": "margaret_chen",
+      "copy_id": "selfish_gene_springfield",
+      "checkout_date": "2026-02-01",
+      "due_date": "2026-02-22",
+      "return_date": null,
+      "renewals_count": 0,
+      "fine_amount": 0.0
+    },
+    "loan_chen_goodnight_moon": {
+      "loan_id": "loan_chen_goodnight_moon",
+      "patron_id": "margaret_chen",
+      "copy_id": "goodnight_moon_springfield",
+      "checkout_date": "2026-01-22",
+      "due_date": "2026-02-12",
+      "return_date": null,
+      "renewals_count": 0,
+      "fine_amount": 0.0
+    },
+    "loan_rivera_algorithms": {
+      "loan_id": "loan_rivera_algorithms",
+      "patron_id": "james_rivera",
+      "copy_id": "algorithms_springfield",
+      "checkout_date": "2026-02-01",
+      "due_date": "2026-03-01",
+      "return_date": null,
+      "renewals_count": 0,
+      "fine_amount": 0.0
+    },
+    "loan_rivera_organic_chem": {
+      "loan_id": "loan_rivera_organic_chem",
+      "patron_id": "james_rivera",
+      "copy_id": "organic_chem_springfield",
+      "checkout_date": "2026-02-10",
+      "due_date": "2026-03-10",
+      "return_date": null,
+      "renewals_count": 0,
+      "fine_amount": 0.0
+    },
+    "loan_williams_brief_history": {
+      "loan_id": "loan_williams_brief_history",
+      "patron_id": "harold_williams",
+      "copy_id": "brief_history_westside",
+      "checkout_date": "2025-12-01",
+      "due_date": "2025-12-22",
+      "return_date": "2026-01-15",
+      "renewals_count": 2,
+      "fine_amount": 0.0
+    },
+    "loan_patel_quantum": {
+      "loan_id": "loan_patel_quantum",
+      "patron_id": "aisha_patel",
+      "copy_id": "quantum_computing_westside",
+      "checkout_date": "2026-02-08",
+      "due_date": "2026-03-15",
+      "return_date": null,
+      "renewals_count": 0,
+      "fine_amount": 0.0
+    }
+  },
+  "holds": {
+    "hold_chen_quantum": {
+      "hold_id": "hold_chen_quantum",
+      "patron_id": "margaret_chen",
+      "book_id": "quantum_computing",
+      "branch_id": "springfield_central",
+      "placed_date": "2026-02-05",
+      "status": "pending",
+      "position_in_queue": 1,
+      "expiry_date": null
+    },
+    "hold_patel_algorithms": {
+      "hold_id": "hold_patel_algorithms",
+      "patron_id": "aisha_patel",
+      "book_id": "intro_to_algorithms",
+      "branch_id": "springfield_central",
+      "placed_date": "2026-02-09",
+      "status": "pending",
+      "position_in_queue": 1,
+      "expiry_date": null
+    }
+  },
+  "fines": {
+    "fine_chen_gatsby": {
+      "fine_id": "fine_chen_gatsby",
+      "patron_id": "margaret_chen",
+      "loan_id": "loan_chen_gatsby",
+      "amount": 8.50,
+      "reason": "overdue",
+      "status": "outstanding",
+      "issued_date": "2026-02-05"
+    },
+    "fine_chen_mockingbird": {
+      "fine_id": "fine_chen_mockingbird",
+      "patron_id": "margaret_chen",
+      "loan_id": "loan_chen_mockingbird",
+      "amount": 4.00,
+      "reason": "overdue",
+      "status": "outstanding",
+      "issued_date": "2026-02-08"
+    },
+    "fine_williams_overdue": {
+      "fine_id": "fine_williams_overdue",
+      "patron_id": "harold_williams",
+      "loan_id": "loan_williams_brief_history",
+      "amount": 3.50,
+      "reason": "overdue",
+      "status": "outstanding",
+      "issued_date": "2026-01-15"
+    }
+  },
+  "events": {
+    "story_hour": {
+      "event_id": "story_hour",
+      "branch_id": "springfield_central",
+      "title": "Children's Story Hour",
+      "description": "Weekly story time for children ages 3-8, featuring picture books and interactive reading.",
+      "date": "2026-02-14",
+      "time": "10:00",
+      "capacity": 20,
+      "registered_patrons": ["susan_park"],
+      "status": "upcoming"
+    },
+    "scifi_book_club": {
+      "event_id": "scifi_book_club",
+      "branch_id": "springfield_central",
+      "title": "Book Club: Science Fiction Classics",
+      "description": "Monthly book club meeting discussing science fiction classics. This month: Dune by Frank Herbert.",
+      "date": "2026-02-20",
+      "time": "18:30",
+      "capacity": 15,
+      "registered_patrons": ["margaret_chen", "aisha_patel"],
+      "status": "upcoming"
+    },
+    "research_workshop": {
+      "event_id": "research_workshop",
+      "branch_id": "westside",
+      "title": "Research Workshop: Academic Databases",
+      "description": "Learn how to effectively use academic databases and research tools.",
+      "date": "2026-02-22",
+      "time": "14:00",
+      "capacity": 2,
+      "registered_patrons": ["james_rivera"],
+      "status": "upcoming"
+    }
+  }
+}
