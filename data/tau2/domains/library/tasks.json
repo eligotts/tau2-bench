@@ -4,51 +4,51 @@
     "description": {
       "purpose": "Test checkout blocked by fines, requiring partial payment before checkout",
       "relevant_policies": "Fines exceeding $10.00 block all new checkouts until the balance is reduced to $10.00 or below through payment.",
-      "notes": "Patron Margaret Chen has $12.50 in fines (above the $10 threshold). She wants to check out a book. The agent must handle partial payment to bring fines to $10 or below, then process the checkout."
+      "notes": "Patron Margaret Clark has $12.50 in fines (above the $10 threshold). She wants to check out a book. The agent must handle partial payment to bring fines to $10 or below, then process the checkout."
     },
     "user_scenario": {
       "persona": null,
       "instructions": {
         "task_instructions": "Avid reader who is friendly but a bit impatient. Speaks casually and expects the agent to know the system well.",
         "domain": "library",
-        "reason_for_call": "You want to check out 'A Brief History of Time' at the Westside Branch. You know you have some overdue fines but you're not sure of the exact amount.",
-        "known_info": "Your name is Margaret Chen. You want to check out 'A Brief History of Time' at the Westside Branch.",
-        "unknown_info": "You do not know your exact fine amount or that fines above $10 block checkout. When the agent tells you about the fines blocking checkout, agree to pay $3.00 toward fine_chen_gatsby using cash. Then ask the agent to proceed with the checkout."
+        "reason_for_call": "You want to check out 'To Kill a Mockingbird' at the Westside Branch. You know you have some overdue fines but you're not sure of the exact amount.",
+        "known_info": "Your name is Margaret Clark. You want to check out 'To Kill a Mockingbird' at the Westside Branch.",
+        "unknown_info": "You do not know your exact fine amount or that fines above $10 block checkout. When the agent tells you about the fines blocking checkout, agree to pay $3.00 toward fine_clark_overdue_2 using cash. Then ask the agent to proceed with the checkout."
       }
     },
-    "ticket": "Patron Margaret Chen wants to check out 'A Brief History of Time' at the Westside Branch. She has $12.50 in fines which blocks checkout. Agent must collect partial payment on fine_chen_gatsby to bring total to $10 or below, then complete the checkout.",
+    "ticket": "Patron Margaret Clark wants to check out 'To Kill a Mockingbird' at the Westside Branch. She has $12.50 in fines which blocks checkout. Agent must collect partial payment on fine_clark_overdue_2 to bring total to $10 or below, then complete the checkout.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "pay_fine_1",
           "name": "pay_fine",
           "arguments": {
-            "fine_id": "fine_chen_gatsby",
+            "fine_id": "fine_clark_overdue_2",
             "amount": 3.0,
             "payment_method": "cash"
           },
-          "info": "Pay $3.00 toward fine_chen_gatsby to bring total fines from $12.50 to $9.50"
+          "info": "Pay $3.00 toward fine_clark_overdue_2 to bring total fines from $12.50 to $9.50"
         },
         {
           "action_id": "checkout_1",
           "name": "checkout_book",
           "arguments": {
-            "patron_id": "margaret_chen",
-            "copy_id": "brief_history_westside"
+            "patron_id": "margaret_clark",
+            "copy_id": "mockingbird_westside"
           },
-          "info": "Check out brief_history_westside (A Brief History of Time) to margaret_chen"
+          "info": "Check out mockingbird_westside (To Kill a Mockingbird) to margaret_clark"
         }
       ],
       "env_assertions": [
         {
           "env_type": "assistant",
           "func_name": "assert_copy_status",
-          "arguments": {"copy_id": "brief_history_westside", "expected_status": "checked_out"}
+          "arguments": {"copy_id": "mockingbird_westside", "expected_status": "checked_out"}
         },
         {
           "env_type": "assistant",
           "func_name": "assert_patron_loan_count",
-          "arguments": {"patron_id": "margaret_chen", "expected": 10}
+          "arguments": {"patron_id": "margaret_clark", "expected": 1}
         }
       ],
       "nl_assertions": [
