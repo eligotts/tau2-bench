@@ -2412,7 +2412,7 @@ def main():
 
     # Tier 1: Simple Single-Action (~60)
     generators_t1 = [
-        ("simple_checkout", gen_simple_checkout, 17),
+        ("simple_checkout", gen_simple_checkout, 18),
         ("simple_return", gen_simple_return, 12),
         ("overdue_return", gen_overdue_return, 10),
         ("renew_loan", gen_renew_loan, 10),

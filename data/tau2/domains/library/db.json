@@ -12,7 +12,7 @@
       "holds": [
         "hold_clark_team_rivals"
       ],
-      "fines_owed": 12.5,
+      "fines_owed": 0.0,
       "borrowing_limit": 10
     },
     "michael_thomas": {
@@ -8929,26 +8929,6 @@
       "return_date": null,
       "renewals_count": 0,
       "fine_amount": 0.0
-    },
-    "loan_clark_mockingbird": {
-      "loan_id": "loan_clark_mockingbird",
-      "patron_id": "margaret_clark",
-      "copy_id": "mockingbird_northgate",
-      "checkout_date": "2025-09-18",
-      "due_date": "2025-10-09",
-      "return_date": "2025-11-12",
-      "renewals_count": 0,
-      "fine_amount": 8.5
-    },
-    "loan_clark_mockingbird_2": {
-      "loan_id": "loan_clark_mockingbird_2",
-      "patron_id": "margaret_clark",
-      "copy_id": "mockingbird_springfield_4",
-      "checkout_date": "2025-10-21",
-      "due_date": "2025-11-11",
-      "return_date": "2025-11-27",
-      "renewals_count": 0,
-      "fine_amount": 4.0
     }
   },
   "holds": {
@@ -9803,24 +9783,6 @@
       "reason": "damaged",
       "status": "paid",
       "issued_date": "2025-03-16"
-    },
-    "fine_clark_overdue_2": {
-      "fine_id": "fine_clark_overdue_2",
-      "patron_id": "margaret_clark",
-      "loan_id": "loan_clark_mockingbird",
-      "amount": 8.5,
-      "reason": "overdue",
-      "status": "outstanding",
-      "issued_date": "2025-11-12"
-    },
-    "fine_clark_overdue_3": {
-      "fine_id": "fine_clark_overdue_3",
-      "patron_id": "margaret_clark",
-      "loan_id": "loan_clark_mockingbird_2",
-      "amount": 4.0,
-      "reason": "overdue",
-      "status": "outstanding",
-      "issued_date": "2025-11-27"
     }
   },
   "events": {

@@ -106,43 +106,239 @@ for spec in BRANCH_SPECS:
 # (book_id, short_name, title, author, isbn, category)
 BOOK_CATALOG = [
     # Fiction (8)
-    ("the_great_gatsby", "gatsby", "The Great Gatsby", "F. Scott Fitzgerald", "978-0743273565", "fiction"),
-    ("to_kill_a_mockingbird", "mockingbird", "To Kill a Mockingbird", "Harper Lee", "978-0061120084", "fiction"),
-    ("pride_and_prejudice", "pride", "Pride and Prejudice", "Jane Austen", "978-0141439518", "fiction"),
-    ("nineteen_eighty_four", "nineteen84", "1984", "George Orwell", "978-0451524935", "fiction"),
-    ("the_catcher_in_the_rye", "catcher", "The Catcher in the Rye", "J.D. Salinger", "978-0316769488", "fiction"),
-    ("brave_new_world", "brave_new", "Brave New World", "Aldous Huxley", "978-0060850524", "fiction"),
-    ("the_road", "the_road", "The Road", "Cormac McCarthy", "978-0307387899", "fiction"),
+    (
+        "the_great_gatsby",
+        "gatsby",
+        "The Great Gatsby",
+        "F. Scott Fitzgerald",
+        "978-0743273565",
+        "fiction",
+    ),
+    (
+        "to_kill_a_mockingbird",
+        "mockingbird",
+        "To Kill a Mockingbird",
+        "Harper Lee",
+        "978-0061120084",
+        "fiction",
+    ),
+    (
+        "pride_and_prejudice",
+        "pride",
+        "Pride and Prejudice",
+        "Jane Austen",
+        "978-0141439518",
+        "fiction",
+    ),
+    (
+        "nineteen_eighty_four",
+        "nineteen84",
+        "1984",
+        "George Orwell",
+        "978-0451524935",
+        "fiction",
+    ),
+    (
+        "the_catcher_in_the_rye",
+        "catcher",
+        "The Catcher in the Rye",
+        "J.D. Salinger",
+        "978-0316769488",
+        "fiction",
+    ),
+    (
+        "brave_new_world",
+        "brave_new",
+        "Brave New World",
+        "Aldous Huxley",
+        "978-0060850524",
+        "fiction",
+    ),
+    (
+        "the_road",
+        "the_road",
+        "The Road",
+        "Cormac McCarthy",
+        "978-0307387899",
+        "fiction",
+    ),
     ("beloved", "beloved", "Beloved", "Toni Morrison", "978-1400033416", "fiction"),
     # Non-fiction (5)
-    ("intro_to_algorithms", "algorithms", "Introduction to Algorithms", "Thomas Cormen", "978-0262033848", "non-fiction"),
-    ("organic_chemistry", "organic_chem", "Organic Chemistry", "Jonathan Clayden", "978-0199270293", "non-fiction"),
-    ("thinking_fast_and_slow", "thinking_fast", "Thinking, Fast and Slow", "Daniel Kahneman", "978-0374533557", "non-fiction"),
-    ("sapiens", "sapiens", "Sapiens: A Brief History of Humankind", "Yuval Noah Harari", "978-0062316097", "non-fiction"),
-    ("the_elements_of_style", "elements_style", "The Elements of Style", "William Strunk Jr.", "978-0205309023", "non-fiction"),
+    (
+        "intro_to_algorithms",
+        "algorithms",
+        "Introduction to Algorithms",
+        "Thomas Cormen",
+        "978-0262033848",
+        "non-fiction",
+    ),
+    (
+        "organic_chemistry",
+        "organic_chem",
+        "Organic Chemistry",
+        "Jonathan Clayden",
+        "978-0199270293",
+        "non-fiction",
+    ),
+    (
+        "thinking_fast_and_slow",
+        "thinking_fast",
+        "Thinking, Fast and Slow",
+        "Daniel Kahneman",
+        "978-0374533557",
+        "non-fiction",
+    ),
+    (
+        "sapiens",
+        "sapiens",
+        "Sapiens: A Brief History of Humankind",
+        "Yuval Noah Harari",
+        "978-0062316097",
+        "non-fiction",
+    ),
+    (
+        "the_elements_of_style",
+        "elements_style",
+        "The Elements of Style",
+        "William Strunk Jr.",
+        "978-0205309023",
+        "non-fiction",
+    ),
     # Science (4)
-    ("a_brief_history_of_time", "brief_history", "A Brief History of Time", "Stephen Hawking", "978-0553380163", "science"),
-    ("the_selfish_gene", "selfish_gene", "The Selfish Gene", "Richard Dawkins", "978-0198788607", "science"),
-    ("quantum_computing", "quantum", "Quantum Computing: An Applied Approach", "Jack Hidary", "978-3030239220", "science"),
+    (
+        "a_brief_history_of_time",
+        "brief_history",
+        "A Brief History of Time",
+        "Stephen Hawking",
+        "978-0553380163",
+        "science",
+    ),
+    (
+        "the_selfish_gene",
+        "selfish_gene",
+        "The Selfish Gene",
+        "Richard Dawkins",
+        "978-0198788607",
+        "science",
+    ),
+    (
+        "quantum_computing",
+        "quantum",
+        "Quantum Computing: An Applied Approach",
+        "Jack Hidary",
+        "978-3030239220",
+        "science",
+    ),
     ("cosmos", "cosmos", "Cosmos", "Carl Sagan", "978-0345539434", "science"),
     # Children (4)
-    ("charlottes_web", "charlottes_web", "Charlotte's Web", "E.B. White", "978-0064400558", "children"),
-    ("goodnight_moon", "goodnight_moon", "Goodnight Moon", "Margaret Wise Brown", "978-0694003617", "children"),
-    ("where_the_wild_things_are", "wild_things", "Where the Wild Things Are", "Maurice Sendak", "978-0064431781", "children"),
-    ("the_very_hungry_caterpillar", "hungry_caterpillar", "The Very Hungry Caterpillar", "Eric Carle", "978-0399226908", "children"),
+    (
+        "charlottes_web",
+        "charlottes_web",
+        "Charlotte's Web",
+        "E.B. White",
+        "978-0064400558",
+        "children",
+    ),
+    (
+        "goodnight_moon",
+        "goodnight_moon",
+        "Goodnight Moon",
+        "Margaret Wise Brown",
+        "978-0694003617",
+        "children",
+    ),
+    (
+        "where_the_wild_things_are",
+        "wild_things",
+        "Where the Wild Things Are",
+        "Maurice Sendak",
+        "978-0064431781",
+        "children",
+    ),
+    (
+        "the_very_hungry_caterpillar",
+        "hungry_caterpillar",
+        "The Very Hungry Caterpillar",
+        "Eric Carle",
+        "978-0399226908",
+        "children",
+    ),
     # History (3)
-    ("a_peoples_history", "peoples_history", "A People's History of the United States", "Howard Zinn", "978-0062397348", "history"),
-    ("the_guns_of_august", "guns_august", "The Guns of August", "Barbara Tuchman", "978-0345386236", "history"),
-    ("team_of_rivals", "team_rivals", "Team of Rivals", "Doris Kearns Goodwin", "978-0743270755", "history"),
+    (
+        "a_peoples_history",
+        "peoples_history",
+        "A People's History of the United States",
+        "Howard Zinn",
+        "978-0062397348",
+        "history",
+    ),
+    (
+        "the_guns_of_august",
+        "guns_august",
+        "The Guns of August",
+        "Barbara Tuchman",
+        "978-0345386236",
+        "history",
+    ),
+    (
+        "team_of_rivals",
+        "team_rivals",
+        "Team of Rivals",
+        "Doris Kearns Goodwin",
+        "978-0743270755",
+        "history",
+    ),
     # Mystery (3)
-    ("the_hound_of_the_baskervilles", "hound", "The Hound of the Baskervilles", "Arthur Conan Doyle", "978-0451528018", "mystery"),
-    ("gone_girl", "gone_girl", "Gone Girl", "Gillian Flynn", "978-0307588371", "mystery"),
-    ("the_girl_with_the_dragon_tattoo", "dragon_tattoo", "The Girl with the Dragon Tattoo", "Stieg Larsson", "978-0307454546", "mystery"),
+    (
+        "the_hound_of_the_baskervilles",
+        "hound",
+        "The Hound of the Baskervilles",
+        "Arthur Conan Doyle",
+        "978-0451528018",
+        "mystery",
+    ),
+    (
+        "gone_girl",
+        "gone_girl",
+        "Gone Girl",
+        "Gillian Flynn",
+        "978-0307588371",
+        "mystery",
+    ),
+    (
+        "the_girl_with_the_dragon_tattoo",
+        "dragon_tattoo",
+        "The Girl with the Dragon Tattoo",
+        "Stieg Larsson",
+        "978-0307454546",
+        "mystery",
+    ),
     # Biography (2)
-    ("steve_jobs", "steve_jobs", "Steve Jobs", "Walter Isaacson", "978-1451648539", "biography"),
-    ("the_diary_of_a_young_girl", "diary_anne", "The Diary of a Young Girl", "Anne Frank", "978-0553296983", "biography"),
+    (
+        "steve_jobs",
+        "steve_jobs",
+        "Steve Jobs",
+        "Walter Isaacson",
+        "978-1451648539",
+        "biography",
+    ),
+    (
+        "the_diary_of_a_young_girl",
+        "diary_anne",
+        "The Diary of a Young Girl",
+        "Anne Frank",
+        "978-0553296983",
+        "biography",
+    ),
     # Reference (1)
-    ("merriams_dictionary", "dictionary", "Merriam-Webster's Collegiate Dictionary", "Merriam-Webster", "978-0877798095", "reference"),
+    (
+        "merriams_dictionary",
+        "dictionary",
+        "Merriam-Webster's Collegiate Dictionary",
+        "Merriam-Webster",
+        "978-0877798095",
+        "reference",
+    ),
 ]
 
 books = {}
@@ -207,7 +403,9 @@ for bid in book_ids:
     add_copy(bid, br)
 
 # Remaining 70 copies distributed by category popularity
-book_pool_weights = [CATEGORY_WEIGHTS.get(books[bid]["category"], 1.0) for bid in book_ids]
+book_pool_weights = [
+    CATEGORY_WEIGHTS.get(books[bid]["category"], 1.0) for bid in book_ids
+]
 for _ in range(100 - len(copies)):
     bid = random.choices(book_ids, weights=book_pool_weights, k=1)[0]
     br = random.choices(branch_ids, weights=branch_weights, k=1)[0]
@@ -218,34 +416,133 @@ for _ in range(100 - len(copies)):
 # Step 4: Patrons (200)
 # ═══════════════════════════════════════════════════════════════════════════
 FIRST_NAMES = [
-    "James", "Mary", "Robert", "Patricia", "John", "Jennifer", "Michael",
-    "Linda", "David", "Elizabeth", "William", "Barbara", "Richard", "Susan",
-    "Joseph", "Jessica", "Thomas", "Sarah", "Christopher", "Karen", "Charles",
-    "Lisa", "Daniel", "Nancy", "Matthew", "Betty", "Anthony", "Margaret",
-    "Mark", "Sandra", "Donald", "Ashley", "Steven", "Dorothy", "Paul",
-    "Kimberly", "Andrew", "Emily", "Joshua", "Donna", "Kenneth", "Michelle",
-    "Kevin", "Carol", "Brian", "Amanda", "George", "Melissa", "Timothy",
+    "James",
+    "Mary",
+    "Robert",
+    "Patricia",
+    "John",
+    "Jennifer",
+    "Michael",
+    "Linda",
+    "David",
+    "Elizabeth",
+    "William",
+    "Barbara",
+    "Richard",
+    "Susan",
+    "Joseph",
+    "Jessica",
+    "Thomas",
+    "Sarah",
+    "Christopher",
+    "Karen",
+    "Charles",
+    "Lisa",
+    "Daniel",
+    "Nancy",
+    "Matthew",
+    "Betty",
+    "Anthony",
+    "Margaret",
+    "Mark",
+    "Sandra",
+    "Donald",
+    "Ashley",
+    "Steven",
+    "Dorothy",
+    "Paul",
+    "Kimberly",
+    "Andrew",
+    "Emily",
+    "Joshua",
+    "Donna",
+    "Kenneth",
+    "Michelle",
+    "Kevin",
+    "Carol",
+    "Brian",
+    "Amanda",
+    "George",
+    "Melissa",
+    "Timothy",
     "Deborah",
 ]
 
 LAST_NAMES = [
-    "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller",
-    "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez",
-    "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin",
-    "Lee", "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark",
-    "Ramirez", "Lewis", "Robinson", "Walker", "Young", "Allen", "King",
-    "Wright", "Scott", "Torres", "Nguyen", "Hill", "Flores", "Green",
-    "Adams", "Nelson", "Baker", "Hall", "Rivera", "Campbell", "Mitchell",
-    "Carter", "Roberts",
+    "Smith",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Jones",
+    "Garcia",
+    "Miller",
+    "Davis",
+    "Rodriguez",
+    "Martinez",
+    "Hernandez",
+    "Lopez",
+    "Gonzalez",
+    "Wilson",
+    "Anderson",
+    "Thomas",
+    "Taylor",
+    "Moore",
+    "Jackson",
+    "Martin",
+    "Lee",
+    "Perez",
+    "Thompson",
+    "White",
+    "Harris",
+    "Sanchez",
+    "Clark",
+    "Ramirez",
+    "Lewis",
+    "Robinson",
+    "Walker",
+    "Young",
+    "Allen",
+    "King",
+    "Wright",
+    "Scott",
+    "Torres",
+    "Nguyen",
+    "Hill",
+    "Flores",
+    "Green",
+    "Adams",
+    "Nelson",
+    "Baker",
+    "Hall",
+    "Rivera",
+    "Campbell",
+    "Mitchell",
+    "Carter",
+    "Roberts",
 ]
 
 EMAIL_DOMAINS = ["email.com", "mail.com", "inbox.com", "webmail.net"]
 STREETS = [
-    "Elm Street", "Oak Lane", "Pine Road", "Maple Avenue", "Cedar Drive",
-    "Birch Way", "Walnut Court", "Cherry Lane", "Spruce Street",
-    "Willow Place", "Main Street", "College Ave", "University Blvd",
-    "Park Drive", "Lake Road", "Hill Street", "River Road", "Garden Way",
-    "Forest Lane", "Valley Drive",
+    "Elm Street",
+    "Oak Lane",
+    "Pine Road",
+    "Maple Avenue",
+    "Cedar Drive",
+    "Birch Way",
+    "Walnut Court",
+    "Cherry Lane",
+    "Spruce Street",
+    "Willow Place",
+    "Main Street",
+    "College Ave",
+    "University Blvd",
+    "Park Drive",
+    "Lake Road",
+    "Hill Street",
+    "River Road",
+    "Garden Way",
+    "Forest Lane",
+    "Valley Drive",
 ]
 MEMBERSHIP_TYPES = ["standard", "student", "senior", "child"]
 MEMBERSHIP_WEIGHTS = [50, 25, 15, 10]
@@ -298,7 +595,8 @@ for i in range(200):
 
 all_patron_ids = list(patrons.keys())
 active_patron_ids = [
-    pid for pid in all_patron_ids
+    pid
+    for pid in all_patron_ids
     if patrons[pid]["membership_expiry"] >= date_str(TODAY)
 ]
 
@@ -319,7 +617,11 @@ def book_short_from_copy(copy_id):
 
 
 def loan_period_weeks(membership_type):
-    return LOAN_PERIOD_STUDENT_WEEKS if membership_type == "student" else LOAN_PERIOD_STANDARD_WEEKS
+    return (
+        LOAN_PERIOD_STUDENT_WEEKS
+        if membership_type == "student"
+        else LOAN_PERIOD_STANDARD_WEEKS
+    )
 
 
 # ── Phase A: Returned loans (~450) ─────────────────────────────────────────
@@ -428,7 +730,9 @@ def create_active_loan(pid, cid):
 active_loan_count = 0
 
 # Edge case: 1 child patron at borrowing limit (5 loans)
-child_patrons = [pid for pid in active_patron_ids if patrons[pid]["membership_type"] == "child"]
+child_patrons = [
+    pid for pid in active_patron_ids if patrons[pid]["membership_type"] == "child"
+]
 if child_patrons:
     at_limit_child = random.choice(child_patrons)
     for _ in range(BORROWING_LIMITS["child"]):
@@ -438,7 +742,8 @@ if child_patrons:
 
 # Edge case: 2 standard/senior patrons at borrowing limit (10 loans each)
 std_senior = [
-    pid for pid in active_patron_ids
+    pid
+    for pid in active_patron_ids
     if patrons[pid]["membership_type"] in ("standard", "senior")
     and len(patrons[pid]["active_loans"]) == 0
 ]
@@ -455,7 +760,8 @@ for cid in copy_iter:
     if active_loan_count >= ACTIVE_LOAN_TARGET:
         break
     eligible = [
-        pid for pid in active_patron_ids
+        pid
+        for pid in active_patron_ids
         if len(patrons[pid]["active_loans"]) < patrons[pid]["borrowing_limit"]
     ]
     if not eligible:
@@ -475,7 +781,9 @@ for loan in non_overdue[:overdue_target]:
     mtype = patrons[loan["patron_id"]]["membership_type"]
     weeks = loan_period_weeks(mtype)
     shift = random.randint(21, 50)
-    new_checkout = datetime.strptime(loan["checkout_date"], "%Y-%m-%d") - timedelta(days=shift)
+    new_checkout = datetime.strptime(loan["checkout_date"], "%Y-%m-%d") - timedelta(
+        days=shift
+    )
     new_due = new_checkout + timedelta(weeks=weeks)
     loan["checkout_date"] = date_str(new_checkout)
     loan["due_date"] = date_str(new_due)
@@ -489,14 +797,16 @@ def max_renewals_for(patron_id):
 
 
 maxed_renewals = [
-    l for l in loans.values()
+    l
+    for l in loans.values()
     if l["return_date"] is None
     and l["renewals_count"] >= max_renewals_for(l["patron_id"])
 ]
 need_maxed = 5 - len(maxed_renewals)
 if need_maxed > 0:
     candidates = [
-        l for l in loans.values()
+        l
+        for l in loans.values()
         if l["return_date"] is None and l not in maxed_renewals
     ]
     random.shuffle(candidates)
@@ -512,7 +822,8 @@ fine_id_set = set()
 
 # Find late-returned loans for overdue fines
 late_returned = [
-    l for l in returned_loans
+    l
+    for l in returned_loans
     if l["return_date"] and l["due_date"] and l["return_date"] > l["due_date"]
 ]
 random.shuffle(late_returned)
@@ -575,7 +886,8 @@ for loan in available_returned[:8]:
 
 # Damaged fines (5): pick returned loans with available copies (not already used for lost)
 available_for_damage = [
-    l for l in returned_loans
+    l
+    for l in returned_loans
     if copies[l["copy_id"]]["status"] == "available"
     and l["loan_id"] not in lost_loan_ids
 ]
@@ -636,63 +948,6 @@ if len(high_fine_patrons) < 3:
             high_fine_patrons.add(f["patron_id"])
 
 
-# ── Task setup: patron with $12.50 in overdue fines ────────────────────────
-# Create a specific scenario for the checkout_with_fines task:
-# a patron with two outstanding overdue fines totaling $12.50.
-task_patron_id = None
-for pid in active_patron_ids:
-    p = patrons[pid]
-    if (
-        p["membership_type"] == "standard"
-        and len(p["active_loans"]) <= p["borrowing_limit"] - 2
-        and pid not in outstanding_by_patron
-    ):
-        task_patron_id = pid
-        break
-
-if task_patron_id:
-    plast = patron_last(task_patron_id)
-    # Two overdue fines: $8.50 and $4.00 = $12.50 total
-    for amount, days_ago in [(8.50, 90), (4.00, 75)]:
-        cid = random.choice(all_copy_ids)
-        days_late = int(amount / OVERDUE_FINE_PER_DAY)
-        return_date = TODAY - timedelta(days=days_ago)
-        due_date = return_date - timedelta(days=days_late)
-        checkout_date = due_date - timedelta(weeks=LOAN_PERIOD_STANDARD_WEEKS)
-
-        bshort_name = book_short_from_copy(cid)
-        base_lid = f"loan_{plast}_{bshort_name}"
-        lid = make_unique_id(base_lid, loan_id_set)
-        loan_id_set.add(lid)
-
-        loans[lid] = {
-            "loan_id": lid,
-            "patron_id": task_patron_id,
-            "copy_id": cid,
-            "checkout_date": date_str(checkout_date),
-            "due_date": date_str(due_date),
-            "return_date": date_str(return_date),
-            "renewals_count": 0,
-            "fine_amount": amount,
-        }
-
-        base_fid = f"fine_{plast}_overdue"
-        fid = make_unique_id(base_fid, fine_id_set)
-        fine_id_set.add(fid)
-
-        fines[fid] = {
-            "fine_id": fid,
-            "patron_id": task_patron_id,
-            "loan_id": lid,
-            "amount": amount,
-            "reason": "overdue",
-            "status": "outstanding",
-            "issued_date": date_str(return_date),
-        }
-
-    print(f"Task patron: {task_patron_id} ({patrons[task_patron_id]['name']})")
-
-
 # ═══════════════════════════════════════════════════════════════════════════
 # Step 7: Holds (40)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -710,7 +965,8 @@ while pending_created < 20 and attempts < 2000:
 
     # All copies of this book at this branch must be non-available
     branch_copies = [
-        cid for cid, c in copies.items()
+        cid
+        for cid, c in copies.items()
         if c["book_id"] == bid and c["branch_id"] == brid
     ]
     if not branch_copies:
@@ -720,8 +976,10 @@ while pending_created < 20 and attempts < 2000:
 
     # No duplicate pending hold for same patron+book+branch
     dup = any(
-        h["patron_id"] == pid and h["book_id"] == bid
-        and h["branch_id"] == brid and h["status"] == "pending"
+        h["patron_id"] == pid
+        and h["book_id"] == bid
+        and h["branch_id"] == brid
+        and h["status"] == "pending"
         for h in holds.values()
     )
     if dup:
@@ -733,10 +991,16 @@ while pending_created < 20 and attempts < 2000:
     hid = make_unique_id(base_hid, hold_id_set)
     hold_id_set.add(hid)
 
-    position = sum(
-        1 for h in holds.values()
-        if h["book_id"] == bid and h["branch_id"] == brid and h["status"] == "pending"
-    ) + 1
+    position = (
+        sum(
+            1
+            for h in holds.values()
+            if h["book_id"] == bid
+            and h["branch_id"] == brid
+            and h["status"] == "pending"
+        )
+        + 1
+    )
 
     placed_date = TODAY - timedelta(days=random.randint(1, 30))
 
@@ -1094,9 +1358,7 @@ for key, hold_list in pending_holds_by_key.items():
     positions = sorted(h["position_in_queue"] for h in hold_list)
     expected = list(range(1, len(hold_list) + 1))
     if positions != expected:
-        errors.append(
-            f"Hold queue {key}: positions {positions} != expected {expected}"
-        )
+        errors.append(f"Hold queue {key}: positions {positions} != expected {expected}")
 
 
 # ── Statistics ──────────────────────────────────────────────────────────────
@@ -1111,29 +1373,39 @@ for p in patrons.values():
 cat_counts = defaultdict(int)
 for b in books.values():
     cat_counts[b["category"]] += 1
-expired_patrons = [p for p in patrons.values() if p["membership_expiry"] < date_str(TODAY)]
+expired_patrons = [
+    p for p in patrons.values() if p["membership_expiry"] < date_str(TODAY)
+]
 high_fine_pats = [p for p in patrons.values() if p["fines_owed"] > 10]
 at_limit_pats = [
-    p for p in patrons.values()
+    p
+    for p in patrons.values()
     if len(p["active_loans"]) >= p["borrowing_limit"] and p["borrowing_limit"] > 0
 ]
 maxed_renewal_loans = [
-    l for l in loans.values()
+    l
+    for l in loans.values()
     if l["return_date"] is None
     and l["renewals_count"] >= max_renewals_for(l["patron_id"])
 ]
-books_with_pending_holds = {h["book_id"] for h in holds.values() if h["status"] == "pending"}
+books_with_pending_holds = {
+    h["book_id"] for h in holds.values() if h["status"] == "pending"
+}
 loans_blocked_by_holds = [
-    l for l in active_loans_final
+    l
+    for l in active_loans_final
     if copies[l["copy_id"]]["book_id"] in books_with_pending_holds
 ]
 patron_fine_counts = defaultdict(int)
 for f in fines.values():
     patron_fine_counts[f["patron_id"]] += 1
 waiver_eligible = [
-    pid for pid, cnt in patron_fine_counts.items()
+    pid
+    for pid, cnt in patron_fine_counts.items()
     if cnt == 1
-    and any(f["patron_id"] == pid and f["status"] == "outstanding" for f in fines.values())
+    and any(
+        f["patron_id"] == pid and f["status"] == "outstanding" for f in fines.values()
+    )
 ]
 book_hold_counts = defaultdict(int)
 for h in holds.values():
@@ -1167,7 +1439,9 @@ print(f"  Ready:     {sum(1 for h in holds.values() if h['status'] == 'ready')}"
 print(f"  Expired:   {sum(1 for h in holds.values() if h['status'] == 'expired')}")
 print(f"  Cancelled: {sum(1 for h in holds.values() if h['status'] == 'cancelled')}")
 print(f"\nFines:       {len(fines)}")
-print(f"  Outstanding: {sum(1 for f in fines.values() if f['status'] == 'outstanding')}")
+print(
+    f"  Outstanding: {sum(1 for f in fines.values() if f['status'] == 'outstanding')}"
+)
 print(f"  Paid:      {sum(1 for f in fines.values() if f['status'] == 'paid')}")
 print(f"  Waived:    {sum(1 for f in fines.values() if f['status'] == 'waived')}")
 print(f"\nEvents:      {len(events)}")
