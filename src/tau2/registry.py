@@ -39,6 +39,14 @@ from tau2.domains.telecom.environment import (
 from tau2.domains.telecom.environment import (
     get_tasks_split as telecom_domain_get_tasks_split,
 )
+from tau2.domains.smart_home.environment import (
+    get_environment as smart_home_domain_get_environment,
+)
+from tau2.domains.smart_home.environment import get_tasks as smart_home_domain_get_tasks
+from tau2.domains.hosting.environment import (
+    get_environment as hosting_domain_get_environment,
+)
+from tau2.domains.hosting.environment import get_tasks as hosting_domain_get_tasks
 from tau2.environment.environment import Environment
 from tau2.user.base import BaseUser
 from tau2.user.user_simulator import DummyUser, UserSimulator
@@ -243,6 +251,12 @@ try:
         "telecom-workflow",
         get_task_splits=telecom_domain_get_tasks_split,
     )
+
+    registry.register_domain(smart_home_domain_get_environment, "smart_home")
+    registry.register_tasks(smart_home_domain_get_tasks, "smart_home")
+
+    registry.register_domain(hosting_domain_get_environment, "hosting")
+    registry.register_tasks(hosting_domain_get_tasks, "hosting")
 
     logger.debug(
         f"Default components registered successfully. Registry info: {json.dumps(registry.get_info().model_dump(), indent=2)}"

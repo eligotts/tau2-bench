@@ -1,0 +1,19 @@
+{
+  "website": {
+    "url": "https://mybusiness.com",
+    "loads_successfully": true,
+    "response_time_ms": 250,
+    "error_code": null,
+    "ssl_warning": false,
+    "page_content_correct": true
+  },
+  "email_working": true,
+  "dns_resolves": true,
+  "browser_cache_stale": false,
+  "local_dns_stale": false,
+  "user_verified_working": true,
+  "needs_email_verification": false,
+  "user_name": null,
+  "user_email": null,
+  "account_id": null
+}

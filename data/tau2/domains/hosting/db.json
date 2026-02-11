@@ -1,0 +1,72 @@
+{
+  "servers": [
+    {
+      "server_id": "SRV001",
+      "hostname": "web1.hostprovider.com",
+      "status": "running",
+      "server_software": "nginx",
+      "document_root": "/var/www/html",
+      "php_version": "8.2",
+      "port": 443,
+      "error_log": [],
+      "hardware_failure": false
+    }
+  ],
+  "databases": [
+    {
+      "db_id": "DB001",
+      "db_type": "mysql",
+      "status": "running",
+      "host": "db1.hostprovider.com",
+      "port": 3306,
+      "max_connections": 100,
+      "current_connections": 5
+    }
+  ],
+  "dns_records": [
+    {
+      "record_id": "DNS001",
+      "domain": "mybusiness.com",
+      "record_type": "A",
+      "value": "203.0.113.10",
+      "ttl": 3600
+    },
+    {
+      "record_id": "DNS002",
+      "domain": "mybusiness.com",
+      "record_type": "MX",
+      "value": "mail.mybusiness.com",
+      "ttl": 3600
+    }
+  ],
+  "ssl_certificates": [
+    {
+      "cert_id": "SSL001",
+      "domain": "mybusiness.com",
+      "status": "valid",
+      "issuer": "Let's Encrypt",
+      "valid_until": "2026-12-31"
+    }
+  ],
+  "deployments": [
+    {
+      "deployment_id": "DEP001",
+      "version": "3.2.1",
+      "status": "active",
+      "deployed_at": "2025-01-15T10:00:00Z",
+      "previous_version": "3.2.0"
+    }
+  ],
+  "account": {
+    "account_id": "ACC001",
+    "owner_name": "Maria Chen",
+    "email": "maria@mybusiness.com",
+    "plan": "business_pro",
+    "domain": "mybusiness.com",
+    "server_ip": "203.0.113.10",
+    "server_id": "SRV001",
+    "db_id": "DB001"
+  },
+  "firewall_enabled": true,
+  "server_cache_stale": false
+}
