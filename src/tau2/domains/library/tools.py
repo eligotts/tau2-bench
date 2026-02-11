@@ -14,6 +14,11 @@ from tau2.domains.library.data_model import (
 )
 from tau2.environment.toolkit import ToolKitBase, ToolType, is_tool
 
+# Fixed reference date — must match generate_db.py / generate_tasks.py TODAY.
+# Using a fixed date (instead of datetime.now()) keeps the tools consistent
+# with the generated DB regardless of when the eval actually runs.
+REFERENCE_DATE = datetime(2025, 10, 15)
+
 # Policy constants
 FINE_CHECKOUT_BLOCK_THRESHOLD = 10.0
 MAX_RENEWALS_STANDARD = 2
@@ -137,7 +142,7 @@ class LibraryTools(ToolKitBase):
             title: Book title to search for (partial, case-insensitive)
             author: Author name to search for (partial, case-insensitive)
             isbn: ISBN to search for (exact match)
-            category: Category to filter by (case-insensitive)
+            category: Category to filter by (case-insensitive). Valid categories: biography, children, fiction, history, mystery, non-fiction, reference, science
 
         Returns:
             A list of matching books
@@ -302,7 +307,7 @@ class LibraryTools(ToolKitBase):
             )
 
         # Policy: membership must be active
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = REFERENCE_DATE.strftime("%Y-%m-%d")
         if patron.membership_expiry < today:
             raise ValueError(
                 f"Patron's membership expired on {patron.membership_expiry}. "
@@ -327,7 +332,7 @@ class LibraryTools(ToolKitBase):
         else:
             weeks = LOAN_PERIOD_STANDARD_WEEKS
 
-        checkout_date = datetime.now()
+        checkout_date = REFERENCE_DATE
         due_date = checkout_date + timedelta(weeks=weeks)
 
         book_id = self.db.copies[copy_id].book_id
@@ -382,7 +387,7 @@ class LibraryTools(ToolKitBase):
         if loan is None:
             raise ValueError(f"No active loan found for copy {copy_id}.")
 
-        today = datetime.now()
+        today = REFERENCE_DATE
         loan.return_date = today.strftime("%Y-%m-%d")
 
         # Check if overdue and generate fine
@@ -524,7 +529,7 @@ class LibraryTools(ToolKitBase):
         ]
         position = len(existing_holds) + 1
 
-        today = datetime.now()
+        today = REFERENCE_DATE
         base_hid = f"hold_{self._patron_last(patron_id)}_{book_id}"
         hold_id = self._make_unique_id(base_hid, self.db.holds)
         hold = Hold(
@@ -686,7 +691,7 @@ class LibraryTools(ToolKitBase):
             raise ValueError(f"Event '{event.title}' is at capacity.")
 
         # Policy: membership must be active for free access
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = REFERENCE_DATE.strftime("%Y-%m-%d")
         if patron.membership_expiry < today:
             raise ValueError(
                 f"Patron's membership expired on {patron.membership_expiry}. "
@@ -722,7 +727,7 @@ class LibraryTools(ToolKitBase):
         patron = self.db.patrons[patron_id]
 
         # Renew from today or from expiry, whichever is later
-        today = datetime.now()
+        today = REFERENCE_DATE
         expiry = datetime.strptime(patron.membership_expiry, "%Y-%m-%d")
         start = max(today, expiry)
         new_expiry = start + timedelta(days=365)
@@ -751,7 +756,7 @@ class LibraryTools(ToolKitBase):
         patron = self.db.patrons[patron_id]
 
         # Check membership active
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = REFERENCE_DATE.strftime("%Y-%m-%d")
         if patron.membership_expiry < today:
             raise ValueError(
                 f"Patron's membership expired on {patron.membership_expiry}. "

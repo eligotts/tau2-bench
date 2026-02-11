@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 SEED = 42
-TODAY = "2026-02-10"
+TODAY = "2025-10-15"
 FINE_CHECKOUT_BLOCK_THRESHOLD = 10.0
 MAX_RENEWALS_STANDARD = 2
 MAX_RENEWALS_STUDENT = 3
@@ -254,25 +254,41 @@ def build_indexes(db: dict) -> EntityIndexes:
     def _hold_patron(hid):
         return db["holds"][hid]["patron_id"]
 
-    ix.active_loans = [
-        lid for lid in ix.active_loans if _loan_patron(lid) not in _ambiguous
-    ]
+    # Filter out loans where the patron has multiple active loans of the same
+    # book.  When a patron has 2+ copies of the same title checked out the
+    # agent can't deterministically pick the "right" copy to return/renew,
+    # leading to false negatives.
+    from collections import Counter as _Counter
+
+    _dup_book_loans: set[str] = set()
+    for pid, p in db["patrons"].items():
+        book_counts: dict[str, list[str]] = {}
+        for lid in p["active_loans"]:
+            loan = db["loans"][lid]
+            bid = db["copies"][loan["copy_id"]]["book_id"]
+            book_counts.setdefault(bid, []).append(lid)
+        for bid, lids in book_counts.items():
+            if len(lids) > 1:
+                _dup_book_loans.update(lids)
+
+    def _is_clean_loan(lid):
+        return _loan_patron(lid) not in _ambiguous and lid not in _dup_book_loans
+
+    ix.active_loans = [lid for lid in ix.active_loans if _is_clean_loan(lid)]
     ix.overdue_active_loans = [
-        lid for lid in ix.overdue_active_loans if _loan_patron(lid) not in _ambiguous
+        lid for lid in ix.overdue_active_loans if _is_clean_loan(lid)
     ]
     ix.not_overdue_active_loans = [
-        lid
-        for lid in ix.not_overdue_active_loans
-        if _loan_patron(lid) not in _ambiguous
+        lid for lid in ix.not_overdue_active_loans if _is_clean_loan(lid)
     ]
     ix.renewable_loans = [
-        lid for lid in ix.renewable_loans if _loan_patron(lid) not in _ambiguous
+        lid for lid in ix.renewable_loans if _is_clean_loan(lid)
     ]
     ix.max_renewal_loans = [
-        lid for lid in ix.max_renewal_loans if _loan_patron(lid) not in _ambiguous
+        lid for lid in ix.max_renewal_loans if _is_clean_loan(lid)
     ]
     ix.hold_blocked_loans = [
-        lid for lid in ix.hold_blocked_loans if _loan_patron(lid) not in _ambiguous
+        lid for lid in ix.hold_blocked_loans if _is_clean_loan(lid)
     ]
 
     ix.outstanding_fines = [

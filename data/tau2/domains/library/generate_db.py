@@ -15,7 +15,7 @@ from pathlib import Path
 random.seed(42)
 
 # ── Reference date (anchor for all date math) ──────────────────────────────
-TODAY = datetime(2026, 2, 10)
+TODAY = datetime(2025, 10, 15)
 
 # ── Policy constants (mirrors tools.py) ─────────────────────────────────────
 LOAN_PERIOD_STANDARD_WEEKS = 3
