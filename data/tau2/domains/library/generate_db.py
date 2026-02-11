@@ -549,15 +549,24 @@ MEMBERSHIP_WEIGHTS = [50, 25, 15, 10]
 
 patrons = {}
 patron_ids_set = set()
+patron_names_set: set[str] = set()  # Track display names to prevent duplicates
 
 # Pre-select indices for expired memberships (~5% = 10 patrons)
 expired_indices = set(random.sample(range(200), 10))
 
 for i in range(200):
-    first = random.choice(FIRST_NAMES)
-    last = random.choice(LAST_NAMES)
+    # Pick a unique (first, last) combination — no duplicate display names
+    for _attempt in range(500):
+        first = random.choice(FIRST_NAMES)
+        last = random.choice(LAST_NAMES)
+        display_name = f"{first} {last}"
+        if display_name not in patron_names_set:
+            break
+    else:
+        raise RuntimeError("Could not find a unique name after 500 attempts")
+    patron_names_set.add(display_name)
     base_id = f"{first.lower()}_{last.lower()}"
-    pid = make_unique_id(base_id, patron_ids_set)
+    pid = base_id  # Guaranteed unique since display name is unique
     patron_ids_set.add(pid)
 
     mtype = random.choices(MEMBERSHIP_TYPES, weights=MEMBERSHIP_WEIGHTS, k=1)[0]

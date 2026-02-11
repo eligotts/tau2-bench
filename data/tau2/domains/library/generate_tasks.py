@@ -4,8 +4,12 @@
 Standalone script (stdlib only: json, random, pathlib).
 Deterministic via random.seed(42).
 
+Uses retail-inspired structured personas and variant generation:
+- Easy (a) variants: full info, direct persona
+- Hard (b) variants: vague info, challenging persona
+
 Usage:
-    python generate_tasks.py            # writes tasks.json next to db.json
+    python generate_tasks.py            # writes tasks.json + split_tasks.json
     python generate_tasks.py --stats    # print stats only, don't write
 """
 
@@ -22,6 +26,7 @@ MAX_RENEWALS_STUDENT = 3
 
 DB_PATH = Path(__file__).parent / "db.json"
 TASKS_PATH = Path(__file__).parent / "tasks.json"
+SPLIT_TASKS_PATH = Path(__file__).parent / "split_tasks.json"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -219,10 +224,6 @@ def build_indexes(db: dict) -> EntityIndexes:
                 ix.books_all_out_at_branch[(book_id, br)] = True
 
     # Filter out patrons with ambiguous (duplicate) names.
-    # The DB may contain e.g. anthony_perez and anthony_perez_2 who share the
-    # display name "Anthony Perez".  An agent that looks up by name cannot
-    # reliably distinguish them, so we exclude both variants from task
-    # generation to avoid false-negative evaluation failures.
     _name_counts: dict[str, list[str]] = {}
     for pid, p in db["patrons"].items():
         _name_counts.setdefault(p["name"], []).append(pid)
@@ -237,12 +238,13 @@ def build_indexes(db: dict) -> EntityIndexes:
     ix.active_patrons = _remove_ambiguous(ix.active_patrons)
     ix.expired_patrons = _remove_ambiguous(ix.expired_patrons)
     ix.patrons_with_fines_blocking = _remove_ambiguous(ix.patrons_with_fines_blocking)
-    ix.patrons_with_outstanding_fines = _remove_ambiguous(ix.patrons_with_outstanding_fines)
+    ix.patrons_with_outstanding_fines = _remove_ambiguous(
+        ix.patrons_with_outstanding_fines
+    )
     ix.patrons_at_limit = _remove_ambiguous(ix.patrons_at_limit)
     ix.patrons_below_limit = _remove_ambiguous(ix.patrons_below_limit)
     ix.patrons_no_fines_active = _remove_ambiguous(ix.patrons_no_fines_active)
 
-    # Also filter loans, fines, and holds belonging to ambiguous patrons
     def _loan_patron(lid):
         return db["loans"][lid]["patron_id"]
 
@@ -252,58 +254,196 @@ def build_indexes(db: dict) -> EntityIndexes:
     def _hold_patron(hid):
         return db["holds"][hid]["patron_id"]
 
-    ix.active_loans = [lid for lid in ix.active_loans if _loan_patron(lid) not in _ambiguous]
-    ix.overdue_active_loans = [lid for lid in ix.overdue_active_loans if _loan_patron(lid) not in _ambiguous]
-    ix.not_overdue_active_loans = [lid for lid in ix.not_overdue_active_loans if _loan_patron(lid) not in _ambiguous]
-    ix.renewable_loans = [lid for lid in ix.renewable_loans if _loan_patron(lid) not in _ambiguous]
-    ix.max_renewal_loans = [lid for lid in ix.max_renewal_loans if _loan_patron(lid) not in _ambiguous]
-    ix.hold_blocked_loans = [lid for lid in ix.hold_blocked_loans if _loan_patron(lid) not in _ambiguous]
+    ix.active_loans = [
+        lid for lid in ix.active_loans if _loan_patron(lid) not in _ambiguous
+    ]
+    ix.overdue_active_loans = [
+        lid for lid in ix.overdue_active_loans if _loan_patron(lid) not in _ambiguous
+    ]
+    ix.not_overdue_active_loans = [
+        lid
+        for lid in ix.not_overdue_active_loans
+        if _loan_patron(lid) not in _ambiguous
+    ]
+    ix.renewable_loans = [
+        lid for lid in ix.renewable_loans if _loan_patron(lid) not in _ambiguous
+    ]
+    ix.max_renewal_loans = [
+        lid for lid in ix.max_renewal_loans if _loan_patron(lid) not in _ambiguous
+    ]
+    ix.hold_blocked_loans = [
+        lid for lid in ix.hold_blocked_loans if _loan_patron(lid) not in _ambiguous
+    ]
 
-    ix.outstanding_fines = [fid for fid in ix.outstanding_fines if _fine_patron(fid) not in _ambiguous]
-    ix.waiver_eligible_fines = [fid for fid in ix.waiver_eligible_fines if _fine_patron(fid) not in _ambiguous]
-    ix.waiver_ineligible_fines = [fid for fid in ix.waiver_ineligible_fines if _fine_patron(fid) not in _ambiguous]
+    ix.outstanding_fines = [
+        fid for fid in ix.outstanding_fines if _fine_patron(fid) not in _ambiguous
+    ]
+    ix.waiver_eligible_fines = [
+        fid for fid in ix.waiver_eligible_fines if _fine_patron(fid) not in _ambiguous
+    ]
+    ix.waiver_ineligible_fines = [
+        fid for fid in ix.waiver_ineligible_fines if _fine_patron(fid) not in _ambiguous
+    ]
 
-    ix.pending_holds = [hid for hid in ix.pending_holds if _hold_patron(hid) not in _ambiguous]
-    ix.ready_holds = [hid for hid in ix.ready_holds if _hold_patron(hid) not in _ambiguous]
-    ix.cancellable_holds = [hid for hid in ix.cancellable_holds if _hold_patron(hid) not in _ambiguous]
+    ix.pending_holds = [
+        hid for hid in ix.pending_holds if _hold_patron(hid) not in _ambiguous
+    ]
+    ix.ready_holds = [
+        hid for hid in ix.ready_holds if _hold_patron(hid) not in _ambiguous
+    ]
+    ix.cancellable_holds = [
+        hid for hid in ix.cancellable_holds if _hold_patron(hid) not in _ambiguous
+    ]
 
     return ix
 
 
 # ---------------------------------------------------------------------------
-# Persona / template generation
+# Persona System (structured, difficulty-aware)
 # ---------------------------------------------------------------------------
 
-PERSONALITIES = [
-    "Friendly and patient",
-    "Polite but in a hurry",
-    "Chatty and sociable, tends to go off-topic",
-    "Quiet and straightforward, prefers brief answers",
-    "Nervous first-time library user",
-    "Elderly patron, not very familiar with the system",
-    "Young student, very casual tone",
-    "Parent with kids, slightly distracted",
-    "Regular patron who knows the system well",
-    "Formal and precise in communication",
-    "Enthusiastic book lover, talks a lot about books",
-    "Shy and soft-spoken, needs encouragement",
-    "Busy professional, wants quick service",
-    "Cheerful retiree with plenty of time to chat",
-    "Tech-savvy patron, comfortable with the system",
+
+@dataclass
+class Persona:
+    label: str
+    instructions: str
+    auth: str  # "name" or "card"
+    difficulty: str  # "easy", "medium", "hard"
+
+
+EASY_PERSONAS = [
+    Persona(
+        "Friendly and direct",
+        "Provide all requested information promptly and clearly. Be cooperative and concise.",
+        "name",
+        "easy",
+    ),
+    Persona(
+        "Polite regular patron",
+        "You know the library system well. Provide information concisely and politely.",
+        "name",
+        "easy",
+    ),
 ]
 
+MEDIUM_PERSONAS = [
+    Persona(
+        "Casual, provides info gradually",
+        "Don't volunteer all information at once. Wait for the agent to ask for specific details before providing them. Answer one question at a time.",
+        "name",
+        "medium",
+    ),
+    Persona(
+        "Busy professional",
+        "You have limited time. Be terse and direct. Give short answers. Omit details you assume the agent can figure out.",
+        "name",
+        "medium",
+    ),
+    Persona(
+        "Distracted parent",
+        "You have kids in the background. Your responses may be slightly scattered. You might answer a question, then go back to add something you forgot.",
+        "name",
+        "medium",
+    ),
+]
+
+HARD_PERSONAS = [
+    Persona(
+        "Vague and uncertain",
+        "You don't remember exact titles or details. Describe things from memory using approximate descriptions. Say things like 'I think it was called...' or 'something about...'. You're not sure which branch you want.",
+        "name",
+        "hard",
+    ),
+    Persona(
+        "Chatty and digressive",
+        "You are very chatty and go off-topic. Before answering questions, share anecdotes or small talk. Bury your actual requests in longer statements. The agent needs to extract key information from your chatter.",
+        "name",
+        "hard",
+    ),
+    Persona(
+        "Frustrated patron",
+        "You are frustrated about a previous bad experience. Vent before giving details. Your responses are curt. The agent may need to ask clarifying questions multiple times.",
+        "name",
+        "hard",
+    ),
+    Persona(
+        "Elderly, unfamiliar with system",
+        "You are not very familiar with library terminology or procedures. You might confuse terms (say 'reserve' when you mean 'check out'). You need patient guidance.",
+        "name",
+        "hard",
+    ),
+    Persona(
+        "Nervous first-timer",
+        "You are a nervous first-time library user. You're unsure about procedures and ask the agent to walk you through each step. Express uncertainty frequently.",
+        "name",
+        "hard",
+    ),
+]
+
+ALL_EASY_MEDIUM = EASY_PERSONAS + MEDIUM_PERSONAS
+
+
+def pick_easy_persona() -> Persona:
+    return random.choice(ALL_EASY_MEDIUM)
+
+
+def pick_hard_persona() -> Persona:
+    return random.choice(HARD_PERSONAS)
+
+
+# ---------------------------------------------------------------------------
+# Vague book descriptions (for hard variants)
+# ---------------------------------------------------------------------------
+
+VAGUE_BOOK_DESCRIPTIONS = {
+    "the_great_gatsby": "a classic novel set in the 1920s, about the American Dream and a mysterious wealthy man",
+    "to_kill_a_mockingbird": "that famous book about a lawyer in the South defending someone in a trial, told from a child's perspective",
+    "pride_and_prejudice": "a Jane Austen novel, the one with Mr. Darcy and Elizabeth",
+    "nineteen_eighty_four": "a dystopian novel about surveillance and Big Brother",
+    "the_catcher_in_the_rye": "a novel about a teenager wandering around New York City, I think his name was Holden",
+    "brave_new_world": "a book about a future society where everyone is controlled, something about soma",
+    "the_road": "a really dark novel about a father and son traveling after the world ends",
+    "beloved": "a Toni Morrison novel dealing with slavery and its aftermath",
+    "intro_to_algorithms": "a big algorithms textbook, I think it's by Cormen or something",
+    "organic_chemistry": "an organic chemistry textbook, a thick one",
+    "thinking_fast_and_slow": "a book about psychology and decision-making, by Kahneman I think",
+    "sapiens": "that popular nonfiction book about the history of humankind",
+    "the_elements_of_style": "a writing guide, I think by Strunk and White",
+    "a_brief_history_of_time": "a Stephen Hawking book about the universe and black holes",
+    "the_selfish_gene": "a biology book by Richard Dawkins about evolution",
+    "quantum_computing": "a book about quantum computers, fairly technical",
+    "cosmos": "the Carl Sagan book about space and the universe",
+    "charlottes_web": "a children's book about a pig and a spider who are friends",
+    "goodnight_moon": "that children's bedtime story book with the bunny",
+    "where_the_wild_things_are": "a picture book about a boy who sails to an island with monsters",
+    "the_very_hungry_caterpillar": "the kids' book about a caterpillar eating through everything",
+    "gone_girl": "a thriller about a woman who goes missing, by Gillian Flynn I think",
+    "the_girl_with_the_dragon_tattoo": "a Swedish mystery novel about a hacker girl",
+    "the_hound_of_the_baskervilles": "a Sherlock Holmes mystery, the one with the scary dog",
+    "a_peoples_history": "Howard Zinn's alternative history of America",
+    "the_guns_of_august": "a history book about the start of World War I",
+    "team_of_rivals": "that book about Abraham Lincoln and his cabinet",
+    "steve_jobs": "the Steve Jobs biography by Walter Isaacson",
+    "the_diary_of_a_young_girl": "Anne Frank's diary",
+    "merriams_dictionary": "a big dictionary, Merriam-Webster I think",
+}
+
+
+def vague_book(bid: str, title: str) -> str:
+    return VAGUE_BOOK_DESCRIPTIONS.get(bid, f"a book called something like '{title}'")
+
+
+# ---------------------------------------------------------------------------
+# Payment, entity tracking, task builder
+# ---------------------------------------------------------------------------
+
 PAYMENT_METHODS = ["cash", "credit_card", "debit_card"]
-
-
-def pick_persona() -> str:
-    return random.choice(PERSONALITIES)
 
 
 def pick_payment() -> str:
     return random.choice(PAYMENT_METHODS)
 
 
-# Entity usage tracking to diversify
 _entity_usage: dict[str, int] = {}
 
 
@@ -316,17 +456,11 @@ def sort_by_usage(ids: list[str]) -> list[str]:
 
 
 def sample_diverse(ids: list[str], n: int) -> list[str]:
-    """Sample up to n items, preferring under-used entities."""
     ordered = sort_by_usage(list(ids))
     chosen = ordered[:n]
     for c in chosen:
         track_use(c)
     return chosen
-
-
-# ---------------------------------------------------------------------------
-# Task builder helper
-# ---------------------------------------------------------------------------
 
 
 def make_task(
@@ -347,7 +481,7 @@ def make_task(
 ) -> dict:
     if reward_basis is None:
         reward_basis = ["ACTION"]
-    task = {
+    return {
         "id": task_id,
         "description": {
             "purpose": purpose,
@@ -372,7 +506,6 @@ def make_task(
             "reward_basis": reward_basis,
         },
     }
-    return task
 
 
 def action(action_id: str, name: str, arguments: dict, info: str, compare_args=None):
@@ -396,79 +529,93 @@ def env_assert(func_name: str, arguments: dict):
 
 
 # ---------------------------------------------------------------------------
-# Scenario generators
+# Tier 1: Simple Single-Action Generators
 # ---------------------------------------------------------------------------
 
 
-def gen_simple_checkout(db, ix, n=15):
-    """Tier 1: Simple checkout — patron eligible, copy available."""
+def gen_simple_checkout(db, ix, n=8):
+    """Simple checkout. n base scenarios → 2n tasks (easy+hard variants)."""
     tasks = []
-    eligible = [
-        pid
-        for pid in ix.patrons_below_limit
-        if pid in ix.patrons_no_fines_active or pid in ix.active_patrons
-        if patron_can_checkout(db, pid)
-    ]
-    eligible = list(set(eligible))
+    eligible = list(
+        set(pid for pid in ix.patrons_below_limit if patron_can_checkout(db, pid))
+    )
     random.shuffle(eligible)
-
-    # Pair each patron with an available copy
-    avail = list(ix.available_copies)
-    random.shuffle(avail)
+    # Use book/branch copy lists so we pick the first available copy the model
+    # will see from get_book_availability (avoids copy_id mismatch).
+    avail_combos = list(ix.available_copies_by_book_branch.items())
+    random.shuffle(avail_combos)
 
     count = 0
+    combo_idx = 0
     for pid in eligible:
-        if count >= n or not avail:
+        if count >= n or combo_idx >= len(avail_combos):
             break
-        cid = avail.pop()
+        (bid, brid), copy_ids = avail_combos[combo_idx]
+        combo_idx += 1
+        cid = copy_ids[0]  # first available copy at this branch
         track_use(pid)
         track_use(cid)
-
         p = db["patrons"][pid]
-        bid = copy_book_id(db, cid)
-        brid = copy_branch_id(db, cid)
         title = book_title(db, bid)
         br = branch_name(db, brid)
         name = p["name"]
-        loan_count = len(p["active_loans"])
+        lc = len(p["active_loans"])
+        vdesc = vague_book(bid, title)
 
-        reasons = [
-            f"You want to borrow '{title}' from the {br}.",
-            f"You'd like to check out a copy of '{title}' at the {br}.",
-            f"You're looking to get '{title}' from the {br}.",
+        acts = [
+            action(
+                "checkout_1",
+                "checkout_book",
+                {"patron_id": pid, "copy_id": cid},
+                f"Check out {cid} ('{title}') to {name}",
+                compare_args=["patron_id", "copy_id"],
+            )
+        ]
+        asserts = [
+            env_assert(
+                "assert_copy_status", {"copy_id": cid, "expected_status": "checked_out"}
+            ),
+            env_assert(
+                "assert_patron_loan_count", {"patron_id": pid, "expected": lc + 1}
+            ),
         ]
 
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"simple_checkout_{count + 1}",
-                purpose="Test simple book checkout with eligible patron",
-                relevant_policies="Patron must have active membership, fines <= $10, and be below borrowing limit.",
-                notes=f"Patron {name} checks out '{title}' at {br}. Straightforward checkout.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to check out a book from the library.",
-                reason_for_call=random.choice(reasons),
-                known_info=f"Your name is {name}. You want '{title}' at the {br}.",
-                unknown_info="You don't know the copy ID or your patron ID. The agent should look you up by name.",
-                ticket=f"Patron {name} wants to check out '{title}' at {br}. Patron is eligible. Agent should find the patron, find an available copy, and process the checkout.",
-                actions=[
-                    action(
-                        "checkout_1",
-                        "checkout_book",
-                        {"patron_id": pid, "copy_id": cid},
-                        f"Check out {cid} ('{title}') to {name}",
-                        compare_args=["patron_id", "copy_id"],
-                    )
-                ],
-                env_assertions=[
-                    env_assert(
-                        "assert_copy_status",
-                        {"copy_id": cid, "expected_status": "checked_out"},
-                    ),
-                    env_assert(
-                        "assert_patron_loan_count",
-                        {"patron_id": pid, "expected": loan_count + 1},
-                    ),
-                ],
+                f"simple_checkout_{count + 1}a",
+                "Test simple book checkout with eligible patron",
+                "Patron must have active membership, fines <= $10, and be below borrowing limit.",
+                f"Patron {name} checks out '{title}' at {br}. Straightforward checkout.",
+                pa.label,
+                f"You are {name}. You want to check out a book from the library. {pa.instructions}",
+                f"You'd like to check out '{title}' at the {br}.",
+                f"Your name is {name}. You want '{title}' at the {br}.",
+                "You don't know the copy ID or your patron ID.",
+                f"Patron {name} wants to check out '{title}' at {br}. Patron is eligible.",
+                acts,
+                asserts,
+                reward_basis=["ACTION", "ENV_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"simple_checkout_{count + 1}b",
+                "Test simple checkout with vague patron request",
+                "Patron must have active membership, fines <= $10, and be below borrowing limit.",
+                f"Patron {name} vaguely describes '{title}'. Agent must identify the book and process checkout.",
+                pb.label,
+                f"You are {name}. You want to check out a book. {pb.instructions}",
+                f"You're looking for {vdesc}. You're not sure which branch has it.",
+                f"Your name is {name}. You vaguely remember the book as {vdesc}.",
+                "You don't know the exact title, copy ID, or which branch has it.",
+                f"Patron {name} vaguely describes '{title}' as '{vdesc}'. Agent should identify the book, find a copy, and checkout.",
+                acts,
+                asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
             )
         )
@@ -476,155 +623,221 @@ def gen_simple_checkout(db, ix, n=15):
     return tasks
 
 
-def gen_simple_return(db, ix, n=10):
-    """Tier 1: Simple return — not overdue active loans."""
+def gen_simple_return(db, ix, n=6):
+    """Simple return (not overdue). n bases → 2n tasks."""
     tasks = []
     not_overdue = list(ix.not_overdue_active_loans)
     random.shuffle(not_overdue)
-    chosen = not_overdue[:n]
 
-    for i, lid in enumerate(chosen):
+    for i, lid in enumerate(not_overdue[:n]):
         loan = db["loans"][lid]
         pid = loan["patron_id"]
         cid = loan["copy_id"]
         bid = copy_book_id(db, cid)
         title = book_title(db, bid)
         name = patron_name(db, pid)
+        vdesc = vague_book(bid, title)
         track_use(pid)
         track_use(cid)
 
+        acts = [
+            action(
+                "return_1", "return_book", {"copy_id": cid}, f"Return {cid} ('{title}')"
+            )
+        ]
+        asserts = [
+            env_assert(
+                "assert_copy_status", {"copy_id": cid, "expected_status": "available"}
+            )
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"simple_return_{i + 1}",
-                purpose="Test simple book return (not overdue)",
-                relevant_policies="Copy must be checked out. Return processes the loan and makes the copy available.",
-                notes=f"Patron {name} returns '{title}'. Not overdue, so no fine generated.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to return a book you borrowed.",
-                reason_for_call=f"You want to return '{title}'.",
-                known_info=f"Your name is {name}. You have '{title}' checked out.",
-                unknown_info="You don't know the copy ID. The agent should look up your loans.",
-                ticket=f"Patron {name} wants to return '{title}' (copy {cid}). Not overdue. Agent should process the return.",
-                actions=[
-                    action(
-                        "return_1",
-                        "return_book",
-                        {"copy_id": cid},
-                        f"Return {cid} ('{title}')",
-                    )
-                ],
-                env_assertions=[
-                    env_assert(
-                        "assert_copy_status",
-                        {"copy_id": cid, "expected_status": "available"},
-                    ),
-                ],
+                f"simple_return_{i + 1}a",
+                "Test simple book return (not overdue)",
+                "Copy must be checked out. Return processes the loan and makes the copy available.",
+                f"Patron {name} returns '{title}'. Not overdue.",
+                pa.label,
+                f"You are {name}. You want to return a book you borrowed. {pa.instructions}",
+                f"You want to return '{title}'.",
+                f"Your name is {name}. You have '{title}' checked out.",
+                "You don't know the copy ID. The agent should look up your loans.",
+                f"Patron {name} wants to return '{title}' (copy {cid}). Not overdue.",
+                acts,
+                asserts,
+                reward_basis=["ACTION", "ENV_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"simple_return_{i + 1}b",
+                "Test simple return with vague book description",
+                "Copy must be checked out. Return processes the loan and makes the copy available.",
+                f"Patron {name} vaguely describes '{title}' for return.",
+                pb.label,
+                f"You are {name}. You want to return a book. {pb.instructions}",
+                f"You want to return a book — {vdesc}.",
+                f"Your name is {name}. You have a book checked out that you'd describe as {vdesc}.",
+                "You don't remember the exact title or copy ID.",
+                f"Patron {name} describes '{title}' vaguely as '{vdesc}'. Agent should identify the loan and process return.",
+                acts,
+                asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
             )
         )
     return tasks
 
 
-def gen_overdue_return(db, ix, n=8):
-    """Tier 1: Return overdue book — fine will be generated."""
+def gen_overdue_return(db, ix, n=5):
+    """Return overdue book. n bases → 2n tasks."""
     tasks = []
     overdue = list(ix.overdue_active_loans)
     random.shuffle(overdue)
-    chosen = overdue[:n]
 
-    for i, lid in enumerate(chosen):
+    for i, lid in enumerate(overdue[:n]):
         loan = db["loans"][lid]
         pid = loan["patron_id"]
         cid = loan["copy_id"]
         bid = copy_book_id(db, cid)
         title = book_title(db, bid)
         name = patron_name(db, pid)
+        vdesc = vague_book(bid, title)
         track_use(pid)
         track_use(cid)
 
+        acts = [
+            action(
+                "return_1",
+                "return_book",
+                {"copy_id": cid},
+                f"Return overdue {cid} ('{title}')",
+            )
+        ]
+        asserts = [
+            env_assert(
+                "assert_copy_status", {"copy_id": cid, "expected_status": "available"}
+            )
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"overdue_return_{i + 1}",
-                purpose="Test return of overdue book (fine generated)",
-                relevant_policies="Overdue returns generate fines at $0.25/day, capped at $25. The fine is created automatically on return.",
-                notes=f"Patron {name} returns overdue '{title}' (due {loan['due_date']}). A fine will be generated.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You need to return a book that's overdue.",
-                reason_for_call=f"You want to return '{title}'. You think it might be overdue.",
-                known_info=f"Your name is {name}. You have '{title}' checked out.",
-                unknown_info="You're not sure exactly how overdue it is or what the fine will be.",
-                ticket=f"Patron {name} returns overdue '{title}' (copy {cid}, due {loan['due_date']}). Agent should process return; system auto-generates a fine.",
-                actions=[
-                    action(
-                        "return_1",
-                        "return_book",
-                        {"copy_id": cid},
-                        f"Return overdue {cid} ('{title}')",
-                    )
-                ],
-                env_assertions=[
-                    env_assert(
-                        "assert_copy_status",
-                        {"copy_id": cid, "expected_status": "available"},
-                    ),
-                ],
+                f"overdue_return_{i + 1}a",
+                "Test return of overdue book (fine generated)",
+                "Overdue returns generate fines at $0.25/day, capped at $25.",
+                f"Patron {name} returns overdue '{title}' (due {loan['due_date']}).",
+                pa.label,
+                f"You are {name}. You need to return a book that's overdue. {pa.instructions}",
+                f"You want to return '{title}'. You think it might be overdue.",
+                f"Your name is {name}. You have '{title}' checked out.",
+                "You're not sure exactly how overdue it is or what the fine will be.",
+                f"Patron {name} returns overdue '{title}' (copy {cid}, due {loan['due_date']}).",
+                acts,
+                asserts,
+                reward_basis=["ACTION", "ENV_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"overdue_return_{i + 1}b",
+                "Test overdue return with vague description",
+                "Overdue returns generate fines at $0.25/day, capped at $25.",
+                f"Patron {name} vaguely describes overdue '{title}'.",
+                pb.label,
+                f"You are {name}. You need to return a book that might be overdue. {pb.instructions}",
+                f"You have a book to return, something like {vdesc}. You think it might be late.",
+                f"Your name is {name}. You have a book that's {vdesc}.",
+                "You don't remember the exact title or how overdue it is.",
+                f"Patron {name} vaguely describes overdue '{title}' as '{vdesc}'. Agent should identify and return.",
+                acts,
+                asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
             )
         )
     return tasks
 
 
-def gen_renew_loan(db, ix, n=8):
-    """Tier 1: Renew a loan — eligible for renewal."""
+def gen_renew_loan(db, ix, n=5):
+    """Renew eligible loan. n bases → 2n tasks."""
     tasks = []
     renewable = list(ix.renewable_loans)
     random.shuffle(renewable)
-    chosen = renewable[:n]
 
-    for i, lid in enumerate(chosen):
+    for i, lid in enumerate(renewable[:n]):
         loan = db["loans"][lid]
         pid = loan["patron_id"]
         cid = loan["copy_id"]
         bid = copy_book_id(db, cid)
         title = book_title(db, bid)
         name = patron_name(db, pid)
+        vdesc = vague_book(bid, title)
         track_use(pid)
 
+        acts = [
+            action(
+                "renew_1",
+                "renew_loan",
+                {"loan_id": lid},
+                f"Renew loan {lid} for '{title}'",
+            )
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"renew_loan_{i + 1}",
-                purpose="Test loan renewal for eligible loan",
-                relevant_policies="Loans can be renewed if under max renewals and no pending holds on the book.",
-                notes=f"Patron {name} renews '{title}' (loan {lid}, current renewals: {loan['renewals_count']}).",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to renew a book you have checked out.",
-                reason_for_call=f"You'd like to renew '{title}' — you need more time with it.",
-                known_info=f"Your name is {name}. You have '{title}' checked out.",
-                unknown_info="You don't know your loan ID. The agent should look up your loans.",
-                ticket=f"Patron {name} wants to renew '{title}' (loan {lid}). Eligible for renewal. Agent should process the renewal.",
-                actions=[
-                    action(
-                        "renew_1",
-                        "renew_loan",
-                        {"loan_id": lid},
-                        f"Renew loan {lid} for '{title}'",
-                    )
-                ],
+                f"renew_loan_{i + 1}a",
+                "Test loan renewal for eligible loan",
+                "Loans can be renewed if under max renewals and no pending holds on the book.",
+                f"Patron {name} renews '{title}' (renewals: {loan['renewals_count']}).",
+                pa.label,
+                f"You are {name}. You want to renew a book. {pa.instructions}",
+                f"You'd like to renew '{title}' — you need more time with it.",
+                f"Your name is {name}. You have '{title}' checked out.",
+                "You don't know your loan ID.",
+                f"Patron {name} wants to renew '{title}' (loan {lid}). Eligible.",
+                acts,
+                reward_basis=["ACTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"renew_loan_{i + 1}b",
+                "Test loan renewal with vague book reference",
+                "Loans can be renewed if under max renewals and no pending holds on the book.",
+                f"Patron {name} vaguely describes '{title}' for renewal.",
+                pb.label,
+                f"You are {name}. You want to keep a library book longer. {pb.instructions}",
+                f"You have a book checked out, {vdesc}, and you need more time with it.",
+                f"Your name is {name}. You have a book, {vdesc}.",
+                "You don't remember the exact title or loan details.",
+                f"Patron {name} vaguely describes '{title}' for renewal. Agent should identify loan and renew.",
+                acts,
                 reward_basis=["ACTION"],
             )
         )
     return tasks
 
 
-def gen_pay_fine_full(db, ix, n=7):
-    """Tier 1: Pay a fine in full."""
+def gen_pay_fine_full(db, ix, n=4):
+    """Pay fine in full. n bases → 2n tasks."""
     tasks = []
-    # Pick outstanding fines with moderate amounts (not the $50 lost book fines)
     fines = [fid for fid in ix.outstanding_fines if db["fines"][fid]["amount"] <= 10.0]
     random.shuffle(fines)
-    chosen = fines[:n]
 
-    for i, fid in enumerate(chosen):
+    for i, fid in enumerate(fines[:n]):
         fine = db["fines"][fid]
         pid = fine["patron_id"]
         name = patron_name(db, pid)
@@ -632,67 +845,91 @@ def gen_pay_fine_full(db, ix, n=7):
         payment = pick_payment()
         track_use(pid)
 
+        acts = [
+            action(
+                "pay_fine_1",
+                "pay_fine",
+                {"fine_id": fid, "amount": amount, "payment_method": payment},
+                f"Pay ${amount:.2f} on {fid}",
+                compare_args=["fine_id"],
+            )
+        ]
+        asserts = [
+            env_assert(
+                "assert_fine_status", {"fine_id": fid, "expected_status": "paid"}
+            )
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"pay_fine_full_{i + 1}",
-                purpose="Test full fine payment",
-                relevant_policies="Fines can be paid in full or partially. Payment reduces patron's fines_owed.",
-                notes=f"Patron {name} pays fine {fid} (${amount:.2f}) in full via {payment}.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to pay off a fine.",
-                reason_for_call=f"You want to pay your library fine. You'd like to pay the full amount.",
-                known_info=f"Your name is {name}. You know you have a fine to pay.",
-                unknown_info=f"You don't know the exact fine amount. When the agent tells you, agree to pay the full ${amount:.2f} using {payment}.",
-                ticket=f"Patron {name} wants to pay fine {fid} (${amount:.2f}) in full via {payment}. Agent should look up fines and process payment.",
-                actions=[
-                    action(
-                        "pay_fine_1",
-                        "pay_fine",
-                        {"fine_id": fid, "amount": amount, "payment_method": payment},
-                        f"Pay ${amount:.2f} on {fid}",
-                        compare_args=["fine_id"],
-                    )
-                ],
-                env_assertions=[
-                    env_assert(
-                        "assert_fine_status",
-                        {"fine_id": fid, "expected_status": "paid"},
-                    ),
-                ],
+                f"pay_fine_full_{i + 1}a",
+                "Test full fine payment",
+                "Fines can be paid in full or partially. Payment reduces patron's fines_owed.",
+                f"Patron {name} pays fine {fid} (${amount:.2f}) via {payment}.",
+                pa.label,
+                f"You are {name}. You want to pay off a fine. {pa.instructions}",
+                f"You want to pay your library fine in full.",
+                f"Your name is {name}. You know you have a fine to pay.",
+                f"You don't know the exact fine amount. When told, pay the full ${amount:.2f} using {payment}.",
+                f"Patron {name} pays fine {fid} (${amount:.2f}) via {payment}.",
+                acts,
+                asserts,
+                reward_basis=["ACTION", "ENV_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"pay_fine_full_{i + 1}b",
+                "Test fine payment with difficult patron interaction",
+                "Fines can be paid in full or partially. Payment reduces patron's fines_owed.",
+                f"Patron {name} pays fine {fid} (${amount:.2f}) after difficult interaction.",
+                pb.label,
+                f"You are {name}. You have a library fine. {pb.instructions}",
+                f"You think you might have some kind of fee or charge on your account.",
+                f"Your name is {name}.",
+                f"You're not sure what the fine is for or the amount. When the agent tells you, agree to pay ${amount:.2f} using {payment}.",
+                f"Patron {name} vaguely asks about charges. Fine {fid} (${amount:.2f}). Agent should look up and process payment.",
+                acts,
+                asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
             )
         )
     return tasks
 
 
-def gen_cancel_hold(db, ix, n=4):
-    """Tier 1: Cancel a hold."""
+def gen_cancel_hold(db, ix, n=3):
+    """Cancel a hold. Single variant only."""
     tasks = []
     holds = list(ix.cancellable_holds)
     random.shuffle(holds)
-    chosen = holds[:n]
 
-    for i, hid in enumerate(chosen):
+    for i, hid in enumerate(holds[:n]):
         hold = db["holds"][hid]
         pid = hold["patron_id"]
         bid = hold["book_id"]
         title = book_title(db, bid)
         name = patron_name(db, pid)
         track_use(pid)
+        pa = pick_easy_persona()
 
         tasks.append(
             make_task(
-                task_id=f"cancel_hold_{i + 1}",
-                purpose="Test hold cancellation",
-                relevant_policies="Pending or ready holds can be cancelled.",
-                notes=f"Patron {name} cancels hold on '{title}' (hold {hid}).",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to cancel a hold you placed.",
-                reason_for_call=f"You want to cancel your hold on '{title}'. You no longer need it.",
-                known_info=f"Your name is {name}. You placed a hold on '{title}'.",
-                unknown_info="You don't know the hold ID. The agent should look up your account.",
-                ticket=f"Patron {name} wants to cancel hold {hid} on '{title}'. Agent should find the hold and cancel it.",
-                actions=[
+                f"cancel_hold_{i + 1}",
+                "Test hold cancellation",
+                "Pending or ready holds can be cancelled.",
+                f"Patron {name} cancels hold on '{title}' (hold {hid}).",
+                pa.label,
+                f"You are {name}. You want to cancel a hold you placed. {pa.instructions}",
+                f"You want to cancel your hold on '{title}'. You no longer need it.",
+                f"Your name is {name}. You placed a hold on '{title}'.",
+                "You don't know the hold ID.",
+                f"Patron {name} wants to cancel hold {hid} on '{title}'.",
+                [
                     action(
                         "cancel_hold_1",
                         "cancel_hold",
@@ -707,29 +944,29 @@ def gen_cancel_hold(db, ix, n=4):
 
 
 def gen_renew_membership(db, ix, n=3):
-    """Tier 1: Renew expired membership."""
+    """Renew expired membership. Single variant only."""
     tasks = []
     expired = list(ix.expired_patrons)
     random.shuffle(expired)
-    chosen = expired[:n]
 
-    for i, pid in enumerate(chosen):
+    for i, pid in enumerate(expired[:n]):
         name = patron_name(db, pid)
         track_use(pid)
+        pa = pick_easy_persona()
 
         tasks.append(
             make_task(
-                task_id=f"renew_membership_{i + 1}",
-                purpose="Test membership renewal",
-                relevant_policies="Expired memberships can be renewed for one year.",
-                notes=f"Patron {name} has expired membership ({db['patrons'][pid]['membership_expiry']}). Renewing.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. Your library membership has expired and you want to renew it.",
-                reason_for_call="You want to renew your library membership.",
-                known_info=f"Your name is {name}.",
-                unknown_info="You're not sure when your membership expired.",
-                ticket=f"Patron {name} wants to renew expired membership. Agent should look up the patron and renew.",
-                actions=[
+                f"renew_membership_{i + 1}",
+                "Test membership renewal",
+                "Expired memberships can be renewed for one year.",
+                f"Patron {name} has expired membership ({db['patrons'][pid]['membership_expiry']}).",
+                pa.label,
+                f"You are {name}. Your library membership has expired. {pa.instructions}",
+                "You want to renew your library membership.",
+                f"Your name is {name}.",
+                "You're not sure when your membership expired.",
+                f"Patron {name} wants to renew expired membership.",
+                [
                     action(
                         "renew_1",
                         "renew_membership",
@@ -743,31 +980,63 @@ def gen_renew_membership(db, ix, n=3):
     return tasks
 
 
-# ── Tier 2: Information & Search ──────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Tier 2: Information & Search Generators
+# ---------------------------------------------------------------------------
 
 
-def gen_search_by_title(db, ix, n=5):
-    """Tier 2: Search catalog by title."""
+def gen_search_by_title(db, ix, n=3):
+    """Search catalog by title. n bases → 2n tasks."""
     tasks = []
     books = list(db["books"].keys())
     random.shuffle(books)
-    chosen = books[:n]
 
-    for i, bid in enumerate(chosen):
+    for i, bid in enumerate(books[:n]):
         title = book_title(db, bid)
+        vdesc = vague_book(bid, title)
+
+        # Variant A: Easy — exact title
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"search_title_{i + 1}",
-                purpose="Test catalog search by title",
-                relevant_policies="search_catalog supports partial, case-insensitive title search.",
-                notes=f"Patron searches for '{title}'.",
-                persona=pick_persona(),
-                task_instructions="You are a library patron looking for a specific book.",
-                reason_for_call=f"You're looking for a book called '{title}'. Can you check if the library has it?",
-                known_info=f"You know the book title: '{title}'.",
-                unknown_info="You don't know the book ID or availability.",
-                ticket=f"Patron asks about '{title}'. Agent should search the catalog.",
-                actions=[
+                f"search_title_{i + 1}a",
+                "Test catalog search by title",
+                "search_catalog supports partial, case-insensitive title search.",
+                f"Patron searches for '{title}'.",
+                pa.label,
+                f"You are a library patron looking for a specific book. {pa.instructions}",
+                f"You're looking for a book called '{title}'. Can you check if the library has it?",
+                f"You know the book title: '{title}'.",
+                "You don't know the book ID or availability.",
+                f"Patron asks about '{title}'. Agent should search the catalog.",
+                [
+                    action(
+                        "search_1",
+                        "search_catalog",
+                        {"title": title},
+                        f"Search catalog for '{title}'",
+                        compare_args=["title"],
+                    )
+                ],
+                reward_basis=["ACTION"],
+            )
+        )
+
+        # Variant B: Hard — vague description
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"search_title_{i + 1}b",
+                "Test catalog search with vague book description",
+                "search_catalog supports partial, case-insensitive title search.",
+                f"Patron vaguely describes '{title}'.",
+                pb.label,
+                f"You are a library patron looking for a book. {pb.instructions}",
+                f"You're looking for {vdesc}. You can't remember the exact title.",
+                f"You vaguely remember the book as {vdesc}.",
+                "You don't know the exact title or book ID.",
+                f"Patron vaguely describes '{title}' as '{vdesc}'. Agent should search catalog.",
+                [
                     action(
                         "search_1",
                         "search_catalog",
@@ -782,15 +1051,14 @@ def gen_search_by_title(db, ix, n=5):
     return tasks
 
 
-def gen_search_by_author(db, ix, n=5):
-    """Tier 2: Search catalog by author or category."""
+def gen_search_by_author(db, ix, n=4):
+    """Search catalog by author or category. Single variant."""
     tasks = []
     books = list(db["books"].values())
     random.shuffle(books)
-    chosen = books[:n]
 
-    for i, book in enumerate(chosen):
-        # Alternate between author and category search
+    for i, book in enumerate(books[:n]):
+        pa = pick_easy_persona()
         if i % 2 == 0:
             search_arg = {"author": book["author"]}
             query_desc = f"author '{book['author']}'"
@@ -804,17 +1072,17 @@ def gen_search_by_author(db, ix, n=5):
 
         tasks.append(
             make_task(
-                task_id=f"search_author_category_{i + 1}",
-                purpose=f"Test catalog search by {query_desc}",
-                relevant_policies="search_catalog supports author and category search.",
-                notes=f"Patron searches by {query_desc}.",
-                persona=pick_persona(),
-                task_instructions="You are a library patron looking for books.",
-                reason_for_call=reason,
-                known_info=known,
-                unknown_info="You don't know specific book IDs.",
-                ticket=f"Patron asks about books by {query_desc}. Agent should search the catalog.",
-                actions=[
+                f"search_author_category_{i + 1}",
+                f"Test catalog search by {query_desc}",
+                "search_catalog supports author and category search.",
+                f"Patron searches by {query_desc}.",
+                pa.label,
+                f"You are a library patron looking for books. {pa.instructions}",
+                reason,
+                known,
+                "You don't know specific book IDs.",
+                f"Patron asks about books by {query_desc}. Agent should search catalog.",
+                [
                     action(
                         "search_1",
                         "search_catalog",
@@ -828,8 +1096,8 @@ def gen_search_by_author(db, ix, n=5):
     return tasks
 
 
-def gen_check_availability(db, ix, n=5):
-    """Tier 2: Search catalog + check availability."""
+def gen_check_availability(db, ix, n=3):
+    """Check availability. n bases → 2n tasks."""
     tasks = []
     books = list(db["books"].keys())
     random.shuffle(books)
@@ -840,34 +1108,66 @@ def gen_check_availability(db, ix, n=5):
         brid = random.choice(branches)
         title = book_title(db, bid)
         br = branch_name(db, brid)
+        vdesc = vague_book(bid, title)
 
+        acts = [
+            action(
+                "search_1",
+                "search_catalog",
+                {"title": title},
+                f"Search for '{title}'",
+                compare_args=["title"],
+            ),
+            action(
+                "availability_1",
+                "get_book_availability",
+                {"book_id": bid, "branch_id": brid},
+                f"Check availability at {br}",
+                compare_args=["book_id"],
+            ),
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"check_availability_{i + 1}",
-                purpose="Test checking book availability at a branch",
-                relevant_policies="Use search_catalog to find the book, then get_book_availability to check copies.",
-                notes=f"Patron asks about availability of '{title}' at {br}.",
-                persona=pick_persona(),
-                task_instructions="You are a library patron checking if a book is available.",
-                reason_for_call=f"You want to know if '{title}' is available at the {br}.",
-                known_info=f"You want '{title}' at the {br}.",
-                unknown_info="You don't know if there are copies available.",
-                ticket=f"Patron asks about availability of '{title}' at {br}. Agent should search catalog and check availability.",
-                actions=[
+                f"check_availability_{i + 1}a",
+                "Test checking book availability at a branch",
+                "Use search_catalog to find the book, then get_book_availability.",
+                f"Patron asks about '{title}' at {br}.",
+                pa.label,
+                f"You are a library patron checking availability. {pa.instructions}",
+                f"You want to know if '{title}' is available at the {br}.",
+                f"You want '{title}' at the {br}.",
+                "You don't know if there are copies available.",
+                f"Patron asks about '{title}' at {br}. Agent should search and check availability.",
+                acts,
+                reward_basis=["ACTION"],
+            )
+        )
+
+        # Variant B: Hard — vague
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"check_availability_{i + 1}b",
+                "Test availability check with vague description",
+                "Use search_catalog to find the book, then get_book_availability.",
+                f"Patron vaguely describes '{title}' for availability check.",
+                pb.label,
+                f"You are a library patron. {pb.instructions}",
+                f"You're wondering if the library has {vdesc}. You'd like to pick it up if it's available.",
+                f"You vaguely remember: {vdesc}.",
+                "You don't know the exact title, which branch, or availability.",
+                f"Patron vaguely describes '{title}'. Agent should identify book and check availability.",
+                [
                     action(
                         "search_1",
                         "search_catalog",
                         {"title": title},
                         f"Search for '{title}'",
                         compare_args=["title"],
-                    ),
-                    action(
-                        "availability_1",
-                        "get_book_availability",
-                        {"book_id": bid, "branch_id": brid},
-                        f"Check availability of '{title}' at {br}",
-                        compare_args=["book_id"],
-                    ),
+                    )
                 ],
                 reward_basis=["ACTION"],
             )
@@ -875,106 +1175,155 @@ def gen_check_availability(db, ix, n=5):
     return tasks
 
 
-def gen_list_loans(db, ix, n=5):
-    """Tier 2: List my loans."""
+def gen_list_loans(db, ix, n=3):
+    """List patron's loans. n bases → 2n tasks."""
     tasks = []
-    # Pick patrons with active loans
     with_loans = [
         pid for pid in ix.active_patrons if db["patrons"][pid]["active_loans"]
     ]
     random.shuffle(with_loans)
-    chosen = with_loans[:n]
 
-    for i, pid in enumerate(chosen):
+    for i, pid in enumerate(with_loans[:n]):
         name = patron_name(db, pid)
         track_use(pid)
+        loan_count = len(db["patrons"][pid]["active_loans"])
 
+        acts = [
+            action(
+                "find_1",
+                "find_patron_by_name",
+                {"name": name},
+                f"Find patron {name}",
+                compare_args=[],
+            ),
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"list_loans_{i + 1}",
-                purpose="Test listing patron's active loans",
-                relevant_policies="Use find_patron_by_name then list_patron_loans.",
-                notes=f"Patron {name} asks to see their current loans.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to see what books you currently have checked out.",
-                reason_for_call="You want to know what books you currently have out from the library.",
-                known_info=f"Your name is {name}.",
-                unknown_info="You don't remember exactly which books you have.",
-                ticket=f"Patron {name} wants to see their active loans. Agent should look up the patron and list loans.",
-                actions=[
-                    action(
-                        "find_1",
-                        "find_patron_by_name",
-                        {"name": name},
-                        f"Find patron {name}",
-                        compare_args=[],
-                    ),
-                    action(
-                        "list_loans_1",
-                        "list_patron_loans",
-                        {"patron_id": pid},
-                        f"List loans for {name}",
-                    ),
+                f"list_loans_{i + 1}a",
+                "Test listing patron's active loans",
+                "Find patron and provide loan information.",
+                f"Patron {name} asks to see current loans.",
+                pa.label,
+                f"You are {name}. You want to see what books you have out. {pa.instructions}",
+                "You want to know what books you currently have checked out.",
+                f"Your name is {name}.",
+                "You don't remember exactly which books you have.",
+                f"Patron {name} wants to see active loans. Agent should look up and list.",
+                acts,
+                nl_assertions=[
+                    f"The agent provided information about the patron's {loan_count} active loan(s)"
                 ],
-                reward_basis=["ACTION"],
+                reward_basis=["ACTION", "NL_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard — vague request
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"list_loans_{i + 1}b",
+                "Test listing loans with vague request",
+                "Find patron and provide loan information.",
+                f"Patron {name} vaguely asks about account status.",
+                pb.label,
+                f"You are {name}. {pb.instructions}",
+                "You want to check on your library account — like what you have borrowed or when things are due.",
+                f"Your name is {name}.",
+                "You don't know your patron ID or what's on your account.",
+                f"Patron {name} vaguely asks about account. Agent should find patron and list loans.",
+                acts,
+                nl_assertions=[
+                    f"The agent provided information about the patron's {loan_count} active loan(s)"
+                ],
+                reward_basis=["ACTION", "NL_ASSERTION"],
             )
         )
     return tasks
 
 
-def gen_list_fines(db, ix, n=5):
-    """Tier 2: List my fines."""
+def gen_list_fines(db, ix, n=3):
+    """List patron's fines. n bases → 2n tasks."""
     tasks = []
     with_fines = [
         pid for pid in ix.active_patrons if db["patrons"][pid]["fines_owed"] > 0
     ]
     random.shuffle(with_fines)
-    chosen = with_fines[:n]
 
-    for i, pid in enumerate(chosen):
+    for i, pid in enumerate(with_fines[:n]):
         name = patron_name(db, pid)
+        fines_owed = db["patrons"][pid]["fines_owed"]
         track_use(pid)
 
+        acts = [
+            action(
+                "find_1",
+                "find_patron_by_name",
+                {"name": name},
+                f"Find patron {name}",
+                compare_args=[],
+            ),
+            action(
+                "list_fines_1",
+                "list_patron_fines",
+                {"patron_id": pid},
+                f"List fines for {name}",
+            ),
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"list_fines_{i + 1}",
-                purpose="Test listing patron's outstanding fines",
-                relevant_policies="Use find_patron_by_name then list_patron_fines.",
-                notes=f"Patron {name} (fines: ${db['patrons'][pid]['fines_owed']:.2f}) asks about fines.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to check what fines you have.",
-                reason_for_call="You want to know if you have any outstanding library fines.",
-                known_info=f"Your name is {name}.",
-                unknown_info="You don't know your exact fine balance.",
-                ticket=f"Patron {name} wants to check outstanding fines. Agent should look up patron and list fines.",
-                actions=[
-                    action(
-                        "find_1",
-                        "find_patron_by_name",
-                        {"name": name},
-                        f"Find patron {name}",
-                        compare_args=[],
-                    ),
-                    action(
-                        "list_fines_1",
-                        "list_patron_fines",
-                        {"patron_id": pid},
-                        f"List fines for {name}",
-                    ),
-                ],
+                f"list_fines_{i + 1}a",
+                "Test listing patron's outstanding fines",
+                "Use find_patron_by_name then list_patron_fines.",
+                f"Patron {name} (fines: ${fines_owed:.2f}) asks about fines.",
+                pa.label,
+                f"You are {name}. You want to check your fines. {pa.instructions}",
+                "You want to know if you have any outstanding library fines.",
+                f"Your name is {name}.",
+                "You don't know your exact fine balance.",
+                f"Patron {name} wants to check fines. Agent should look up and list.",
+                acts,
                 reward_basis=["ACTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"list_fines_{i + 1}b",
+                "Test listing fines with vague inquiry",
+                "Use find_patron_by_name then list_patron_fines.",
+                f"Patron {name} vaguely asks about charges.",
+                pb.label,
+                f"You are {name}. {pb.instructions}",
+                "You think you might owe the library some money but you're not sure.",
+                f"Your name is {name}.",
+                "You have no idea about your fine situation.",
+                f"Patron {name} vaguely asks about potential charges. Agent should find patron and list fines.",
+                acts,
+                nl_assertions=[
+                    f"The agent informed the patron about their outstanding balance of ${fines_owed:.2f}"
+                ],
+                reward_basis=["ACTION", "NL_ASSERTION"],
             )
         )
     return tasks
 
 
-# ── Tier 3: Moderate Multi-Step ───────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Tier 3: Moderate Multi-Step Generators
+# ---------------------------------------------------------------------------
 
 
-def gen_checkout_blocked_by_fines(db, ix, n=8):
-    """Tier 3: Fines block checkout → pay → checkout."""
+def gen_checkout_blocked_by_fines(db, ix, n=3):
+    """Fines block checkout → pay → checkout. n bases → 2n tasks."""
     tasks = []
-    # Patrons with fines > $10 who are otherwise active
     blocking = [
         pid
         for pid in ix.patrons_with_fines_blocking
@@ -982,20 +1331,17 @@ def gen_checkout_blocked_by_fines(db, ix, n=8):
         and len(db["patrons"][pid]["active_loans"])
         < db["patrons"][pid]["borrowing_limit"]
     ]
-
-    # Also create scenarios where patrons have fines that are close to blocking
-    # and we can construct pay→checkout flows
-    avail = list(ix.available_copies)
-    random.shuffle(avail)
+    avail_combos = list(ix.available_copies_by_book_branch.items())
+    random.shuffle(avail_combos)
+    combo_idx = 0
 
     for i, pid in enumerate(blocking):
-        if i >= n or not avail:
+        if i >= n or combo_idx >= len(avail_combos):
             break
         p = db["patrons"][pid]
         name = p["name"]
         track_use(pid)
 
-        # Find an outstanding fine to pay
         patron_fines = [
             f
             for f in db["fines"].values()
@@ -1003,72 +1349,89 @@ def gen_checkout_blocked_by_fines(db, ix, n=8):
         ]
         if not patron_fines:
             continue
-
         fine = patron_fines[0]
         fid = fine["fine_id"]
-
-        # Calculate minimum payment needed to bring fines to $10 or below
         excess = p["fines_owed"] - FINE_CHECKOUT_BLOCK_THRESHOLD
         pay_amount = min(round(excess + 0.50, 2), fine["amount"])
         payment = pick_payment()
 
-        cid = avail.pop()
-        bid = copy_book_id(db, cid)
-        brid = copy_branch_id(db, cid)
+        (bid, brid), copy_ids = avail_combos[combo_idx]
+        combo_idx += 1
+        cid = copy_ids[0]
         title = book_title(db, bid)
         br = branch_name(db, brid)
-        loan_count = len(p["active_loans"])
+        lc = len(p["active_loans"])
+        vdesc = vague_book(bid, title)
 
+        acts = [
+            action(
+                "pay_fine_1",
+                "pay_fine",
+                {"fine_id": fid, "amount": pay_amount, "payment_method": payment},
+                f"Pay ${pay_amount:.2f} toward {fid}",
+                compare_args=["fine_id"],
+            ),
+            action(
+                "checkout_1",
+                "checkout_book",
+                {"patron_id": pid, "copy_id": cid},
+                f"Check out {cid} ('{title}') to {name}",
+                compare_args=["patron_id", "copy_id"],
+            ),
+        ]
+        asserts = [
+            env_assert(
+                "assert_copy_status", {"copy_id": cid, "expected_status": "checked_out"}
+            ),
+            env_assert(
+                "assert_patron_loan_count", {"patron_id": pid, "expected": lc + 1}
+            ),
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"checkout_with_fines_{i + 1}",
-                purpose="Test checkout blocked by fines, requiring payment before checkout",
-                relevant_policies=f"Fines exceeding ${FINE_CHECKOUT_BLOCK_THRESHOLD:.2f} block all new checkouts until the balance is reduced to ${FINE_CHECKOUT_BLOCK_THRESHOLD:.2f} or below through payment.",
-                notes=f"Patron {name} has ${p['fines_owed']:.2f} in fines (above ${FINE_CHECKOUT_BLOCK_THRESHOLD:.2f} threshold). Needs to pay at least ${excess:.2f} before checkout.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to check out a book but you might have fines.",
-                reason_for_call=f"You want to check out '{title}' at the {br}. You know you have some overdue fines but you're not sure of the exact amount.",
-                known_info=f"Your name is {name}. You want to check out '{title}' at the {br}.",
-                unknown_info=f"You do not know your exact fine amount or that fines above $10 block checkout. When the agent tells you about the fines blocking checkout, agree to pay ${pay_amount:.2f} toward {fid} using {payment}. Then ask the agent to proceed with the checkout.",
-                ticket=f"Patron {name} wants to check out '{title}' at {br}. Has ${p['fines_owed']:.2f} in fines blocking checkout. Agent must collect payment on {fid} to bring total to $10 or below, then complete checkout.",
-                actions=[
-                    action(
-                        "pay_fine_1",
-                        "pay_fine",
-                        {
-                            "fine_id": fid,
-                            "amount": pay_amount,
-                            "payment_method": payment,
-                        },
-                        f"Pay ${pay_amount:.2f} toward {fid} to bring total fines from ${p['fines_owed']:.2f} to ${p['fines_owed'] - pay_amount:.2f}",
-                        compare_args=["fine_id"],
-                    ),
-                    action(
-                        "checkout_1",
-                        "checkout_book",
-                        {"patron_id": pid, "copy_id": cid},
-                        f"Check out {cid} ('{title}') to {name}",
-                        compare_args=["patron_id", "copy_id"],
-                    ),
-                ],
-                env_assertions=[
-                    env_assert(
-                        "assert_copy_status",
-                        {"copy_id": cid, "expected_status": "checked_out"},
-                    ),
-                    env_assert(
-                        "assert_patron_loan_count",
-                        {"patron_id": pid, "expected": loan_count + 1},
-                    ),
-                ],
+                f"checkout_with_fines_{i + 1}a",
+                "Test checkout blocked by fines, requiring payment first",
+                f"Fines > ${FINE_CHECKOUT_BLOCK_THRESHOLD:.2f} block checkouts.",
+                f"Patron {name} has ${p['fines_owed']:.2f} in fines. Needs to pay before checkout.",
+                pa.label,
+                f"You are {name}. You want to check out a book but may have fines. {pa.instructions}",
+                f"You want to check out '{title}' at the {br}. You know you have some overdue fines.",
+                f"Your name is {name}. You want '{title}' at the {br}.",
+                f"You don't know the exact fine amount. When told about the block, agree to pay ${pay_amount:.2f} via {payment}.",
+                f"Patron {name}: ${p['fines_owed']:.2f} fines block checkout. Agent must collect payment then checkout.",
+                acts,
+                asserts,
+                reward_basis=["ACTION", "ENV_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"checkout_with_fines_{i + 1}b",
+                "Test checkout blocked by fines with difficult patron",
+                f"Fines > ${FINE_CHECKOUT_BLOCK_THRESHOLD:.2f} block checkouts.",
+                f"Patron {name} vaguely requests '{title}' while having blocking fines.",
+                pb.label,
+                f"You are {name}. You want a book from the library. {pb.instructions}",
+                f"You're looking for {vdesc}. You're not sure if you owe anything.",
+                f"Your name is {name}. You want {vdesc}.",
+                f"You don't know your fine balance or that it blocks checkout. When told, agree to pay ${pay_amount:.2f} via {payment}.",
+                f"Patron {name} vaguely describes '{title}' while having ${p['fines_owed']:.2f} blocking fines.",
+                acts,
+                asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
             )
         )
     return tasks
 
 
-def gen_checkout_blocked_by_membership(db, ix, n=8):
-    """Tier 3: Expired membership → renew → checkout."""
+def gen_checkout_blocked_by_membership(db, ix, n=3):
+    """Expired membership → renew → checkout. n bases → 2n tasks."""
     tasks = []
     expired_eligible = [
         pid
@@ -1077,103 +1440,136 @@ def gen_checkout_blocked_by_membership(db, ix, n=8):
         and len(db["patrons"][pid]["active_loans"])
         < db["patrons"][pid]["borrowing_limit"]
     ]
-    avail = list(ix.available_copies)
-    random.shuffle(avail)
+    avail_combos = list(ix.available_copies_by_book_branch.items())
+    random.shuffle(avail_combos)
     random.shuffle(expired_eligible)
 
+    combo_idx = 0
     for i, pid in enumerate(expired_eligible):
-        if i >= n or not avail:
+        if i >= n or combo_idx >= len(avail_combos):
             break
         p = db["patrons"][pid]
         name = p["name"]
         track_use(pid)
 
-        cid = avail.pop()
-        bid = copy_book_id(db, cid)
-        brid = copy_branch_id(db, cid)
+        (bid, brid), copy_ids = avail_combos[combo_idx]
+        combo_idx += 1
+        cid = copy_ids[0]
         title = book_title(db, bid)
         br = branch_name(db, brid)
-        loan_count = len(p["active_loans"])
+        lc = len(p["active_loans"])
+        vdesc = vague_book(bid, title)
 
+        acts = [
+            action(
+                "renew_membership_1",
+                "renew_membership",
+                {"patron_id": pid},
+                f"Renew membership for {name}",
+            ),
+            action(
+                "checkout_1",
+                "checkout_book",
+                {"patron_id": pid, "copy_id": cid},
+                f"Check out {cid} ('{title}') to {name}",
+                compare_args=["patron_id", "copy_id"],
+            ),
+        ]
+        asserts = [
+            env_assert(
+                "assert_copy_status", {"copy_id": cid, "expected_status": "checked_out"}
+            ),
+            env_assert(
+                "assert_patron_loan_count", {"patron_id": pid, "expected": lc + 1}
+            ),
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"checkout_expired_membership_{i + 1}",
-                purpose="Test checkout blocked by expired membership, requiring renewal first",
-                relevant_policies="Membership must be active for checkout. Expired memberships can be renewed for one year.",
-                notes=f"Patron {name} has expired membership ({p['membership_expiry']}). Must renew before checkout.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to check out a book. Your membership may have expired.",
-                reason_for_call=f"You want to check out '{title}' at the {br}.",
-                known_info=f"Your name is {name}. You want '{title}' at the {br}.",
-                unknown_info="You're not sure if your membership is still valid. If the agent says it's expired, agree to renew it.",
-                ticket=f"Patron {name} wants to check out '{title}' at {br}. Membership expired on {p['membership_expiry']}. Agent must renew membership, then process checkout.",
-                actions=[
-                    action(
-                        "renew_membership_1",
-                        "renew_membership",
-                        {"patron_id": pid},
-                        f"Renew membership for {name}",
-                    ),
-                    action(
-                        "checkout_1",
-                        "checkout_book",
-                        {"patron_id": pid, "copy_id": cid},
-                        f"Check out {cid} ('{title}') to {name}",
-                        compare_args=["patron_id", "copy_id"],
-                    ),
-                ],
-                env_assertions=[
-                    env_assert(
-                        "assert_copy_status",
-                        {"copy_id": cid, "expected_status": "checked_out"},
-                    ),
-                    env_assert(
-                        "assert_patron_loan_count",
-                        {"patron_id": pid, "expected": loan_count + 1},
-                    ),
-                ],
+                f"checkout_expired_membership_{i + 1}a",
+                "Test checkout blocked by expired membership",
+                "Membership must be active for checkout. Expired can be renewed for one year.",
+                f"Patron {name} has expired membership ({p['membership_expiry']}). Must renew first.",
+                pa.label,
+                f"You are {name}. You want to check out a book. {pa.instructions}",
+                f"You want to check out '{title}' at the {br}.",
+                f"Your name is {name}. You want '{title}' at the {br}.",
+                "You're not sure if your membership is valid. If expired, agree to renew.",
+                f"Patron {name}: expired membership. Agent must renew then checkout.",
+                acts,
+                asserts,
+                reward_basis=["ACTION", "ENV_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"checkout_expired_membership_{i + 1}b",
+                "Test checkout with expired membership and vague request",
+                "Membership must be active for checkout. Expired can be renewed for one year.",
+                f"Patron {name} vaguely requests '{title}' with expired membership.",
+                pb.label,
+                f"You are {name}. You want a book. {pb.instructions}",
+                f"You're looking for {vdesc}.",
+                f"Your name is {name}. You want something like {vdesc}.",
+                "You're not sure about your membership status. If expired, agree to renew.",
+                f"Patron {name} vaguely describes '{title}'. Membership expired. Agent must renew then checkout.",
+                acts,
+                asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
             )
         )
     return tasks
 
 
-def gen_place_hold(db, ix, n=8):
-    """Tier 3: Place hold (book unavailable at branch)."""
+def gen_place_hold(db, ix, n=4):
+    """Place hold on unavailable book. n bases → 2n tasks."""
     tasks = []
-    # Pick (book, branch) combos where all copies are out
     combos = list(ix.books_all_out_at_branch.keys())
     random.shuffle(combos)
-
-    # Need eligible patrons
     eligible = [pid for pid in ix.active_patrons if pid not in ix.patrons_at_limit]
     random.shuffle(eligible)
 
     count = 0
-    patron_idx = 0
+    pidx = 0
     for book_id, branch_id in combos:
-        if count >= n or patron_idx >= len(eligible):
+        if count >= n or pidx >= len(eligible):
             break
-        pid = eligible[patron_idx]
-        patron_idx += 1
+        pid = eligible[pidx]
+        pidx += 1
         name = patron_name(db, pid)
         title = book_title(db, book_id)
         br = branch_name(db, branch_id)
+        vdesc = vague_book(book_id, title)
         track_use(pid)
 
+        hold_act = action(
+            "place_hold_1",
+            "place_hold",
+            {"patron_id": pid, "book_id": book_id, "branch_id": branch_id},
+            f"Place hold on '{title}' at {br}",
+            compare_args=["patron_id", "book_id", "branch_id"],
+        )
+
+        # Variant A: Easy — full search+availability+hold sequence
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"place_hold_{count + 1}",
-                purpose="Test placing a hold on an unavailable book",
-                relevant_policies="Holds can be placed when no copies are available at the requested branch.",
-                notes=f"Patron {name} wants '{title}' at {br} but no copies are available. Agent should place a hold.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want a book that might not be available.",
-                reason_for_call=f"You'd like to get '{title}' from the {br}.",
-                known_info=f"Your name is {name}. You want '{title}' at the {br}.",
-                unknown_info="You don't know if the book is available. If the agent says it's not available, ask them to place a hold for you.",
-                ticket=f"Patron {name} wants '{title}' at {br}. No copies available. Agent should search, check availability, and place a hold.",
-                actions=[
+                f"place_hold_{count + 1}a",
+                "Test placing a hold on an unavailable book",
+                "Holds can be placed when no copies are available at the requested branch.",
+                f"Patron {name} wants '{title}' at {br} — unavailable. Should place hold.",
+                pa.label,
+                f"You are {name}. You want a book that might not be available. {pa.instructions}",
+                f"You'd like to get '{title}' from the {br}.",
+                f"Your name is {name}. You want '{title}' at the {br}.",
+                "You don't know if the book is available. If not, ask for a hold.",
+                f"Patron {name} wants '{title}' at {br}. Unavailable. Agent should place hold.",
+                [
                     action(
                         "search_1",
                         "search_catalog",
@@ -1188,14 +1584,27 @@ def gen_place_hold(db, ix, n=8):
                         f"Check availability at {br}",
                         compare_args=["book_id"],
                     ),
-                    action(
-                        "place_hold_1",
-                        "place_hold",
-                        {"patron_id": pid, "book_id": book_id, "branch_id": branch_id},
-                        f"Place hold on '{title}' at {br} for {name}",
-                        compare_args=["patron_id", "book_id", "branch_id"],
-                    ),
+                    hold_act,
                 ],
+                reward_basis=["ACTION"],
+            )
+        )
+
+        # Variant B: Hard — vague description, core action only
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"place_hold_{count + 1}b",
+                "Test placing hold with vague book description",
+                "Holds can be placed when no copies are available at the requested branch.",
+                f"Patron {name} vaguely describes '{title}' and needs a hold.",
+                pb.label,
+                f"You are {name}. You want a specific book. {pb.instructions}",
+                f"You're looking for {vdesc}. You'd like to pick it up at a library if it's available.",
+                f"Your name is {name}. You want {vdesc}.",
+                "You don't know the title, availability, or branch. If unavailable, ask for a hold.",
+                f"Patron {name} vaguely describes '{title}'. Unavailable at {br}. Agent should place hold.",
+                [hold_act],
                 reward_basis=["ACTION"],
             )
         )
@@ -1203,27 +1612,26 @@ def gen_place_hold(db, ix, n=8):
     return tasks
 
 
-def gen_register_event(db, ix, n=8):
-    """Tier 3: Register for event."""
+def gen_register_event(db, ix, n=4):
+    """Register for event. n bases → 2n tasks."""
     tasks = []
     events = list(ix.upcoming_events_with_capacity)
-    eligible = [pid for pid in ix.active_patrons]
+    eligible = list(ix.active_patrons)
     random.shuffle(eligible)
     random.shuffle(events)
 
     count = 0
-    patron_idx = 0
+    pidx = 0
     for eid in events:
-        if count >= n or patron_idx >= len(eligible):
+        if count >= n or pidx >= len(eligible):
             break
         event = db["events"][eid]
         brid = event["branch_id"]
         br = branch_name(db, brid)
 
-        # Find a patron not already registered
-        while patron_idx < len(eligible):
-            pid = eligible[patron_idx]
-            patron_idx += 1
+        while pidx < len(eligible):
+            pid = eligible[pidx]
+            pidx += 1
             if pid not in event["registered_patrons"]:
                 break
         else:
@@ -1232,19 +1640,29 @@ def gen_register_event(db, ix, n=8):
         name = patron_name(db, pid)
         track_use(pid)
 
+        reg_act = action(
+            "register_1",
+            "register_for_event",
+            {"patron_id": pid, "event_id": eid},
+            f"Register {name} for '{event['title']}'",
+            compare_args=["patron_id", "event_id"],
+        )
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"register_event_{count + 1}",
-                purpose="Test event registration",
-                relevant_policies="Patron must have active membership. Event must have capacity.",
-                notes=f"Patron {name} registers for '{event['title']}' at {br}.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You're interested in attending a library event.",
-                reason_for_call=f"You heard about '{event['title']}' at the {br} and want to sign up.",
-                known_info=f"Your name is {name}. You want to attend '{event['title']}' at the {br}.",
-                unknown_info="You don't know the event ID or if there's still space.",
-                ticket=f"Patron {name} wants to register for '{event['title']}' ({eid}) at {br}. Event has capacity. Agent should find the event and register the patron.",
-                actions=[
+                f"register_event_{count + 1}a",
+                "Test event registration",
+                "Patron must have active membership. Event must have capacity.",
+                f"Patron {name} registers for '{event['title']}' at {br}.",
+                pa.label,
+                f"You are {name}. You want to sign up for a library event. {pa.instructions}",
+                f"You heard about '{event['title']}' at the {br} and want to sign up.",
+                f"Your name is {name}. You want '{event['title']}' at the {br}.",
+                "You don't know the event ID or if there's still space.",
+                f"Patron {name} registers for '{event['title']}' ({eid}) at {br}.",
+                [
                     action(
                         "find_branch_1",
                         "find_branch_by_name",
@@ -1259,14 +1677,27 @@ def gen_register_event(db, ix, n=8):
                         f"List events at {br}",
                         compare_args=[],
                     ),
-                    action(
-                        "register_1",
-                        "register_for_event",
-                        {"patron_id": pid, "event_id": eid},
-                        f"Register {name} for '{event['title']}'",
-                        compare_args=["patron_id", "event_id"],
-                    ),
+                    reg_act,
                 ],
+                reward_basis=["ACTION"],
+            )
+        )
+
+        # Variant B: Hard — vague event description
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"register_event_{count + 1}b",
+                "Test event registration with vague request",
+                "Patron must have active membership. Event must have capacity.",
+                f"Patron {name} vaguely describes '{event['title']}' event.",
+                pb.label,
+                f"You are {name}. You want to attend something at the library. {pb.instructions}",
+                f"You heard the library has some kind of event — maybe something like '{event['title'].split(':')[0].strip()}'? You'd like to sign up.",
+                f"Your name is {name}. You're interested in a library event.",
+                "You don't remember the exact event name, date, or which branch.",
+                f"Patron {name} vaguely asks about '{event['title']}'. Agent should find event and register.",
+                [reg_act],
                 reward_basis=["ACTION"],
             )
         )
@@ -1274,37 +1705,36 @@ def gen_register_event(db, ix, n=8):
     return tasks
 
 
-def gen_pay_fine_partial(db, ix, n=5):
-    """Tier 3: Partial fine payment."""
+def gen_pay_fine_partial(db, ix, n=3):
+    """Partial fine payment. Single variant."""
     tasks = []
     fines = [fid for fid in ix.outstanding_fines if db["fines"][fid]["amount"] > 2.0]
     random.shuffle(fines)
-    chosen = fines[:n]
 
-    for i, fid in enumerate(chosen):
+    for i, fid in enumerate(fines[:n]):
         fine = db["fines"][fid]
         pid = fine["patron_id"]
         name = patron_name(db, pid)
-        # Pay roughly half
         pay_amount = round(fine["amount"] / 2, 2)
         if pay_amount <= 0:
             pay_amount = 1.0
         payment = pick_payment()
         track_use(pid)
+        pa = pick_easy_persona()
 
         tasks.append(
             make_task(
-                task_id=f"pay_fine_partial_{i + 1}",
-                purpose="Test partial fine payment",
-                relevant_policies="Fines can be paid partially. Remaining balance stays outstanding.",
-                notes=f"Patron {name} pays ${pay_amount:.2f} of ${fine['amount']:.2f} fine ({fid}).",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to make a partial payment on a fine.",
-                reason_for_call="You want to pay some of your library fine but not all of it right now.",
-                known_info=f"Your name is {name}.",
-                unknown_info=f"You don't know the exact amount. When the agent tells you, say you'd like to pay ${pay_amount:.2f} using {payment}.",
-                ticket=f"Patron {name} wants to pay ${pay_amount:.2f} toward fine {fid} (${fine['amount']:.2f}) via {payment}.",
-                actions=[
+                f"pay_fine_partial_{i + 1}",
+                "Test partial fine payment",
+                "Fines can be paid partially. Remaining balance stays outstanding.",
+                f"Patron {name} pays ${pay_amount:.2f} of ${fine['amount']:.2f} fine ({fid}).",
+                pa.label,
+                f"You are {name}. You want to make a partial payment on a fine. {pa.instructions}",
+                "You want to pay some of your library fine but not all right now.",
+                f"Your name is {name}.",
+                f"You don't know the exact amount. When told, pay ${pay_amount:.2f} using {payment}.",
+                f"Patron {name} pays ${pay_amount:.2f} toward fine {fid} (${fine['amount']:.2f}) via {payment}.",
+                [
                     action(
                         "find_1",
                         "find_patron_by_name",
@@ -1336,10 +1766,10 @@ def gen_pay_fine_partial(db, ix, n=5):
     return tasks
 
 
-def gen_interlibrary_loan(db, ix, n=5):
-    """Tier 3: Request interlibrary loan."""
+def gen_interlibrary_loan(db, ix, n=3):
+    """Interlibrary loan request. Single variant."""
     tasks = []
-    eligible = [pid for pid in ix.active_patrons]
+    eligible = list(ix.active_patrons)
     random.shuffle(eligible)
     books = list(db["books"].keys())
     random.shuffle(books)
@@ -1350,20 +1780,21 @@ def gen_interlibrary_loan(db, ix, n=5):
         name = patron_name(db, pid)
         title = book_title(db, bid)
         track_use(pid)
+        pa = pick_easy_persona()
 
         tasks.append(
             make_task(
-                task_id=f"interlibrary_loan_{i + 1}",
-                purpose="Test interlibrary loan request",
-                relevant_policies="Active membership required. Interlibrary loans requested when local copies unavailable.",
-                notes=f"Patron {name} requests ILL for '{title}'.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to request an interlibrary loan.",
-                reason_for_call=f"You've been looking for '{title}' but can't find it at your local branch. You'd like to request it from another library system.",
-                known_info=f"Your name is {name}. You want '{title}'.",
-                unknown_info="You're not sure how the interlibrary loan process works.",
-                ticket=f"Patron {name} wants an interlibrary loan for '{title}'. Agent should search catalog and submit ILL request.",
-                actions=[
+                f"interlibrary_loan_{i + 1}",
+                "Test interlibrary loan request",
+                "Active membership required. ILL for books unavailable locally.",
+                f"Patron {name} requests ILL for '{title}'.",
+                pa.label,
+                f"You are {name}. You want an interlibrary loan. {pa.instructions}",
+                f"You've been looking for '{title}' but can't find it. You'd like to request it from another library.",
+                f"Your name is {name}. You want '{title}'.",
+                "You're not sure how the interlibrary loan process works.",
+                f"Patron {name} requests ILL for '{title}'.",
+                [
                     action(
                         "search_1",
                         "search_catalog",
@@ -1385,99 +1816,138 @@ def gen_interlibrary_loan(db, ix, n=5):
     return tasks
 
 
-def gen_waive_fine_eligible(db, ix, n=5):
-    """Tier 3: Waive fine (eligible — first offense)."""
+def gen_waive_fine_eligible(db, ix, n=3):
+    """Waive fine (eligible — first offense). n bases → 2n tasks."""
     tasks = []
-    # Only fines that are actually waiver-eligible (no other fines on record)
-    eligible = list(ix.waiver_eligible_fines)
-    # Filter to reasonable amounts (not $50 lost book fines for more realistic scenarios)
-    eligible_small = [fid for fid in eligible if db["fines"][fid]["amount"] <= 10.0]
-    random.shuffle(eligible_small)
-    chosen = eligible_small[:n]
+    eligible = [
+        fid for fid in ix.waiver_eligible_fines if db["fines"][fid]["amount"] <= 10.0
+    ]
+    random.shuffle(eligible)
 
-    for i, fid in enumerate(chosen):
+    for i, fid in enumerate(eligible[:n]):
         fine = db["fines"][fid]
         pid = fine["patron_id"]
         name = patron_name(db, pid)
         track_use(pid)
 
+        acts = [
+            action(
+                "list_fines_1",
+                "list_patron_fines",
+                {"patron_id": pid},
+                f"List fines for {name}",
+            ),
+            action(
+                "waive_1",
+                "waive_fine",
+                {"fine_id": fid, "reason": "first_offense"},
+                f"Waive fine {fid}",
+                compare_args=["fine_id"],
+            ),
+        ]
+        asserts = [
+            env_assert(
+                "assert_fine_status", {"fine_id": fid, "expected_status": "waived"}
+            )
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"waive_fine_{i + 1}",
-                purpose="Test fine waiver for eligible patron (first offense)",
-                relevant_policies="Fine waivers are only allowed for first offense (no other fines on record).",
-                notes=f"Patron {name} has only one fine ({fid}, ${fine['amount']:.2f}) — eligible for waiver.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to ask about getting a fine waived.",
-                reason_for_call="You have a library fine and you'd like to ask if it can be waived. This is your first time having a fine.",
-                known_info=f"Your name is {name}. You have a fine you'd like waived.",
-                unknown_info="You don't know if you're eligible for a waiver. Mention that this is your first offense when the agent asks.",
-                ticket=f"Patron {name} requests waiver of fine {fid} (${fine['amount']:.2f}). First offense — eligible. Agent should verify eligibility and waive the fine.",
-                actions=[
-                    action(
-                        "list_fines_1",
-                        "list_patron_fines",
-                        {"patron_id": pid},
-                        f"List fines for {name}",
-                    ),
-                    action(
-                        "waive_1",
-                        "waive_fine",
-                        {"fine_id": fid, "reason": "first_offense"},
-                        f"Waive fine {fid}",
-                        compare_args=["fine_id"],
-                    ),
-                ],
-                env_assertions=[
-                    env_assert(
-                        "assert_fine_status",
-                        {"fine_id": fid, "expected_status": "waived"},
-                    ),
-                ],
+                f"waive_fine_{i + 1}a",
+                "Test fine waiver for eligible patron (first offense)",
+                "Fine waivers only for first offense (no other fines on record).",
+                f"Patron {name} has one fine ({fid}, ${fine['amount']:.2f}) — eligible.",
+                pa.label,
+                f"You are {name}. You want to ask about getting a fine waived. {pa.instructions}",
+                "You have a library fine and you'd like to ask if it can be waived. This is your first time having a fine.",
+                f"Your name is {name}. You have a fine you'd like waived.",
+                "You don't know if you're eligible. Mention it's your first offense when asked.",
+                f"Patron {name} requests waiver of {fid}. First offense — eligible.",
+                acts,
+                asserts,
+                reward_basis=["ACTION", "ENV_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"waive_fine_{i + 1}b",
+                "Test fine waiver with difficult patron interaction",
+                "Fine waivers only for first offense (no other fines on record).",
+                f"Patron {name} asks about charges and wants them removed.",
+                pb.label,
+                f"You are {name}. {pb.instructions}",
+                "You have some kind of charge on your account and you want it removed. You've never had any issues before.",
+                f"Your name is {name}.",
+                "You don't know the details of the fine. Mention it's your first time having a problem when prompted.",
+                f"Patron {name} vaguely asks about charges. Fine {fid} eligible for waiver.",
+                acts,
+                asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
             )
         )
     return tasks
 
 
-def gen_search_availability_checkout(db, ix, n=8):
-    """Tier 3: Search → availability → checkout (full flow)."""
+def gen_search_availability_checkout(db, ix, n=4):
+    """Search → availability → checkout (full flow). n bases → 2n tasks."""
     tasks = []
     eligible = [pid for pid in ix.patrons_below_limit if patron_can_checkout(db, pid)]
     random.shuffle(eligible)
-
-    # Find (book, branch) combos with available copies
     avail_combos = list(ix.available_copies_by_book_branch.items())
     random.shuffle(avail_combos)
 
     count = 0
-    patron_idx = 0
+    pidx = 0
     for (book_id, branch_id), copy_ids in avail_combos:
-        if count >= n or patron_idx >= len(eligible):
+        if count >= n or pidx >= len(eligible):
             break
-        pid = eligible[patron_idx]
-        patron_idx += 1
+        pid = eligible[pidx]
+        pidx += 1
         cid = copy_ids[0]
         name = patron_name(db, pid)
         title = book_title(db, book_id)
         br = branch_name(db, branch_id)
-        loan_count = len(db["patrons"][pid]["active_loans"])
+        lc = len(db["patrons"][pid]["active_loans"])
+        vdesc = vague_book(book_id, title)
         track_use(pid)
         track_use(cid)
 
+        checkout_act = action(
+            "checkout_1",
+            "checkout_book",
+            {"patron_id": pid, "copy_id": cid},
+            f"Check out {cid} to {name}",
+            compare_args=["patron_id", "copy_id"],
+        )
+        asserts = [
+            env_assert(
+                "assert_copy_status", {"copy_id": cid, "expected_status": "checked_out"}
+            ),
+            env_assert(
+                "assert_patron_loan_count", {"patron_id": pid, "expected": lc + 1}
+            ),
+        ]
+
+        # Variant A: Easy — full flow
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"search_checkout_{count + 1}",
-                purpose="Test full flow: search catalog → check availability → checkout",
-                relevant_policies="Agent should search catalog, verify availability, then process checkout.",
-                notes=f"Patron {name} wants '{title}' at {br}. Copy {cid} is available.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to find and check out a specific book.",
-                reason_for_call=f"You're looking for '{title}' at the {br} and want to borrow it.",
-                known_info=f"Your name is {name}. You want '{title}' at the {br}.",
-                unknown_info="You don't know if the book is available.",
-                ticket=f"Patron {name} wants '{title}' at {br}. Agent should search, check availability, and check out copy {cid}.",
-                actions=[
+                f"search_checkout_{count + 1}a",
+                "Test full flow: search → availability → checkout",
+                "Agent should search catalog, verify availability, then checkout.",
+                f"Patron {name} wants '{title}' at {br}. Copy {cid} available.",
+                pa.label,
+                f"You are {name}. You want to find and borrow a book. {pa.instructions}",
+                f"You're looking for '{title}' at the {br} and want to borrow it.",
+                f"Your name is {name}. You want '{title}' at the {br}.",
+                "You don't know if it's available.",
+                f"Patron {name} wants '{title}' at {br}. Agent should search, check, checkout.",
+                [
                     action(
                         "search_1",
                         "search_catalog",
@@ -1492,24 +1962,29 @@ def gen_search_availability_checkout(db, ix, n=8):
                         f"Check availability at {br}",
                         compare_args=["book_id"],
                     ),
-                    action(
-                        "checkout_1",
-                        "checkout_book",
-                        {"patron_id": pid, "copy_id": cid},
-                        f"Check out {cid} to {name}",
-                        compare_args=["patron_id", "copy_id"],
-                    ),
+                    checkout_act,
                 ],
-                env_assertions=[
-                    env_assert(
-                        "assert_copy_status",
-                        {"copy_id": cid, "expected_status": "checked_out"},
-                    ),
-                    env_assert(
-                        "assert_patron_loan_count",
-                        {"patron_id": pid, "expected": loan_count + 1},
-                    ),
-                ],
+                asserts,
+                reward_basis=["ACTION", "ENV_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard — vague
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"search_checkout_{count + 1}b",
+                "Test search-to-checkout with vague book description",
+                "Agent should search catalog, verify availability, then checkout.",
+                f"Patron {name} vaguely describes '{title}' for checkout.",
+                pb.label,
+                f"You are {name}. You want a book from the library. {pb.instructions}",
+                f"You're looking for {vdesc}. You'd like to borrow it if it's available.",
+                f"Your name is {name}. You want {vdesc}.",
+                "You don't know the exact title, branch, or availability.",
+                f"Patron {name} vaguely describes '{title}'. Agent should find and checkout copy {cid}.",
+                [checkout_act],
+                asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
             )
         )
@@ -1517,13 +1992,14 @@ def gen_search_availability_checkout(db, ix, n=8):
     return tasks
 
 
-# ── Tier 4: Complex Multi-Step ────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Tier 4: Complex Multi-Step Generators
+# ---------------------------------------------------------------------------
 
 
-def gen_return_then_checkout(db, ix, n=8):
-    """Tier 4: Return a book then checkout a new one."""
+def gen_return_then_checkout(db, ix, n=4):
+    """Return a book then checkout a new one. n bases → 2n tasks."""
     tasks = []
-    # Patrons with active loans who can checkout after return
     candidates = []
     for lid in ix.active_loans:
         loan = db["loans"][lid]
@@ -1535,77 +2011,98 @@ def gen_return_then_checkout(db, ix, n=8):
         ):
             candidates.append(lid)
     random.shuffle(candidates)
-
-    avail = list(ix.available_copies)
-    random.shuffle(avail)
+    avail_combos = list(ix.available_copies_by_book_branch.items())
+    random.shuffle(avail_combos)
 
     count = 0
+    combo_idx = 0
     for lid in candidates:
-        if count >= n or not avail:
+        if count >= n or combo_idx >= len(avail_combos):
             break
         loan = db["loans"][lid]
         pid = loan["patron_id"]
-        return_cid = loan["copy_id"]
-        return_bid = copy_book_id(db, return_cid)
-        return_title = book_title(db, return_bid)
+        ret_cid = loan["copy_id"]
+        ret_bid = copy_book_id(db, ret_cid)
+        ret_title = book_title(db, ret_bid)
 
-        new_cid = avail.pop()
-        new_bid = copy_book_id(db, new_cid)
-        new_title = book_title(db, new_bid)
-        new_br = branch_name(db, copy_branch_id(db, new_cid))
-
-        # Skip if same book
-        if new_bid == return_bid:
-            avail.append(new_cid)
+        (new_bid, new_brid), copy_ids = avail_combos[combo_idx]
+        combo_idx += 1
+        if new_bid == ret_bid:
             continue
+        new_cid = copy_ids[0]
+        new_title = book_title(db, new_bid)
+        new_br = branch_name(db, new_brid)
+        vdesc = vague_book(new_bid, new_title)
 
         name = patron_name(db, pid)
-        p = db["patrons"][pid]
-        # After return, loan count will be current - 1, then +1 for new checkout = same as current
-        final_loan_count = len(p["active_loans"])
+        final_lc = len(db["patrons"][pid]["active_loans"])
         track_use(pid)
 
+        acts = [
+            action(
+                "return_1",
+                "return_book",
+                {"copy_id": ret_cid},
+                f"Return {ret_cid} ('{ret_title}')",
+            ),
+            action(
+                "checkout_1",
+                "checkout_book",
+                {"patron_id": pid, "copy_id": new_cid},
+                f"Check out {new_cid} ('{new_title}') to {name}",
+                compare_args=["patron_id", "copy_id"],
+            ),
+        ]
+        asserts = [
+            env_assert(
+                "assert_copy_status",
+                {"copy_id": ret_cid, "expected_status": "available"},
+            ),
+            env_assert(
+                "assert_copy_status",
+                {"copy_id": new_cid, "expected_status": "checked_out"},
+            ),
+            env_assert(
+                "assert_patron_loan_count", {"patron_id": pid, "expected": final_lc}
+            ),
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"return_checkout_{count + 1}",
-                purpose="Test return of one book followed by checkout of another",
-                relevant_policies="Return processes the loan. Checkout requires eligibility.",
-                notes=f"Patron {name} returns '{return_title}' and checks out '{new_title}' at {new_br}.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to return a book and borrow a different one.",
-                reason_for_call=f"You want to return '{return_title}' and check out '{new_title}' at the {new_br}.",
-                known_info=f"Your name is {name}. You have '{return_title}' to return and want '{new_title}' at the {new_br}.",
-                unknown_info="You don't know the copy IDs.",
-                ticket=f"Patron {name} returns '{return_title}' (copy {return_cid}) and checks out '{new_title}' (copy {new_cid}) at {new_br}.",
-                actions=[
-                    action(
-                        "return_1",
-                        "return_book",
-                        {"copy_id": return_cid},
-                        f"Return {return_cid} ('{return_title}')",
-                    ),
-                    action(
-                        "checkout_1",
-                        "checkout_book",
-                        {"patron_id": pid, "copy_id": new_cid},
-                        f"Check out {new_cid} ('{new_title}') to {name}",
-                        compare_args=["patron_id", "copy_id"],
-                    ),
-                ],
-                env_assertions=[
-                    env_assert(
-                        "assert_copy_status",
-                        {"copy_id": return_cid, "expected_status": "available"},
-                    ),
-                    env_assert(
-                        "assert_copy_status",
-                        {"copy_id": new_cid, "expected_status": "checked_out"},
-                    ),
-                    env_assert(
-                        "assert_patron_loan_count",
-                        {"patron_id": pid, "expected": final_loan_count},
-                    ),
-                ],
+                f"return_checkout_{count + 1}a",
+                "Test return followed by checkout",
+                "Return processes loan. Checkout requires eligibility.",
+                f"Patron {name} returns '{ret_title}' and checks out '{new_title}' at {new_br}.",
+                pa.label,
+                f"You are {name}. You want to return a book and borrow a different one. {pa.instructions}",
+                f"You want to return '{ret_title}' and check out '{new_title}' at the {new_br}.",
+                f"Your name is {name}. You have '{ret_title}' to return. You want '{new_title}' at the {new_br}.",
+                "You don't know the copy IDs.",
+                f"Patron {name} returns '{ret_title}' then checks out '{new_title}' at {new_br}.",
+                acts,
+                asserts,
+                reward_basis=["ACTION", "ENV_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"return_checkout_{count + 1}b",
+                "Test return+checkout with vague new book description",
+                "Return processes loan. Checkout requires eligibility.",
+                f"Patron {name} returns '{ret_title}' and vaguely describes '{new_title}'.",
+                pb.label,
+                f"You are {name}. You want to return a book and get a new one. {pb.instructions}",
+                f"You want to return '{ret_title}' and you're also looking for {vdesc}.",
+                f"Your name is {name}. You have '{ret_title}' to return. You also want {vdesc}.",
+                "You don't know the exact new title or copy IDs.",
+                f"Patron {name} returns '{ret_title}' and vaguely describes '{new_title}'. Agent should handle both.",
+                acts,
+                asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
             )
         )
@@ -1613,8 +2110,8 @@ def gen_return_then_checkout(db, ix, n=8):
     return tasks
 
 
-def gen_renew_membership_register_event(db, ix, n=5):
-    """Tier 4: Renew expired membership + register for event."""
+def gen_renew_membership_register_event(db, ix, n=3):
+    """Renew expired membership + register for event. Single variant."""
     tasks = []
     expired = list(ix.expired_patrons)
     events = list(ix.upcoming_events_with_capacity)
@@ -1625,27 +2122,27 @@ def gen_renew_membership_register_event(db, ix, n=5):
         pid = expired[i]
         eid = events[i % len(events)]
         event = db["events"][eid]
+        if pid in event["registered_patrons"]:
+            continue
         name = patron_name(db, pid)
         brid = event["branch_id"]
         br = branch_name(db, brid)
         track_use(pid)
-
-        if pid in event["registered_patrons"]:
-            continue
+        pa = pick_easy_persona()
 
         tasks.append(
             make_task(
-                task_id=f"renew_register_event_{i + 1}",
-                purpose="Test membership renewal followed by event registration",
-                relevant_policies="Membership must be active for event registration. Expired memberships can be renewed.",
-                notes=f"Patron {name} has expired membership. Renew, then register for '{event['title']}' at {br}.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to sign up for a library event but your membership might be expired.",
-                reason_for_call=f"You want to attend '{event['title']}' at the {br}.",
-                known_info=f"Your name is {name}. You want to attend '{event['title']}' at the {br}.",
-                unknown_info="You're not sure if your membership is current. If the agent says it's expired, agree to renew.",
-                ticket=f"Patron {name} wants to register for '{event['title']}' at {br}. Membership expired. Agent must renew membership first, then register for event.",
-                actions=[
+                f"renew_register_event_{i + 1}",
+                "Test membership renewal followed by event registration",
+                "Membership must be active for event registration.",
+                f"Patron {name}: expired membership. Renew then register for '{event['title']}' at {br}.",
+                pa.label,
+                f"You are {name}. You want to sign up for a library event. {pa.instructions}",
+                f"You want to attend '{event['title']}' at the {br}.",
+                f"Your name is {name}. You want '{event['title']}' at the {br}.",
+                "You're not sure if your membership is current. If expired, agree to renew.",
+                f"Patron {name}: expired. Agent must renew then register for '{event['title']}'.",
+                [
                     action(
                         "renew_1",
                         "renew_membership",
@@ -1666,15 +2163,13 @@ def gen_renew_membership_register_event(db, ix, n=5):
     return tasks
 
 
-def gen_pay_multiple_fines(db, ix, n=5):
-    """Tier 4: Pay multiple fines for same patron."""
+def gen_pay_multiple_fines(db, ix, n=3):
+    """Pay multiple fines for same patron. Single variant."""
     tasks = []
-    # Find patrons with multiple outstanding fines
     patron_fines: dict[str, list] = {}
     for fid in ix.outstanding_fines:
         fine = db["fines"][fid]
         patron_fines.setdefault(fine["patron_id"], []).append(fid)
-
     multi = [(pid, fids) for pid, fids in patron_fines.items() if len(fids) >= 2]
     random.shuffle(multi)
 
@@ -1682,14 +2177,15 @@ def gen_pay_multiple_fines(db, ix, n=5):
         name = patron_name(db, pid)
         payment = pick_payment()
         track_use(pid)
+        pa = pick_easy_persona()
 
-        fine_actions = []
-        fine_assertions = []
+        fine_acts = []
+        fine_asserts = []
         total = 0.0
         for j, fid in enumerate(fids):
             fine = db["fines"][fid]
             total += fine["amount"]
-            fine_actions.append(
+            fine_acts.append(
                 action(
                     f"pay_fine_{j + 1}",
                     "pay_fine",
@@ -1702,7 +2198,7 @@ def gen_pay_multiple_fines(db, ix, n=5):
                     compare_args=["fine_id"],
                 )
             )
-            fine_assertions.append(
+            fine_asserts.append(
                 env_assert(
                     "assert_fine_status", {"fine_id": fid, "expected_status": "paid"}
                 )
@@ -1710,102 +2206,130 @@ def gen_pay_multiple_fines(db, ix, n=5):
 
         tasks.append(
             make_task(
-                task_id=f"pay_multiple_fines_{i + 1}",
-                purpose="Test paying multiple outstanding fines",
-                relevant_policies="Each fine can be paid individually. Payment reduces patron's total fines_owed.",
-                notes=f"Patron {name} pays {len(fids)} fines totaling ${total:.2f}.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to pay off all your library fines.",
-                reason_for_call="You want to pay all your outstanding library fines.",
-                known_info=f"Your name is {name}. You want to pay all your fines.",
-                unknown_info=f"You don't know exactly how many fines you have. Pay them all using {payment}.",
-                ticket=f"Patron {name} wants to pay all outstanding fines ({len(fids)} fines, ${total:.2f}). Agent should list fines and process each payment.",
-                actions=fine_actions,
-                env_assertions=fine_assertions,
+                f"pay_multiple_fines_{i + 1}",
+                "Test paying multiple outstanding fines",
+                "Each fine can be paid individually.",
+                f"Patron {name} pays {len(fids)} fines totaling ${total:.2f}.",
+                pa.label,
+                f"You are {name}. You want to pay all your fines. {pa.instructions}",
+                "You want to pay all your outstanding library fines.",
+                f"Your name is {name}. You want to pay all fines.",
+                f"You don't know how many fines you have. Pay all using {payment}.",
+                f"Patron {name}: {len(fids)} fines, ${total:.2f}. Agent should list and process each.",
+                fine_acts,
+                fine_asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
             )
         )
     return tasks
 
 
-def gen_return_overdue_pay_fine(db, ix, n=5):
-    """Tier 4: Return overdue book + pay the resulting fine."""
+def gen_return_overdue_pay_fine(db, ix, n=3):
+    """Return overdue + pay resulting fine. n bases → 2n tasks."""
     tasks = []
     overdue = list(ix.overdue_active_loans)
     random.shuffle(overdue)
-    chosen = overdue[:n]
 
-    for i, lid in enumerate(chosen):
+    for i, lid in enumerate(overdue[:n]):
         loan = db["loans"][lid]
         pid = loan["patron_id"]
         cid = loan["copy_id"]
         bid = copy_book_id(db, cid)
         title = book_title(db, bid)
         name = patron_name(db, pid)
+        vdesc = vague_book(bid, title)
         payment = pick_payment()
         track_use(pid)
 
+        acts = [
+            action(
+                "return_1",
+                "return_book",
+                {"copy_id": cid},
+                f"Return overdue {cid} ('{title}')",
+            )
+        ]
+        asserts = [
+            env_assert(
+                "assert_copy_status", {"copy_id": cid, "expected_status": "available"}
+            )
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"return_overdue_pay_{i + 1}",
-                purpose="Test returning overdue book and paying the resulting fine",
-                relevant_policies="Overdue returns generate fines ($0.25/day). Patron wants to return and pay immediately.",
-                notes=f"Patron {name} returns overdue '{title}' (due {loan['due_date']}) and pays the resulting fine.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to return an overdue book and pay any fines right away.",
-                reason_for_call=f"You want to return '{title}' — you know it's overdue. You'd like to pay any fine immediately.",
-                known_info=f"Your name is {name}. You have '{title}' checked out and it's overdue.",
-                unknown_info=f"You don't know the exact fine amount. After returning, agree to pay the full fine using {payment}.",
-                ticket=f"Patron {name} returns overdue '{title}' (copy {cid}) and pays the resulting fine immediately via {payment}.",
-                actions=[
-                    action(
-                        "return_1",
-                        "return_book",
-                        {"copy_id": cid},
-                        f"Return overdue {cid} ('{title}')",
-                    ),
-                ],
-                env_assertions=[
-                    env_assert(
-                        "assert_copy_status",
-                        {"copy_id": cid, "expected_status": "available"},
-                    ),
-                ],
+                f"return_overdue_pay_{i + 1}a",
+                "Test returning overdue book and paying fine",
+                "Overdue returns generate fines ($0.25/day). Patron wants to pay immediately.",
+                f"Patron {name} returns overdue '{title}' (due {loan['due_date']}) and pays fine.",
+                pa.label,
+                f"You are {name}. You want to return an overdue book and pay any fines. {pa.instructions}",
+                f"You want to return '{title}' — it's overdue. You'd like to pay any fine immediately.",
+                f"Your name is {name}. You have '{title}' checked out and it's overdue.",
+                f"You don't know the fine amount. After returning, pay the full fine using {payment}.",
+                f"Patron {name} returns overdue '{title}' and pays fine via {payment}.",
+                acts,
+                asserts,
                 nl_assertions=[
-                    "The agent informed the patron about the overdue fine amount",
+                    "The agent informed the patron about the overdue fine",
                     "The agent processed or offered to process the fine payment",
                 ],
+                reward_basis=["ACTION", "ENV_ASSERTION", "NL_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"return_overdue_pay_{i + 1}b",
+                "Test overdue return+pay with vague description",
+                "Overdue returns generate fines ($0.25/day).",
+                f"Patron {name} vaguely describes overdue '{title}' and wants to settle up.",
+                pb.label,
+                f"You are {name}. You need to return a library book and deal with any fees. {pb.instructions}",
+                f"You have a book to return — {vdesc}. You think it might be late. You want to settle everything.",
+                f"Your name is {name}. You have a book — {vdesc}.",
+                f"You're not sure of the title or fine. After returning, pay using {payment}.",
+                f"Patron {name} vaguely describes overdue '{title}'. Agent should return and handle fine.",
+                acts,
+                asserts,
+                nl_assertions=["The agent informed the patron about the overdue fine"],
                 reward_basis=["ACTION", "ENV_ASSERTION", "NL_ASSERTION"],
             )
         )
     return tasks
 
 
-def gen_hold_plus_checkout_different(db, ix, n=4):
-    """Tier 4: Search → unavailable → hold + checkout a different book."""
+def gen_hold_plus_checkout_different(db, ix, n=2):
+    """Hold on unavailable + checkout a different book. n bases → 2n tasks."""
     tasks = []
     combos = list(ix.books_all_out_at_branch.keys())
     random.shuffle(combos)
-
     eligible = [pid for pid in ix.patrons_below_limit if patron_can_checkout(db, pid)]
     random.shuffle(eligible)
-
-    avail = list(ix.available_copies)
-    random.shuffle(avail)
+    avail_combos = list(ix.available_copies_by_book_branch.items())
+    random.shuffle(avail_combos)
 
     count = 0
-    patron_idx = 0
+    pidx = 0
+    combo_idx = 0
     for book_id, branch_id in combos:
-        if count >= n or patron_idx >= len(eligible) or not avail:
+        if count >= n or pidx >= len(eligible) or combo_idx >= len(avail_combos):
             break
-        pid = eligible[patron_idx]
-        patron_idx += 1
+        pid = eligible[pidx]
+        pidx += 1
 
-        # Find available copy of a different book
+        # Find an available copy for a *different* book
         new_cid = None
-        for j, c in enumerate(avail):
-            if copy_book_id(db, c) != book_id:
-                new_cid = avail.pop(j)
+        while combo_idx < len(avail_combos):
+            (cb_bid, cb_brid), copy_ids = avail_combos[combo_idx]
+            combo_idx += 1
+            if cb_bid != book_id:
+                new_cid = copy_ids[0]
+                new_bid = cb_bid
+                new_brid = cb_brid
                 break
         if new_cid is None:
             continue
@@ -1813,158 +2337,75 @@ def gen_hold_plus_checkout_different(db, ix, n=4):
         name = patron_name(db, pid)
         hold_title = book_title(db, book_id)
         br = branch_name(db, branch_id)
-        new_bid = copy_book_id(db, new_cid)
         new_title = book_title(db, new_bid)
-        new_br = branch_name(db, copy_branch_id(db, new_cid))
-        loan_count = len(db["patrons"][pid]["active_loans"])
+        new_br = branch_name(db, new_brid)
+        vdesc_hold = vague_book(book_id, hold_title)
+        vdesc_new = vague_book(new_bid, new_title)
+        lc = len(db["patrons"][pid]["active_loans"])
         track_use(pid)
 
-        tasks.append(
-            make_task(
-                task_id=f"hold_and_checkout_{count + 1}",
-                purpose="Test placing hold on unavailable book and checking out a different available book",
-                relevant_policies="Holds placed when unavailable. Checkouts require eligibility.",
-                notes=f"Patron {name} places hold on '{hold_title}' at {br} (unavailable) and checks out '{new_title}' at {new_br}.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want two books — one might not be available.",
-                reason_for_call=f"You want '{hold_title}' from the {br} and also '{new_title}' from the {new_br}.",
-                known_info=f"Your name is {name}. You want '{hold_title}' at the {br} and '{new_title}' at the {new_br}.",
-                unknown_info=f"You don't know which books are available. If '{hold_title}' isn't available, ask for a hold.",
-                ticket=f"Patron {name} wants '{hold_title}' (unavailable at {br} — place hold) and '{new_title}' (available at {new_br} — checkout).",
-                actions=[
-                    action(
-                        "place_hold_1",
-                        "place_hold",
-                        {"patron_id": pid, "book_id": book_id, "branch_id": branch_id},
-                        f"Place hold on '{hold_title}' at {br}",
-                        compare_args=["patron_id", "book_id", "branch_id"],
-                    ),
-                    action(
-                        "checkout_1",
-                        "checkout_book",
-                        {"patron_id": pid, "copy_id": new_cid},
-                        f"Check out {new_cid} ('{new_title}') to {name}",
-                        compare_args=["patron_id", "copy_id"],
-                    ),
-                ],
-                env_assertions=[
-                    env_assert(
-                        "assert_copy_status",
-                        {"copy_id": new_cid, "expected_status": "checked_out"},
-                    ),
-                    env_assert(
-                        "assert_patron_loan_count",
-                        {"patron_id": pid, "expected": loan_count + 1},
-                    ),
-                ],
-                reward_basis=["ACTION", "ENV_ASSERTION"],
-            )
-        )
-        count += 1
-    return tasks
-
-
-def gen_renew_membership_pay_fines_checkout(db, ix, n=3):
-    """Tier 4: Renew membership + pay fines + checkout (triple combo)."""
-    tasks = []
-    # Expired patrons with fines > $10
-    candidates = [
-        pid
-        for pid in ix.expired_patrons
-        if db["patrons"][pid]["fines_owed"] > FINE_CHECKOUT_BLOCK_THRESHOLD
-        and len(db["patrons"][pid]["active_loans"])
-        < db["patrons"][pid]["borrowing_limit"]
-    ]
-    # Also expired patrons with moderate fines
-    candidates += [
-        pid
-        for pid in ix.expired_patrons
-        if 0 < db["patrons"][pid]["fines_owed"] <= FINE_CHECKOUT_BLOCK_THRESHOLD
-        and len(db["patrons"][pid]["active_loans"])
-        < db["patrons"][pid]["borrowing_limit"]
-    ]
-    random.shuffle(candidates)
-
-    avail = list(ix.available_copies)
-    random.shuffle(avail)
-
-    count = 0
-    for pid in candidates:
-        if count >= n or not avail:
-            break
-        p = db["patrons"][pid]
-        name = p["name"]
-        track_use(pid)
-
-        # Find a fine to pay
-        patron_fines = [
-            f
-            for f in db["fines"].values()
-            if f["patron_id"] == pid and f["status"] == "outstanding"
+        acts = [
+            action(
+                "place_hold_1",
+                "place_hold",
+                {"patron_id": pid, "book_id": book_id, "branch_id": branch_id},
+                f"Place hold on '{hold_title}' at {br}",
+                compare_args=["patron_id", "book_id", "branch_id"],
+            ),
+            action(
+                "checkout_1",
+                "checkout_book",
+                {"patron_id": pid, "copy_id": new_cid},
+                f"Check out {new_cid} ('{new_title}') to {name}",
+                compare_args=["patron_id", "copy_id"],
+            ),
         ]
-        if not patron_fines:
-            continue
+        asserts = [
+            env_assert(
+                "assert_copy_status",
+                {"copy_id": new_cid, "expected_status": "checked_out"},
+            ),
+            env_assert(
+                "assert_patron_loan_count", {"patron_id": pid, "expected": lc + 1}
+            ),
+        ]
 
-        fine = patron_fines[0]
-        fid = fine["fine_id"]
-        pay_amount = fine["amount"]
-        payment = pick_payment()
-
-        cid = avail.pop()
-        bid = copy_book_id(db, cid)
-        brid = copy_branch_id(db, cid)
-        title = book_title(db, bid)
-        br = branch_name(db, brid)
-        loan_count = len(p["active_loans"])
-
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"full_combo_{count + 1}",
-                purpose="Test renewal + fine payment + checkout (triple blocker)",
-                relevant_policies="Membership must be active, fines <= $10, and below borrowing limit for checkout.",
-                notes=f"Patron {name}: expired membership, ${p['fines_owed']:.2f} in fines. Must renew, pay, then checkout.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to check out a book but your membership might be expired and you have fines.",
-                reason_for_call=f"You want to check out '{title}' at the {br}.",
-                known_info=f"Your name is {name}. You want '{title}' at the {br}.",
-                unknown_info=f"You don't know if your membership is valid or your fine balance. If the agent says your membership is expired, agree to renew. If fines block checkout, agree to pay ${pay_amount:.2f} via {payment}.",
-                ticket=f"Patron {name}: expired membership + ${p['fines_owed']:.2f} fines. Agent must: 1) renew membership, 2) collect fine payment, 3) checkout '{title}' at {br}.",
-                actions=[
-                    action(
-                        "renew_1",
-                        "renew_membership",
-                        {"patron_id": pid},
-                        f"Renew membership for {name}",
-                    ),
-                    action(
-                        "pay_fine_1",
-                        "pay_fine",
-                        {
-                            "fine_id": fid,
-                            "amount": pay_amount,
-                            "payment_method": payment,
-                        },
-                        f"Pay ${pay_amount:.2f} on {fid}",
-                        compare_args=["fine_id"],
-                    ),
-                    action(
-                        "checkout_1",
-                        "checkout_book",
-                        {"patron_id": pid, "copy_id": cid},
-                        f"Check out {cid} ('{title}') to {name}",
-                        compare_args=["patron_id", "copy_id"],
-                    ),
-                ],
-                env_assertions=[
-                    env_assert(
-                        "assert_copy_status",
-                        {"copy_id": cid, "expected_status": "checked_out"},
-                    ),
-                    env_assert(
-                        "assert_patron_loan_count",
-                        {"patron_id": pid, "expected": loan_count + 1},
-                    ),
-                ],
+                f"hold_and_checkout_{count + 1}a",
+                "Test placing hold + checking out a different book",
+                "Holds placed when unavailable. Checkouts require eligibility.",
+                f"Patron {name}: hold '{hold_title}' at {br}, checkout '{new_title}' at {new_br}.",
+                pa.label,
+                f"You are {name}. You want two books. {pa.instructions}",
+                f"You want '{hold_title}' from the {br} and also '{new_title}' from the {new_br}.",
+                f"Your name is {name}. You want '{hold_title}' at {br} and '{new_title}' at {new_br}.",
+                f"You don't know availability. If '{hold_title}' isn't available, ask for a hold.",
+                f"Patron {name}: '{hold_title}' unavailable (hold), '{new_title}' available (checkout).",
+                acts,
+                asserts,
+                reward_basis=["ACTION", "ENV_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"hold_and_checkout_{count + 1}b",
+                "Test hold+checkout with vague descriptions",
+                "Holds placed when unavailable. Checkouts require eligibility.",
+                f"Patron {name} vaguely describes two books.",
+                pb.label,
+                f"You are {name}. You're looking for a couple of books. {pb.instructions}",
+                f"You want {vdesc_hold} and also {vdesc_new}.",
+                f"Your name is {name}. You want {vdesc_hold} and {vdesc_new}.",
+                "You don't know titles or availability. If one isn't available, ask for a hold.",
+                f"Patron {name} vaguely describes '{hold_title}' and '{new_title}'. Agent should hold+checkout.",
+                acts,
+                asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
             )
         )
@@ -1972,20 +2413,20 @@ def gen_renew_membership_pay_fines_checkout(db, ix, n=3):
     return tasks
 
 
-# ── Tier 5: Edge Cases / Policy Failures ──────────────────────────────────
+# ---------------------------------------------------------------------------
+# Tier 5: Edge Cases & Policy Generators
+# ---------------------------------------------------------------------------
 
 
 def gen_checkout_at_limit(db, ix, n=3):
-    """Tier 5: Patron at borrowing limit tries to checkout."""
+    """Patron at borrowing limit tries to checkout. n bases → 2n tasks."""
     tasks = []
     at_limit = list(ix.patrons_at_limit)
     random.shuffle(at_limit)
-    chosen = at_limit[:n]
-
     avail = list(ix.available_copies)
     random.shuffle(avail)
 
-    for i, pid in enumerate(chosen):
+    for i, pid in enumerate(at_limit[:n]):
         if not avail:
             break
         cid = avail[i % len(avail)]
@@ -1994,39 +2435,63 @@ def gen_checkout_at_limit(db, ix, n=3):
         title = book_title(db, bid)
         br = branch_name(db, copy_branch_id(db, cid))
         limit = db["patrons"][pid]["borrowing_limit"]
+        vdesc = vague_book(bid, title)
         track_use(pid)
 
+        nl = [
+            f"The agent informed the patron they have reached the borrowing limit of {limit} books",
+            "The agent suggested returning a book to free up a slot",
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"checkout_at_limit_{i + 1}",
-                purpose="Test checkout when patron is at borrowing limit",
-                relevant_policies=f"Patrons cannot exceed their borrowing limit of {limit} books.",
-                notes=f"Patron {name} has {limit} active loans (at limit). Checkout should fail gracefully.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to check out another book.",
-                reason_for_call=f"You want to check out '{title}' at the {br}.",
-                known_info=f"Your name is {name}. You want '{title}' at the {br}.",
-                unknown_info="You don't realize you've hit your borrowing limit.",
-                ticket=f"Patron {name} wants to checkout but is at borrowing limit ({limit}). Agent should inform patron and suggest returning a book.",
-                actions=[],
-                nl_assertions=[
-                    f"The agent informed the patron they have reached the borrowing limit of {limit} books",
-                    "The agent suggested the patron return a book to free up a slot",
-                ],
+                f"checkout_at_limit_{i + 1}a",
+                "Test checkout when patron is at borrowing limit",
+                f"Patrons cannot exceed borrowing limit of {limit} books.",
+                f"Patron {name} at limit ({limit}). Checkout should fail.",
+                pa.label,
+                f"You are {name}. You want to check out another book. {pa.instructions}",
+                f"You want to check out '{title}' at the {br}.",
+                f"Your name is {name}. You want '{title}' at the {br}.",
+                "You don't realize you've hit your borrowing limit.",
+                f"Patron {name} at limit ({limit}). Agent should inform and suggest returning a book.",
+                [],
+                nl_assertions=nl,
+                reward_basis=["ACTION", "NL_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"checkout_at_limit_{i + 1}b",
+                "Test checkout at limit with vague request",
+                f"Patrons cannot exceed borrowing limit of {limit} books.",
+                f"Patron {name} vaguely requests '{title}' while at limit.",
+                pb.label,
+                f"You are {name}. You want a book. {pb.instructions}",
+                f"You're looking for {vdesc}.",
+                f"Your name is {name}. You want {vdesc}.",
+                "You have no idea about your borrowing limit.",
+                f"Patron {name} at limit, vaguely requests '{title}'. Agent should inform of limit.",
+                [],
+                nl_assertions=nl,
                 reward_basis=["ACTION", "NL_ASSERTION"],
             )
         )
     return tasks
 
 
-def gen_renewal_at_max(db, ix, n=5):
-    """Tier 5: Renewal at max renewals."""
+def gen_renewal_at_max(db, ix, n=4):
+    """Renewal at max renewals. Single variant."""
     tasks = []
     max_loans = list(ix.max_renewal_loans)
     random.shuffle(max_loans)
-    chosen = max_loans[:n]
 
-    for i, lid in enumerate(chosen):
+    for i, lid in enumerate(max_loans[:n]):
         loan = db["loans"][lid]
         pid = loan["patron_id"]
         cid = loan["copy_id"]
@@ -2035,23 +2500,24 @@ def gen_renewal_at_max(db, ix, n=5):
         name = patron_name(db, pid)
         mr = max_renewals(db, pid)
         track_use(pid)
+        pa = pick_easy_persona()
 
         tasks.append(
             make_task(
-                task_id=f"renewal_max_{i + 1}",
-                purpose="Test renewal when maximum renewals reached",
-                relevant_policies=f"Maximum {mr} renewals allowed. Patron has used all renewals.",
-                notes=f"Patron {name} tries to renew '{title}' (loan {lid}) but has {loan['renewals_count']}/{mr} renewals used.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to renew a book you have checked out.",
-                reason_for_call=f"You'd like to renew '{title}' — you need more time with it.",
-                known_info=f"Your name is {name}. You have '{title}' checked out.",
-                unknown_info="You don't know you've already renewed the maximum number of times.",
-                ticket=f"Patron {name} wants to renew '{title}' (loan {lid}) but has reached max renewals ({mr}). Agent should inform the patron.",
-                actions=[],
+                f"renewal_max_{i + 1}",
+                "Test renewal when maximum renewals reached",
+                f"Maximum {mr} renewals allowed.",
+                f"Patron {name} tries to renew '{title}' ({loan['renewals_count']}/{mr} used).",
+                pa.label,
+                f"You are {name}. You want to renew a book. {pa.instructions}",
+                f"You'd like to renew '{title}'.",
+                f"Your name is {name}. You have '{title}' checked out.",
+                "You don't know you've used all renewals.",
+                f"Patron {name}: max renewals reached for '{title}'. Agent should inform.",
+                [],
                 nl_assertions=[
                     f"The agent informed the patron that maximum renewals ({mr}) have been reached",
-                    "The agent explained the patron cannot renew the book further",
+                    "The agent explained the patron cannot renew further",
                 ],
                 reward_basis=["ACTION", "NL_ASSERTION"],
             )
@@ -2059,37 +2525,35 @@ def gen_renewal_at_max(db, ix, n=5):
     return tasks
 
 
-def gen_renewal_blocked_by_hold(db, ix, n=5):
-    """Tier 5: Renewal blocked by pending hold on book."""
+def gen_renewal_blocked_by_hold(db, ix, n=4):
+    """Renewal blocked by pending hold. Single variant."""
     tasks = []
     blocked = list(ix.hold_blocked_loans)
     random.shuffle(blocked)
-    chosen = blocked[:n]
 
-    for i, lid in enumerate(chosen):
+    for i, lid in enumerate(blocked[:n]):
         loan = db["loans"][lid]
         pid = loan["patron_id"]
-        cid = loan["copy_id"]
-        bid = copy_book_id(db, cid)
-        title = book_title(db, bid)
+        title = book_title(db, copy_book_id(db, loan["copy_id"]))
         name = patron_name(db, pid)
         track_use(pid)
+        pa = pick_easy_persona()
 
         tasks.append(
             make_task(
-                task_id=f"renewal_hold_blocked_{i + 1}",
-                purpose="Test renewal blocked by pending hold from another patron",
-                relevant_policies="Loans cannot be renewed if another patron has a pending hold on the book.",
-                notes=f"Patron {name} tries to renew '{title}' but another patron has a hold on it.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to renew a book.",
-                reason_for_call=f"You'd like to renew '{title}'.",
-                known_info=f"Your name is {name}. You have '{title}' checked out.",
-                unknown_info="You don't know that another patron has placed a hold on this book.",
-                ticket=f"Patron {name} wants to renew '{title}' (loan {lid}) but a hold exists on the book. Agent should inform the patron.",
-                actions=[],
+                f"renewal_hold_blocked_{i + 1}",
+                "Test renewal blocked by pending hold",
+                "Loans cannot be renewed if another patron has a pending hold.",
+                f"Patron {name} tries to renew '{title}' but hold exists.",
+                pa.label,
+                f"You are {name}. You want to renew a book. {pa.instructions}",
+                f"You'd like to renew '{title}'.",
+                f"Your name is {name}. You have '{title}' checked out.",
+                "You don't know another patron has a hold.",
+                f"Patron {name}: hold blocks renewal of '{title}'. Agent should inform.",
+                [],
                 nl_assertions=[
-                    "The agent informed the patron that the book cannot be renewed because another patron has placed a hold",
+                    "The agent informed the patron that the book cannot be renewed because another patron has placed a hold"
                 ],
                 reward_basis=["ACTION", "NL_ASSERTION"],
             )
@@ -2098,11 +2562,11 @@ def gen_renewal_blocked_by_hold(db, ix, n=5):
 
 
 def gen_event_full(db, ix, n=3):
-    """Tier 5: Try to register for a full event."""
+    """Register for full event. Single variant."""
     tasks = []
     full = list(ix.full_events)
     random.shuffle(full)
-    eligible = [pid for pid in ix.active_patrons]
+    eligible = list(ix.active_patrons)
     random.shuffle(eligible)
 
     for i in range(min(n, len(full), len(eligible))):
@@ -2112,22 +2576,23 @@ def gen_event_full(db, ix, n=3):
         name = patron_name(db, pid)
         br = branch_name(db, event["branch_id"])
         track_use(pid)
+        pa = pick_easy_persona()
 
         tasks.append(
             make_task(
-                task_id=f"event_full_{i + 1}",
-                purpose="Test registration for a full event",
-                relevant_policies="Events at capacity cannot accept new registrations.",
-                notes=f"Patron {name} tries to register for '{event['title']}' ({eid}) which is full.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to attend a library event.",
-                reason_for_call=f"You want to sign up for '{event['title']}' at the {br}.",
-                known_info=f"Your name is {name}. You want to attend '{event['title']}' at the {br}.",
-                unknown_info="You don't know the event is full.",
-                ticket=f"Patron {name} wants to register for '{event['title']}' but it's full. Agent should inform the patron.",
-                actions=[],
+                f"event_full_{i + 1}",
+                "Test registration for a full event",
+                "Events at capacity cannot accept registrations.",
+                f"Patron {name} tries to register for full '{event['title']}'.",
+                pa.label,
+                f"You are {name}. You want to attend a library event. {pa.instructions}",
+                f"You want to sign up for '{event['title']}' at the {br}.",
+                f"Your name is {name}. You want '{event['title']}' at the {br}.",
+                "You don't know the event is full.",
+                f"Patron {name}: '{event['title']}' is full. Agent should inform.",
+                [],
                 nl_assertions=[
-                    f"The agent informed the patron that '{event['title']}' is full",
+                    f"The agent informed the patron that '{event['title']}' is full"
                 ],
                 reward_basis=["ACTION", "NL_ASSERTION"],
             )
@@ -2136,11 +2601,11 @@ def gen_event_full(db, ix, n=3):
 
 
 def gen_event_cancelled(db, ix, n=2):
-    """Tier 5: Try to register for cancelled/completed event."""
+    """Register for cancelled/completed event. Single variant."""
     tasks = []
     events = ix.cancelled_events + ix.completed_events
     random.shuffle(events)
-    eligible = [pid for pid in ix.active_patrons]
+    eligible = list(ix.active_patrons)
     random.shuffle(eligible)
 
     for i in range(min(n, len(events), len(eligible))):
@@ -2151,22 +2616,23 @@ def gen_event_cancelled(db, ix, n=2):
         br = branch_name(db, event["branch_id"])
         status = event["status"]
         track_use(pid)
+        pa = pick_easy_persona()
 
         tasks.append(
             make_task(
-                task_id=f"event_{status}_{i + 1}",
-                purpose=f"Test registration for a {status} event",
-                relevant_policies=f"Events that are {status} cannot accept registrations.",
-                notes=f"Patron {name} tries to register for '{event['title']}' which is {status}.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to attend a library event.",
-                reason_for_call=f"You want to sign up for '{event['title']}' at the {br}.",
-                known_info=f"Your name is {name}. You want to attend '{event['title']}' at the {br}.",
-                unknown_info=f"You don't know the event is {status}.",
-                ticket=f"Patron {name} wants to register for '{event['title']}' but it's {status}. Agent should inform the patron.",
-                actions=[],
+                f"event_{status}_{i + 1}",
+                f"Test registration for a {status} event",
+                f"Events that are {status} cannot accept registrations.",
+                f"Patron {name} tries to register for {status} '{event['title']}'.",
+                pa.label,
+                f"You are {name}. You want to attend a library event. {pa.instructions}",
+                f"You want to sign up for '{event['title']}' at the {br}.",
+                f"Your name is {name}. You want '{event['title']}' at the {br}.",
+                f"You don't know the event is {status}.",
+                f"Patron {name}: '{event['title']}' is {status}. Agent should inform.",
+                [],
                 nl_assertions=[
-                    f"The agent informed the patron that '{event['title']}' is {status}",
+                    f"The agent informed the patron that '{event['title']}' is {status}"
                 ],
                 reward_basis=["ACTION", "NL_ASSERTION"],
             )
@@ -2175,12 +2641,11 @@ def gen_event_cancelled(db, ix, n=2):
 
 
 def gen_hold_unnecessary(db, ix, n=3):
-    """Tier 5: Patron asks for hold when copy is available → suggest checkout."""
+    """Patron asks for hold when copy available. Single variant."""
     tasks = []
-    # Find (book, branch) where copies ARE available
     avail_combos = list(ix.available_copies_by_book_branch.keys())
     random.shuffle(avail_combos)
-    eligible = [pid for pid in ix.active_patrons]
+    eligible = list(ix.active_patrons)
     random.shuffle(eligible)
 
     for i in range(min(n, len(avail_combos), len(eligible))):
@@ -2190,20 +2655,21 @@ def gen_hold_unnecessary(db, ix, n=3):
         title = book_title(db, book_id)
         br = branch_name(db, branch_id)
         track_use(pid)
+        pa = pick_easy_persona()
 
         tasks.append(
             make_task(
-                task_id=f"hold_unnecessary_{i + 1}",
-                purpose="Test patron requesting hold when book is actually available",
-                relevant_policies="Holds cannot be placed when copies are available at the branch. Agent should suggest checkout instead.",
-                notes=f"Patron {name} asks for hold on '{title}' at {br}, but copies are available.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to place a hold on a book.",
-                reason_for_call=f"You'd like to place a hold on '{title}' at the {br}. You assume it's not available.",
-                known_info=f"Your name is {name}. You want to place a hold on '{title}' at the {br}.",
-                unknown_info="You don't realize the book is actually available right now.",
-                ticket=f"Patron {name} asks for hold on '{title}' at {br}, but a copy is available. Agent should inform patron the book is available and suggest checking it out instead.",
-                actions=[],
+                f"hold_unnecessary_{i + 1}",
+                "Test patron requesting hold when book is actually available",
+                "Holds cannot be placed when copies are available. Suggest checkout instead.",
+                f"Patron {name} asks for hold on '{title}' at {br}, but copies available.",
+                pa.label,
+                f"You are {name}. You want to place a hold on a book. {pa.instructions}",
+                f"You'd like to place a hold on '{title}' at the {br}. You assume it's not available.",
+                f"Your name is {name}. You want to hold '{title}' at the {br}.",
+                "You don't realize the book is actually available.",
+                f"Patron {name}: '{title}' available at {br}. Agent should suggest checkout instead.",
+                [],
                 nl_assertions=[
                     f"The agent informed the patron that a copy of '{title}' is available at the {br}",
                     "The agent suggested checking out the book instead of placing a hold",
@@ -2214,38 +2680,61 @@ def gen_hold_unnecessary(db, ix, n=3):
     return tasks
 
 
-def gen_waive_fine_ineligible(db, ix, n=4):
-    """Tier 5: Patron asks for waiver but has prior fines (ineligible)."""
+def gen_waive_fine_ineligible(db, ix, n=3):
+    """Waiver denied (prior fines). n bases → 2n tasks."""
     tasks = []
-    ineligible = list(ix.waiver_ineligible_fines)
-    # Filter to non-lost fines for more realistic scenarios
-    ineligible = [fid for fid in ineligible if db["fines"][fid]["amount"] <= 10.0]
+    ineligible = [
+        fid for fid in ix.waiver_ineligible_fines if db["fines"][fid]["amount"] <= 10.0
+    ]
     random.shuffle(ineligible)
-    chosen = ineligible[:n]
 
-    for i, fid in enumerate(chosen):
+    for i, fid in enumerate(ineligible[:n]):
         fine = db["fines"][fid]
         pid = fine["patron_id"]
         name = patron_name(db, pid)
         track_use(pid)
 
+        nl = [
+            "The agent informed the patron that the fine waiver is not eligible because they have prior fines",
+            "The agent explained the waiver policy (first offense only)",
+        ]
+
+        # Variant A: Easy
+        pa = pick_easy_persona()
         tasks.append(
             make_task(
-                task_id=f"waive_ineligible_{i + 1}",
-                purpose="Test fine waiver denial for patron with prior fines",
-                relevant_policies="Fine waivers are only for first offense. Patron with prior fines is ineligible.",
-                notes=f"Patron {name} asks for waiver of {fid} but has other fines on record — ineligible.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to ask about getting a fine waived.",
-                reason_for_call="You have a library fine and want to see if it can be waived.",
-                known_info=f"Your name is {name}.",
-                unknown_info="You don't know you're ineligible because you have prior fines on record.",
-                ticket=f"Patron {name} requests waiver of {fid} but has prior fines — ineligible. Agent should deny and explain policy.",
-                actions=[],
-                nl_assertions=[
-                    "The agent informed the patron that the fine waiver is not eligible because they have prior fines on record",
-                    "The agent explained the waiver policy (first offense only)",
-                ],
+                f"waive_ineligible_{i + 1}a",
+                "Test fine waiver denial for patron with prior fines",
+                "Fine waivers are only for first offense.",
+                f"Patron {name}: {fid} waiver denied, prior fines.",
+                pa.label,
+                f"You are {name}. You want to ask about a fine waiver. {pa.instructions}",
+                "You have a library fine and want to see if it can be waived.",
+                f"Your name is {name}.",
+                "You don't know you're ineligible due to prior fines.",
+                f"Patron {name}: waiver of {fid} denied (prior fines). Agent should explain policy.",
+                [],
+                nl_assertions=nl,
+                reward_basis=["ACTION", "NL_ASSERTION"],
+            )
+        )
+
+        # Variant B: Hard
+        pb = pick_hard_persona()
+        tasks.append(
+            make_task(
+                f"waive_ineligible_{i + 1}b",
+                "Test waiver denial with difficult patron",
+                "Fine waivers are only for first offense.",
+                f"Patron {name} frustratedly asks about charges and removal.",
+                pb.label,
+                f"You are {name}. {pb.instructions}",
+                "You have a charge on your account and you want it removed. You don't think it's fair.",
+                f"Your name is {name}.",
+                "You're not aware of your fine history or the waiver policy.",
+                f"Patron {name}: waiver ineligible. Agent should deny and explain despite difficult interaction.",
+                [],
+                nl_assertions=nl,
                 reward_basis=["ACTION", "NL_ASSERTION"],
             )
         )
@@ -2253,7 +2742,7 @@ def gen_waive_fine_ineligible(db, ix, n=4):
 
 
 def gen_checkout_unavailable_copy(db, ix, n=3):
-    """Tier 5: Patron asks about a copy that's damaged/lost/in-transit."""
+    """Checkout attempt for damaged/lost/in-transit copy. Single variant."""
     tasks = []
     unavail = [
         cid
@@ -2261,7 +2750,7 @@ def gen_checkout_unavailable_copy(db, ix, n=3):
         if db["copies"][cid]["status"] in ("damaged", "lost", "in_transit")
     ]
     random.shuffle(unavail)
-    eligible = [pid for pid in ix.active_patrons]
+    eligible = list(ix.active_patrons)
     random.shuffle(eligible)
 
     for i in range(min(n, len(unavail), len(eligible))):
@@ -2274,22 +2763,23 @@ def gen_checkout_unavailable_copy(db, ix, n=3):
         status = db["copies"][cid]["status"]
         name = patron_name(db, pid)
         track_use(pid)
+        pa = pick_easy_persona()
 
         tasks.append(
             make_task(
-                task_id=f"checkout_unavailable_{i + 1}",
-                purpose=f"Test checkout attempt for {status} copy",
-                relevant_policies=f"Copies with status '{status}' cannot be checked out.",
-                notes=f"Patron {name} wants '{title}' at {br} but the copy is {status}.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You want to borrow a specific book.",
-                reason_for_call=f"You want '{title}' from the {br}.",
-                known_info=f"Your name is {name}. You want '{title}' at the {br}.",
-                unknown_info=f"You don't know the copy is {status}.",
-                ticket=f"Patron {name} wants '{title}' at {br} but copy is {status}. Agent should check availability and inform patron.",
-                actions=[],
+                f"checkout_unavailable_{i + 1}",
+                f"Test checkout attempt for {status} copy",
+                f"Copies with status '{status}' cannot be checked out.",
+                f"Patron {name} wants '{title}' at {br} but copy is {status}.",
+                pa.label,
+                f"You are {name}. You want a specific book. {pa.instructions}",
+                f"You want '{title}' from the {br}.",
+                f"Your name is {name}. You want '{title}' at the {br}.",
+                f"You don't know the copy is {status}.",
+                f"Patron {name}: '{title}' at {br} is {status}. Agent should inform.",
+                [],
                 nl_assertions=[
-                    f"The agent informed the patron that the requested copy is not available (status: {status})",
+                    f"The agent informed the patron that the requested copy is not available (status: {status})"
                 ],
                 reward_basis=["ACTION", "NL_ASSERTION"],
             )
@@ -2298,28 +2788,26 @@ def gen_checkout_unavailable_copy(db, ix, n=3):
 
 
 def gen_transfer_scenarios(db, ix, n=4):
-    """Tier 5: Scenarios requiring transfer to human agent."""
+    """Transfer to human agent scenarios. Single variant."""
     tasks = []
-    eligible = [pid for pid in ix.active_patrons]
+    eligible = list(ix.active_patrons)
     random.shuffle(eligible)
 
     transfer_types = [
         {
             "suffix": "dispute_fine",
-            "reason": "You want to dispute a fine on your account. You believe it's an error and insist on speaking with someone who can investigate.",
+            "reason": "You want to dispute a fine. You believe it's an error and insist on speaking with someone who can investigate.",
             "known": "Your name is {name}. You have a fine you believe is incorrect.",
-            "unknown": "Even if the agent can't resolve it, keep insisting until they transfer you.",
-            "ticket": "Patron {name} wants to dispute a fine and insists on human review. Agent should attempt to help, then transfer when unable to resolve.",
-            "nl": [
-                "The agent transferred the patron to a human agent after being unable to resolve the dispute"
-            ],
+            "unknown": "Keep insisting until they transfer you.",
+            "ticket": "Patron {name} disputes a fine. Agent should transfer to human.",
+            "nl": ["The agent transferred the patron to a human agent"],
         },
         {
             "suffix": "change_info",
             "reason": "You want to update your address and phone number on your library account.",
-            "known": "Your name is {name}. You recently moved and need to update your contact information.",
-            "unknown": "If the agent can't update your info directly, ask to be transferred to someone who can.",
-            "ticket": "Patron {name} wants to update personal information. No tool exists for this. Agent should transfer to human.",
+            "known": "Your name is {name}. You recently moved.",
+            "unknown": "If the agent can't update your info, ask to be transferred.",
+            "ticket": "Patron {name} wants to update personal info. Agent should transfer to human.",
             "nl": [
                 "The agent transferred the patron to a human agent for updating personal information"
             ],
@@ -2328,8 +2816,8 @@ def gen_transfer_scenarios(db, ix, n=4):
             "suffix": "lost_book",
             "reason": "You lost a library book and want to report it.",
             "known": "Your name is {name}. You lost a book you had checked out.",
-            "unknown": "You're not sure what happens when a book is lost. Ask the agent for help.",
-            "ticket": "Patron {name} reports a lost book. No tool to process this directly. Agent should transfer to human staff.",
+            "unknown": "You're not sure what happens when a book is lost.",
+            "ticket": "Patron {name} reports lost book. Agent should transfer to human.",
             "nl": [
                 "The agent transferred the patron to a human agent to handle the lost book report"
             ],
@@ -2338,8 +2826,8 @@ def gen_transfer_scenarios(db, ix, n=4):
             "suffix": "meeting_room",
             "reason": "You want to reserve a meeting room at the library for a study group.",
             "known": "Your name is {name}. You want to book a meeting room.",
-            "unknown": "You expect the library to have meeting rooms available for reservation.",
-            "ticket": "Patron {name} wants to reserve a meeting room. Not supported by tools. Agent should transfer to human.",
+            "unknown": "You expect the library to have meeting rooms.",
+            "ticket": "Patron {name} wants meeting room. Agent should transfer to human.",
             "nl": [
                 "The agent transferred the patron to a human agent for meeting room reservation"
             ],
@@ -2352,25 +2840,26 @@ def gen_transfer_scenarios(db, ix, n=4):
         pid = eligible[i]
         name = patron_name(db, pid)
         track_use(pid)
+        pa = pick_easy_persona()
 
         tasks.append(
             make_task(
-                task_id=f"transfer_{scenario['suffix']}",
-                purpose=f"Test transfer to human agent ({scenario['suffix']})",
-                relevant_policies="Agent should transfer to human when unable to resolve with available tools.",
-                notes=f"Patron {name}: {scenario['suffix']} scenario. Requires human agent.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. {scenario['reason']}",
-                reason_for_call=scenario["reason"],
-                known_info=scenario["known"].format(name=name),
-                unknown_info=scenario["unknown"],
-                ticket=scenario["ticket"].format(name=name),
-                actions=[
+                f"transfer_{scenario['suffix']}",
+                f"Test transfer to human agent ({scenario['suffix']})",
+                "Agent should transfer to human when unable to resolve.",
+                f"Patron {name}: {scenario['suffix']} scenario.",
+                pa.label,
+                f"You are {name}. {scenario['reason']} {pa.instructions}",
+                scenario["reason"],
+                scenario["known"].format(name=name),
+                scenario["unknown"],
+                scenario["ticket"].format(name=name),
+                [
                     action(
                         "transfer_1",
                         "transfer_to_human_agents",
                         {"summary": f"Patron {name}: {scenario['suffix']}"},
-                        f"Transfer to human agent",
+                        "Transfer to human agent",
                         compare_args=[],
                     )
                 ],
@@ -2382,16 +2871,14 @@ def gen_transfer_scenarios(db, ix, n=4):
 
 
 def gen_find_by_card(db, ix, n=3):
-    """Tier 5: Patron identifies by card number instead of name."""
+    """Patron identifies by card number. Single variant."""
     tasks = []
-    eligible = [pid for pid in ix.active_patrons]
+    eligible = [pid for pid in ix.active_patrons if patron_can_checkout(db, pid)]
     random.shuffle(eligible)
-    chosen = eligible[:n]
-
     avail = list(ix.available_copies)
     random.shuffle(avail)
 
-    for i, pid in enumerate(chosen):
+    for i, pid in enumerate(eligible[:n]):
         if not avail:
             break
         cid = avail.pop()
@@ -2400,27 +2887,22 @@ def gen_find_by_card(db, ix, n=3):
         title = book_title(db, bid)
         brid = copy_branch_id(db, cid)
         br = branch_name(db, brid)
-        loan_count = len(db["patrons"][pid]["active_loans"])
+        lc = len(db["patrons"][pid]["active_loans"])
         track_use(pid)
-
-        # Only include if patron can checkout
-        if not patron_can_checkout(db, pid):
-            avail.append(cid)
-            continue
 
         tasks.append(
             make_task(
-                task_id=f"find_by_card_{i + 1}",
-                purpose="Test patron lookup by card number instead of name",
-                relevant_policies="find_patron_by_card accepts the patron_id as a library card number.",
-                notes=f"Patron {name} gives card number '{pid}' instead of name. Agent should use find_patron_by_card.",
-                persona=pick_persona(),
-                task_instructions=f"You are {name}. You prefer to identify yourself by your library card number rather than your name.",
-                reason_for_call=f"You want to check out '{title}' at the {br}.",
-                known_info=f"Your library card number is {pid}. You want '{title}' at the {br}.",
-                unknown_info="You don't want to give your name — only your card number. If the agent asks for your name, provide your card number instead.",
-                ticket=f"Patron gives card number '{pid}' (not name). Agent should use find_patron_by_card, then check out '{title}' at {br}.",
-                actions=[
+                f"find_by_card_{i + 1}",
+                "Test patron lookup by card number",
+                "find_patron_by_card accepts patron_id as library card number.",
+                f"Patron {name} gives card number '{pid}'.",
+                "Prepared card-holder",
+                f"You are {name}. You prefer to identify by card number. You have your library card handy.",
+                f"You want to check out '{title}' at the {br}.",
+                f"Your library card number is {pid}. You want '{title}' at the {br}.",
+                "You don't want to give your name — only your card number.",
+                f"Patron gives card '{pid}'. Agent should use find_patron_by_card, then checkout.",
+                [
                     action(
                         "find_1",
                         "find_patron_by_card",
@@ -2436,14 +2918,14 @@ def gen_find_by_card(db, ix, n=3):
                         compare_args=["patron_id", "copy_id"],
                     ),
                 ],
-                env_assertions=[
+                [
                     env_assert(
                         "assert_copy_status",
                         {"copy_id": cid, "expected_status": "checked_out"},
                     ),
                     env_assert(
                         "assert_patron_loan_count",
-                        {"patron_id": pid, "expected": loan_count + 1},
+                        {"patron_id": pid, "expected": lc + 1},
                     ),
                 ],
                 reward_basis=["ACTION", "ENV_ASSERTION"],
@@ -2465,57 +2947,51 @@ def main():
     all_tasks = []
     stats = {}
 
-    # Tier 1: Simple Single-Action (~60)
+    # n = number of base scenarios; generators with variants produce 2*n tasks
     generators_t1 = [
-        ("simple_checkout", gen_simple_checkout, 18),
-        ("simple_return", gen_simple_return, 12),
-        ("overdue_return", gen_overdue_return, 10),
-        ("renew_loan", gen_renew_loan, 10),
-        ("pay_fine_full", gen_pay_fine_full, 7),
-        ("cancel_hold", gen_cancel_hold, 4),
+        ("simple_checkout", gen_simple_checkout, 9),
+        ("simple_return", gen_simple_return, 6),
+        ("overdue_return", gen_overdue_return, 6),
+        ("renew_loan", gen_renew_loan, 5),
+        ("pay_fine_full", gen_pay_fine_full, 4),
+        ("cancel_hold", gen_cancel_hold, 3),
         ("renew_membership", gen_renew_membership, 3),
     ]
 
-    # Tier 2: Information & Search (~30)
     generators_t2 = [
-        ("search_title", gen_search_by_title, 7),
-        ("search_author_category", gen_search_by_author, 7),
-        ("check_availability", gen_check_availability, 6),
-        ("list_loans", gen_list_loans, 5),
-        ("list_fines", gen_list_fines, 5),
+        ("search_title", gen_search_by_title, 3),
+        ("search_author_category", gen_search_by_author, 4),
+        ("check_availability", gen_check_availability, 3),
+        ("list_loans", gen_list_loans, 3),
+        ("list_fines", gen_list_fines, 3),
     ]
 
-    # Tier 3: Moderate Multi-Step (~55)
     generators_t3 = [
-        ("checkout_with_fines", gen_checkout_blocked_by_fines, 8),
-        ("checkout_expired_membership", gen_checkout_blocked_by_membership, 8),
-        ("place_hold", gen_place_hold, 8),
-        ("register_event", gen_register_event, 8),
-        ("pay_fine_partial", gen_pay_fine_partial, 5),
-        ("interlibrary_loan", gen_interlibrary_loan, 5),
-        ("waive_fine", gen_waive_fine_eligible, 5),
-        ("search_checkout", gen_search_availability_checkout, 8),
+        ("checkout_with_fines", gen_checkout_blocked_by_fines, 3),
+        ("checkout_expired_membership", gen_checkout_blocked_by_membership, 3),
+        ("place_hold", gen_place_hold, 4),
+        ("register_event", gen_register_event, 4),
+        ("pay_fine_partial", gen_pay_fine_partial, 3),
+        ("interlibrary_loan", gen_interlibrary_loan, 3),
+        ("waive_fine", gen_waive_fine_eligible, 3),
+        ("search_checkout", gen_search_availability_checkout, 4),
     ]
 
-    # Tier 4: Complex Multi-Step (~30)
     generators_t4 = [
-        ("return_checkout", gen_return_then_checkout, 8),
-        ("renew_register_event", gen_renew_membership_register_event, 5),
-        ("pay_multiple_fines", gen_pay_multiple_fines, 5),
-        ("return_overdue_pay", gen_return_overdue_pay_fine, 5),
-        ("hold_and_checkout", gen_hold_plus_checkout_different, 4),
-        ("full_combo", gen_renew_membership_pay_fines_checkout, 3),
+        ("return_checkout", gen_return_then_checkout, 4),
+        ("renew_register_event", gen_renew_membership_register_event, 3),
+        ("return_overdue_pay", gen_return_overdue_pay_fine, 3),
+        ("hold_and_checkout", gen_hold_plus_checkout_different, 2),
     ]
 
-    # Tier 5: Edge Cases (~35)
     generators_t5 = [
         ("checkout_at_limit", gen_checkout_at_limit, 3),
-        ("renewal_max", gen_renewal_at_max, 5),
-        ("renewal_hold_blocked", gen_renewal_blocked_by_hold, 5),
-        ("event_full", gen_event_full, 3),
+        ("renewal_max", gen_renewal_at_max, 4),
+        ("renewal_hold_blocked", gen_renewal_blocked_by_hold, 4),
+        ("event_full", gen_event_full, 2),
         ("event_cancelled", gen_event_cancelled, 2),
         ("hold_unnecessary", gen_hold_unnecessary, 3),
-        ("waive_ineligible", gen_waive_fine_ineligible, 4),
+        ("waive_ineligible", gen_waive_fine_ineligible, 3),
         ("checkout_unavailable", gen_checkout_unavailable_copy, 3),
         ("transfer", gen_transfer_scenarios, 4),
         ("find_by_card", gen_find_by_card, 3),
@@ -2526,19 +3002,14 @@ def main():
         ("Tier 2: Information & Search", generators_t2),
         ("Tier 3: Moderate Multi-Step", generators_t3),
         ("Tier 4: Complex Multi-Step", generators_t4),
-        ("Tier 5: Edge Cases", generators_t5),
+        ("Tier 5: Edge Cases & Policy", generators_t5),
     ]
 
     for tier_name, generators in tier_names:
-        tier_tasks = []
-        for name, gen_fn, target_n in generators:
-            tasks = gen_fn(db, ix, n=target_n)
-            stats[name] = {"target": target_n, "actual": len(tasks)}
-            tier_tasks.extend(tasks)
-        all_tasks.extend(tier_tasks)
-        tier_total = sum(
-            s["actual"] for n, _, _ in generators for n2, s in stats.items() if n2 == n
-        )
+        for gname, gen_fn, base_n in generators:
+            tasks = gen_fn(db, ix, n=base_n)
+            stats[gname] = {"base": base_n, "actual": len(tasks)}
+            all_tasks.extend(tasks)
 
     # Validate unique IDs
     ids = [t["id"] for t in all_tasks]
@@ -2553,10 +3024,18 @@ def main():
     for tier_name, generators in tier_names:
         tier_total = sum(stats[n]["actual"] for n, _, _ in generators)
         print(f"\n{tier_name}: {tier_total} tasks")
-        for name, _, _ in generators:
-            s = stats[name]
-            marker = " *" if s["actual"] < s["target"] else ""
-            print(f"  {name:35s} {s['actual']:3d}/{s['target']:3d}{marker}")
+        for gname, _, base_n in generators:
+            s = stats[gname]
+            print(f"  {gname:35s} {s['actual']:3d}  (base={s['base']})")
+
+    # Difficulty distribution
+    easy_count = sum(1 for t in all_tasks if t["id"].endswith("a"))
+    hard_count = sum(1 for t in all_tasks if t["id"].endswith("b"))
+    single_count = len(all_tasks) - easy_count - hard_count
+    print(f"\nDifficulty distribution:")
+    print(f"  Easy (a variants):    {easy_count}")
+    print(f"  Hard (b variants):    {hard_count}")
+    print(f"  Single variant:       {single_count}")
 
     # Reward basis distribution
     rb_counts: dict[str, int] = {}
@@ -2567,10 +3046,27 @@ def main():
     for rb, count in sorted(rb_counts.items()):
         print(f"  {rb}: {count}")
 
-    # Write
+    # Write tasks.json
     with open(TASKS_PATH, "w") as f:
         json.dump(all_tasks, f, indent=2)
     print(f"\nWritten to {TASKS_PATH}")
+
+    # Write split_tasks.json
+    easy_ids = [t["id"] for t in all_tasks if t["id"].endswith("a")]
+    hard_ids = [t["id"] for t in all_tasks if t["id"].endswith("b")]
+    single_ids = [
+        t["id"]
+        for t in all_tasks
+        if not t["id"].endswith("a") and not t["id"].endswith("b")
+    ]
+    split = {
+        "base": [t["id"] for t in all_tasks],
+        "easy": easy_ids + single_ids,
+        "hard": hard_ids,
+    }
+    with open(SPLIT_TASKS_PATH, "w") as f:
+        json.dump(split, f, indent=2)
+    print(f"Written to {SPLIT_TASKS_PATH}")
 
 
 if __name__ == "__main__":
