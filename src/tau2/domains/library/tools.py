@@ -35,6 +35,21 @@ class LibraryTools(ToolKitBase):
     def __init__(self, db: LibraryDB) -> None:
         super().__init__(db)
 
+    # ── ID helpers ─────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _make_unique_id(base: str, existing) -> str:
+        """Return *base* if unique, else base_2, base_3, … (deterministic)."""
+        if base not in existing:
+            return base
+        n = 2
+        while f"{base}_{n}" in existing:
+            n += 1
+        return f"{base}_{n}"
+
+    def _patron_last(self, patron_id: str) -> str:
+        return self.db.patrons[patron_id].name.split()[-1].lower()
+
     # ── READ tools ────────────────────────────────────────────────────────
 
     @is_tool(ToolType.READ)
@@ -315,7 +330,9 @@ class LibraryTools(ToolKitBase):
         checkout_date = datetime.now()
         due_date = checkout_date + timedelta(weeks=weeks)
 
-        loan_id = f"loan_{len(self.db.loans) + 1}"
+        book_id = self.db.copies[copy_id].book_id
+        base_lid = f"loan_{self._patron_last(patron_id)}_{book_id}"
+        loan_id = self._make_unique_id(base_lid, self.db.loans)
         loan = Loan(
             loan_id=loan_id,
             patron_id=patron_id,
@@ -375,7 +392,8 @@ class LibraryTools(ToolKitBase):
             fine_amount = min(days_overdue * OVERDUE_FINE_PER_DAY, MAX_FINE_PER_ITEM)
             loan.fine_amount = fine_amount
 
-            fine_id = f"fine_{len(self.db.fines) + 1}"
+            base_fid = f"fine_{self._patron_last(loan.patron_id)}_overdue"
+            fine_id = self._make_unique_id(base_fid, self.db.fines)
             fine = Fine(
                 fine_id=fine_id,
                 patron_id=loan.patron_id,
@@ -507,7 +525,8 @@ class LibraryTools(ToolKitBase):
         position = len(existing_holds) + 1
 
         today = datetime.now()
-        hold_id = f"hold_{len(self.db.holds) + 1}"
+        base_hid = f"hold_{self._patron_last(patron_id)}_{book_id}"
+        hold_id = self._make_unique_id(base_hid, self.db.holds)
         hold = Hold(
             hold_id=hold_id,
             patron_id=patron_id,

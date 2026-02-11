@@ -218,6 +218,55 @@ def build_indexes(db: dict) -> EntityIndexes:
             else:
                 ix.books_all_out_at_branch[(book_id, br)] = True
 
+    # Filter out patrons with ambiguous (duplicate) names.
+    # The DB may contain e.g. anthony_perez and anthony_perez_2 who share the
+    # display name "Anthony Perez".  An agent that looks up by name cannot
+    # reliably distinguish them, so we exclude both variants from task
+    # generation to avoid false-negative evaluation failures.
+    _name_counts: dict[str, list[str]] = {}
+    for pid, p in db["patrons"].items():
+        _name_counts.setdefault(p["name"], []).append(pid)
+    _ambiguous: set[str] = set()
+    for _pids in _name_counts.values():
+        if len(_pids) > 1:
+            _ambiguous.update(_pids)
+
+    def _remove_ambiguous(pids: list) -> list:
+        return [pid for pid in pids if pid not in _ambiguous]
+
+    ix.active_patrons = _remove_ambiguous(ix.active_patrons)
+    ix.expired_patrons = _remove_ambiguous(ix.expired_patrons)
+    ix.patrons_with_fines_blocking = _remove_ambiguous(ix.patrons_with_fines_blocking)
+    ix.patrons_with_outstanding_fines = _remove_ambiguous(ix.patrons_with_outstanding_fines)
+    ix.patrons_at_limit = _remove_ambiguous(ix.patrons_at_limit)
+    ix.patrons_below_limit = _remove_ambiguous(ix.patrons_below_limit)
+    ix.patrons_no_fines_active = _remove_ambiguous(ix.patrons_no_fines_active)
+
+    # Also filter loans, fines, and holds belonging to ambiguous patrons
+    def _loan_patron(lid):
+        return db["loans"][lid]["patron_id"]
+
+    def _fine_patron(fid):
+        return db["fines"][fid]["patron_id"]
+
+    def _hold_patron(hid):
+        return db["holds"][hid]["patron_id"]
+
+    ix.active_loans = [lid for lid in ix.active_loans if _loan_patron(lid) not in _ambiguous]
+    ix.overdue_active_loans = [lid for lid in ix.overdue_active_loans if _loan_patron(lid) not in _ambiguous]
+    ix.not_overdue_active_loans = [lid for lid in ix.not_overdue_active_loans if _loan_patron(lid) not in _ambiguous]
+    ix.renewable_loans = [lid for lid in ix.renewable_loans if _loan_patron(lid) not in _ambiguous]
+    ix.max_renewal_loans = [lid for lid in ix.max_renewal_loans if _loan_patron(lid) not in _ambiguous]
+    ix.hold_blocked_loans = [lid for lid in ix.hold_blocked_loans if _loan_patron(lid) not in _ambiguous]
+
+    ix.outstanding_fines = [fid for fid in ix.outstanding_fines if _fine_patron(fid) not in _ambiguous]
+    ix.waiver_eligible_fines = [fid for fid in ix.waiver_eligible_fines if _fine_patron(fid) not in _ambiguous]
+    ix.waiver_ineligible_fines = [fid for fid in ix.waiver_ineligible_fines if _fine_patron(fid) not in _ambiguous]
+
+    ix.pending_holds = [hid for hid in ix.pending_holds if _hold_patron(hid) not in _ambiguous]
+    ix.ready_holds = [hid for hid in ix.ready_holds if _hold_patron(hid) not in _ambiguous]
+    ix.cancellable_holds = [hid for hid in ix.cancellable_holds if _hold_patron(hid) not in _ambiguous]
+
     return ix
 
 
@@ -858,6 +907,7 @@ def gen_list_loans(db, ix, n=5):
                         "find_patron_by_name",
                         {"name": name},
                         f"Find patron {name}",
+                        compare_args=[],
                     ),
                     action(
                         "list_loans_1",
@@ -903,6 +953,7 @@ def gen_list_fines(db, ix, n=5):
                         "find_patron_by_name",
                         {"name": name},
                         f"Find patron {name}",
+                        compare_args=[],
                     ),
                     action(
                         "list_fines_1",
@@ -1199,12 +1250,14 @@ def gen_register_event(db, ix, n=8):
                         "find_branch_by_name",
                         {"name": br},
                         f"Find branch {br}",
+                        compare_args=[],
                     ),
                     action(
                         "list_events_1",
                         "list_events",
                         {"branch_id": brid},
                         f"List events at {br}",
+                        compare_args=[],
                     ),
                     action(
                         "register_1",
@@ -1257,6 +1310,7 @@ def gen_pay_fine_partial(db, ix, n=5):
                         "find_patron_by_name",
                         {"name": name},
                         f"Find patron {name}",
+                        compare_args=[],
                     ),
                     action(
                         "list_fines_1",
@@ -2372,6 +2426,7 @@ def gen_find_by_card(db, ix, n=3):
                         "find_patron_by_card",
                         {"card_number": pid},
                         f"Look up patron by card {pid}",
+                        compare_args=[],
                     ),
                     action(
                         "checkout_1",
