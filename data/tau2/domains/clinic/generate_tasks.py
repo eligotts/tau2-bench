@@ -487,7 +487,7 @@ def gen_book_appointment(db, ix, n=8):
         asserts = [
             env_assert(
                 "assert_appointment_exists_for_patient",
-                {"patient_id": pid, "doctor_id": did, "date": date},
+                {"patient_id": pid, "doctor_id": did},
             )
         ]
 

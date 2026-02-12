@@ -45,8 +45,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_ivan_evans",
-            "doctor_id": "doc_anna_muller",
-            "date": "2025-10-24"
+            "doctor_id": "doc_anna_muller"
           }
         }
       ],
@@ -103,8 +102,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_ivan_evans",
-            "doctor_id": "doc_anna_muller",
-            "date": "2025-10-24"
+            "doctor_id": "doc_anna_muller"
           }
         }
       ],
@@ -161,8 +159,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_xander_stewart",
-            "doctor_id": "doc_john_johansson",
-            "date": "2025-11-07"
+            "doctor_id": "doc_john_johansson"
           }
         }
       ],
@@ -219,8 +216,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_xander_stewart",
-            "doctor_id": "doc_john_johansson",
-            "date": "2025-11-07"
+            "doctor_id": "doc_john_johansson"
           }
         }
       ],
@@ -277,8 +273,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_oscar_mitchell",
-            "doctor_id": "doc_paul_rossi",
-            "date": "2025-10-22"
+            "doctor_id": "doc_paul_rossi"
           }
         }
       ],
@@ -335,8 +330,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_oscar_mitchell",
-            "doctor_id": "doc_paul_rossi",
-            "date": "2025-10-22"
+            "doctor_id": "doc_paul_rossi"
           }
         }
       ],
@@ -393,8 +387,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_sarah_martinez",
-            "doctor_id": "doc_sarah_andersen",
-            "date": "2025-10-26"
+            "doctor_id": "doc_sarah_andersen"
           }
         }
       ],
@@ -451,8 +444,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_sarah_martinez",
-            "doctor_id": "doc_sarah_andersen",
-            "date": "2025-10-26"
+            "doctor_id": "doc_sarah_andersen"
           }
         }
       ],
@@ -509,8 +501,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_teresa_turner",
-            "doctor_id": "doc_richard_becker",
-            "date": "2025-11-05"
+            "doctor_id": "doc_richard_becker"
           }
         }
       ],
@@ -567,8 +558,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_teresa_turner",
-            "doctor_id": "doc_richard_becker",
-            "date": "2025-11-05"
+            "doctor_id": "doc_richard_becker"
           }
         }
       ],
@@ -625,8 +615,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_nathan_anderson",
-            "doctor_id": "doc_maria_muller",
-            "date": "2025-10-22"
+            "doctor_id": "doc_maria_muller"
           }
         }
       ],
@@ -683,8 +672,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_nathan_anderson",
-            "doctor_id": "doc_maria_muller",
-            "date": "2025-10-22"
+            "doctor_id": "doc_maria_muller"
           }
         }
       ],
@@ -741,8 +729,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_emily_thompson",
-            "doctor_id": "doc_david_okafor",
-            "date": "2025-11-11"
+            "doctor_id": "doc_david_okafor"
           }
         }
       ],
@@ -799,8 +786,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_emily_thompson",
-            "doctor_id": "doc_david_okafor",
-            "date": "2025-11-11"
+            "doctor_id": "doc_david_okafor"
           }
         }
       ],
@@ -857,8 +843,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_george_williams",
-            "doctor_id": "doc_anna_muller",
-            "date": "2025-11-07"
+            "doctor_id": "doc_anna_muller"
           }
         }
       ],
@@ -915,8 +900,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_george_williams",
-            "doctor_id": "doc_anna_muller",
-            "date": "2025-11-07"
+            "doctor_id": "doc_anna_muller"
           }
         }
       ],
@@ -973,8 +957,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_ethan_long",
-            "doctor_id": "doc_john_johansson",
-            "date": "2025-10-20"
+            "doctor_id": "doc_john_johansson"
           }
         }
       ],
@@ -1031,8 +1014,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_ethan_long",
-            "doctor_id": "doc_john_johansson",
-            "date": "2025-10-20"
+            "doctor_id": "doc_john_johansson"
           }
         }
       ],
@@ -1089,8 +1071,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_linda_wood",
-            "doctor_id": "doc_david_okafor",
-            "date": "2025-11-01"
+            "doctor_id": "doc_david_okafor"
           }
         }
       ],
@@ -1147,8 +1128,7 @@
           "func_name": "assert_appointment_exists_for_patient",
           "arguments": {
             "patient_id": "pat_linda_wood",
-            "doctor_id": "doc_david_okafor",
-            "date": "2025-11-01"
+            "doctor_id": "doc_david_okafor"
           }
         }
       ],

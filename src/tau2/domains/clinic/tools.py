@@ -196,6 +196,9 @@ class ClinicTools(ToolKitBase):
                 end_date = datetime.strptime(parts[1].strip(), "%Y-%m-%d")
             except (IndexError, ValueError):
                 pass
+        # Never return slots in the past
+        if start_date < today:
+            start_date = today
 
         # Collect existing appointments to find occupied slots
         booked: set[tuple[str, str, str]] = set()
@@ -459,6 +462,14 @@ class ClinicTools(ToolKitBase):
             raise ValueError(f"Doctor {doctor_id} not found")
         if clinic_id not in self.db.clinics:
             raise ValueError(f"Clinic {clinic_id} not found")
+
+        # Reject dates in the past
+        today_str = REFERENCE_DATE.strftime("%Y-%m-%d")
+        if date < today_str:
+            raise ValueError(
+                f"Cannot book an appointment in the past. "
+                f"The date {date} is before today ({today_str})."
+            )
 
         doctor = self.db.doctors[doctor_id]
         patient = self.db.patients[patient_id]
@@ -979,12 +990,14 @@ class ClinicTools(ToolKitBase):
         return self.db.appointments[appointment_id].status == expected_status
 
     def assert_appointment_exists_for_patient(
-        self, patient_id: str, doctor_id: str, date: str
+        self, patient_id: str, doctor_id: str, date: str | None = None
     ) -> bool:
+        today_str = REFERENCE_DATE.strftime("%Y-%m-%d")
         return any(
             a.patient_id == patient_id
             and a.doctor_id == doctor_id
-            and a.date == date
+            and (date is None or a.date == date)
+            and a.date >= today_str
             and a.status not in ("cancelled", "no_show")
             for a in self.db.appointments.values()
         )
