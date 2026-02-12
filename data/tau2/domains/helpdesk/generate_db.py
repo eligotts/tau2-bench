@@ -36,16 +36,57 @@ def make_unique_id(base, existing):
 # Step 1: Departments & Roles
 # ═══════════════════════════════════════════════════════════════════════════
 DEPARTMENTS = [
-    {"name": "Engineering", "roles": ["Software Engineer", "Senior Engineer", "Tech Lead", "Engineering Manager"], "weight": 30},
-    {"name": "Product", "roles": ["Product Manager", "Senior PM", "Product Director"], "weight": 10},
-    {"name": "Design", "roles": ["UI Designer", "UX Researcher", "Design Lead"], "weight": 8},
-    {"name": "Sales", "roles": ["Account Executive", "Sales Manager", "Sales Director"], "weight": 12},
-    {"name": "Marketing", "roles": ["Marketing Specialist", "Content Manager", "Marketing Director"], "weight": 8},
+    {
+        "name": "Engineering",
+        "roles": [
+            "Software Engineer",
+            "Senior Engineer",
+            "Tech Lead",
+            "Engineering Manager",
+        ],
+        "weight": 30,
+    },
+    {
+        "name": "Product",
+        "roles": ["Product Manager", "Senior PM", "Product Director"],
+        "weight": 10,
+    },
+    {
+        "name": "Design",
+        "roles": ["UI Designer", "UX Researcher", "Design Lead"],
+        "weight": 8,
+    },
+    {
+        "name": "Sales",
+        "roles": ["Account Executive", "Sales Manager", "Sales Director"],
+        "weight": 12,
+    },
+    {
+        "name": "Marketing",
+        "roles": ["Marketing Specialist", "Content Manager", "Marketing Director"],
+        "weight": 8,
+    },
     {"name": "HR", "roles": ["HR Specialist", "Recruiter", "HR Manager"], "weight": 6},
-    {"name": "Finance", "roles": ["Accountant", "Financial Analyst", "Finance Manager"], "weight": 6},
-    {"name": "IT", "roles": ["IT Support", "System Administrator", "IT Manager"], "weight": 8},
-    {"name": "Legal", "roles": ["Legal Counsel", "Compliance Officer", "Legal Director"], "weight": 4},
-    {"name": "Operations", "roles": ["Operations Analyst", "Operations Manager", "VP Operations"], "weight": 8},
+    {
+        "name": "Finance",
+        "roles": ["Accountant", "Financial Analyst", "Finance Manager"],
+        "weight": 6,
+    },
+    {
+        "name": "IT",
+        "roles": ["IT Support", "System Administrator", "IT Manager"],
+        "weight": 8,
+    },
+    {
+        "name": "Legal",
+        "roles": ["Legal Counsel", "Compliance Officer", "Legal Director"],
+        "weight": 4,
+    },
+    {
+        "name": "Operations",
+        "roles": ["Operations Analyst", "Operations Manager", "VP Operations"],
+        "weight": 8,
+    },
 ]
 
 dept_names = [d["name"] for d in DEPARTMENTS]
@@ -56,27 +97,129 @@ dept_roles = {d["name"]: d["roles"] for d in DEPARTMENTS}
 # Step 2: Employees (150)
 # ═══════════════════════════════════════════════════════════════════════════
 FIRST_NAMES = [
-    "James", "Mary", "Robert", "Patricia", "John", "Jennifer", "Michael",
-    "Linda", "David", "Elizabeth", "William", "Barbara", "Richard", "Susan",
-    "Joseph", "Jessica", "Thomas", "Sarah", "Christopher", "Karen",
-    "Charles", "Lisa", "Daniel", "Nancy", "Matthew", "Betty", "Anthony",
-    "Margaret", "Mark", "Sandra", "Donald", "Ashley", "Steven", "Dorothy",
-    "Paul", "Kimberly", "Andrew", "Emily", "Joshua", "Donna", "Kenneth",
-    "Michelle", "Kevin", "Carol", "Brian", "Amanda", "George", "Melissa",
-    "Timothy", "Deborah", "Alex", "Priya", "Wei", "Fatima", "Raj",
-    "Yuki", "Carlos", "Aisha", "Omar", "Sofia",
+    "James",
+    "Mary",
+    "Robert",
+    "Patricia",
+    "John",
+    "Jennifer",
+    "Michael",
+    "Linda",
+    "David",
+    "Elizabeth",
+    "William",
+    "Barbara",
+    "Richard",
+    "Susan",
+    "Joseph",
+    "Jessica",
+    "Thomas",
+    "Sarah",
+    "Christopher",
+    "Karen",
+    "Charles",
+    "Lisa",
+    "Daniel",
+    "Nancy",
+    "Matthew",
+    "Betty",
+    "Anthony",
+    "Margaret",
+    "Mark",
+    "Sandra",
+    "Donald",
+    "Ashley",
+    "Steven",
+    "Dorothy",
+    "Paul",
+    "Kimberly",
+    "Andrew",
+    "Emily",
+    "Joshua",
+    "Donna",
+    "Kenneth",
+    "Michelle",
+    "Kevin",
+    "Carol",
+    "Brian",
+    "Amanda",
+    "George",
+    "Melissa",
+    "Timothy",
+    "Deborah",
+    "Alex",
+    "Priya",
+    "Wei",
+    "Fatima",
+    "Raj",
+    "Yuki",
+    "Carlos",
+    "Aisha",
+    "Omar",
+    "Sofia",
 ]
 
 LAST_NAMES = [
-    "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller",
-    "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez",
-    "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin",
-    "Lee", "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark",
-    "Ramirez", "Lewis", "Robinson", "Walker", "Young", "Allen", "King",
-    "Wright", "Scott", "Torres", "Nguyen", "Hill", "Flores", "Green",
-    "Adams", "Nelson", "Baker", "Hall", "Rivera", "Campbell", "Mitchell",
-    "Carter", "Roberts", "Chen", "Patel", "Kim", "Singh", "Tanaka",
-    "Mueller", "Ali", "Okafor", "Ivanov", "Santos",
+    "Smith",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Jones",
+    "Garcia",
+    "Miller",
+    "Davis",
+    "Rodriguez",
+    "Martinez",
+    "Hernandez",
+    "Lopez",
+    "Gonzalez",
+    "Wilson",
+    "Anderson",
+    "Thomas",
+    "Taylor",
+    "Moore",
+    "Jackson",
+    "Martin",
+    "Lee",
+    "Perez",
+    "Thompson",
+    "White",
+    "Harris",
+    "Sanchez",
+    "Clark",
+    "Ramirez",
+    "Lewis",
+    "Robinson",
+    "Walker",
+    "Young",
+    "Allen",
+    "King",
+    "Wright",
+    "Scott",
+    "Torres",
+    "Nguyen",
+    "Hill",
+    "Flores",
+    "Green",
+    "Adams",
+    "Nelson",
+    "Baker",
+    "Hall",
+    "Rivera",
+    "Campbell",
+    "Mitchell",
+    "Carter",
+    "Roberts",
+    "Chen",
+    "Patel",
+    "Kim",
+    "Singh",
+    "Tanaka",
+    "Mueller",
+    "Ali",
+    "Okafor",
+    "Ivanov",
+    "Santos",
 ]
 
 employees = {}
@@ -85,7 +228,9 @@ employee_ids_set = set()
 
 # Pre-select indices for locked accounts (~5%), disabled (~2%)
 locked_indices = set(random.sample(range(150), 8))
-disabled_indices = set(random.sample([i for i in range(150) if i not in locked_indices], 3))
+disabled_indices = set(
+    random.sample([i for i in range(150) if i not in locked_indices], 3)
+)
 
 # Pre-select managers (one per department, plus a few extra)
 managers = {}  # dept -> employee_id
@@ -147,7 +292,9 @@ for i in range(150):
     }
 
 all_employee_ids = list(employees.keys())
-active_employee_ids = [eid for eid in all_employee_ids if employees[eid]["account_status"] == "active"]
+active_employee_ids = [
+    eid for eid in all_employee_ids if employees[eid]["account_status"] == "active"
+]
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -231,7 +378,9 @@ for eid in all_employee_ids:
     employees[eid]["device_ids"].append(did)
 
 # Add some extra devices (phones, desktops) for ~20% of employees
-extra_device_employees = random.sample(active_employee_ids, min(30, len(active_employee_ids)))
+extra_device_employees = random.sample(
+    active_employee_ids, min(30, len(active_employee_ids))
+)
 for eid in extra_device_employees:
     dtype = random.choice(["desktop", "phone"])
     model_info = random.choice(DEVICE_MODELS[dtype])
@@ -272,18 +421,78 @@ for did in repair_candidates[:5]:
 # Step 4: Software Catalog & Licenses
 # ═══════════════════════════════════════════════════════════════════════════
 SOFTWARE_CATALOG = [
-    {"software_name": "Jira", "category": "standard", "total_licenses": 120, "requires_approval": False},
-    {"software_name": "Confluence", "category": "standard", "total_licenses": 120, "requires_approval": False},
-    {"software_name": "GitHub Enterprise", "category": "standard", "total_licenses": 80, "requires_approval": False},
-    {"software_name": "Slack Pro", "category": "standard", "total_licenses": 150, "requires_approval": False},
-    {"software_name": "VS Code Pro", "category": "standard", "total_licenses": 60, "requires_approval": False},
-    {"software_name": "Zoom Business", "category": "standard", "total_licenses": 100, "requires_approval": False},
-    {"software_name": "Figma", "category": "standard", "total_licenses": 30, "requires_approval": False},
-    {"software_name": "Adobe Creative Suite", "category": "non_standard", "total_licenses": 15, "requires_approval": True},
-    {"software_name": "IntelliJ IDEA Ultimate", "category": "non_standard", "total_licenses": 20, "requires_approval": True},
-    {"software_name": "Tableau", "category": "non_standard", "total_licenses": 10, "requires_approval": True},
-    {"software_name": "AWS Admin Console", "category": "restricted", "total_licenses": 5, "requires_approval": True},
-    {"software_name": "CyberArk", "category": "restricted", "total_licenses": 3, "requires_approval": True},
+    {
+        "software_name": "Jira",
+        "category": "standard",
+        "total_licenses": 120,
+        "requires_approval": False,
+    },
+    {
+        "software_name": "Confluence",
+        "category": "standard",
+        "total_licenses": 160,
+        "requires_approval": False,
+    },
+    {
+        "software_name": "GitHub Enterprise",
+        "category": "standard",
+        "total_licenses": 80,
+        "requires_approval": False,
+    },
+    {
+        "software_name": "Slack Pro",
+        "category": "standard",
+        "total_licenses": 150,
+        "requires_approval": False,
+    },
+    {
+        "software_name": "VS Code Pro",
+        "category": "standard",
+        "total_licenses": 60,
+        "requires_approval": False,
+    },
+    {
+        "software_name": "Zoom Business",
+        "category": "standard",
+        "total_licenses": 100,
+        "requires_approval": False,
+    },
+    {
+        "software_name": "Figma",
+        "category": "standard",
+        "total_licenses": 30,
+        "requires_approval": False,
+    },
+    {
+        "software_name": "Adobe Creative Suite",
+        "category": "non_standard",
+        "total_licenses": 15,
+        "requires_approval": True,
+    },
+    {
+        "software_name": "IntelliJ IDEA Ultimate",
+        "category": "non_standard",
+        "total_licenses": 20,
+        "requires_approval": True,
+    },
+    {
+        "software_name": "Tableau",
+        "category": "non_standard",
+        "total_licenses": 10,
+        "requires_approval": True,
+    },
+    {
+        "software_name": "AWS Admin Console",
+        "category": "restricted",
+        "total_licenses": 5,
+        "requires_approval": True,
+    },
+    {
+        "software_name": "CyberArk",
+        "category": "restricted",
+        "total_licenses": 3,
+        "requires_approval": True,
+    },
 ]
 
 software_catalog = {}
@@ -300,7 +509,13 @@ software_licenses = {}
 license_id_set = set()
 
 DEPT_SOFTWARE = {
-    "Engineering": ["Jira", "Confluence", "GitHub Enterprise", "VS Code Pro", "Slack Pro"],
+    "Engineering": [
+        "Jira",
+        "Confluence",
+        "GitHub Enterprise",
+        "VS Code Pro",
+        "Slack Pro",
+    ],
     "Product": ["Jira", "Confluence", "Slack Pro", "Zoom Business"],
     "Design": ["Jira", "Figma", "Slack Pro", "Confluence"],
     "Sales": ["Slack Pro", "Zoom Business", "Confluence"],
@@ -361,16 +576,76 @@ for lid in expired_lic_candidates[:10]:
 # Step 5: Access Groups (10)
 # ═══════════════════════════════════════════════════════════════════════════
 ACCESS_GROUP_SPECS = [
-    {"group_id": "jira_users", "name": "Jira Users", "description": "Access to Jira project management tool", "permissions": ["jira.read", "jira.write"], "requires_approval": False},
-    {"group_id": "confluence_users", "name": "Confluence Users", "description": "Access to Confluence wiki and documentation", "permissions": ["confluence.read", "confluence.write"], "requires_approval": False},
-    {"group_id": "github_users", "name": "GitHub Users", "description": "Access to GitHub Enterprise repositories", "permissions": ["github.read", "github.write", "github.pr"], "requires_approval": False},
-    {"group_id": "slack_users", "name": "Slack Users", "description": "Access to Slack messaging platform", "permissions": ["slack.read", "slack.write"], "requires_approval": False},
-    {"group_id": "zoom_users", "name": "Zoom Users", "description": "Access to Zoom video conferencing", "permissions": ["zoom.host", "zoom.join"], "requires_approval": False},
-    {"group_id": "vpn_users", "name": "VPN Users", "description": "Access to corporate VPN for remote work", "permissions": ["vpn.connect"], "requires_approval": False},
-    {"group_id": "staging_access", "name": "Staging Environment", "description": "Access to staging/testing environment", "permissions": ["staging.deploy", "staging.read"], "requires_approval": False},
-    {"group_id": "admin_access", "name": "Admin Access", "description": "Administrative access to production systems", "permissions": ["admin.full"], "requires_approval": True},
-    {"group_id": "security_tools", "name": "Security Tools", "description": "Access to security monitoring and audit tools", "permissions": ["security.audit", "security.monitor"], "requires_approval": True},
-    {"group_id": "production_db", "name": "Production Database", "description": "Direct access to production databases", "permissions": ["db.read", "db.write"], "requires_approval": True},
+    {
+        "group_id": "jira_users",
+        "name": "Jira Users",
+        "description": "Access to Jira project management tool",
+        "permissions": ["jira.read", "jira.write"],
+        "requires_approval": False,
+    },
+    {
+        "group_id": "confluence_users",
+        "name": "Confluence Users",
+        "description": "Access to Confluence wiki and documentation",
+        "permissions": ["confluence.read", "confluence.write"],
+        "requires_approval": False,
+    },
+    {
+        "group_id": "github_users",
+        "name": "GitHub Users",
+        "description": "Access to GitHub Enterprise repositories",
+        "permissions": ["github.read", "github.write", "github.pr"],
+        "requires_approval": False,
+    },
+    {
+        "group_id": "slack_users",
+        "name": "Slack Users",
+        "description": "Access to Slack messaging platform",
+        "permissions": ["slack.read", "slack.write"],
+        "requires_approval": False,
+    },
+    {
+        "group_id": "zoom_users",
+        "name": "Zoom Users",
+        "description": "Access to Zoom video conferencing",
+        "permissions": ["zoom.host", "zoom.join"],
+        "requires_approval": False,
+    },
+    {
+        "group_id": "vpn_users",
+        "name": "VPN Users",
+        "description": "Access to corporate VPN for remote work",
+        "permissions": ["vpn.connect"],
+        "requires_approval": False,
+    },
+    {
+        "group_id": "staging_access",
+        "name": "Staging Environment",
+        "description": "Access to staging/testing environment",
+        "permissions": ["staging.deploy", "staging.read"],
+        "requires_approval": False,
+    },
+    {
+        "group_id": "admin_access",
+        "name": "Admin Access",
+        "description": "Administrative access to production systems",
+        "permissions": ["admin.full"],
+        "requires_approval": True,
+    },
+    {
+        "group_id": "security_tools",
+        "name": "Security Tools",
+        "description": "Access to security monitoring and audit tools",
+        "permissions": ["security.audit", "security.monitor"],
+        "requires_approval": True,
+    },
+    {
+        "group_id": "production_db",
+        "name": "Production Database",
+        "description": "Direct access to production databases",
+        "permissions": ["db.read", "db.write"],
+        "requires_approval": True,
+    },
 ]
 
 access_groups = {}
@@ -386,14 +661,28 @@ for spec in ACCESS_GROUP_SPECS:
 
 # Assign employees to standard groups based on department
 DEPT_GROUPS = {
-    "Engineering": ["jira_users", "confluence_users", "github_users", "slack_users", "vpn_users", "staging_access"],
+    "Engineering": [
+        "jira_users",
+        "confluence_users",
+        "github_users",
+        "slack_users",
+        "vpn_users",
+        "staging_access",
+    ],
     "Product": ["jira_users", "confluence_users", "slack_users", "zoom_users"],
     "Design": ["jira_users", "confluence_users", "slack_users", "zoom_users"],
     "Sales": ["slack_users", "zoom_users", "confluence_users"],
     "Marketing": ["slack_users", "zoom_users", "confluence_users", "jira_users"],
     "HR": ["slack_users", "zoom_users", "confluence_users"],
     "Finance": ["slack_users", "zoom_users", "confluence_users"],
-    "IT": ["jira_users", "confluence_users", "github_users", "slack_users", "vpn_users", "staging_access"],
+    "IT": [
+        "jira_users",
+        "confluence_users",
+        "github_users",
+        "slack_users",
+        "vpn_users",
+        "staging_access",
+    ],
     "Legal": ["slack_users", "zoom_users", "confluence_users"],
     "Operations": ["jira_users", "slack_users", "zoom_users", "confluence_users"],
 }
@@ -410,9 +699,11 @@ for eid, emp in employees.items():
 
 # Add a few IT/Engineering people to restricted groups
 it_eng_employees = [
-    eid for eid in active_employee_ids
+    eid
+    for eid in active_employee_ids
     if employees[eid]["department"] in ("IT", "Engineering")
-    and "Manager" in employees[eid]["role"] or "Lead" in employees[eid]["role"]
+    and "Manager" in employees[eid]["role"]
+    or "Lead" in employees[eid]["role"]
 ]
 random.shuffle(it_eng_employees)
 for eid in it_eng_employees[:3]:
@@ -425,42 +716,57 @@ for eid in it_eng_employees[:3]:
 # Step 6: Tickets (80)
 # ═══════════════════════════════════════════════════════════════════════════
 TICKET_TEMPLATES = [
-    {"category": "account", "descriptions": [
-        "Cannot log in to my account",
-        "Need password reset",
-        "Account keeps locking after login attempts",
-        "Need MFA setup assistance",
-        "Account access issues after returning from leave",
-    ]},
-    {"category": "hardware", "descriptions": [
-        "Laptop running very slow",
-        "Laptop screen flickering",
-        "Keyboard not working properly",
-        "Battery draining too fast",
-        "External monitor not detected",
-        "Laptop won't turn on",
-    ]},
-    {"category": "software", "descriptions": [
-        "Need access to Jira",
-        "VS Code keeps crashing",
-        "Cannot install required development tools",
-        "Software license expired",
-        "Application not responding after update",
-    ]},
-    {"category": "network", "descriptions": [
-        "VPN keeps disconnecting",
-        "Cannot access internal websites",
-        "Slow internet connection",
-        "WiFi not connecting in office",
-        "VPN certificate error",
-    ]},
-    {"category": "access", "descriptions": [
-        "Need access to GitHub repository",
-        "Cannot access staging environment",
-        "Need Confluence editing permissions",
-        "Request access to shared drive",
-        "Need VPN access for remote work",
-    ]},
+    {
+        "category": "account",
+        "descriptions": [
+            "Cannot log in to my account",
+            "Need password reset",
+            "Account keeps locking after login attempts",
+            "Need MFA setup assistance",
+            "Account access issues after returning from leave",
+        ],
+    },
+    {
+        "category": "hardware",
+        "descriptions": [
+            "Laptop running very slow",
+            "Laptop screen flickering",
+            "Keyboard not working properly",
+            "Battery draining too fast",
+            "External monitor not detected",
+            "Laptop won't turn on",
+        ],
+    },
+    {
+        "category": "software",
+        "descriptions": [
+            "Need access to Jira",
+            "VS Code keeps crashing",
+            "Cannot install required development tools",
+            "Software license expired",
+            "Application not responding after update",
+        ],
+    },
+    {
+        "category": "network",
+        "descriptions": [
+            "VPN keeps disconnecting",
+            "Cannot access internal websites",
+            "Slow internet connection",
+            "WiFi not connecting in office",
+            "VPN certificate error",
+        ],
+    },
+    {
+        "category": "access",
+        "descriptions": [
+            "Need access to GitHub repository",
+            "Cannot access staging environment",
+            "Need Confluence editing permissions",
+            "Request access to shared drive",
+            "Need VPN access for remote work",
+        ],
+    },
 ]
 
 tickets = {}
@@ -487,7 +793,9 @@ for i in range(80):
     resolution = None
     if status in ("resolved", "closed"):
         resolution = "Issue resolved by IT support."
-    assigned_to = random.choice(["IT Support L1", "IT Support L2", "Network Team", None])
+    assigned_to = random.choice(
+        ["IT Support L1", "IT Support L2", "Network Team", None]
+    )
 
     tickets[tid] = {
         "ticket_id": tid,
@@ -586,7 +894,9 @@ for st, cnt in sorted(license_status_counts.items()):
     print(f"  {st}: {cnt}")
 print(f"\nAccess Groups:   {len(access_groups)}")
 for gid, g in access_groups.items():
-    print(f"  {g['name']}: {len(g['members'])} members (approval: {g['requires_approval']})")
+    print(
+        f"  {g['name']}: {len(g['members'])} members (approval: {g['requires_approval']})"
+    )
 print(f"\nTickets:         {len(tickets)}")
 for st, cnt in sorted(ticket_status_counts.items()):
     print(f"  {st}: {cnt}")
@@ -594,9 +904,19 @@ for st, cnt in sorted(ticket_status_counts.items()):
 # Edge cases
 locked = [e for e in employees.values() if e["account_status"] == "locked"]
 disabled = [e for e in employees.values() if e["account_status"] == "disabled"]
-no_mfa = [e for e in employees.values() if not e["mfa_enabled"] and e["account_status"] == "active"]
-expired_warranty = [d for d in devices.values() if d["warranty_expiry"] < date_str(TODAY) and d["status"] == "active"]
-expired_licenses = [lic for lic in software_licenses.values() if lic["status"] == "expired"]
+no_mfa = [
+    e
+    for e in employees.values()
+    if not e["mfa_enabled"] and e["account_status"] == "active"
+]
+expired_warranty = [
+    d
+    for d in devices.values()
+    if d["warranty_expiry"] < date_str(TODAY) and d["status"] == "active"
+]
+expired_licenses = [
+    lic for lic in software_licenses.values() if lic["status"] == "expired"
+]
 
 print(f"\n-- Edge Cases --")
 print(f"  Locked accounts:           {len(locked)}")

@@ -174,7 +174,8 @@
         "github_users",
         "slack_users",
         "vpn_users",
-        "staging_access"
+        "staging_access",
+        "admin_access"
       ]
     },
     "joseph_roberts": {
@@ -896,8 +897,7 @@
         "github_users",
         "slack_users",
         "vpn_users",
-        "staging_access",
-        "admin_access"
+        "staging_access"
       ]
     },
     "jessica_gonzalez": {
@@ -927,8 +927,7 @@
         "github_users",
         "slack_users",
         "vpn_users",
-        "staging_access",
-        "admin_access"
+        "staging_access"
       ]
     },
     "jessica_mueller": {
@@ -3421,8 +3420,7 @@
         "jira_users",
         "confluence_users",
         "slack_users",
-        "zoom_users",
-        "admin_access"
+        "zoom_users"
       ]
     },
     "christopher_rivera": {
@@ -3437,6 +3435,7 @@
       ],
       "software_licenses": [
         "lic_rivera_jira_4",
+        "lic_rivera_confluence_4",
         "lic_rivera_github_enterprise",
         "lic_rivera_vs_code_pro",
         "lic_rivera_slack_pro_4"
@@ -3467,6 +3466,7 @@
       "software_licenses": [
         "lic_chen_slack_pro",
         "lic_chen_zoom_business",
+        "lic_chen_confluence",
         "lic_chen_jira"
       ],
       "vpn_access": true,
@@ -3493,6 +3493,7 @@
       "software_licenses": [
         "lic_anderson_slack_pro_7",
         "lic_anderson_zoom_business_5",
+        "lic_anderson_confluence_7",
         "lic_anderson_jira_5"
       ],
       "vpn_access": true,
@@ -3518,7 +3519,8 @@
       ],
       "software_licenses": [
         "lic_martin_slack_pro_2",
-        "lic_martin_zoom_business_2"
+        "lic_martin_zoom_business_2",
+        "lic_martin_confluence_2"
       ],
       "vpn_access": true,
       "mfa_enabled": false,
@@ -3542,7 +3544,8 @@
       ],
       "software_licenses": [
         "lic_martin_slack_pro_3",
-        "lic_martin_zoom_business_3"
+        "lic_martin_zoom_business_3",
+        "lic_martin_confluence_3"
       ],
       "vpn_access": true,
       "mfa_enabled": true,
@@ -3566,7 +3569,8 @@
       ],
       "software_licenses": [
         "lic_williams_slack_pro_2",
-        "lic_williams_zoom_business"
+        "lic_williams_zoom_business",
+        "lic_williams_confluence_2"
       ],
       "vpn_access": true,
       "mfa_enabled": true,
@@ -3590,6 +3594,7 @@
       ],
       "software_licenses": [
         "lic_baker_jira",
+        "lic_baker_confluence_3",
         "lic_baker_github_enterprise",
         "lic_baker_slack_pro_3",
         "lic_baker_vs_code_pro"
@@ -3619,7 +3624,8 @@
       ],
       "software_licenses": [
         "lic_moore_slack_pro_6",
-        "lic_moore_zoom_business_4"
+        "lic_moore_zoom_business_4",
+        "lic_moore_confluence_6"
       ],
       "vpn_access": true,
       "mfa_enabled": true,
@@ -3644,7 +3650,8 @@
       "software_licenses": [
         "lic_nguyen_jira",
         "lic_nguyen_figma",
-        "lic_nguyen_slack_pro"
+        "lic_nguyen_slack_pro",
+        "lic_nguyen_confluence"
       ],
       "vpn_access": true,
       "mfa_enabled": false,
@@ -3670,6 +3677,7 @@
       "software_licenses": [
         "lic_lee_slack_pro_4",
         "lic_lee_zoom_business_3",
+        "lic_lee_confluence_4",
         "lic_lee_jira_3"
       ],
       "vpn_access": true,
@@ -3695,6 +3703,7 @@
       ],
       "software_licenses": [
         "lic_sanchez_jira",
+        "lic_sanchez_confluence",
         "lic_sanchez_github_enterprise",
         "lic_sanchez_slack_pro",
         "lic_sanchez_vs_code_pro"
@@ -3709,7 +3718,8 @@
         "github_users",
         "slack_users",
         "vpn_users",
-        "staging_access"
+        "staging_access",
+        "admin_access"
       ]
     },
     "deborah_sanchez": {
@@ -3724,6 +3734,7 @@
       ],
       "software_licenses": [
         "lic_sanchez_jira_2",
+        "lic_sanchez_confluence_2",
         "lic_sanchez_github_enterprise_2",
         "lic_sanchez_slack_pro_2",
         "lic_sanchez_vs_code_pro_2"
@@ -3753,7 +3764,8 @@
       ],
       "software_licenses": [
         "lic_gonzalez_slack_pro_2",
-        "lic_gonzalez_zoom_business"
+        "lic_gonzalez_zoom_business",
+        "lic_gonzalez_confluence_2"
       ],
       "vpn_access": true,
       "mfa_enabled": false,
@@ -3778,7 +3790,8 @@
       ],
       "software_licenses": [
         "lic_moore_slack_pro_7",
-        "lic_moore_zoom_business_5"
+        "lic_moore_zoom_business_5",
+        "lic_moore_confluence_7"
       ],
       "vpn_access": true,
       "mfa_enabled": true,
@@ -3804,6 +3817,7 @@
       "software_licenses": [
         "lic_green_slack_pro_2",
         "lic_green_zoom_business_2",
+        "lic_green_confluence_2",
         "lic_green_jira_2"
       ],
       "vpn_access": true,
@@ -3829,6 +3843,7 @@
       ],
       "software_licenses": [
         "lic_clark_jira_4",
+        "lic_clark_confluence_5",
         "lic_clark_github_enterprise_3",
         "lic_clark_vs_code_pro_3",
         "lic_clark_slack_pro_5"
@@ -3858,7 +3873,8 @@
       ],
       "software_licenses": [
         "lic_santos_slack_pro_2",
-        "lic_santos_zoom_business"
+        "lic_santos_zoom_business",
+        "lic_santos_confluence_2"
       ],
       "vpn_access": true,
       "mfa_enabled": false,
@@ -3883,7 +3899,8 @@
       "software_licenses": [
         "lic_thomas_jira_4",
         "lic_thomas_figma",
-        "lic_thomas_slack_pro_4"
+        "lic_thomas_slack_pro_4",
+        "lic_thomas_confluence_4"
       ],
       "vpn_access": false,
       "mfa_enabled": true,
@@ -3908,6 +3925,7 @@
       ],
       "software_licenses": [
         "lic_ali_jira_3",
+        "lic_ali_confluence_3",
         "lic_ali_github_enterprise_3",
         "lic_ali_vs_code_pro_3",
         "lic_ali_slack_pro_3"
@@ -3938,7 +3956,8 @@
       ],
       "software_licenses": [
         "lic_santos_slack_pro_3",
-        "lic_santos_zoom_business_2"
+        "lic_santos_zoom_business_2",
+        "lic_santos_confluence_3"
       ],
       "vpn_access": true,
       "mfa_enabled": false,
@@ -3962,7 +3981,8 @@
       ],
       "software_licenses": [
         "lic_nguyen_slack_pro_2",
-        "lic_nguyen_zoom_business"
+        "lic_nguyen_zoom_business",
+        "lic_nguyen_confluence_2"
       ],
       "vpn_access": true,
       "mfa_enabled": true,
@@ -3986,6 +4006,7 @@
       ],
       "software_licenses": [
         "lic_thompson_jira",
+        "lic_thompson_confluence_2",
         "lic_thompson_slack_pro_2",
         "lic_thompson_zoom_business_2"
       ],
@@ -4012,7 +4033,8 @@
       ],
       "software_licenses": [
         "lic_thomas_slack_pro_5",
-        "lic_thomas_zoom_business_2"
+        "lic_thomas_zoom_business_2",
+        "lic_thomas_confluence_5"
       ],
       "vpn_access": true,
       "mfa_enabled": false,
@@ -4036,7 +4058,8 @@
       ],
       "software_licenses": [
         "lic_walker_slack_pro_3",
-        "lic_walker_zoom_business_2"
+        "lic_walker_zoom_business_2",
+        "lic_walker_confluence_3"
       ],
       "vpn_access": true,
       "mfa_enabled": true,
@@ -4061,7 +4084,8 @@
       "software_licenses": [
         "lic_young_jira_2",
         "lic_young_slack_pro_2",
-        "lic_young_zoom_business"
+        "lic_young_zoom_business",
+        "lic_young_confluence_2"
       ],
       "vpn_access": true,
       "mfa_enabled": true,
@@ -4087,7 +4111,8 @@
       "software_licenses": [
         "lic_tanaka_jira",
         "lic_tanaka_figma",
-        "lic_tanaka_slack_pro_2"
+        "lic_tanaka_slack_pro_2",
+        "lic_tanaka_confluence_2"
       ],
       "vpn_access": true,
       "mfa_enabled": false,
@@ -4097,7 +4122,8 @@
         "jira_users",
         "confluence_users",
         "slack_users",
-        "zoom_users"
+        "zoom_users",
+        "admin_access"
       ]
     },
     "anthony_mueller": {
@@ -4113,6 +4139,7 @@
       "software_licenses": [
         "lic_mueller_slack_pro_4",
         "lic_mueller_zoom_business_3",
+        "lic_mueller_confluence_4",
         "lic_mueller_jira_4"
       ],
       "vpn_access": false,
@@ -4140,16 +4167,16 @@
       "assigned_date": "2023-12-17",
       "warranty_expiry": "2026-12-16",
       "installed_software": [
-        "Zoom",
         "Teams",
-        "Postman",
-        "VS Code",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "Google Workspace",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_clark_lapt": {
@@ -4164,16 +4191,16 @@
       "assigned_date": "2023-12-14",
       "warranty_expiry": "2026-12-13",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "Postman",
-        "VS Code",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "VS Code",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_ramirez_lapt": {
@@ -4188,13 +4215,13 @@
       "assigned_date": "2023-12-09",
       "warranty_expiry": "2026-12-08",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_harris_lapt": {
@@ -4209,16 +4236,16 @@
       "assigned_date": "2025-06-15",
       "warranty_expiry": "2027-06-15",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
-        "IntelliJ IDEA",
-        "VS Code",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_davis_lapt": {
@@ -4233,13 +4260,13 @@
       "assigned_date": "2024-11-13",
       "warranty_expiry": "2025-11-13",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_ali_lapt": {
@@ -4254,13 +4281,13 @@
       "assigned_date": "2025-07-20",
       "warranty_expiry": "2027-07-20",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_roberts_lapt": {
@@ -4275,16 +4302,16 @@
       "assigned_date": "2024-07-01",
       "warranty_expiry": "2025-07-01",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "Postman",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
         "Outlook",
-        "Git"
+        "Git",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_robinson_lapt": {
@@ -4299,13 +4326,13 @@
       "assigned_date": "2025-03-20",
       "warranty_expiry": "2026-03-20",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_hall_lapt": {
@@ -4320,13 +4347,13 @@
       "assigned_date": "2023-10-17",
       "warranty_expiry": "2024-10-16",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_thomas_lapt": {
@@ -4341,16 +4368,16 @@
       "assigned_date": "2025-04-22",
       "warranty_expiry": "2026-04-22",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "Postman",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "Git",
+        "Google Workspace",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_anderson_lapt": {
@@ -4365,13 +4392,13 @@
       "assigned_date": "2025-09-06",
       "warranty_expiry": "2027-09-06",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_moore_lapt": {
@@ -4386,16 +4413,16 @@
       "assigned_date": "2024-03-05",
       "warranty_expiry": "2025-03-05",
       "installed_software": [
-        "Zoom",
         "Teams",
-        "Postman",
-        "VS Code",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "Google Workspace",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_martinez_lapt": {
@@ -4410,16 +4437,16 @@
       "assigned_date": "2024-07-08",
       "warranty_expiry": "2027-07-08",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "Postman",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
         "Outlook",
-        "Git"
+        "Git",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_okafor_lapt": {
@@ -4434,13 +4461,13 @@
       "assigned_date": "2024-05-09",
       "warranty_expiry": "2025-05-09",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_garcia_lapt_2": {
@@ -4455,13 +4482,13 @@
       "assigned_date": "2024-02-08",
       "warranty_expiry": "2026-02-07",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_hill_lapt": {
@@ -4476,16 +4503,16 @@
       "assigned_date": "2024-11-17",
       "warranty_expiry": "2025-11-17",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "Postman",
-        "VS Code",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "VS Code",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_mueller_lapt": {
@@ -4500,13 +4527,13 @@
       "assigned_date": "2024-04-25",
       "warranty_expiry": "2026-04-25",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_moore_lapt_2": {
@@ -4521,13 +4548,13 @@
       "assigned_date": "2024-09-20",
       "warranty_expiry": "2025-09-20",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_campbell_lapt": {
@@ -4542,13 +4569,13 @@
       "assigned_date": "2025-01-02",
       "warranty_expiry": "2028-01-02",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_miller_lapt": {
@@ -4563,13 +4590,13 @@
       "assigned_date": "2025-06-08",
       "warranty_expiry": "2028-06-07",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_white_lapt": {
@@ -4584,13 +4611,13 @@
       "assigned_date": "2024-06-21",
       "warranty_expiry": "2025-06-21",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_lee_lapt": {
@@ -4605,13 +4632,13 @@
       "assigned_date": "2025-05-04",
       "warranty_expiry": "2026-05-04",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_brown_lapt": {
@@ -4626,16 +4653,16 @@
       "assigned_date": "2024-07-17",
       "warranty_expiry": "2025-07-17",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "IntelliJ IDEA",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "Git",
+        "Google Workspace",
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_wright_lapt": {
@@ -4650,13 +4677,13 @@
       "assigned_date": "2024-04-20",
       "warranty_expiry": "2026-04-20",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_king_lapt": {
@@ -4671,13 +4698,13 @@
       "assigned_date": "2024-05-10",
       "warranty_expiry": "2026-05-10",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_rivera_lapt": {
@@ -4692,13 +4719,13 @@
       "assigned_date": "2024-05-24",
       "warranty_expiry": "2025-05-24",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_davis_lapt_2": {
@@ -4713,16 +4740,16 @@
       "assigned_date": "2023-10-24",
       "warranty_expiry": "2026-10-23",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "Postman",
-        "VS Code",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
+        "VS Code",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_anderson_lapt_2": {
@@ -4737,16 +4764,16 @@
       "assigned_date": "2024-12-19",
       "warranty_expiry": "2027-12-19",
       "installed_software": [
-        "Zoom",
         "Teams",
-        "Postman",
-        "VS Code",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "Google Workspace",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_allen_lapt": {
@@ -4761,16 +4788,16 @@
       "assigned_date": "2024-08-21",
       "warranty_expiry": "2027-08-21",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "IntelliJ IDEA",
-        "VS Code",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "VS Code",
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_walker_lapt": {
@@ -4785,16 +4812,16 @@
       "assigned_date": "2025-08-21",
       "warranty_expiry": "2028-08-20",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "Postman",
-        "IntelliJ IDEA",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "IntelliJ IDEA",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_ramirez_lapt_2": {
@@ -4809,13 +4836,13 @@
       "assigned_date": "2025-07-13",
       "warranty_expiry": "2028-07-12",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_adams_lapt": {
@@ -4830,16 +4857,16 @@
       "assigned_date": "2024-11-10",
       "warranty_expiry": "2027-11-10",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
-        "Postman",
-        "IntelliJ IDEA",
-        "VS Code",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "VS Code",
+        "IntelliJ IDEA",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_gonzalez_lapt": {
@@ -4854,16 +4881,16 @@
       "assigned_date": "2024-11-08",
       "warranty_expiry": "2026-11-08",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
-        "Postman",
-        "IntelliJ IDEA",
-        "VS Code",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "VS Code",
+        "IntelliJ IDEA",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_mueller_lapt_2": {
@@ -4878,13 +4905,13 @@
       "assigned_date": "2024-06-08",
       "warranty_expiry": "2026-06-08",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_adams_lapt_2": {
@@ -4899,13 +4926,13 @@
       "assigned_date": "2025-04-10",
       "warranty_expiry": "2027-04-10",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_clark_lapt_2": {
@@ -4920,13 +4947,13 @@
       "assigned_date": "2023-12-25",
       "warranty_expiry": "2025-12-24",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_smith_lapt": {
@@ -4941,13 +4968,13 @@
       "assigned_date": "2024-09-01",
       "warranty_expiry": "2025-09-01",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_hall_lapt_2": {
@@ -4962,13 +4989,13 @@
       "assigned_date": "2025-01-17",
       "warranty_expiry": "2027-01-17",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_wilson_lapt": {
@@ -4983,13 +5010,13 @@
       "assigned_date": "2024-09-04",
       "warranty_expiry": "2027-09-04",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_brown_lapt_2": {
@@ -5004,13 +5031,13 @@
       "assigned_date": "2024-08-04",
       "warranty_expiry": "2026-08-04",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_garcia_lapt_3": {
@@ -5025,13 +5052,13 @@
       "assigned_date": "2024-06-07",
       "warranty_expiry": "2025-06-07",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_davis_lapt_3": {
@@ -5046,13 +5073,13 @@
       "assigned_date": "2023-12-01",
       "warranty_expiry": "2026-11-30",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_clark_lapt_3": {
@@ -5067,13 +5094,13 @@
       "assigned_date": "2024-10-09",
       "warranty_expiry": "2025-10-09",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_rivera_lapt_2": {
@@ -5088,13 +5115,13 @@
       "assigned_date": "2025-02-17",
       "warranty_expiry": "2026-02-17",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_lee_lapt_2": {
@@ -5109,13 +5136,13 @@
       "assigned_date": "2025-02-06",
       "warranty_expiry": "2026-02-06",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_jones_lapt": {
@@ -5130,13 +5157,13 @@
       "assigned_date": "2024-01-14",
       "warranty_expiry": "2025-01-13",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_thomas_lapt_2": {
@@ -5151,13 +5178,13 @@
       "assigned_date": "2025-05-05",
       "warranty_expiry": "2028-05-04",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_patel_lapt": {
@@ -5172,13 +5199,13 @@
       "assigned_date": "2025-05-26",
       "warranty_expiry": "2028-05-25",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_ali_lapt_2": {
@@ -5193,16 +5220,16 @@
       "assigned_date": "2025-08-31",
       "warranty_expiry": "2027-08-31",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "VS Code",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "Zoom"
       ]
     },
     "dev_jackson_lapt": {
@@ -5217,13 +5244,13 @@
       "assigned_date": "2025-07-24",
       "warranty_expiry": "2026-07-24",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_young_lapt": {
@@ -5238,16 +5265,16 @@
       "assigned_date": "2025-05-22",
       "warranty_expiry": "2028-05-21",
       "installed_software": [
-        "Zoom",
         "Teams",
-        "Postman",
-        "VS Code",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "Google Workspace",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_smith_lapt_2": {
@@ -5262,13 +5289,13 @@
       "assigned_date": "2024-01-17",
       "warranty_expiry": "2025-01-16",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_rivera_lapt_3": {
@@ -5283,15 +5310,15 @@
       "assigned_date": "2025-02-01",
       "warranty_expiry": "2028-02-01",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Adobe Creative Suite",
-        "Slack",
-        "Google Workspace",
         "Figma",
-        "Outlook"
+        "Outlook",
+        "Adobe Creative Suite",
+        "Google Workspace",
+        "Zoom"
       ]
     },
     "dev_martinez_lapt_2": {
@@ -5306,13 +5333,13 @@
       "assigned_date": "2025-08-15",
       "warranty_expiry": "2026-08-15",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_martin_lapt": {
@@ -5327,13 +5354,13 @@
       "assigned_date": "2024-07-06",
       "warranty_expiry": "2027-07-06",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_miller_lapt_2": {
@@ -5348,13 +5375,13 @@
       "assigned_date": "2024-06-18",
       "warranty_expiry": "2025-06-18",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_martinez_lapt_3": {
@@ -5369,13 +5396,13 @@
       "assigned_date": "2024-01-02",
       "warranty_expiry": "2025-01-01",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_clark_lapt_4": {
@@ -5390,16 +5417,16 @@
       "assigned_date": "2024-12-08",
       "warranty_expiry": "2027-12-08",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "IntelliJ IDEA",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "Git",
+        "Google Workspace",
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_mitchell_lapt": {
@@ -5414,13 +5441,13 @@
       "assigned_date": "2024-04-16",
       "warranty_expiry": "2027-04-16",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_williams_lapt": {
@@ -5435,13 +5462,13 @@
       "assigned_date": "2025-05-21",
       "warranty_expiry": "2028-05-20",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_kim_lapt": {
@@ -5456,13 +5483,13 @@
       "assigned_date": "2024-06-10",
       "warranty_expiry": "2025-06-10",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_moore_lapt_3": {
@@ -5477,13 +5504,13 @@
       "assigned_date": "2024-06-08",
       "warranty_expiry": "2026-06-08",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_wright_lapt_2": {
@@ -5498,13 +5525,13 @@
       "assigned_date": "2025-06-10",
       "warranty_expiry": "2027-06-10",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_taylor_lapt": {
@@ -5519,16 +5546,16 @@
       "assigned_date": "2023-11-04",
       "warranty_expiry": "2025-11-03",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "IntelliJ IDEA",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "Git",
+        "Google Workspace",
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_allen_lapt_2": {
@@ -5543,16 +5570,16 @@
       "assigned_date": "2025-06-14",
       "warranty_expiry": "2026-06-14",
       "installed_software": [
-        "Zoom",
         "Teams",
-        "Postman",
-        "IntelliJ IDEA",
-        "VS Code",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
+        "VS Code",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "IntelliJ IDEA",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_santos_lapt": {
@@ -5567,13 +5594,13 @@
       "assigned_date": "2024-02-24",
       "warranty_expiry": "2025-02-23",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_white_lapt_2": {
@@ -5588,15 +5615,15 @@
       "assigned_date": "2025-05-13",
       "warranty_expiry": "2027-05-13",
       "installed_software": [
-        "Sketch",
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Adobe Creative Suite",
-        "Slack",
-        "Outlook"
+        "Sketch",
+        "Zoom"
       ]
     },
     "dev_davis_lapt_4": {
@@ -5611,13 +5638,13 @@
       "assigned_date": "2024-01-10",
       "warranty_expiry": "2026-01-09",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_hall_lapt_3": {
@@ -5632,16 +5659,16 @@
       "assigned_date": "2024-02-02",
       "warranty_expiry": "2027-02-01",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "IntelliJ IDEA",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "Git",
+        "Google Workspace",
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_mitchell_lapt_2": {
@@ -5656,13 +5683,13 @@
       "assigned_date": "2025-05-28",
       "warranty_expiry": "2027-05-28",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_jackson_lapt_2": {
@@ -5677,16 +5704,16 @@
       "assigned_date": "2024-12-04",
       "warranty_expiry": "2027-12-04",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "Postman",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
         "Outlook",
-        "Git"
+        "Git",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_walker_lapt_2": {
@@ -5701,13 +5728,13 @@
       "assigned_date": "2023-11-12",
       "warranty_expiry": "2026-11-11",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_green_lapt": {
@@ -5722,13 +5749,13 @@
       "assigned_date": "2025-03-15",
       "warranty_expiry": "2027-03-15",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_anderson_lapt_3": {
@@ -5743,13 +5770,13 @@
       "assigned_date": "2024-09-21",
       "warranty_expiry": "2025-09-21",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_tanaka_lapt": {
@@ -5764,13 +5791,13 @@
       "assigned_date": "2024-02-14",
       "warranty_expiry": "2027-02-13",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_hall_lapt_4": {
@@ -5785,13 +5812,13 @@
       "assigned_date": "2025-04-23",
       "warranty_expiry": "2028-04-22",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_carter_lapt": {
@@ -5806,13 +5833,13 @@
       "assigned_date": "2024-03-21",
       "warranty_expiry": "2025-03-21",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_robinson_lapt_2": {
@@ -5827,16 +5854,16 @@
       "assigned_date": "2024-06-08",
       "warranty_expiry": "2026-06-08",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "IntelliJ IDEA",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "Git",
+        "Google Workspace",
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_robinson_lapt_3": {
@@ -5851,13 +5878,13 @@
       "assigned_date": "2024-01-14",
       "warranty_expiry": "2025-01-13",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_kim_lapt_2": {
@@ -5872,13 +5899,13 @@
       "assigned_date": "2025-04-07",
       "warranty_expiry": "2028-04-06",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_hernandez_lapt": {
@@ -5893,13 +5920,13 @@
       "assigned_date": "2025-06-24",
       "warranty_expiry": "2027-06-24",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_roberts_lapt_2": {
@@ -5914,13 +5941,13 @@
       "assigned_date": "2024-07-08",
       "warranty_expiry": "2026-07-08",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_jackson_lapt_3": {
@@ -5935,16 +5962,16 @@
       "assigned_date": "2024-12-10",
       "warranty_expiry": "2025-12-10",
       "installed_software": [
-        "Zoom",
         "Teams",
-        "IntelliJ IDEA",
-        "VS Code",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "Google Workspace",
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_anderson_lapt_4": {
@@ -5959,13 +5986,13 @@
       "assigned_date": "2024-11-29",
       "warranty_expiry": "2027-11-29",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_wright_lapt_3": {
@@ -5980,15 +6007,15 @@
       "assigned_date": "2023-11-02",
       "warranty_expiry": "2025-11-01",
       "installed_software": [
-        "Sketch",
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Figma",
-        "Outlook"
+        "Outlook",
+        "Sketch",
+        "Google Workspace",
+        "Zoom"
       ]
     },
     "dev_johnson_lapt": {
@@ -6003,13 +6030,13 @@
       "assigned_date": "2025-07-21",
       "warranty_expiry": "2026-07-21",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_carter_lapt_2": {
@@ -6024,13 +6051,13 @@
       "assigned_date": "2025-02-11",
       "warranty_expiry": "2026-02-11",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_anderson_lapt_5": {
@@ -6045,13 +6072,13 @@
       "assigned_date": "2024-10-15",
       "warranty_expiry": "2025-10-15",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_baker_lapt": {
@@ -6066,13 +6093,13 @@
       "assigned_date": "2024-07-02",
       "warranty_expiry": "2025-07-02",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_wright_lapt_4": {
@@ -6087,16 +6114,16 @@
       "assigned_date": "2024-03-19",
       "warranty_expiry": "2027-03-19",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "VS Code",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "Google Workspace",
+        "Zoom"
       ]
     },
     "dev_ramirez_lapt_3": {
@@ -6111,16 +6138,16 @@
       "assigned_date": "2025-08-03",
       "warranty_expiry": "2027-08-03",
       "installed_software": [
-        "Zoom",
         "Teams",
-        "Postman",
-        "IntelliJ IDEA",
-        "VS Code",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
+        "VS Code",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "IntelliJ IDEA",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_robinson_lapt_4": {
@@ -6135,13 +6162,13 @@
       "assigned_date": "2024-07-03",
       "warranty_expiry": "2027-07-03",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_singh_lapt": {
@@ -6156,16 +6183,16 @@
       "assigned_date": "2023-11-30",
       "warranty_expiry": "2025-11-29",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "VS Code",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "Zoom"
       ]
     },
     "dev_adams_lapt_3": {
@@ -6180,16 +6207,16 @@
       "assigned_date": "2025-03-24",
       "warranty_expiry": "2028-03-23",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "Postman",
-        "VS Code",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
+        "VS Code",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_johnson_lapt_2": {
@@ -6204,13 +6231,13 @@
       "assigned_date": "2025-01-09",
       "warranty_expiry": "2027-01-09",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_taylor_lapt_2": {
@@ -6225,13 +6252,13 @@
       "assigned_date": "2025-06-27",
       "warranty_expiry": "2027-06-27",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_kim_lapt_3": {
@@ -6246,16 +6273,16 @@
       "assigned_date": "2024-10-03",
       "warranty_expiry": "2025-10-03",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "VS Code",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "Zoom"
       ]
     },
     "dev_baker_lapt_2": {
@@ -6270,13 +6297,13 @@
       "assigned_date": "2024-04-11",
       "warranty_expiry": "2025-04-11",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_hall_lapt_5": {
@@ -6291,13 +6318,13 @@
       "assigned_date": "2023-11-25",
       "warranty_expiry": "2024-11-24",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_patel_lapt_2": {
@@ -6312,16 +6339,16 @@
       "assigned_date": "2025-04-19",
       "warranty_expiry": "2027-04-19",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "IntelliJ IDEA",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
         "Outlook",
-        "Git"
+        "Git",
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_perez_lapt": {
@@ -6336,16 +6363,16 @@
       "assigned_date": "2025-06-30",
       "warranty_expiry": "2026-06-30",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "Postman",
-        "IntelliJ IDEA",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "IntelliJ IDEA",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_okafor_lapt_2": {
@@ -6360,13 +6387,13 @@
       "assigned_date": "2024-02-15",
       "warranty_expiry": "2027-02-14",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_moore_lapt_4": {
@@ -6381,13 +6408,13 @@
       "assigned_date": "2024-10-27",
       "warranty_expiry": "2025-10-27",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_lee_lapt_3": {
@@ -6402,13 +6429,13 @@
       "assigned_date": "2024-05-23",
       "warranty_expiry": "2026-05-23",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_flores_lapt": {
@@ -6423,13 +6450,13 @@
       "assigned_date": "2024-01-19",
       "warranty_expiry": "2025-01-18",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_wilson_lapt_2": {
@@ -6444,13 +6471,13 @@
       "assigned_date": "2025-07-02",
       "warranty_expiry": "2027-07-02",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_moore_lapt_5": {
@@ -6465,13 +6492,13 @@
       "assigned_date": "2025-08-08",
       "warranty_expiry": "2026-08-08",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_scott_lapt": {
@@ -6486,13 +6513,13 @@
       "assigned_date": "2025-06-29",
       "warranty_expiry": "2028-06-28",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_johnson_lapt_3": {
@@ -6507,16 +6534,16 @@
       "assigned_date": "2024-01-16",
       "warranty_expiry": "2027-01-15",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "Postman",
-        "IntelliJ IDEA",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "IntelliJ IDEA",
+        "Postman",
+        "Zoom"
       ]
     },
     "dev_white_lapt_3": {
@@ -6531,15 +6558,15 @@
       "assigned_date": "2024-02-08",
       "warranty_expiry": "2027-02-07",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Adobe Creative Suite",
-        "Slack",
-        "Google Workspace",
         "Figma",
-        "Outlook"
+        "Outlook",
+        "Adobe Creative Suite",
+        "Google Workspace",
+        "Zoom"
       ]
     },
     "dev_thompson_lapt": {
@@ -6554,13 +6581,13 @@
       "assigned_date": "2025-04-14",
       "warranty_expiry": "2026-04-14",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_davis_lapt_5": {
@@ -6575,13 +6602,13 @@
       "assigned_date": "2024-09-29",
       "warranty_expiry": "2027-09-29",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_campbell_lapt_2": {
@@ -6596,13 +6623,13 @@
       "assigned_date": "2023-11-24",
       "warranty_expiry": "2024-11-23",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_anderson_lapt_6": {
@@ -6617,13 +6644,13 @@
       "assigned_date": "2024-06-24",
       "warranty_expiry": "2026-06-24",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_brown_lapt_3": {
@@ -6638,13 +6665,13 @@
       "assigned_date": "2024-08-30",
       "warranty_expiry": "2026-08-30",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_mueller_lapt_3": {
@@ -6659,16 +6686,16 @@
       "assigned_date": "2024-10-04",
       "warranty_expiry": "2027-10-04",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "IntelliJ IDEA",
-        "VS Code",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
+        "VS Code",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_taylor_lapt_3": {
@@ -6683,13 +6710,13 @@
       "assigned_date": "2024-10-13",
       "warranty_expiry": "2025-10-13",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_torres_lapt": {
@@ -6704,13 +6731,13 @@
       "assigned_date": "2024-12-31",
       "warranty_expiry": "2027-12-31",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_thomas_lapt_3": {
@@ -6725,16 +6752,16 @@
       "assigned_date": "2025-06-24",
       "warranty_expiry": "2028-06-23",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "IntelliJ IDEA",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "Git",
+        "Google Workspace",
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_king_lapt_2": {
@@ -6749,13 +6776,13 @@
       "assigned_date": "2024-01-15",
       "warranty_expiry": "2027-01-14",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_torres_lapt_2": {
@@ -6770,13 +6797,13 @@
       "assigned_date": "2024-02-21",
       "warranty_expiry": "2026-02-20",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_wilson_lapt_3": {
@@ -6791,16 +6818,16 @@
       "assigned_date": "2023-10-30",
       "warranty_expiry": "2026-10-29",
       "installed_software": [
-        "Zoom",
-        "Teams",
-        "IntelliJ IDEA",
-        "VS Code",
         "Docker",
+        "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
+        "VS Code",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_smith_lapt_3": {
@@ -6815,15 +6842,15 @@
       "assigned_date": "2024-09-10",
       "warranty_expiry": "2025-09-10",
       "installed_software": [
-        "Sketch",
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Adobe Creative Suite",
-        "Slack",
-        "Outlook"
+        "Sketch",
+        "Zoom"
       ]
     },
     "dev_rivera_lapt_4": {
@@ -6838,16 +6865,16 @@
       "assigned_date": "2024-10-01",
       "warranty_expiry": "2026-10-01",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
-        "IntelliJ IDEA",
-        "VS Code",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_chen_lapt": {
@@ -6862,13 +6889,13 @@
       "assigned_date": "2024-11-17",
       "warranty_expiry": "2025-11-17",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_anderson_lapt_7": {
@@ -6883,13 +6910,13 @@
       "assigned_date": "2024-10-06",
       "warranty_expiry": "2027-10-06",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_martin_lapt_2": {
@@ -6904,13 +6931,13 @@
       "assigned_date": "2024-08-26",
       "warranty_expiry": "2025-08-26",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_martin_lapt_3": {
@@ -6925,13 +6952,13 @@
       "assigned_date": "2023-12-16",
       "warranty_expiry": "2024-12-15",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_williams_lapt_2": {
@@ -6946,13 +6973,13 @@
       "assigned_date": "2024-07-22",
       "warranty_expiry": "2026-07-22",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_baker_lapt_3": {
@@ -6967,13 +6994,13 @@
       "assigned_date": "2023-12-30",
       "warranty_expiry": "2025-12-29",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_moore_lapt_6": {
@@ -6988,13 +7015,13 @@
       "assigned_date": "2024-03-18",
       "warranty_expiry": "2025-03-18",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_nguyen_lapt": {
@@ -7009,15 +7036,15 @@
       "assigned_date": "2025-03-01",
       "warranty_expiry": "2027-03-01",
       "installed_software": [
-        "Sketch",
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Adobe Creative Suite",
-        "Slack",
+        "Sketch",
         "Google Workspace",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_lee_lapt_4": {
@@ -7032,13 +7059,13 @@
       "assigned_date": "2024-08-20",
       "warranty_expiry": "2027-08-20",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_sanchez_lapt": {
@@ -7053,13 +7080,13 @@
       "assigned_date": "2025-02-23",
       "warranty_expiry": "2028-02-23",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_sanchez_lapt_2": {
@@ -7074,13 +7101,13 @@
       "assigned_date": "2025-07-24",
       "warranty_expiry": "2028-07-23",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_gonzalez_lapt_2": {
@@ -7095,13 +7122,13 @@
       "assigned_date": "2024-02-26",
       "warranty_expiry": "2025-02-25",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_moore_lapt_7": {
@@ -7116,13 +7143,13 @@
       "assigned_date": "2025-06-22",
       "warranty_expiry": "2026-06-22",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_green_lapt_2": {
@@ -7137,13 +7164,13 @@
       "assigned_date": "2024-04-08",
       "warranty_expiry": "2025-04-08",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_clark_lapt_5": {
@@ -7158,16 +7185,16 @@
       "assigned_date": "2025-01-31",
       "warranty_expiry": "2027-01-31",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
-        "Teams",
-        "VS Code",
         "Docker",
+        "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "Zoom"
       ]
     },
     "dev_santos_lapt_2": {
@@ -7182,13 +7209,13 @@
       "assigned_date": "2024-04-19",
       "warranty_expiry": "2026-04-19",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_thomas_lapt_4": {
@@ -7203,15 +7230,15 @@
       "assigned_date": "2025-06-24",
       "warranty_expiry": "2027-06-24",
       "installed_software": [
-        "Sketch",
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Figma",
-        "Outlook"
+        "Outlook",
+        "Sketch",
+        "Google Workspace",
+        "Zoom"
       ]
     },
     "dev_ali_lapt_3": {
@@ -7226,16 +7253,16 @@
       "assigned_date": "2023-11-20",
       "warranty_expiry": "2025-11-19",
       "installed_software": [
-        "Zoom",
         "Teams",
-        "IntelliJ IDEA",
-        "VS Code",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Outlook",
-        "Git"
+        "VS Code",
+        "Git",
+        "Google Workspace",
+        "IntelliJ IDEA",
+        "Zoom"
       ]
     },
     "dev_santos_lapt_3": {
@@ -7250,13 +7277,13 @@
       "assigned_date": "2025-04-26",
       "warranty_expiry": "2028-04-25",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_nguyen_lapt_2": {
@@ -7271,13 +7298,13 @@
       "assigned_date": "2023-12-25",
       "warranty_expiry": "2024-12-24",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_thompson_lapt_2": {
@@ -7292,13 +7319,13 @@
       "assigned_date": "2024-12-27",
       "warranty_expiry": "2025-12-27",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_thomas_lapt_5": {
@@ -7313,13 +7340,13 @@
       "assigned_date": "2024-01-01",
       "warranty_expiry": "2026-12-31",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_walker_lapt_3": {
@@ -7334,13 +7361,13 @@
       "assigned_date": "2024-11-24",
       "warranty_expiry": "2025-11-24",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_young_lapt_2": {
@@ -7355,13 +7382,13 @@
       "assigned_date": "2025-07-29",
       "warranty_expiry": "2026-07-29",
       "installed_software": [
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
+        "Outlook",
         "Google Workspace",
-        "Slack",
-        "Outlook"
+        "Zoom"
       ]
     },
     "dev_tanaka_lapt_2": {
@@ -7376,15 +7403,15 @@
       "assigned_date": "2023-12-18",
       "warranty_expiry": "2025-12-17",
       "installed_software": [
-        "Sketch",
-        "Zoom",
         "Teams",
+        "Slack",
         "Chrome",
         "1Password",
-        "Google Workspace",
-        "Slack",
         "Figma",
-        "Outlook"
+        "Outlook",
+        "Sketch",
+        "Google Workspace",
+        "Zoom"
       ]
     },
     "dev_mueller_lapt_4": {
@@ -7399,13 +7426,13 @@
       "assigned_date": "2024-03-16",
       "warranty_expiry": "2025-03-16",
       "installed_software": [
-        "Zoom",
-        "Microsoft Office",
         "Teams",
+        "Microsoft Office",
+        "Slack",
         "Chrome",
         "1Password",
-        "Slack",
-        "Outlook"
+        "Outlook",
+        "Zoom"
       ]
     },
     "dev_clark_desk": {
@@ -8358,8 +8385,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "sarah_hall",
-      "expiry_date": "2026-09-25",
-      "status": "active"
+      "expiry_date": "2025-07-24",
+      "status": "expired"
     },
     "lic_hall_zoom_business": {
       "license_id": "lic_hall_zoom_business",
@@ -8934,8 +8961,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "thomas_king",
-      "expiry_date": "2025-09-01",
-      "status": "expired"
+      "expiry_date": "2026-02-08",
+      "status": "active"
     },
     "lic_king_github_enterprise": {
       "license_id": "lic_king_github_enterprise",
@@ -9312,8 +9339,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "jessica_mueller",
-      "expiry_date": "2025-07-19",
-      "status": "expired"
+      "expiry_date": "2026-03-30",
+      "status": "active"
     },
     "lic_mueller_slack_pro_2": {
       "license_id": "lic_mueller_slack_pro_2",
@@ -9348,8 +9375,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "patricia_adams",
-      "expiry_date": "2025-09-28",
-      "status": "expired"
+      "expiry_date": "2026-06-10",
+      "status": "active"
     },
     "lic_adams_slack_pro_2": {
       "license_id": "lic_adams_slack_pro_2",
@@ -9753,8 +9780,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "michael_jones",
-      "expiry_date": "2026-09-21",
-      "status": "active"
+      "expiry_date": "2025-08-08",
+      "status": "expired"
     },
     "lic_thomas_jira_2": {
       "license_id": "lic_thomas_jira_2",
@@ -9843,8 +9870,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "michael_ali",
-      "expiry_date": "2026-05-09",
-      "status": "active"
+      "expiry_date": "2025-09-06",
+      "status": "expired"
     },
     "lic_ali_github_enterprise_2": {
       "license_id": "lic_ali_github_enterprise_2",
@@ -10284,8 +10311,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "yuki_williams",
-      "expiry_date": "2025-08-02",
-      "status": "expired"
+      "expiry_date": "2026-11-06",
+      "status": "active"
     },
     "lic_williams_vs_code_pro": {
       "license_id": "lic_williams_vs_code_pro",
@@ -10464,8 +10491,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "joshua_allen",
-      "expiry_date": "2025-08-03",
-      "status": "expired"
+      "expiry_date": "2026-05-17",
+      "status": "active"
     },
     "lic_allen_github_enterprise_2": {
       "license_id": "lic_allen_github_enterprise_2",
@@ -10608,8 +10635,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "betty_hall",
-      "expiry_date": "2025-10-08",
-      "status": "expired"
+      "expiry_date": "2026-02-12",
+      "status": "active"
     },
     "lic_hall_confluence_3": {
       "license_id": "lic_hall_confluence_3",
@@ -10896,8 +10923,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "aisha_carter",
-      "expiry_date": "2026-03-27",
-      "status": "active"
+      "expiry_date": "2025-09-27",
+      "status": "expired"
     },
     "lic_carter_confluence": {
       "license_id": "lic_carter_confluence",
@@ -11247,8 +11274,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "brian_johnson",
-      "expiry_date": "2026-01-18",
-      "status": "active"
+      "expiry_date": "2025-09-27",
+      "status": "expired"
     },
     "lic_johnson_vs_code_pro": {
       "license_id": "lic_johnson_vs_code_pro",
@@ -11616,8 +11643,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "brian_taylor",
-      "expiry_date": "2025-08-05",
-      "status": "expired"
+      "expiry_date": "2026-05-04",
+      "status": "active"
     },
     "lic_taylor_confluence_2": {
       "license_id": "lic_taylor_confluence_2",
@@ -11652,8 +11679,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "deborah_kim",
-      "expiry_date": "2026-11-17",
-      "status": "active"
+      "expiry_date": "2025-09-26",
+      "status": "expired"
     },
     "lic_kim_vs_code_pro": {
       "license_id": "lic_kim_vs_code_pro",
@@ -11967,8 +11994,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "andrew_flores",
-      "expiry_date": "2025-08-13",
-      "status": "expired"
+      "expiry_date": "2026-04-06",
+      "status": "active"
     },
     "lic_flores_zoom_business": {
       "license_id": "lic_flores_zoom_business",
@@ -12228,8 +12255,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "sarah_campbell",
-      "expiry_date": "2026-02-25",
-      "status": "active"
+      "expiry_date": "2025-10-06",
+      "status": "expired"
     },
     "lic_campbell_zoom_business": {
       "license_id": "lic_campbell_zoom_business",
@@ -12435,8 +12462,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "jennifer_thomas",
-      "expiry_date": "2025-09-01",
-      "status": "expired"
+      "expiry_date": "2026-06-25",
+      "status": "active"
     },
     "lic_thomas_confluence_3": {
       "license_id": "lic_thomas_confluence_3",
@@ -12633,7 +12660,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "christopher_rivera",
-      "expiry_date": "2026-04-15",
+      "expiry_date": "2025-08-03",
+      "status": "expired"
+    },
+    "lic_rivera_confluence_4": {
+      "license_id": "lic_rivera_confluence_4",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "christopher_rivera",
+      "expiry_date": "2026-09-22",
       "status": "active"
     },
     "lic_rivera_github_enterprise": {
@@ -12642,7 +12678,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "christopher_rivera",
-      "expiry_date": "2026-09-22",
+      "expiry_date": "2026-05-27",
       "status": "active"
     },
     "lic_rivera_vs_code_pro": {
@@ -12651,7 +12687,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "christopher_rivera",
-      "expiry_date": "2026-05-27",
+      "expiry_date": "2026-05-07",
       "status": "active"
     },
     "lic_rivera_slack_pro_4": {
@@ -12660,7 +12696,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "christopher_rivera",
-      "expiry_date": "2026-05-07",
+      "expiry_date": "2026-06-26",
       "status": "active"
     },
     "lic_chen_slack_pro": {
@@ -12669,7 +12705,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "alex_chen",
-      "expiry_date": "2026-06-26",
+      "expiry_date": "2026-08-09",
       "status": "active"
     },
     "lic_chen_zoom_business": {
@@ -12678,7 +12714,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "alex_chen",
-      "expiry_date": "2026-08-09",
+      "expiry_date": "2026-09-13",
+      "status": "active"
+    },
+    "lic_chen_confluence": {
+      "license_id": "lic_chen_confluence",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "alex_chen",
+      "expiry_date": "2026-11-11",
       "status": "active"
     },
     "lic_chen_jira": {
@@ -12687,7 +12732,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "alex_chen",
-      "expiry_date": "2026-09-13",
+      "expiry_date": "2026-06-15",
       "status": "active"
     },
     "lic_anderson_slack_pro_7": {
@@ -12696,7 +12741,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "paul_anderson",
-      "expiry_date": "2026-11-11",
+      "expiry_date": "2026-05-20",
       "status": "active"
     },
     "lic_anderson_zoom_business_5": {
@@ -12705,7 +12750,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "paul_anderson",
-      "expiry_date": "2026-06-15",
+      "expiry_date": "2026-04-26",
+      "status": "active"
+    },
+    "lic_anderson_confluence_7": {
+      "license_id": "lic_anderson_confluence_7",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "paul_anderson",
+      "expiry_date": "2026-06-16",
       "status": "active"
     },
     "lic_anderson_jira_5": {
@@ -12714,7 +12768,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "paul_anderson",
-      "expiry_date": "2026-05-20",
+      "expiry_date": "2026-09-02",
       "status": "active"
     },
     "lic_martin_slack_pro_2": {
@@ -12723,7 +12777,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "alex_martin",
-      "expiry_date": "2026-04-26",
+      "expiry_date": "2026-08-25",
       "status": "active"
     },
     "lic_martin_zoom_business_2": {
@@ -12732,7 +12786,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "alex_martin",
-      "expiry_date": "2026-06-16",
+      "expiry_date": "2026-08-09",
+      "status": "active"
+    },
+    "lic_martin_confluence_2": {
+      "license_id": "lic_martin_confluence_2",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "alex_martin",
+      "expiry_date": "2026-02-02",
       "status": "active"
     },
     "lic_martin_slack_pro_3": {
@@ -12741,7 +12804,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "brian_martin",
-      "expiry_date": "2026-09-02",
+      "expiry_date": "2026-08-11",
       "status": "active"
     },
     "lic_martin_zoom_business_3": {
@@ -12750,7 +12813,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "brian_martin",
-      "expiry_date": "2026-08-25",
+      "expiry_date": "2026-05-26",
+      "status": "active"
+    },
+    "lic_martin_confluence_3": {
+      "license_id": "lic_martin_confluence_3",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "brian_martin",
+      "expiry_date": "2026-03-28",
       "status": "active"
     },
     "lic_williams_slack_pro_2": {
@@ -12759,7 +12831,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "joshua_williams",
-      "expiry_date": "2026-08-09",
+      "expiry_date": "2026-06-21",
       "status": "active"
     },
     "lic_williams_zoom_business": {
@@ -12768,7 +12840,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "joshua_williams",
-      "expiry_date": "2026-02-02",
+      "expiry_date": "2026-05-23",
+      "status": "active"
+    },
+    "lic_williams_confluence_2": {
+      "license_id": "lic_williams_confluence_2",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "joshua_williams",
+      "expiry_date": "2026-07-13",
       "status": "active"
     },
     "lic_baker_jira": {
@@ -12777,7 +12858,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "joseph_baker",
-      "expiry_date": "2026-08-11",
+      "expiry_date": "2026-01-06",
+      "status": "active"
+    },
+    "lic_baker_confluence_3": {
+      "license_id": "lic_baker_confluence_3",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "joseph_baker",
+      "expiry_date": "2026-09-28",
       "status": "active"
     },
     "lic_baker_github_enterprise": {
@@ -12786,7 +12876,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "joseph_baker",
-      "expiry_date": "2026-05-26",
+      "expiry_date": "2026-04-06",
       "status": "active"
     },
     "lic_baker_slack_pro_3": {
@@ -12795,7 +12885,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "joseph_baker",
-      "expiry_date": "2026-03-28",
+      "expiry_date": "2026-02-26",
       "status": "active"
     },
     "lic_baker_vs_code_pro": {
@@ -12804,7 +12894,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "joseph_baker",
-      "expiry_date": "2026-06-21",
+      "expiry_date": "2025-12-22",
       "status": "active"
     },
     "lic_moore_slack_pro_6": {
@@ -12813,8 +12903,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "wei_moore",
-      "expiry_date": "2026-05-23",
-      "status": "active"
+      "expiry_date": "2025-08-27",
+      "status": "expired"
     },
     "lic_moore_zoom_business_4": {
       "license_id": "lic_moore_zoom_business_4",
@@ -12822,7 +12912,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "wei_moore",
-      "expiry_date": "2026-07-13",
+      "expiry_date": "2026-09-23",
+      "status": "active"
+    },
+    "lic_moore_confluence_6": {
+      "license_id": "lic_moore_confluence_6",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "wei_moore",
+      "expiry_date": "2026-10-09",
       "status": "active"
     },
     "lic_nguyen_jira": {
@@ -12831,7 +12930,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "barbara_nguyen",
-      "expiry_date": "2026-01-06",
+      "expiry_date": "2026-10-06",
       "status": "active"
     },
     "lic_nguyen_figma": {
@@ -12840,7 +12939,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "barbara_nguyen",
-      "expiry_date": "2026-09-28",
+      "expiry_date": "2026-07-15",
       "status": "active"
     },
     "lic_nguyen_slack_pro": {
@@ -12849,7 +12948,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "barbara_nguyen",
-      "expiry_date": "2026-04-06",
+      "expiry_date": "2026-05-14",
+      "status": "active"
+    },
+    "lic_nguyen_confluence": {
+      "license_id": "lic_nguyen_confluence",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "barbara_nguyen",
+      "expiry_date": "2026-03-02",
       "status": "active"
     },
     "lic_lee_slack_pro_4": {
@@ -12858,7 +12966,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "lisa_lee",
-      "expiry_date": "2026-02-26",
+      "expiry_date": "2026-03-24",
       "status": "active"
     },
     "lic_lee_zoom_business_3": {
@@ -12867,7 +12975,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "lisa_lee",
-      "expiry_date": "2025-12-22",
+      "expiry_date": "2026-05-31",
+      "status": "active"
+    },
+    "lic_lee_confluence_4": {
+      "license_id": "lic_lee_confluence_4",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "lisa_lee",
+      "expiry_date": "2026-04-10",
       "status": "active"
     },
     "lic_lee_jira_3": {
@@ -12876,7 +12993,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "lisa_lee",
-      "expiry_date": "2026-04-26",
+      "expiry_date": "2026-06-26",
       "status": "active"
     },
     "lic_sanchez_jira": {
@@ -12885,7 +13002,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "kevin_sanchez",
-      "expiry_date": "2026-09-23",
+      "expiry_date": "2026-10-01",
+      "status": "active"
+    },
+    "lic_sanchez_confluence": {
+      "license_id": "lic_sanchez_confluence",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "kevin_sanchez",
+      "expiry_date": "2026-04-18",
       "status": "active"
     },
     "lic_sanchez_github_enterprise": {
@@ -12894,7 +13020,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "kevin_sanchez",
-      "expiry_date": "2026-10-09",
+      "expiry_date": "2026-08-26",
       "status": "active"
     },
     "lic_sanchez_slack_pro": {
@@ -12903,7 +13029,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "kevin_sanchez",
-      "expiry_date": "2026-10-06",
+      "expiry_date": "2026-09-21",
       "status": "active"
     },
     "lic_sanchez_vs_code_pro": {
@@ -12912,7 +13038,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "kevin_sanchez",
-      "expiry_date": "2026-07-15",
+      "expiry_date": "2026-11-14",
       "status": "active"
     },
     "lic_sanchez_jira_2": {
@@ -12921,7 +13047,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "deborah_sanchez",
-      "expiry_date": "2026-05-14",
+      "expiry_date": "2026-06-04",
+      "status": "active"
+    },
+    "lic_sanchez_confluence_2": {
+      "license_id": "lic_sanchez_confluence_2",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "deborah_sanchez",
+      "expiry_date": "2026-04-24",
       "status": "active"
     },
     "lic_sanchez_github_enterprise_2": {
@@ -12930,7 +13065,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "deborah_sanchez",
-      "expiry_date": "2026-03-02",
+      "expiry_date": "2026-08-21",
       "status": "active"
     },
     "lic_sanchez_slack_pro_2": {
@@ -12939,7 +13074,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "deborah_sanchez",
-      "expiry_date": "2026-03-24",
+      "expiry_date": "2026-11-07",
       "status": "active"
     },
     "lic_sanchez_vs_code_pro_2": {
@@ -12948,7 +13083,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "deborah_sanchez",
-      "expiry_date": "2026-05-31",
+      "expiry_date": "2026-08-22",
       "status": "active"
     },
     "lic_gonzalez_slack_pro_2": {
@@ -12957,7 +13092,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "patricia_gonzalez",
-      "expiry_date": "2026-04-10",
+      "expiry_date": "2026-08-06",
       "status": "active"
     },
     "lic_gonzalez_zoom_business": {
@@ -12966,7 +13101,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "patricia_gonzalez",
-      "expiry_date": "2026-06-26",
+      "expiry_date": "2026-03-10",
+      "status": "active"
+    },
+    "lic_gonzalez_confluence_2": {
+      "license_id": "lic_gonzalez_confluence_2",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "patricia_gonzalez",
+      "expiry_date": "2026-06-12",
       "status": "active"
     },
     "lic_moore_slack_pro_7": {
@@ -12975,7 +13119,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "susan_moore",
-      "expiry_date": "2026-10-01",
+      "expiry_date": "2026-03-10",
       "status": "active"
     },
     "lic_moore_zoom_business_5": {
@@ -12984,7 +13128,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "susan_moore",
-      "expiry_date": "2026-04-18",
+      "expiry_date": "2026-02-23",
+      "status": "active"
+    },
+    "lic_moore_confluence_7": {
+      "license_id": "lic_moore_confluence_7",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "susan_moore",
+      "expiry_date": "2026-09-19",
       "status": "active"
     },
     "lic_green_slack_pro_2": {
@@ -12993,7 +13146,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "mary_green",
-      "expiry_date": "2026-08-26",
+      "expiry_date": "2026-08-21",
       "status": "active"
     },
     "lic_green_zoom_business_2": {
@@ -13002,7 +13155,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "mary_green",
-      "expiry_date": "2026-09-21",
+      "expiry_date": "2026-03-18",
+      "status": "active"
+    },
+    "lic_green_confluence_2": {
+      "license_id": "lic_green_confluence_2",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "mary_green",
+      "expiry_date": "2026-09-17",
       "status": "active"
     },
     "lic_green_jira_2": {
@@ -13011,7 +13173,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "mary_green",
-      "expiry_date": "2026-11-14",
+      "expiry_date": "2026-11-07",
       "status": "active"
     },
     "lic_clark_jira_4": {
@@ -13020,7 +13182,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "kimberly_clark",
-      "expiry_date": "2026-06-04",
+      "expiry_date": "2026-01-13",
+      "status": "active"
+    },
+    "lic_clark_confluence_5": {
+      "license_id": "lic_clark_confluence_5",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "kimberly_clark",
+      "expiry_date": "2026-09-08",
       "status": "active"
     },
     "lic_clark_github_enterprise_3": {
@@ -13029,7 +13200,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "kimberly_clark",
-      "expiry_date": "2026-04-24",
+      "expiry_date": "2025-12-31",
       "status": "active"
     },
     "lic_clark_vs_code_pro_3": {
@@ -13038,7 +13209,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "kimberly_clark",
-      "expiry_date": "2026-08-21",
+      "expiry_date": "2026-01-21",
       "status": "active"
     },
     "lic_clark_slack_pro_5": {
@@ -13047,7 +13218,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "kimberly_clark",
-      "expiry_date": "2026-11-07",
+      "expiry_date": "2026-01-07",
       "status": "active"
     },
     "lic_santos_slack_pro_2": {
@@ -13056,8 +13227,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "ashley_santos",
-      "expiry_date": "2026-08-22",
-      "status": "active"
+      "expiry_date": "2025-07-20",
+      "status": "expired"
     },
     "lic_santos_zoom_business": {
       "license_id": "lic_santos_zoom_business",
@@ -13065,7 +13236,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "ashley_santos",
-      "expiry_date": "2026-08-06",
+      "expiry_date": "2026-07-13",
+      "status": "active"
+    },
+    "lic_santos_confluence_2": {
+      "license_id": "lic_santos_confluence_2",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "ashley_santos",
+      "expiry_date": "2026-02-22",
       "status": "active"
     },
     "lic_thomas_jira_4": {
@@ -13074,7 +13254,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "donald_thomas",
-      "expiry_date": "2026-03-10",
+      "expiry_date": "2026-11-01",
       "status": "active"
     },
     "lic_thomas_figma": {
@@ -13083,7 +13263,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "donald_thomas",
-      "expiry_date": "2026-06-12",
+      "expiry_date": "2026-04-11",
       "status": "active"
     },
     "lic_thomas_slack_pro_4": {
@@ -13092,7 +13272,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "donald_thomas",
-      "expiry_date": "2026-03-10",
+      "expiry_date": "2026-01-17",
+      "status": "active"
+    },
+    "lic_thomas_confluence_4": {
+      "license_id": "lic_thomas_confluence_4",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "donald_thomas",
+      "expiry_date": "2026-03-01",
       "status": "active"
     },
     "lic_ali_jira_3": {
@@ -13101,7 +13290,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "melissa_ali",
-      "expiry_date": "2026-02-23",
+      "expiry_date": "2025-12-18",
+      "status": "active"
+    },
+    "lic_ali_confluence_3": {
+      "license_id": "lic_ali_confluence_3",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "melissa_ali",
+      "expiry_date": "2026-04-04",
       "status": "active"
     },
     "lic_ali_github_enterprise_3": {
@@ -13110,7 +13308,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "melissa_ali",
-      "expiry_date": "2026-09-19",
+      "expiry_date": "2026-08-29",
       "status": "active"
     },
     "lic_ali_vs_code_pro_3": {
@@ -13119,7 +13317,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "melissa_ali",
-      "expiry_date": "2026-08-21",
+      "expiry_date": "2026-08-04",
       "status": "active"
     },
     "lic_ali_slack_pro_3": {
@@ -13128,7 +13326,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "melissa_ali",
-      "expiry_date": "2026-03-18",
+      "expiry_date": "2026-06-23",
       "status": "active"
     },
     "lic_santos_slack_pro_3": {
@@ -13137,7 +13335,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "lisa_santos",
-      "expiry_date": "2026-09-17",
+      "expiry_date": "2026-01-13",
       "status": "active"
     },
     "lic_santos_zoom_business_2": {
@@ -13146,7 +13344,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "lisa_santos",
-      "expiry_date": "2026-11-07",
+      "expiry_date": "2026-10-26",
+      "status": "active"
+    },
+    "lic_santos_confluence_3": {
+      "license_id": "lic_santos_confluence_3",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "lisa_santos",
+      "expiry_date": "2026-11-05",
       "status": "active"
     },
     "lic_nguyen_slack_pro_2": {
@@ -13155,7 +13362,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "fatima_nguyen",
-      "expiry_date": "2026-01-13",
+      "expiry_date": "2026-10-25",
       "status": "active"
     },
     "lic_nguyen_zoom_business": {
@@ -13164,7 +13371,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "fatima_nguyen",
-      "expiry_date": "2026-09-08",
+      "expiry_date": "2026-08-18",
+      "status": "active"
+    },
+    "lic_nguyen_confluence_2": {
+      "license_id": "lic_nguyen_confluence_2",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "fatima_nguyen",
+      "expiry_date": "2026-11-16",
       "status": "active"
     },
     "lic_thompson_jira": {
@@ -13173,7 +13389,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "donald_thompson",
-      "expiry_date": "2025-12-31",
+      "expiry_date": "2026-08-20",
+      "status": "active"
+    },
+    "lic_thompson_confluence_2": {
+      "license_id": "lic_thompson_confluence_2",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "donald_thompson",
+      "expiry_date": "2025-12-22",
       "status": "active"
     },
     "lic_thompson_slack_pro_2": {
@@ -13182,7 +13407,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "donald_thompson",
-      "expiry_date": "2026-01-21",
+      "expiry_date": "2025-12-17",
       "status": "active"
     },
     "lic_thompson_zoom_business_2": {
@@ -13191,7 +13416,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "donald_thompson",
-      "expiry_date": "2026-01-07",
+      "expiry_date": "2026-09-12",
       "status": "active"
     },
     "lic_thomas_slack_pro_5": {
@@ -13200,8 +13425,8 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "brian_thomas",
-      "expiry_date": "2025-10-09",
-      "status": "expired"
+      "expiry_date": "2026-09-22",
+      "status": "active"
     },
     "lic_thomas_zoom_business_2": {
       "license_id": "lic_thomas_zoom_business_2",
@@ -13209,7 +13434,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "brian_thomas",
-      "expiry_date": "2026-07-13",
+      "expiry_date": "2026-07-12",
+      "status": "active"
+    },
+    "lic_thomas_confluence_5": {
+      "license_id": "lic_thomas_confluence_5",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "brian_thomas",
+      "expiry_date": "2025-12-20",
       "status": "active"
     },
     "lic_walker_slack_pro_3": {
@@ -13218,7 +13452,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "melissa_walker",
-      "expiry_date": "2026-02-22",
+      "expiry_date": "2025-12-22",
       "status": "active"
     },
     "lic_walker_zoom_business_2": {
@@ -13227,7 +13461,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "melissa_walker",
-      "expiry_date": "2026-11-01",
+      "expiry_date": "2026-09-11",
+      "status": "active"
+    },
+    "lic_walker_confluence_3": {
+      "license_id": "lic_walker_confluence_3",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "melissa_walker",
+      "expiry_date": "2026-05-03",
       "status": "active"
     },
     "lic_young_jira_2": {
@@ -13236,7 +13479,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "elizabeth_young",
-      "expiry_date": "2026-04-11",
+      "expiry_date": "2026-09-14",
       "status": "active"
     },
     "lic_young_slack_pro_2": {
@@ -13245,7 +13488,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "elizabeth_young",
-      "expiry_date": "2026-01-17",
+      "expiry_date": "2026-05-09",
       "status": "active"
     },
     "lic_young_zoom_business": {
@@ -13254,7 +13497,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "elizabeth_young",
-      "expiry_date": "2026-03-01",
+      "expiry_date": "2025-12-22",
+      "status": "active"
+    },
+    "lic_young_confluence_2": {
+      "license_id": "lic_young_confluence_2",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "elizabeth_young",
+      "expiry_date": "2026-08-28",
       "status": "active"
     },
     "lic_tanaka_jira": {
@@ -13263,7 +13515,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "yuki_tanaka",
-      "expiry_date": "2025-12-18",
+      "expiry_date": "2026-07-22",
       "status": "active"
     },
     "lic_tanaka_figma": {
@@ -13272,7 +13524,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "yuki_tanaka",
-      "expiry_date": "2026-04-04",
+      "expiry_date": "2026-03-15",
       "status": "active"
     },
     "lic_tanaka_slack_pro_2": {
@@ -13281,7 +13533,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "yuki_tanaka",
-      "expiry_date": "2026-08-29",
+      "expiry_date": "2026-02-06",
+      "status": "active"
+    },
+    "lic_tanaka_confluence_2": {
+      "license_id": "lic_tanaka_confluence_2",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "yuki_tanaka",
+      "expiry_date": "2026-02-01",
       "status": "active"
     },
     "lic_mueller_slack_pro_4": {
@@ -13290,7 +13551,7 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "anthony_mueller",
-      "expiry_date": "2026-08-04",
+      "expiry_date": "2026-09-08",
       "status": "active"
     },
     "lic_mueller_zoom_business_3": {
@@ -13299,7 +13560,16 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "anthony_mueller",
-      "expiry_date": "2026-06-23",
+      "expiry_date": "2026-02-28",
+      "status": "active"
+    },
+    "lic_mueller_confluence_4": {
+      "license_id": "lic_mueller_confluence_4",
+      "software_name": "Confluence",
+      "version": "latest",
+      "license_type": "per_user",
+      "assigned_to": "anthony_mueller",
+      "expiry_date": "2026-04-16",
       "status": "active"
     },
     "lic_mueller_jira_4": {
@@ -13308,106 +13578,29 @@
       "version": "latest",
       "license_type": "per_user",
       "assigned_to": "anthony_mueller",
-      "expiry_date": "2026-01-13",
+      "expiry_date": "2026-03-22",
       "status": "active"
     }
   },
   "tickets": {
-    "ticket_williams_netw": {
-      "ticket_id": "ticket_williams_netw",
-      "employee_id": "yuki_williams",
-      "category": "network",
-      "priority": "high",
-      "status": "open",
-      "description": "VPN keeps disconnecting",
-      "created_at": "2025-08-15",
-      "assigned_to": "IT Support L1",
-      "resolution": null
-    },
-    "ticket_mueller_acce": {
-      "ticket_id": "ticket_mueller_acce",
-      "employee_id": "jessica_mueller",
+    "ticket_taylor_acce": {
+      "ticket_id": "ticket_taylor_acce",
+      "employee_id": "emily_taylor",
       "category": "access",
       "priority": "medium",
-      "status": "in_progress",
-      "description": "Cannot access staging environment",
-      "created_at": "2025-10-14",
-      "assigned_to": "Network Team",
-      "resolution": null
-    },
-    "ticket_ramirez_netw": {
-      "ticket_id": "ticket_ramirez_netw",
-      "employee_id": "kevin_ramirez",
-      "category": "network",
-      "priority": "medium",
-      "status": "open",
-      "description": "Cannot access internal websites",
-      "created_at": "2025-10-04",
-      "assigned_to": "IT Support L1",
-      "resolution": null
-    },
-    "ticket_davis_soft": {
-      "ticket_id": "ticket_davis_soft",
-      "employee_id": "mark_davis",
-      "category": "software",
-      "priority": "high",
-      "status": "open",
-      "description": "Cannot install required development tools",
-      "created_at": "2025-09-28",
-      "assigned_to": "IT Support L2",
-      "resolution": null
-    },
-    "ticket_moore_acce": {
-      "ticket_id": "ticket_moore_acce",
-      "employee_id": "timothy_moore",
-      "category": "access",
-      "priority": "low",
       "status": "resolved",
       "description": "Need VPN access for remote work",
-      "created_at": "2025-08-20",
-      "assigned_to": "Network Team",
+      "created_at": "2025-07-19",
+      "assigned_to": "IT Support L1",
       "resolution": "Issue resolved by IT support."
     },
-    "ticket_martin_hard": {
-      "ticket_id": "ticket_martin_hard",
-      "employee_id": "robert_martin",
-      "category": "hardware",
-      "priority": "medium",
-      "status": "in_progress",
-      "description": "Battery draining too fast",
-      "created_at": "2025-09-18",
-      "assigned_to": "IT Support L1",
-      "resolution": null
-    },
-    "ticket_rivera_hard": {
-      "ticket_id": "ticket_rivera_hard",
-      "employee_id": "richard_rivera",
-      "category": "hardware",
-      "priority": "medium",
-      "status": "in_progress",
-      "description": "Laptop running very slow",
-      "created_at": "2025-08-22",
-      "assigned_to": "Network Team",
-      "resolution": null
-    },
-    "ticket_clark_hard": {
-      "ticket_id": "ticket_clark_hard",
-      "employee_id": "william_clark",
+    "ticket_robinson_hard": {
+      "ticket_id": "ticket_robinson_hard",
+      "employee_id": "dorothy_robinson",
       "category": "hardware",
       "priority": "medium",
       "status": "open",
-      "description": "Keyboard not working properly",
-      "created_at": "2025-07-31",
-      "assigned_to": "Network Team",
-      "resolution": null
-    },
-    "ticket_roberts_soft": {
-      "ticket_id": "ticket_roberts_soft",
-      "employee_id": "joseph_roberts",
-      "category": "software",
-      "priority": "medium",
-      "status": "waiting",
-      "description": "VS Code keeps crashing",
+      "description": "External monitor not detected",
       "created_at": "2025-08-26",
       "assigned_to": "Network Team",
       "resolution": null
@@ -13456,8 +13649,8 @@
       "assigned_to": "Network Team",
       "resolution": "Issue resolved by IT support."
     },
-    "ticket_williams_netw_2": {
-      "ticket_id": "ticket_williams_netw_2",
+    "ticket_williams_netw": {
+      "ticket_id": "ticket_williams_netw",
       "employee_id": "joshua_williams",
       "category": "network",
       "priority": "high",
@@ -13544,8 +13737,8 @@
       "assigned_to": null,
       "resolution": "Issue resolved by IT support."
     },
-    "ticket_taylor_acce": {
-      "ticket_id": "ticket_taylor_acce",
+    "ticket_taylor_acce_2": {
+      "ticket_id": "ticket_taylor_acce_2",
       "employee_id": "patricia_taylor",
       "category": "access",
       "priority": "low",
@@ -13775,8 +13968,8 @@
       "assigned_to": null,
       "resolution": "Issue resolved by IT support."
     },
-    "ticket_mueller_acce_2": {
-      "ticket_id": "ticket_mueller_acce_2",
+    "ticket_mueller_acce": {
+      "ticket_id": "ticket_mueller_acce",
       "employee_id": "michael_mueller",
       "category": "access",
       "priority": "medium",
@@ -13797,8 +13990,8 @@
       "assigned_to": "IT Support L1",
       "resolution": "Issue resolved by IT support."
     },
-    "ticket_mueller_acce_3": {
-      "ticket_id": "ticket_mueller_acce_3",
+    "ticket_mueller_acce_2": {
+      "ticket_id": "ticket_mueller_acce_2",
       "employee_id": "anthony_mueller",
       "category": "access",
       "priority": "critical",
@@ -13907,8 +14100,8 @@
       "assigned_to": "IT Support L2",
       "resolution": "Issue resolved by IT support."
     },
-    "ticket_rivera_hard_2": {
-      "ticket_id": "ticket_rivera_hard_2",
+    "ticket_rivera_hard": {
+      "ticket_id": "ticket_rivera_hard",
       "employee_id": "richard_rivera",
       "category": "hardware",
       "priority": "medium",
@@ -14050,8 +14243,8 @@
       "assigned_to": "IT Support L1",
       "resolution": "Issue resolved by IT support."
     },
-    "ticket_martin_hard_2": {
-      "ticket_id": "ticket_martin_hard_2",
+    "ticket_martin_hard": {
+      "ticket_id": "ticket_martin_hard",
       "employee_id": "brian_martin",
       "category": "hardware",
       "priority": "high",
@@ -14191,6 +14384,83 @@
       "description": "Software license expired",
       "created_at": "2025-09-12",
       "assigned_to": "IT Support L1",
+      "resolution": "Issue resolved by IT support."
+    },
+    "ticket_santos_netw": {
+      "ticket_id": "ticket_santos_netw",
+      "employee_id": "ashley_santos",
+      "category": "network",
+      "priority": "medium",
+      "status": "in_progress",
+      "description": "Cannot access internal websites",
+      "created_at": "2025-09-22",
+      "assigned_to": null,
+      "resolution": null
+    },
+    "ticket_moore_soft": {
+      "ticket_id": "ticket_moore_soft",
+      "employee_id": "betty_moore",
+      "category": "software",
+      "priority": "medium",
+      "status": "open",
+      "description": "Software license expired",
+      "created_at": "2025-09-11",
+      "assigned_to": "IT Support L1",
+      "resolution": null
+    },
+    "ticket_wilson_acco_2": {
+      "ticket_id": "ticket_wilson_acco_2",
+      "employee_id": "christopher_wilson",
+      "category": "account",
+      "priority": "high",
+      "status": "closed",
+      "description": "Cannot log in to my account",
+      "created_at": "2025-08-24",
+      "assigned_to": "IT Support L2",
+      "resolution": "Issue resolved by IT support."
+    },
+    "ticket_ali_acco": {
+      "ticket_id": "ticket_ali_acco",
+      "employee_id": "melissa_ali",
+      "category": "account",
+      "priority": "high",
+      "status": "in_progress",
+      "description": "Need MFA setup assistance",
+      "created_at": "2025-08-08",
+      "assigned_to": null,
+      "resolution": null
+    },
+    "ticket_walker_hard": {
+      "ticket_id": "ticket_walker_hard",
+      "employee_id": "melissa_walker",
+      "category": "hardware",
+      "priority": "medium",
+      "status": "in_progress",
+      "description": "Battery draining too fast",
+      "created_at": "2025-10-11",
+      "assigned_to": "IT Support L2",
+      "resolution": null
+    },
+    "ticket_ramirez_netw": {
+      "ticket_id": "ticket_ramirez_netw",
+      "employee_id": "kevin_ramirez",
+      "category": "network",
+      "priority": "critical",
+      "status": "open",
+      "description": "Cannot access internal websites",
+      "created_at": "2025-09-18",
+      "assigned_to": "IT Support L2",
+      "resolution": null
+    },
+    "ticket_gonzalez_acco_2": {
+      "ticket_id": "ticket_gonzalez_acco_2",
+      "employee_id": "jessica_gonzalez",
+      "category": "account",
+      "priority": "low",
+      "status": "resolved",
+      "description": "Need MFA setup assistance",
+      "created_at": "2025-09-20",
+      "assigned_to": "IT Support L2",
       "resolution": "Issue resolved by IT support."
     }
   },
@@ -14941,9 +15211,9 @@
       "name": "Admin Access",
       "description": "Administrative access to production systems",
       "members": [
-        "william_smith",
-        "jessica_gonzalez",
-        "michelle_adams"
+        "kevin_sanchez",
+        "yuki_tanaka",
+        "donna_ali"
       ],
       "permissions": [
         "admin.full"
@@ -14983,7 +15253,7 @@
     "Confluence": {
       "software_name": "Confluence",
       "category": "standard",
-      "available_licenses": 0,
+      "available_licenses": 13,
       "requires_approval": false
     },
     "GitHub Enterprise": {

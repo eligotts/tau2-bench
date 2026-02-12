@@ -190,14 +190,10 @@ def build_indexes(db: dict) -> EntityIndexes:
         else:
             ix.standard_groups.append(gid)
             # Employees not in this group
-            not_in = [
-                eid for eid in ix.active_employees if eid not in g["members"]
-            ]
+            not_in = [eid for eid in ix.active_employees if eid not in g["members"]]
             if not_in:
                 ix.employees_not_in_group[gid] = not_in
-            in_group = [
-                eid for eid in ix.active_employees if eid in g["members"]
-            ]
+            in_group = [eid for eid in ix.active_employees if eid in g["members"]]
             if in_group:
                 ix.employees_in_group[gid] = in_group
 
@@ -240,9 +236,7 @@ def build_indexes(db: dict) -> EntityIndexes:
             ix.employees_not_in_group[key]
         )
     for key in list(ix.employees_in_group):
-        ix.employees_in_group[key] = remove_ambiguous(
-            ix.employees_in_group[key]
-        )
+        ix.employees_in_group[key] = remove_ambiguous(ix.employees_in_group[key])
 
     return ix
 
@@ -393,6 +387,7 @@ def make_task(
     reward_basis: list | None = None,
     user_setup: list | None = None,
     user_env_assertions: list | None = None,
+    agent_init_data: dict | None = None,
 ) -> dict:
     if reward_basis is None:
         reward_basis = ["ACTION"]
@@ -421,10 +416,31 @@ def make_task(
             "reward_basis": reward_basis,
         },
     }
-    if user_setup:
-        t["user_setup"] = user_setup
+    # Build initial_state from user_setup and/or agent_init_data
+    if user_setup or agent_init_data:
+        init_actions = None
+        init_data = None
+        if user_setup:
+            init_actions = [
+                {
+                    "env_type": "user",
+                    "func_name": a["func_name"],
+                    "arguments": a["arguments"],
+                }
+                for a in user_setup
+            ]
+        if agent_init_data:
+            init_data = {"agent_data": agent_init_data}
+        t["initial_state"] = {
+            "initialization_data": init_data,
+            "initialization_actions": init_actions,
+            "message_history": None,
+        }
+    # Merge user_env_assertions into env_assertions
     if user_env_assertions:
-        t["evaluation_criteria"]["user_env_assertions"] = user_env_assertions
+        if t["evaluation_criteria"]["env_assertions"] is None:
+            t["evaluation_criteria"]["env_assertions"] = []
+        t["evaluation_criteria"]["env_assertions"].extend(user_env_assertions)
     return t
 
 
@@ -549,6 +565,7 @@ def gen_unlock_account(db, ix, n=5):
 
     for i, eid in enumerate(locked[:n]):
         name = emp_name(db, eid)
+        email = emp_email(db, eid)
         dept = emp_dept(db, eid)
         track_use(eid)
 
@@ -573,6 +590,12 @@ def gen_unlock_account(db, ix, n=5):
                 {"expected": False},
             )
         ]
+        setup = [
+            user_setup_action(
+                "set_employee_info", {"name": name, "email": email, "employee_id": eid}
+            ),
+            user_setup_action("lock_account", {}),
+        ]
 
         # Variant A: Easy
         pa = pick_easy_persona()
@@ -592,7 +615,7 @@ def gen_unlock_account(db, ix, n=5):
                 acts,
                 asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
-                user_setup=[user_setup_action("lock_account", {})],
+                user_setup=setup,
                 user_env_assertions=user_asserts,
             )
         )
@@ -615,7 +638,7 @@ def gen_unlock_account(db, ix, n=5):
                 acts,
                 asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
-                user_setup=[user_setup_action("lock_account", {})],
+                user_setup=setup,
                 user_env_assertions=user_asserts,
             )
         )
@@ -866,17 +889,13 @@ def gen_check_device_info(db, ix, n=3):
     """Employee asks about their device details. Single variant."""
     tasks = []
     eligible = [
-        eid for eid in ix.active_employees
-        if db["employees"][eid]["device_ids"]
+        eid for eid in ix.active_employees if db["employees"][eid]["device_ids"]
     ]
     random.shuffle(eligible)
 
     for i, eid in enumerate(eligible[:n]):
-        e = db["employees"][eid]
         name = emp_name(db, eid)
         dept = emp_dept(db, eid)
-        did = e["device_ids"][0]
-        device = db["devices"][did]
         track_use(eid)
         pa = pick_easy_persona()
 
@@ -929,9 +948,7 @@ def gen_check_access_groups(db, ix, n=3):
                 "You're not sure which groups you're in.",
                 f"Employee {name}: check access groups. Agent should list memberships.",
                 [],
-                nl_assertions=[
-                    f"The agent listed the access groups for {name}"
-                ],
+                nl_assertions=[f"The agent listed the access groups for {name}"],
                 reward_basis=["NL_ASSERTION"],
             )
         )
@@ -951,6 +968,7 @@ def gen_unlock_and_reset_password(db, ix, n=4):
 
     for i, eid in enumerate(locked[:n]):
         name = emp_name(db, eid)
+        email = emp_email(db, eid)
         dept = emp_dept(db, eid)
         track_use(eid)
 
@@ -983,6 +1001,12 @@ def gen_unlock_and_reset_password(db, ix, n=4):
         user_asserts = [
             user_env_assert("assert_account_locked", {"expected": False}),
         ]
+        setup = [
+            user_setup_action(
+                "set_employee_info", {"name": name, "email": email, "employee_id": eid}
+            ),
+            user_setup_action("lock_account", {}),
+        ]
 
         # Variant A: Easy
         pa = pick_easy_persona()
@@ -1003,7 +1027,7 @@ def gen_unlock_and_reset_password(db, ix, n=4):
                 acts,
                 asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
-                user_setup=[user_setup_action("lock_account", {})],
+                user_setup=setup,
                 user_env_assertions=user_asserts,
             )
         )
@@ -1027,7 +1051,7 @@ def gen_unlock_and_reset_password(db, ix, n=4):
                 acts,
                 asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
-                user_setup=[user_setup_action("lock_account", {})],
+                user_setup=setup,
                 user_env_assertions=user_asserts,
             )
         )
@@ -1376,6 +1400,7 @@ def gen_vpn_troubleshooting(db, ix, n=4):
 
     for i, eid in enumerate(eligible[:n]):
         name = emp_name(db, eid)
+        email = emp_email(db, eid)
         dept = emp_dept(db, eid)
         track_use(eid)
 
@@ -1383,6 +1408,9 @@ def gen_vpn_troubleshooting(db, ix, n=4):
         user_asserts = [
             user_env_assert("assert_vpn_connected", {"expected": True}),
         ]
+        info_setup = user_setup_action(
+            "set_employee_info", {"name": name, "email": email, "employee_id": eid}
+        )
 
         # Variant A: Easy - basic VPN reconnect
         pa = pick_easy_persona()
@@ -1407,6 +1435,7 @@ def gen_vpn_troubleshooting(db, ix, n=4):
                 ],
                 reward_basis=["NL_ASSERTION"],
                 user_setup=[
+                    info_setup,
                     user_setup_action("break_vpn", {"error": "Connection timed out"}),
                 ],
                 user_env_assertions=user_asserts,
@@ -1456,7 +1485,10 @@ def gen_vpn_troubleshooting(db, ix, n=4):
                 ],
                 reward_basis=["ACTION", "ENV_ASSERTION", "NL_ASSERTION"],
                 user_setup=[
-                    user_setup_action("break_vpn", {"error": "VPN certificate has expired"}),
+                    info_setup,
+                    user_setup_action(
+                        "break_vpn", {"error": "VPN certificate has expired"}
+                    ),
                 ],
             )
         )
@@ -1467,13 +1499,13 @@ def gen_unlock_reset_mfa(db, ix, n=3):
     """Unlock + reset + enable MFA triple combo. n bases -> 2n tasks."""
     tasks = []
     locked_no_mfa = [
-        eid for eid in ix.locked_employees
-        if not db["employees"][eid]["mfa_enabled"]
+        eid for eid in ix.locked_employees if not db["employees"][eid]["mfa_enabled"]
     ]
     random.shuffle(locked_no_mfa)
 
     for i, eid in enumerate(locked_no_mfa[:n]):
         name = emp_name(db, eid)
+        email = emp_email(db, eid)
         dept = emp_dept(db, eid)
         track_use(eid)
 
@@ -1517,6 +1549,12 @@ def gen_unlock_reset_mfa(db, ix, n=3):
         user_asserts = [
             user_env_assert("assert_account_locked", {"expected": False}),
         ]
+        setup = [
+            user_setup_action(
+                "set_employee_info", {"name": name, "email": email, "employee_id": eid}
+            ),
+            user_setup_action("lock_account", {}),
+        ]
 
         # Variant A: Easy
         pa = pick_easy_persona()
@@ -1538,7 +1576,7 @@ def gen_unlock_reset_mfa(db, ix, n=3):
                 acts,
                 asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
-                user_setup=[user_setup_action("lock_account", {})],
+                user_setup=setup,
                 user_env_assertions=user_asserts,
             )
         )
@@ -1563,7 +1601,7 @@ def gen_unlock_reset_mfa(db, ix, n=3):
                 acts,
                 asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
-                user_setup=[user_setup_action("lock_account", {})],
+                user_setup=setup,
                 user_env_assertions=user_asserts,
             )
         )
@@ -1678,12 +1716,13 @@ def gen_software_plus_access_group(db, ix, n=4):
 def gen_login_troubleshooting(db, ix, n=3):
     """Employee can't log in — agent must diagnose using user tools. n -> 2n."""
     tasks = []
-    # Pick active employees whose accounts we'll lock via user_setup
+    # Pick active employees whose accounts we'll lock via initialization
     eligible = list(ix.active_employees)
     random.shuffle(eligible)
 
     for i, eid in enumerate(eligible[:n]):
         name = emp_name(db, eid)
+        email = emp_email(db, eid)
         dept = emp_dept(db, eid)
         track_use(eid)
 
@@ -1704,7 +1743,21 @@ def gen_login_troubleshooting(db, ix, n=3):
         ]
         user_asserts = [
             user_env_assert("assert_account_locked", {"expected": False}),
-            user_env_assert("assert_service_accessible", {"service": "email", "expected": True}),
+            user_env_assert(
+                "assert_service_accessible", {"service": "email", "expected": True}
+            ),
+        ]
+
+        # Agent-side: lock the employee's account in the agent DB
+        agent_data = {"employees": {eid: {"account_status": "locked"}}}
+        # User-side: set employee identity + block email service
+        setup = [
+            user_setup_action(
+                "set_employee_info", {"name": name, "email": email, "employee_id": eid}
+            ),
+            user_setup_action(
+                "block_service", {"service": "email", "status": "account_locked"}
+            ),
         ]
 
         # Variant A: Easy - tells agent their account is locked
@@ -1726,11 +1779,9 @@ def gen_login_troubleshooting(db, ix, n=3):
                 acts,
                 asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
-                user_setup=[
-                    user_setup_action("lock_account", {}),
-                    user_setup_action("block_service", {"service": "email", "status": "account_locked"}),
-                ],
+                user_setup=setup,
                 user_env_assertions=user_asserts,
+                agent_init_data=agent_data,
             )
         )
 
@@ -1753,11 +1804,9 @@ def gen_login_troubleshooting(db, ix, n=3):
                 acts,
                 asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
-                user_setup=[
-                    user_setup_action("lock_account", {}),
-                    user_setup_action("block_service", {"service": "email", "status": "account_locked"}),
-                ],
+                user_setup=setup,
                 user_env_assertions=user_asserts,
+                agent_init_data=agent_data,
             )
         )
     return tasks
@@ -1919,7 +1968,9 @@ def gen_restricted_software_request(db, ix, n=2):
                     action(
                         "transfer_1",
                         "transfer_to_human_agents",
-                        {"summary": f"Employee {name} requests restricted software: {sw_key}"},
+                        {
+                            "summary": f"Employee {name} requests restricted software: {sw_key}"
+                        },
                         f"Transfer for restricted software {sw_key}",
                         compare_args=[],
                     )
@@ -1964,7 +2015,9 @@ def gen_restricted_group_request(db, ix, n=2):
                     action(
                         "transfer_1",
                         "transfer_to_human_agents",
-                        {"summary": f"Employee {name} requests restricted access group: {group_name}"},
+                        {
+                            "summary": f"Employee {name} requests restricted access group: {group_name}"
+                        },
                         f"Transfer for restricted group {group_name}",
                         compare_args=[],
                     )
@@ -2069,13 +2122,13 @@ def gen_mfa_on_locked_account(db, ix, n=2):
     """MFA cannot be enabled on locked account — must unlock first. n -> 2n tasks."""
     tasks = []
     locked_no_mfa = [
-        eid for eid in ix.locked_employees
-        if not db["employees"][eid]["mfa_enabled"]
+        eid for eid in ix.locked_employees if not db["employees"][eid]["mfa_enabled"]
     ]
     random.shuffle(locked_no_mfa)
 
     for i, eid in enumerate(locked_no_mfa[:n]):
         name = emp_name(db, eid)
+        email = emp_email(db, eid)
         dept = emp_dept(db, eid)
         track_use(eid)
 
@@ -2105,6 +2158,12 @@ def gen_mfa_on_locked_account(db, ix, n=2):
                 {"employee_id": eid, "expected": True},
             ),
         ]
+        setup = [
+            user_setup_action(
+                "set_employee_info", {"name": name, "email": email, "employee_id": eid}
+            ),
+            user_setup_action("lock_account", {}),
+        ]
 
         # Variant A: Easy
         pa = pick_easy_persona()
@@ -2124,7 +2183,7 @@ def gen_mfa_on_locked_account(db, ix, n=2):
                 acts,
                 asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
-                user_setup=[user_setup_action("lock_account", {})],
+                user_setup=setup,
             )
         )
 
@@ -2146,7 +2205,7 @@ def gen_mfa_on_locked_account(db, ix, n=2):
                 acts,
                 asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
-                user_setup=[user_setup_action("lock_account", {})],
+                user_setup=setup,
             )
         )
     return tasks
@@ -2164,14 +2223,17 @@ def gen_new_hire_onboarding(db, ix, n=3):
         for sw_key in ix.standard_software:
             sw_lower = sw_key.lower()
             has = any(
-                db["software_licenses"].get(lid, {}).get("software_name", "").lower() == sw_lower
+                db["software_licenses"].get(lid, {}).get("software_name", "").lower()
+                == sw_lower
                 and db["software_licenses"].get(lid, {}).get("status") == "active"
                 for lid in e["software_licenses"]
             )
             if not has:
                 missing_sw += 1
         missing_groups = sum(
-            1 for gid in ix.standard_groups if eid not in db["access_groups"][gid]["members"]
+            1
+            for gid in ix.standard_groups
+            if eid not in db["access_groups"][gid]["members"]
         )
         if missing_sw >= 2 and missing_groups >= 1:
             eligible.append((eid, missing_sw, missing_groups))
@@ -2189,7 +2251,8 @@ def gen_new_hire_onboarding(db, ix, n=3):
         for sw_key in ix.standard_software[:3]:  # grant up to 3
             sw_lower = sw_key.lower()
             has = any(
-                db["software_licenses"].get(lid, {}).get("software_name", "").lower() == sw_lower
+                db["software_licenses"].get(lid, {}).get("software_name", "").lower()
+                == sw_lower
                 and db["software_licenses"].get(lid, {}).get("status") == "active"
                 for lid in e["software_licenses"]
             )
@@ -2328,7 +2391,9 @@ def gen_transfer_scenarios(db, ix, n=4):
             "known": "Your name is {name}. You noticed suspicious activity.",
             "unknown": "You don't know the security incident process.",
             "ticket": "Employee {name} reports security incident. Agent should transfer.",
-            "nl": ["The agent transferred the employee to a human agent or security team"],
+            "nl": [
+                "The agent transferred the employee to a human agent or security team"
+            ],
         },
         {
             "suffix": "bulk_licenses",
@@ -2336,7 +2401,9 @@ def gen_transfer_scenarios(db, ix, n=4):
             "known": "Your name is {name}. You manage a team of 20.",
             "unknown": "You assume IT can do bulk operations.",
             "ticket": "Employee {name} requests bulk licensing. Agent should transfer.",
-            "nl": ["The agent transferred the employee to a human agent for bulk processing"],
+            "nl": [
+                "The agent transferred the employee to a human agent for bulk processing"
+            ],
         },
         {
             "suffix": "data_recovery",
@@ -2344,7 +2411,9 @@ def gen_transfer_scenarios(db, ix, n=4):
             "known": "Your name is {name}. You deleted files yesterday.",
             "unknown": "You don't know if files can be recovered.",
             "ticket": "Employee {name} needs data recovery. Agent should transfer.",
-            "nl": ["The agent transferred the employee to a human agent for data recovery"],
+            "nl": [
+                "The agent transferred the employee to a human agent for data recovery"
+            ],
         },
     ]
 
@@ -2393,6 +2462,7 @@ def gen_vpn_no_internet(db, ix, n=2):
 
     for i, eid in enumerate(eligible[:n]):
         name = emp_name(db, eid)
+        email = emp_email(db, eid)
         dept = emp_dept(db, eid)
         track_use(eid)
         pa = pick_easy_persona()
@@ -2437,6 +2507,10 @@ def gen_vpn_no_internet(db, ix, n=2):
                 ],
                 reward_basis=["ACTION", "ENV_ASSERTION", "NL_ASSERTION"],
                 user_setup=[
+                    user_setup_action(
+                        "set_employee_info",
+                        {"name": name, "email": email, "employee_id": eid},
+                    ),
                     user_setup_action("break_internet", {}),
                 ],
             )
@@ -2452,7 +2526,8 @@ def gen_revoke_software_license(db, ix, n=3):
     for eid in ix.active_employees:
         e = db["employees"][eid]
         active_lics = [
-            lid for lid in e["software_licenses"]
+            lid
+            for lid in e["software_licenses"]
             if lid in db["software_licenses"]
             and db["software_licenses"][lid]["status"] == "active"
         ]
@@ -2634,6 +2709,7 @@ def gen_password_expired_troubleshoot(db, ix, n=3):
 
     for i, eid in enumerate(eligible[:n]):
         name = emp_name(db, eid)
+        email = emp_email(db, eid)
         dept = emp_dept(db, eid)
         track_use(eid)
 
@@ -2651,6 +2727,12 @@ def gen_password_expired_troubleshoot(db, ix, n=3):
                 "assert_password_reset_date",
                 {"employee_id": eid, "expected_date": TODAY},
             ),
+        ]
+        setup = [
+            user_setup_action(
+                "set_employee_info", {"name": name, "email": email, "employee_id": eid}
+            ),
+            user_setup_action("expire_password", {}),
         ]
 
         # Variant A: Easy
@@ -2672,9 +2754,7 @@ def gen_password_expired_troubleshoot(db, ix, n=3):
                 acts,
                 asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
-                user_setup=[
-                    user_setup_action("expire_password", {}),
-                ],
+                user_setup=setup,
             )
         )
 
@@ -2697,9 +2777,7 @@ def gen_password_expired_troubleshoot(db, ix, n=3):
                 acts,
                 asserts,
                 reward_basis=["ACTION", "ENV_ASSERTION"],
-                user_setup=[
-                    user_setup_action("expire_password", {}),
-                ],
+                user_setup=setup,
             )
         )
     return tasks
@@ -2724,7 +2802,6 @@ def gen_remove_from_group(db, ix, n=3):
 
     for i, (gid, eid) in enumerate(selected):
         name = emp_name(db, eid)
-        dept = emp_dept(db, eid)
         group_name = db["access_groups"][gid]["name"]
         track_use(eid)
         pa = pick_easy_persona()
