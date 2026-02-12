@@ -16,6 +16,13 @@ from tau2.domains.car_rental.environment import (
 from tau2.domains.car_rental.environment import (
     get_tasks_split as car_rental_domain_get_tasks_split,
 )
+from tau2.domains.clinic.environment import (
+    get_environment as clinic_domain_get_environment,
+)
+from tau2.domains.clinic.environment import get_tasks as clinic_domain_get_tasks
+from tau2.domains.clinic.environment import (
+    get_tasks_split as clinic_domain_get_tasks_split,
+)
 from tau2.domains.mock.environment import get_environment as mock_domain_get_environment
 from tau2.domains.mock.environment import get_tasks as mock_domain_get_tasks
 from tau2.environment.environment import Environment
@@ -194,6 +201,13 @@ try:
         car_rental_domain_get_tasks,
         "car_rental",
         get_task_splits=car_rental_domain_get_tasks_split,
+    )
+
+    registry.register_domain(clinic_domain_get_environment, "clinic")
+    registry.register_tasks(
+        clinic_domain_get_tasks,
+        "clinic",
+        get_task_splits=clinic_domain_get_tasks_split,
     )
 
     registry.register_domain(mock_domain_get_environment, "mock")
