@@ -176,19 +176,15 @@ class FestivalTools(ToolKitBase):
     def search_lost_items(
         self,
         description: Optional[str] = None,
-        location: Optional[str] = None,
-        date: Optional[str] = None,
     ) -> list[LostItem]:
         """
-        Search the lost and found inventory.
+        Search the lost and found inventory by item description.
 
         Args:
             description: Description to search for (case-insensitive partial match)
-            location: Location where item was found (case-insensitive partial match)
-            date: Date to filter by (YYYY-MM-DD)
 
         Returns:
-            A list of matching lost items
+            A list of matching lost items (includes found location and date)
         """
         results = [
             item for item in self.db.lost_items.values() if item.status == "unclaimed"
@@ -198,13 +194,6 @@ class FestivalTools(ToolKitBase):
             results = [
                 item for item in results if desc_lower in item.description.lower()
             ]
-        if location:
-            loc_lower = location.lower()
-            results = [
-                item for item in results if loc_lower in item.found_location.lower()
-            ]
-        if date:
-            results = [item for item in results if item.found_time.startswith(date)]
         return results
 
     @is_tool(ToolType.READ)
@@ -292,7 +281,7 @@ class FestivalTools(ToolKitBase):
             ("vip", "fri"): 50,
             ("vip", "sat"): 50,
             ("vip", "sun"): 50,
-            ("vip", "all"): 30,
+            ("vip", "all"): 50,
             ("artist", "all"): 20,
         }
         cap_key = (type, day)
