@@ -25,6 +25,13 @@ from tau2.domains.clinic.environment import (
 )
 from tau2.domains.mock.environment import get_environment as mock_domain_get_environment
 from tau2.domains.mock.environment import get_tasks as mock_domain_get_tasks
+from tau2.domains.festival.environment import (
+    get_environment as festival_domain_get_environment,
+)
+from tau2.domains.festival.environment import get_tasks as festival_domain_get_tasks
+from tau2.domains.festival.environment import (
+    get_tasks_split as festival_domain_get_tasks_split,
+)
 from tau2.environment.environment import Environment
 from tau2.user.base import BaseUser
 from tau2.user.user_simulator import DummyUser, UserSimulator
@@ -212,6 +219,13 @@ try:
 
     registry.register_domain(mock_domain_get_environment, "mock")
     registry.register_tasks(mock_domain_get_tasks, "mock")
+
+    registry.register_domain(festival_domain_get_environment, "festival")
+    registry.register_tasks(
+        festival_domain_get_tasks,
+        "festival",
+        get_task_splits=festival_domain_get_tasks_split,
+    )
 
     logger.debug(
         f"Default components registered successfully. Registry info: {json.dumps(registry.get_info().model_dump(), indent=2)}"
