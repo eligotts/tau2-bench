@@ -199,6 +199,15 @@ class CarRentalTools(ToolKitBase):
         return self.db.locations[location_id]
 
     @is_tool(ToolType.READ)
+    def list_locations(self) -> list[Location]:
+        """List all rental locations with their details.
+
+        Returns:
+            A list of all rental locations
+        """
+        return list(self.db.locations.values())
+
+    @is_tool(ToolType.READ)
     def list_extras(self) -> list[Extra]:
         """List all available add-on extras and their daily rates.
 
@@ -240,6 +249,29 @@ class CarRentalTools(ToolKitBase):
         if agreement_id not in self.db.rental_agreements:
             raise ValueError(f"Rental agreement '{agreement_id}' not found")
         return self.db.rental_agreements[agreement_id]
+
+    @is_tool(ToolType.READ)
+    def find_rental_agreements_by_customer(
+        self, customer_id: str
+    ) -> list[RentalAgreement]:
+        """Find all rental agreements for a customer.
+
+        Args:
+            customer_id: The customer's unique identifier
+
+        Returns:
+            A list of rental agreements for the customer
+
+        Raises:
+            ValueError: If the customer ID does not exist
+        """
+        if customer_id not in self.db.customers:
+            raise ValueError(f"Customer '{customer_id}' not found")
+        return [
+            a
+            for a in self.db.rental_agreements.values()
+            if a.customer_id == customer_id
+        ]
 
     # ── WRITE Tools ─────────────────────────────────────────────
 
@@ -425,7 +457,8 @@ class CarRentalTools(ToolKitBase):
         """Modify an existing reservation.
 
         Can change dates, vehicle category, extras, or insurance type.
-        Only confirmed reservations can be modified.
+        Only confirmed reservations can be fully modified.
+        Active reservations allow extras changes only.
 
         Args:
             reservation_id: The reservation's unique identifier
@@ -439,16 +472,26 @@ class CarRentalTools(ToolKitBase):
             The modified reservation
 
         Raises:
-            ValueError: If reservation not found, not confirmed, or invalid changes
+            ValueError: If reservation not found, not modifiable, or invalid changes
         """
         if reservation_id not in self.db.reservations:
             raise ValueError(f"Reservation '{reservation_id}' not found")
         res = self.db.reservations[reservation_id]
 
-        if res.status != "confirmed":
+        if res.status == "active":
+            # Active reservations only allow extras changes
+            if any(
+                x is not None
+                for x in [pickup_datetime, dropoff_datetime, category, insurance_type]
+            ):
+                raise ValueError(
+                    "Cannot modify dates, category, or insurance on an active reservation. "
+                    "Only extras can be updated. Use extend_rental to change the return date."
+                )
+        elif res.status != "confirmed":
             raise ValueError(
                 f"Cannot modify reservation with status '{res.status}'. "
-                "Only confirmed reservations can be modified."
+                "Only confirmed or active reservations can be modified."
             )
 
         # Apply changes

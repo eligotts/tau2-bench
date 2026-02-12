@@ -9,14 +9,14 @@
     "user_scenario": {
       "persona": "Organized frequent renter",
       "instructions": {
-        "task_instructions": "You are Anna Howard. You want to rent a economy car. You know the rental process well. State your request clearly, provide your name and details upfront. You are cooperative and concise in your responses. State your request clearly.",
+        "task_instructions": "You are Anna Howard. You want to rent an economy car. You know the rental process well. State your request clearly, provide your name and details upfront. You are cooperative and concise in your responses. State your request clearly.",
         "domain": "car_rental",
-        "reason_for_call": "I'd like to book a economy car at Downtown Office, picking up on 2025-10-23 and returning 3 days later.",
-        "known_info": "Your name is Anna Howard. You want a economy car at Downtown Office. Pickup: 2025-10-23 10:00, return 3 days later. No insurance needed.",
+        "reason_for_call": "I'd like to book an economy car at Downtown Office, picking up on 2025-10-23 and returning 3 days later.",
+        "known_info": "Your name is Anna Howard. You want an economy car at Downtown Office. Pickup: 2025-10-23 10:00, return 3 days later. No insurance needed.",
         "unknown_info": "You don't know the exact vehicle ID or your customer ID."
       }
     },
-    "ticket": "Customer Anna Howard wants to book a economy at Downtown Office.",
+    "ticket": "Customer Anna Howard wants to book an economy at Downtown Office.",
     "evaluation_criteria": {
       "actions": [
         {
@@ -369,14 +369,14 @@
     "user_scenario": {
       "persona": "Friendly and direct business traveler",
       "instructions": {
-        "task_instructions": "You are Patricia Edwards. You want to rent a suv car. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary. State your request clearly.",
+        "task_instructions": "You are Patricia Edwards. You want to rent an SUV car. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary. State your request clearly.",
         "domain": "car_rental",
-        "reason_for_call": "I'd like to book a suv car at North Park Location, picking up on 2025-11-06 and returning 2 days later.",
-        "known_info": "Your name is Patricia Edwards. You want a suv car at North Park Location. Pickup: 2025-11-06 10:00, return 2 days later. No insurance needed.",
+        "reason_for_call": "I'd like to book an SUV car at North Park Location, picking up on 2025-11-06 and returning 2 days later.",
+        "known_info": "Your name is Patricia Edwards. You want an SUV car at North Park Location. Pickup: 2025-11-06 10:00, return 2 days later. No insurance needed.",
         "unknown_info": "You don't know the exact vehicle ID or your customer ID."
       }
     },
-    "ticket": "Customer Patricia Edwards wants to book a suv at North Park Location.",
+    "ticket": "Customer Patricia Edwards wants to book an SUV at North Park Location.",
     "evaluation_criteria": {
       "actions": [
         {
@@ -489,14 +489,14 @@
     "user_scenario": {
       "persona": "Casual vacation planner",
       "instructions": {
-        "task_instructions": "You are Sandra Ross. You want to rent a economy car. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush. State your request clearly.",
+        "task_instructions": "You are Sandra Ross. You want to rent an economy car. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush. State your request clearly.",
         "domain": "car_rental",
-        "reason_for_call": "I'd like to book a economy car at East Mall Office, picking up on 2025-11-13 and returning 4 days later.",
-        "known_info": "Your name is Sandra Ross. You want a economy car at East Mall Office. Pickup: 2025-11-13 10:00, return 4 days later. No insurance needed.",
+        "reason_for_call": "I'd like to book an economy car at East Mall Office, picking up on 2025-11-13 and returning 4 days later.",
+        "known_info": "Your name is Sandra Ross. You want an economy car at East Mall Office. Pickup: 2025-11-13 10:00, return 4 days later. No insurance needed.",
         "unknown_info": "You don't know the exact vehicle ID or your customer ID."
       }
     },
-    "ticket": "Customer Sandra Ross wants to book a economy at East Mall Office.",
+    "ticket": "Customer Sandra Ross wants to book an economy at East Mall Office.",
     "evaluation_criteria": {
       "actions": [
         {
@@ -849,14 +849,14 @@
     "user_scenario": {
       "persona": "Family trip coordinator",
       "instructions": {
-        "task_instructions": "You are Austin Ruiz. You want to rent a suv car. You're organizing for your family and juggling logistics. You may mention tangential concerns (child seats, space for luggage) before getting to the core request. You eventually provide all needed info. State your request clearly.",
+        "task_instructions": "You are Austin Ruiz. You want to rent an SUV car. You're organizing for your family and juggling logistics. You may mention tangential concerns (child seats, space for luggage) before getting to the core request. You eventually provide all needed info. State your request clearly.",
         "domain": "car_rental",
-        "reason_for_call": "I'd like to book a suv car at University District, picking up on 2025-11-13 and returning 3 days later.",
-        "known_info": "Your name is Austin Ruiz. You want a suv car at University District. Pickup: 2025-11-13 10:00, return 3 days later. No insurance needed.",
+        "reason_for_call": "I'd like to book an SUV car at University District, picking up on 2025-11-13 and returning 3 days later.",
+        "known_info": "Your name is Austin Ruiz. You want an SUV car at University District. Pickup: 2025-11-13 10:00, return 3 days later. No insurance needed.",
         "unknown_info": "You don't know the exact vehicle ID or your customer ID."
       }
     },
-    "ticket": "Customer Austin Ruiz wants to book a suv at University District.",
+    "ticket": "Customer Austin Ruiz wants to book an SUV at University District.",
     "evaluation_criteria": {
       "actions": [
         {
@@ -969,14 +969,14 @@
     "user_scenario": {
       "persona": "Family trip coordinator",
       "instructions": {
-        "task_instructions": "You are Eric Robinson. You want to rent a economy car. You're organizing for your family and juggling logistics. You may mention tangential concerns (child seats, space for luggage) before getting to the core request. You eventually provide all needed info. State your request clearly.",
+        "task_instructions": "You are Eric Robinson. You want to rent an economy car. You're organizing for your family and juggling logistics. You may mention tangential concerns (child seats, space for luggage) before getting to the core request. You eventually provide all needed info. State your request clearly.",
         "domain": "car_rental",
-        "reason_for_call": "I'd like to book a economy car at Downtown Office, picking up on 2025-11-09 and returning 4 days later.",
-        "known_info": "Your name is Eric Robinson. You want a economy car at Downtown Office. Pickup: 2025-11-09 10:00, return 4 days later. No insurance needed.",
+        "reason_for_call": "I'd like to book an economy car at Downtown Office, picking up on 2025-11-09 and returning 4 days later.",
+        "known_info": "Your name is Eric Robinson. You want an economy car at Downtown Office. Pickup: 2025-11-09 10:00, return 4 days later. No insurance needed.",
         "unknown_info": "You don't know the exact vehicle ID or your customer ID."
       }
     },
-    "ticket": "Customer Eric Robinson wants to book a economy at Downtown Office.",
+    "ticket": "Customer Eric Robinson wants to book an economy at Downtown Office.",
     "evaluation_criteria": {
       "actions": [
         {
@@ -1329,14 +1329,14 @@
     "user_scenario": {
       "persona": "Friendly and direct business traveler",
       "instructions": {
-        "task_instructions": "You are Madison Sanders. You want to rent a suv car. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary. State your request clearly.",
+        "task_instructions": "You are Madison Sanders. You want to rent an SUV car. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary. State your request clearly.",
         "domain": "car_rental",
-        "reason_for_call": "I'd like to book a suv car at North Park Location, picking up on 2025-10-30 and returning 5 days later.",
-        "known_info": "Your name is Madison Sanders. You want a suv car at North Park Location. Pickup: 2025-10-30 10:00, return 5 days later. No insurance needed.",
+        "reason_for_call": "I'd like to book an SUV car at North Park Location, picking up on 2025-10-30 and returning 5 days later.",
+        "known_info": "Your name is Madison Sanders. You want an SUV car at North Park Location. Pickup: 2025-10-30 10:00, return 5 days later. No insurance needed.",
         "unknown_info": "You don't know the exact vehicle ID or your customer ID."
       }
     },
-    "ticket": "Customer Madison Sanders wants to book a suv at North Park Location.",
+    "ticket": "Customer Madison Sanders wants to book an SUV at North Park Location.",
     "evaluation_criteria": {
       "actions": [
         {
@@ -1997,7 +1997,7 @@
         "task_instructions": "You are Thomas Lopez. You need to cancel your upcoming car rental. You're organizing for your family and juggling logistics. You may mention tangential concerns (child seats, space for luggage) before getting to the core request. You eventually provide all needed info.",
         "domain": "car_rental",
         "reason_for_call": "I need to cancel my reservation for the economy at Capital City Airport. My plans changed.",
-        "known_info": "Your name is Thomas Lopez. You have a reservation for a economy at Capital City Airport. You want to cancel because your plans changed.",
+        "known_info": "Your name is Thomas Lopez. You have a reservation for an economy at Capital City Airport. You want to cancel because your plans changed.",
         "unknown_info": "You don't know the reservation ID or exact cancellation fee."
       }
     },
@@ -2106,7 +2106,7 @@
         "task_instructions": "You are Sandra Ross. You need to change your pickup and return dates to 2 days later than originally booked. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary.",
         "domain": "car_rental",
         "reason_for_call": "I need to push my rental dates back by 2 days. New pickup: 2025-12-02.",
-        "known_info": "Your name is Sandra Ross. You have a economy reservation. You want to move pickup to 2025-12-02 08:00 and dropoff to 2025-12-16 14:00.",
+        "known_info": "Your name is Sandra Ross. You have an economy reservation. You want to move pickup to 2025-12-02 08:00 and dropoff to 2025-12-16 14:00.",
         "unknown_info": "You don't know the reservation ID or the new total."
       }
     },
@@ -2217,7 +2217,7 @@
         "task_instructions": "You are David Rogers. You need to change your pickup and return dates to 2 days later than originally booked. You know the rental process well. State your request clearly, provide your name and details upfront. You are cooperative and concise in your responses.",
         "domain": "car_rental",
         "reason_for_call": "I need to push my rental dates back by 2 days. New pickup: 2025-10-19.",
-        "known_info": "Your name is David Rogers. You have a economy reservation. You want to move pickup to 2025-10-19 17:00 and dropoff to 2025-10-28 16:00.",
+        "known_info": "Your name is David Rogers. You have an economy reservation. You want to move pickup to 2025-10-19 17:00 and dropoff to 2025-10-28 16:00.",
         "unknown_info": "You don't know the reservation ID or the new total."
       }
     },
@@ -2328,7 +2328,7 @@
         "task_instructions": "You are Robert Morales. You need to change your pickup and return dates to 2 days later than originally booked. You're short on time. Give brief, sometimes incomplete answers. You might skip details you think are obvious. If asked to repeat or clarify, do so but with slight impatience.",
         "domain": "car_rental",
         "reason_for_call": "I need to push my rental dates back by 2 days. New pickup: 2025-12-10.",
-        "known_info": "Your name is Robert Morales. You have a suv reservation. You want to move pickup to 2025-12-10 16:00 and dropoff to 2025-12-15 15:00.",
+        "known_info": "Your name is Robert Morales. You have an SUV reservation. You want to move pickup to 2025-12-10 16:00 and dropoff to 2025-12-15 15:00.",
         "unknown_info": "You don't know the reservation ID or the new total."
       }
     },
@@ -3513,10 +3513,10 @@
     "user_scenario": {
       "persona": "Casual vacation planner",
       "instructions": {
-        "task_instructions": "You are Laura Young. You currently have a car rented and need it for 1 more days than planned. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
+        "task_instructions": "You are Laura Young. You currently have a car rented and need it for 1 day more than planned. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
         "domain": "car_rental",
-        "reason_for_call": "I need to keep my rental car for 1 extra days. Can you extend my rental?",
-        "known_info": "Your name is Laura Young. You have an active rental. You need 1 more days.",
+        "reason_for_call": "I need to keep my rental car for 1 day extra. Can you extend my rental?",
+        "known_info": "Your name is Laura Young. You have an active rental. You need 1 day more.",
         "unknown_info": "You don't know the agreement ID or new total cost."
       }
     },
@@ -3562,10 +3562,10 @@
     "user_scenario": {
       "persona": "Budget-conscious renter questioning every charge",
       "instructions": {
-        "task_instructions": "You are Laura Young. Your trip is taking longer than expected. You're very cost-conscious. You question every line item, ask about hidden fees, and compare options before committing. You want the cheapest option for everything. Provide your details, but always follow up with price-related questions. Eventually confirm you need 1 more days.",
+        "task_instructions": "You are Laura Young. Your trip is taking longer than expected. You're very cost-conscious. You question every line item, ask about hidden fees, and compare options before committing. You want the cheapest option for everything. Provide your details, but always follow up with price-related questions. Eventually confirm you need 1 day more.",
         "domain": "car_rental",
         "reason_for_call": "My trip is running longer than I thought... I might need the car a bit longer.",
-        "known_info": "Your name is Laura Young. You have a rental. Confirm 1 more days when asked.",
+        "known_info": "Your name is Laura Young. You have a rental. Confirm 1 day more when asked.",
         "unknown_info": "You aren't sure exactly how many more days at first."
       }
     },
@@ -3602,10 +3602,10 @@
     "user_scenario": {
       "persona": "Casual vacation planner",
       "instructions": {
-        "task_instructions": "You are Barbara Jackson. You currently have a car rented and need it for 2 more days than planned. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
+        "task_instructions": "You are Barbara Jackson. You currently have a car rented and need it for 2 days more than planned. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
         "domain": "car_rental",
-        "reason_for_call": "I need to keep my rental car for 2 extra days. Can you extend my rental?",
-        "known_info": "Your name is Barbara Jackson. You have an active rental. You need 2 more days.",
+        "reason_for_call": "I need to keep my rental car for 2 days extra. Can you extend my rental?",
+        "known_info": "Your name is Barbara Jackson. You have an active rental. You need 2 days more.",
         "unknown_info": "You don't know the agreement ID or new total cost."
       }
     },
@@ -3651,10 +3651,10 @@
     "user_scenario": {
       "persona": "Confused first-time renter",
       "instructions": {
-        "task_instructions": "You are Barbara Jackson. Your trip is taking longer than expected. You've never rented a car before. You don't know the categories, insurance options, or process. Ask basic questions and provide information only when specifically asked. You're unsure about what you need and rely on the agent to guide you. Eventually confirm you need 2 more days.",
+        "task_instructions": "You are Barbara Jackson. Your trip is taking longer than expected. You've never rented a car before. You don't know the categories, insurance options, or process. Ask basic questions and provide information only when specifically asked. You're unsure about what you need and rely on the agent to guide you. Eventually confirm you need 2 days more.",
         "domain": "car_rental",
         "reason_for_call": "My trip is running longer than I thought... I might need the car a bit longer.",
-        "known_info": "Your name is Barbara Jackson. You have a rental. Confirm 2 more days when asked.",
+        "known_info": "Your name is Barbara Jackson. You have a rental. Confirm 2 days more when asked.",
         "unknown_info": "You aren't sure exactly how many more days at first."
       }
     },
@@ -3691,10 +3691,10 @@
     "user_scenario": {
       "persona": "Busy professional, terse communicator",
       "instructions": {
-        "task_instructions": "You are Madison Sanders. You currently have a car rented and need it for 1 more days than planned. You're short on time. Give brief, sometimes incomplete answers. You might skip details you think are obvious. If asked to repeat or clarify, do so but with slight impatience.",
+        "task_instructions": "You are Madison Sanders. You currently have a car rented and need it for 1 day more than planned. You're short on time. Give brief, sometimes incomplete answers. You might skip details you think are obvious. If asked to repeat or clarify, do so but with slight impatience.",
         "domain": "car_rental",
-        "reason_for_call": "I need to keep my rental car for 1 extra days. Can you extend my rental?",
-        "known_info": "Your name is Madison Sanders. You have an active rental. You need 1 more days.",
+        "reason_for_call": "I need to keep my rental car for 1 day extra. Can you extend my rental?",
+        "known_info": "Your name is Madison Sanders. You have an active rental. You need 1 day more.",
         "unknown_info": "You don't know the agreement ID or new total cost."
       }
     },
@@ -3740,10 +3740,10 @@
     "user_scenario": {
       "persona": "Vague and indecisive renter",
       "instructions": {
-        "task_instructions": "You are Madison Sanders. Your trip is taking longer than expected. You're not sure exactly what you want. You describe your needs in general terms ('something not too big', 'maybe for a week or so'). You change your mind when presented with options. Provide details only when specifically pressed. Eventually confirm you need 1 more days.",
+        "task_instructions": "You are Madison Sanders. Your trip is taking longer than expected. You're not sure exactly what you want. You describe your needs in general terms ('something not too big', 'maybe for a week or so'). You change your mind when presented with options. Provide details only when specifically pressed. Eventually confirm you need 1 day more.",
         "domain": "car_rental",
         "reason_for_call": "My trip is running longer than I thought... I might need the car a bit longer.",
-        "known_info": "Your name is Madison Sanders. You have a rental. Confirm 1 more days when asked.",
+        "known_info": "Your name is Madison Sanders. You have a rental. Confirm 1 day more when asked.",
         "unknown_info": "You aren't sure exactly how many more days at first."
       }
     },
@@ -3780,10 +3780,10 @@
     "user_scenario": {
       "persona": "Friendly and direct business traveler",
       "instructions": {
-        "task_instructions": "You are Anthony Myers. You currently have a car rented and need it for 1 more days than planned. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary.",
+        "task_instructions": "You are Anthony Myers. You currently have a car rented and need it for 1 day more than planned. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary.",
         "domain": "car_rental",
-        "reason_for_call": "I need to keep my rental car for 1 extra days. Can you extend my rental?",
-        "known_info": "Your name is Anthony Myers. You have an active rental. You need 1 more days.",
+        "reason_for_call": "I need to keep my rental car for 1 day extra. Can you extend my rental?",
+        "known_info": "Your name is Anthony Myers. You have an active rental. You need 1 day more.",
         "unknown_info": "You don't know the agreement ID or new total cost."
       }
     },
@@ -3829,10 +3829,10 @@
     "user_scenario": {
       "persona": "Vague and indecisive renter",
       "instructions": {
-        "task_instructions": "You are Anthony Myers. Your trip is taking longer than expected. You're not sure exactly what you want. You describe your needs in general terms ('something not too big', 'maybe for a week or so'). You change your mind when presented with options. Provide details only when specifically pressed. Eventually confirm you need 1 more days.",
+        "task_instructions": "You are Anthony Myers. Your trip is taking longer than expected. You're not sure exactly what you want. You describe your needs in general terms ('something not too big', 'maybe for a week or so'). You change your mind when presented with options. Provide details only when specifically pressed. Eventually confirm you need 1 day more.",
         "domain": "car_rental",
         "reason_for_call": "My trip is running longer than I thought... I might need the car a bit longer.",
-        "known_info": "Your name is Anthony Myers. You have a rental. Confirm 1 more days when asked.",
+        "known_info": "Your name is Anthony Myers. You have a rental. Confirm 1 day more when asked.",
         "unknown_info": "You aren't sure exactly how many more days at first."
       }
     },
@@ -3869,10 +3869,10 @@
     "user_scenario": {
       "persona": "Casual vacation planner",
       "instructions": {
-        "task_instructions": "You are Sandra Ross. You currently have a car rented and need it for 1 more days than planned. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
+        "task_instructions": "You are Sandra Ross. You currently have a car rented and need it for 1 day more than planned. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
         "domain": "car_rental",
-        "reason_for_call": "I need to keep my rental car for 1 extra days. Can you extend my rental?",
-        "known_info": "Your name is Sandra Ross. You have an active rental. You need 1 more days.",
+        "reason_for_call": "I need to keep my rental car for 1 day extra. Can you extend my rental?",
+        "known_info": "Your name is Sandra Ross. You have an active rental. You need 1 day more.",
         "unknown_info": "You don't know the agreement ID or new total cost."
       }
     },
@@ -3918,10 +3918,10 @@
     "user_scenario": {
       "persona": "Frustrated customer with a complaint",
       "instructions": {
-        "task_instructions": "You are Sandra Ross. Your trip is taking longer than expected. You're upset about a previous experience or charge. You may vent before stating your actual request. You're curt and impatient, but eventually cooperate once the agent addresses your concern. Provide information grudgingly. Eventually confirm you need 1 more days.",
+        "task_instructions": "You are Sandra Ross. Your trip is taking longer than expected. You're upset about a previous experience or charge. You may vent before stating your actual request. You're curt and impatient, but eventually cooperate once the agent addresses your concern. Provide information grudgingly. Eventually confirm you need 1 day more.",
         "domain": "car_rental",
         "reason_for_call": "My trip is running longer than I thought... I might need the car a bit longer.",
-        "known_info": "Your name is Sandra Ross. You have a rental. Confirm 1 more days when asked.",
+        "known_info": "Your name is Sandra Ross. You have a rental. Confirm 1 day more when asked.",
         "unknown_info": "You aren't sure exactly how many more days at first."
       }
     },
@@ -5343,7 +5343,7 @@
         "task_instructions": "You are Helen Cooper. You want to rent a midsize car with basic insurance and add Roadside Assistance Package, Additional Driver. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
         "domain": "car_rental",
         "reason_for_call": "I'd like to book a midsize at Westside Branch with basic insurance. Also please add Roadside Assistance Package and Additional Driver.",
-        "known_info": "Your name is Helen Cooper. Pickup: 2025-11-02 10:00, return: 2025-11-06 10:00. Want midsize with basic insurance. Extras: Roadside Assistance Package, Additional Driver.",
+        "known_info": "Your name is Helen Cooper. Pickup: 2025-11-02 10:00, return: 2025-11-06 10:00. Want a midsize with basic insurance. Extras: Roadside Assistance Package, Additional Driver.",
         "unknown_info": "You don't know exact pricing or vehicle ID."
       }
     },
@@ -5468,7 +5468,7 @@
         "task_instructions": "You are Timothy Castillo. You want to rent a compact car with premium insurance and add WiFi Hotspot, Ski Rack. You're organizing for your family and juggling logistics. You may mention tangential concerns (child seats, space for luggage) before getting to the core request. You eventually provide all needed info.",
         "domain": "car_rental",
         "reason_for_call": "I'd like to book a compact at Capital City Airport with premium insurance. Also please add WiFi Hotspot and Ski Rack.",
-        "known_info": "Your name is Timothy Castillo. Pickup: 2025-11-09 10:00, return: 2025-11-12 10:00. Want compact with premium insurance. Extras: WiFi Hotspot, Ski Rack.",
+        "known_info": "Your name is Timothy Castillo. Pickup: 2025-11-09 10:00, return: 2025-11-12 10:00. Want a compact with premium insurance. Extras: WiFi Hotspot, Ski Rack.",
         "unknown_info": "You don't know exact pricing or vehicle ID."
       }
     },
@@ -5590,10 +5590,10 @@
     "user_scenario": {
       "persona": "Casual vacation planner",
       "instructions": {
-        "task_instructions": "You are Linda Hernandez. You want to rent a suv car with basic insurance and add Child Seat, Ski Rack. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
+        "task_instructions": "You are Linda Hernandez. You want to rent an SUV car with basic insurance and add Child Seat, Ski Rack. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
         "domain": "car_rental",
-        "reason_for_call": "I'd like to book a suv at University District with basic insurance. Also please add Child Seat and Ski Rack.",
-        "known_info": "Your name is Linda Hernandez. Pickup: 2025-11-06 10:00, return: 2025-11-09 10:00. Want suv with basic insurance. Extras: Child Seat, Ski Rack.",
+        "reason_for_call": "I'd like to book an SUV at University District with basic insurance. Also please add Child Seat and Ski Rack.",
+        "known_info": "Your name is Linda Hernandez. Pickup: 2025-11-06 10:00, return: 2025-11-09 10:00. Want an SUV with basic insurance. Extras: Child Seat, Ski Rack.",
         "unknown_info": "You don't know exact pricing or vehicle ID."
       }
     },
@@ -5718,7 +5718,7 @@
         "task_instructions": "You are Stephen Morris. You want to rent a compact car with basic insurance and add Roadside Assistance Package, Child Seat. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
         "domain": "car_rental",
         "reason_for_call": "I'd like to book a compact at Springfield Airport with basic insurance. Also please add Roadside Assistance Package and Child Seat.",
-        "known_info": "Your name is Stephen Morris. Pickup: 2025-11-02 10:00, return: 2025-11-05 10:00. Want compact with basic insurance. Extras: Roadside Assistance Package, Child Seat.",
+        "known_info": "Your name is Stephen Morris. Pickup: 2025-11-02 10:00, return: 2025-11-05 10:00. Want a compact with basic insurance. Extras: Roadside Assistance Package, Child Seat.",
         "unknown_info": "You don't know exact pricing or vehicle ID."
       }
     },
@@ -5842,8 +5842,8 @@
       "instructions": {
         "task_instructions": "You are Kenneth Gutierrez. You need to pick up a car at East Mall Office and drop it off at University District. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary.",
         "domain": "car_rental",
-        "reason_for_call": "I need a suv from East Mall Office to University District. Pickup 2025-11-01 for 4 days.",
-        "known_info": "Your name is Kenneth Gutierrez. Pickup: East Mall Office, dropoff: University District. Want suv for 4 days.",
+        "reason_for_call": "I need an SUV from East Mall Office to University District. Pickup 2025-11-01 for 4 days.",
+        "known_info": "Your name is Kenneth Gutierrez. Pickup: East Mall Office, dropoff: University District. Want an SUV for 4 days.",
         "unknown_info": "You don't know the one-way fee or vehicle ID."
       }
     },
@@ -5963,7 +5963,7 @@
         "task_instructions": "You are Pamela Alvarez. You need to pick up a car at Downtown Office and drop it off at East Mall Office. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary.",
         "domain": "car_rental",
         "reason_for_call": "I need a midsize from Downtown Office to East Mall Office. Pickup 2025-10-30 for 3 days.",
-        "known_info": "Your name is Pamela Alvarez. Pickup: Downtown Office, dropoff: East Mall Office. Want midsize for 3 days.",
+        "known_info": "Your name is Pamela Alvarez. Pickup: Downtown Office, dropoff: East Mall Office. Want a midsize for 3 days.",
         "unknown_info": "You don't know the one-way fee or vehicle ID."
       }
     },
@@ -6082,8 +6082,8 @@
       "instructions": {
         "task_instructions": "You are Jerry Ward. You need to pick up a car at East Mall Office and drop it off at Lakeside Terminal. You know the rental process well. State your request clearly, provide your name and details upfront. You are cooperative and concise in your responses.",
         "domain": "car_rental",
-        "reason_for_call": "I need a suv from East Mall Office to Lakeside Terminal. Pickup 2025-11-02 for 2 days.",
-        "known_info": "Your name is Jerry Ward. Pickup: East Mall Office, dropoff: Lakeside Terminal. Want suv for 2 days.",
+        "reason_for_call": "I need an SUV from East Mall Office to Lakeside Terminal. Pickup 2025-11-02 for 2 days.",
+        "known_info": "Your name is Jerry Ward. Pickup: East Mall Office, dropoff: Lakeside Terminal. Want an SUV for 2 days.",
         "unknown_info": "You don't know the one-way fee or vehicle ID."
       }
     },
@@ -6203,7 +6203,7 @@
         "task_instructions": "You are Ralph Torres. You need to pick up a car at East Mall Office and drop it off at North Park Location. You know the rental process well. State your request clearly, provide your name and details upfront. You are cooperative and concise in your responses.",
         "domain": "car_rental",
         "reason_for_call": "I need a compact from East Mall Office to North Park Location. Pickup 2025-10-23 for 2 days.",
-        "known_info": "Your name is Ralph Torres. Pickup: East Mall Office, dropoff: North Park Location. Want compact for 2 days.",
+        "known_info": "Your name is Ralph Torres. Pickup: East Mall Office, dropoff: North Park Location. Want a compact for 2 days.",
         "unknown_info": "You don't know the one-way fee or vehicle ID."
       }
     },
@@ -6320,10 +6320,10 @@
     "user_scenario": {
       "persona": "Friendly and direct business traveler",
       "instructions": {
-        "task_instructions": "You are Frank Cook. You want to upgrade your rental from midsize to suv. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary.",
+        "task_instructions": "You are Frank Cook. You want to upgrade your rental from midsize to SUV. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary.",
         "domain": "car_rental",
-        "reason_for_call": "I'd like to upgrade my reservation from midsize to suv, please.",
-        "known_info": "Your name is Frank Cook. You have a midsize reservation. You want to upgrade to suv.",
+        "reason_for_call": "I'd like to upgrade my reservation from midsize to SUV, please.",
+        "known_info": "Your name is Frank Cook. You have a midsize reservation. You want to upgrade to SUV.",
         "unknown_info": "You don't know the price difference or reservation ID."
       }
     },
@@ -6383,7 +6383,7 @@
         "task_instructions": "You are Frank Cook. You feel your reserved car might be too small but aren't sure about categories. You're very cost-conscious. You question every line item, ask about hidden fees, and compare options before committing. You want the cheapest option for everything. Provide your details, but always follow up with price-related questions. Accept upgrade to suv when suggested.",
         "domain": "car_rental",
         "reason_for_call": "I'm worried my car might be too small... is there something bigger?",
-        "known_info": "Your name is Frank Cook. Your current reservation is for midsize. Accept upgrade to suv.",
+        "known_info": "Your name is Frank Cook. Your current reservation is for midsize. Accept upgrade to SUV.",
         "unknown_info": "You don't know the category hierarchy or pricing."
       }
     },
@@ -6431,10 +6431,10 @@
     "user_scenario": {
       "persona": "Organized frequent renter",
       "instructions": {
-        "task_instructions": "You are Janice Gonzalez. You want to upgrade your rental from midsize to suv. You know the rental process well. State your request clearly, provide your name and details upfront. You are cooperative and concise in your responses.",
+        "task_instructions": "You are Janice Gonzalez. You want to upgrade your rental from midsize to SUV. You know the rental process well. State your request clearly, provide your name and details upfront. You are cooperative and concise in your responses.",
         "domain": "car_rental",
-        "reason_for_call": "I'd like to upgrade my reservation from midsize to suv, please.",
-        "known_info": "Your name is Janice Gonzalez. You have a midsize reservation. You want to upgrade to suv.",
+        "reason_for_call": "I'd like to upgrade my reservation from midsize to SUV, please.",
+        "known_info": "Your name is Janice Gonzalez. You have a midsize reservation. You want to upgrade to SUV.",
         "unknown_info": "You don't know the price difference or reservation ID."
       }
     },
@@ -6494,7 +6494,7 @@
         "task_instructions": "You are Janice Gonzalez. You feel your reserved car might be too small but aren't sure about categories. You're very cost-conscious. You question every line item, ask about hidden fees, and compare options before committing. You want the cheapest option for everything. Provide your details, but always follow up with price-related questions. Accept upgrade to suv when suggested.",
         "domain": "car_rental",
         "reason_for_call": "I'm worried my car might be too small... is there something bigger?",
-        "known_info": "Your name is Janice Gonzalez. Your current reservation is for midsize. Accept upgrade to suv.",
+        "known_info": "Your name is Janice Gonzalez. Your current reservation is for midsize. Accept upgrade to SUV.",
         "unknown_info": "You don't know the category hierarchy or pricing."
       }
     },
@@ -6656,7 +6656,7 @@
         "task_instructions": "You are Terry Evans. You want to upgrade your rental from economy to compact. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
         "domain": "car_rental",
         "reason_for_call": "I'd like to upgrade my reservation from economy to compact, please.",
-        "known_info": "Your name is Terry Evans. You have a economy reservation. You want to upgrade to compact.",
+        "known_info": "Your name is Terry Evans. You have an economy reservation. You want to upgrade to compact.",
         "unknown_info": "You don't know the price difference or reservation ID."
       }
     },
@@ -6767,7 +6767,7 @@
         "task_instructions": "You are Larry Rodriguez. You want to upgrade your rental from economy to compact. You're organizing for your family and juggling logistics. You may mention tangential concerns (child seats, space for luggage) before getting to the core request. You eventually provide all needed info.",
         "domain": "car_rental",
         "reason_for_call": "I'd like to upgrade my reservation from economy to compact, please.",
-        "known_info": "Your name is Larry Rodriguez. You have a economy reservation. You want to upgrade to compact.",
+        "known_info": "Your name is Larry Rodriguez. You have an economy reservation. You want to upgrade to compact.",
         "unknown_info": "You don't know the price difference or reservation ID."
       }
     },
@@ -7359,7 +7359,8 @@
           },
           "info": "Issue $50 credit",
           "compare_args": [
-            "customer_id"
+            "customer_id",
+            "amount"
           ]
         }
       ],
@@ -7409,7 +7410,8 @@
           },
           "info": "Issue $75 credit",
           "compare_args": [
-            "customer_id"
+            "customer_id",
+            "amount"
           ]
         }
       ],
@@ -7459,7 +7461,8 @@
           },
           "info": "Issue $100 credit",
           "compare_args": [
-            "customer_id"
+            "customer_id",
+            "amount"
           ]
         }
       ],
@@ -7509,7 +7512,8 @@
           },
           "info": "Issue $40 credit",
           "compare_args": [
-            "customer_id"
+            "customer_id",
+            "amount"
           ]
         }
       ],
@@ -7559,7 +7563,8 @@
           },
           "info": "Issue $80 credit",
           "compare_args": [
-            "customer_id"
+            "customer_id",
+            "amount"
           ]
         }
       ],
@@ -7580,10 +7585,10 @@
     "user_scenario": {
       "persona": "Casual vacation planner",
       "instructions": {
-        "task_instructions": "You are Sandra Ross. Your plans changed. Cancel your current economy reservation and book a new suv instead for different dates. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
+        "task_instructions": "You are Sandra Ross. Your plans changed. Cancel your current economy reservation and book an SUV instead for different dates. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
         "domain": "car_rental",
-        "reason_for_call": "I need to cancel my economy reservation and book a suv instead, for 2025-11-07 to 2025-11-11.",
-        "known_info": "Your name is Sandra Ross. Cancel the economy reservation. New booking: suv at Capital City Airport, 2025-11-07 10:00 to 2025-11-11 10:00.",
+        "reason_for_call": "I need to cancel my economy reservation and book an SUV instead, for 2025-11-07 to 2025-11-11.",
+        "known_info": "Your name is Sandra Ross. Cancel the economy reservation. New booking: SUV at Capital City Airport, 2025-11-07 10:00 to 2025-11-11 10:00.",
         "unknown_info": "You don't know your reservation ID or the new total."
       }
     },
@@ -7656,10 +7661,10 @@
     "user_scenario": {
       "persona": "Vague and indecisive renter",
       "instructions": {
-        "task_instructions": "You are Sandra Ross. You're not happy with your current booking and want to start over. You're not sure exactly what you want. You describe your needs in general terms ('something not too big', 'maybe for a week or so'). You change your mind when presented with options. Provide details only when specifically pressed. Eventually decide on suv for 2025-11-07.",
+        "task_instructions": "You are Sandra Ross. You're not happy with your current booking and want to start over. You're not sure exactly what you want. You describe your needs in general terms ('something not too big', 'maybe for a week or so'). You change your mind when presented with options. Provide details only when specifically pressed. Eventually decide on SUV for 2025-11-07.",
         "domain": "car_rental",
         "reason_for_call": "I booked the wrong thing... I need to change everything about my reservation. Can we just cancel it and start fresh?",
-        "known_info": "Your name is Sandra Ross. Cancel existing, rebook as suv at Capital City Airport. Accept dates when proposed.",
+        "known_info": "Your name is Sandra Ross. Cancel existing, rebook as SUV at Capital City Airport. Accept dates when proposed.",
         "unknown_info": "You're not sure what you want initially."
       }
     },
@@ -7723,10 +7728,10 @@
     "user_scenario": {
       "persona": "Friendly and direct business traveler",
       "instructions": {
-        "task_instructions": "You are Angela Mendoza. Your plans changed. Cancel your current suv reservation and book a new midsize instead for different dates. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary.",
+        "task_instructions": "You are Angela Mendoza. Your plans changed. Cancel your current SUV reservation and book a midsize instead for different dates. You are polite and efficient. Provide all requested information clearly and promptly. If the agent asks clarifying questions, answer them directly without extra commentary.",
         "domain": "car_rental",
-        "reason_for_call": "I need to cancel my suv reservation and book a midsize instead, for 2025-10-26 to 2025-10-30.",
-        "known_info": "Your name is Angela Mendoza. Cancel the suv reservation. New booking: midsize at Downtown Office, 2025-10-26 10:00 to 2025-10-30 10:00.",
+        "reason_for_call": "I need to cancel my SUV reservation and book a midsize instead, for 2025-10-26 to 2025-10-30.",
+        "known_info": "Your name is Angela Mendoza. Cancel the SUV reservation. New booking: midsize at Downtown Office, 2025-10-26 10:00 to 2025-10-30 10:00.",
         "unknown_info": "You don't know your reservation ID or the new total."
       }
     },
@@ -7866,10 +7871,10 @@
     "user_scenario": {
       "persona": "Family trip coordinator",
       "instructions": {
-        "task_instructions": "You are Brian Johnson. Your plans changed. Cancel your current suv reservation and book a new compact instead for different dates. You're organizing for your family and juggling logistics. You may mention tangential concerns (child seats, space for luggage) before getting to the core request. You eventually provide all needed info.",
+        "task_instructions": "You are Brian Johnson. Your plans changed. Cancel your current SUV reservation and book a compact instead for different dates. You're organizing for your family and juggling logistics. You may mention tangential concerns (child seats, space for luggage) before getting to the core request. You eventually provide all needed info.",
         "domain": "car_rental",
-        "reason_for_call": "I need to cancel my suv reservation and book a compact instead, for 2025-10-28 to 2025-11-01.",
-        "known_info": "Your name is Brian Johnson. Cancel the suv reservation. New booking: compact at North Park Location, 2025-10-28 10:00 to 2025-11-01 10:00.",
+        "reason_for_call": "I need to cancel my SUV reservation and book a compact instead, for 2025-10-28 to 2025-11-01.",
+        "known_info": "Your name is Brian Johnson. Cancel the SUV reservation. New booking: compact at North Park Location, 2025-10-28 10:00 to 2025-11-01 10:00.",
         "unknown_info": "You don't know your reservation ID or the new total."
       }
     },
@@ -8009,10 +8014,10 @@
     "user_scenario": {
       "persona": "Busy professional, terse communicator",
       "instructions": {
-        "task_instructions": "You are Willie Taylor. Your plans changed. Cancel your current economy reservation and book a new suv instead for different dates. You're short on time. Give brief, sometimes incomplete answers. You might skip details you think are obvious. If asked to repeat or clarify, do so but with slight impatience.",
+        "task_instructions": "You are Willie Taylor. Your plans changed. Cancel your current economy reservation and book an SUV instead for different dates. You're short on time. Give brief, sometimes incomplete answers. You might skip details you think are obvious. If asked to repeat or clarify, do so but with slight impatience.",
         "domain": "car_rental",
-        "reason_for_call": "I need to cancel my economy reservation and book a suv instead, for 2025-10-24 to 2025-10-28.",
-        "known_info": "Your name is Willie Taylor. Cancel the economy reservation. New booking: suv at University District, 2025-10-24 10:00 to 2025-10-28 10:00.",
+        "reason_for_call": "I need to cancel my economy reservation and book an SUV instead, for 2025-10-24 to 2025-10-28.",
+        "known_info": "Your name is Willie Taylor. Cancel the economy reservation. New booking: SUV at University District, 2025-10-24 10:00 to 2025-10-28 10:00.",
         "unknown_info": "You don't know your reservation ID or the new total."
       }
     },
@@ -8085,10 +8090,10 @@
     "user_scenario": {
       "persona": "Chatty traveler who goes off-topic",
       "instructions": {
-        "task_instructions": "You are Willie Taylor. You're not happy with your current booking and want to start over. You're talkative and friendly but digressive. You embed your request in stories about your trip, your family, your previous rentals. The agent needs to extract the key details from your conversation. You eventually answer direct questions but always add extra context. Eventually decide on suv for 2025-10-24.",
+        "task_instructions": "You are Willie Taylor. You're not happy with your current booking and want to start over. You're talkative and friendly but digressive. You embed your request in stories about your trip, your family, your previous rentals. The agent needs to extract the key details from your conversation. You eventually answer direct questions but always add extra context. Eventually decide on SUV for 2025-10-24.",
         "domain": "car_rental",
         "reason_for_call": "I booked the wrong thing... I need to change everything about my reservation. Can we just cancel it and start fresh?",
-        "known_info": "Your name is Willie Taylor. Cancel existing, rebook as suv at University District. Accept dates when proposed.",
+        "known_info": "Your name is Willie Taylor. Cancel existing, rebook as SUV at University District. Accept dates when proposed.",
         "unknown_info": "You're not sure what you want initially."
       }
     },
@@ -8624,10 +8629,10 @@
     "user_scenario": {
       "persona": "Family trip coordinator",
       "instructions": {
-        "task_instructions": "You are Christina Flores, a gold member. Book a suv and use 500 loyalty points. You're organizing for your family and juggling logistics. You may mention tangential concerns (child seats, space for luggage) before getting to the core request. You eventually provide all needed info.",
+        "task_instructions": "You are Christina Flores, a gold member. Book an SUV and use 500 loyalty points. You're organizing for your family and juggling logistics. You may mention tangential concerns (child seats, space for luggage) before getting to the core request. You eventually provide all needed info.",
         "domain": "car_rental",
-        "reason_for_call": "I'd like to book a suv at Capital City Airport and use 500 of my loyalty points.",
-        "known_info": "Your name is Christina Flores. gold member. Want suv at Capital City Airport, 3 days. Use 500 points.",
+        "reason_for_call": "I'd like to book an SUV at Capital City Airport and use 500 of my loyalty points.",
+        "known_info": "Your name is Christina Flores. gold member. Want an SUV at Capital City Airport, 3 days. Use 500 points.",
         "unknown_info": "You don't know exact pricing or vehicle ID."
       }
     },
@@ -8710,7 +8715,7 @@
         "task_instructions": "You are Christina Flores, a gold member. You want a car and to use some points but aren't sure how it works. You've never rented a car before. You don't know the categories, insurance options, or process. Ask basic questions and provide information only when specifically asked. You're unsure about what you need and rely on the agent to guide you. Accept suv and agree to use 500 points.",
         "domain": "car_rental",
         "reason_for_call": "I have some loyalty points... can I use them for a rental?",
-        "known_info": "Your name is Christina Flores. Want a car for 3 days. Use 500 points. Accept suv when suggested.",
+        "known_info": "Your name is Christina Flores. Want a car for 3 days. Use 500 points. Accept SUV when suggested.",
         "unknown_info": "You don't understand the points system or categories."
       }
     },
@@ -8773,10 +8778,10 @@
     "user_scenario": {
       "persona": "Casual vacation planner",
       "instructions": {
-        "task_instructions": "You are William Sanders, a silver member. Book a suv and use 500 loyalty points. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
+        "task_instructions": "You are William Sanders, a silver member. Book an SUV and use 500 loyalty points. You're planning a trip and are somewhat flexible. You provide information gradually \u2014 you might not mention all details upfront but respond helpfully when asked. You're friendly but not in a rush.",
         "domain": "car_rental",
-        "reason_for_call": "I'd like to book a suv at Lakeside Terminal and use 500 of my loyalty points.",
-        "known_info": "Your name is William Sanders. silver member. Want suv at Lakeside Terminal, 4 days. Use 500 points.",
+        "reason_for_call": "I'd like to book an SUV at Lakeside Terminal and use 500 of my loyalty points.",
+        "known_info": "Your name is William Sanders. silver member. Want an SUV at Lakeside Terminal, 4 days. Use 500 points.",
         "unknown_info": "You don't know exact pricing or vehicle ID."
       }
     },
@@ -8859,7 +8864,7 @@
         "task_instructions": "You are William Sanders, a silver member. You want a car and to use some points but aren't sure how it works. You're upset about a previous experience or charge. You may vent before stating your actual request. You're curt and impatient, but eventually cooperate once the agent addresses your concern. Provide information grudgingly. Accept suv and agree to use 500 points.",
         "domain": "car_rental",
         "reason_for_call": "I have some loyalty points... can I use them for a rental?",
-        "known_info": "Your name is William Sanders. Want a car for 4 days. Use 500 points. Accept suv when suggested.",
+        "known_info": "Your name is William Sanders. Want a car for 4 days. Use 500 points. Accept SUV when suggested.",
         "unknown_info": "You don't understand the points system or categories."
       }
     },
@@ -8922,10 +8927,10 @@
     "user_scenario": {
       "persona": "Organized frequent renter",
       "instructions": {
-        "task_instructions": "You are Mark Ramos, a silver member. Book a suv and use 500 loyalty points. You know the rental process well. State your request clearly, provide your name and details upfront. You are cooperative and concise in your responses.",
+        "task_instructions": "You are Mark Ramos, a silver member. Book an SUV and use 500 loyalty points. You know the rental process well. State your request clearly, provide your name and details upfront. You are cooperative and concise in your responses.",
         "domain": "car_rental",
-        "reason_for_call": "I'd like to book a suv at North Park Location and use 500 of my loyalty points.",
-        "known_info": "Your name is Mark Ramos. silver member. Want suv at North Park Location, 3 days. Use 500 points.",
+        "reason_for_call": "I'd like to book an SUV at North Park Location and use 500 of my loyalty points.",
+        "known_info": "Your name is Mark Ramos. silver member. Want an SUV at North Park Location, 3 days. Use 500 points.",
         "unknown_info": "You don't know exact pricing or vehicle ID."
       }
     },
@@ -9008,7 +9013,7 @@
         "task_instructions": "You are Mark Ramos, a silver member. You want a car and to use some points but aren't sure how it works. You've never rented a car before. You don't know the categories, insurance options, or process. Ask basic questions and provide information only when specifically asked. You're unsure about what you need and rely on the agent to guide you. Accept suv and agree to use 500 points.",
         "domain": "car_rental",
         "reason_for_call": "I have some loyalty points... can I use them for a rental?",
-        "known_info": "Your name is Mark Ramos. Want a car for 3 days. Use 500 points. Accept suv when suggested.",
+        "known_info": "Your name is Mark Ramos. Want a car for 3 days. Use 500 points. Accept SUV when suggested.",
         "unknown_info": "You don't understand the points system or categories."
       }
     },
@@ -9435,7 +9440,7 @@
     "id": "modify_active_1",
     "description": {
       "purpose": "Modify active (picked-up) reservation \u2014 explain can't modify",
-      "relevant_policies": "Only confirmed reservations can be modified. Active = already picked up.",
+      "relevant_policies": "Insurance and categories can only be changed on confirmed reservations. Active rentals only allow extras changes.",
       "notes": "Margaret Powell tries to modify active reservation res_powell_20251011."
     },
     "user_scenario": {
@@ -9463,7 +9468,7 @@
       ],
       "env_assertions": null,
       "nl_assertions": [
-        "The agent explained that reservations cannot be modified once the rental is active (vehicle has been picked up)."
+        "The agent explained that insurance and other reservation details (except extras) cannot be changed once the rental is active."
       ],
       "reward_basis": [
         "ACTION",
@@ -9475,7 +9480,7 @@
     "id": "modify_active_2",
     "description": {
       "purpose": "Modify active (picked-up) reservation \u2014 explain can't modify",
-      "relevant_policies": "Only confirmed reservations can be modified. Active = already picked up.",
+      "relevant_policies": "Insurance and categories can only be changed on confirmed reservations. Active rentals only allow extras changes.",
       "notes": "Timothy Castillo tries to modify active reservation res_castillo_20251014."
     },
     "user_scenario": {
@@ -9503,7 +9508,7 @@
       ],
       "env_assertions": null,
       "nl_assertions": [
-        "The agent explained that reservations cannot be modified once the rental is active (vehicle has been picked up)."
+        "The agent explained that insurance and other reservation details (except extras) cannot be changed once the rental is active."
       ],
       "reward_basis": [
         "ACTION",
@@ -9515,7 +9520,7 @@
     "id": "modify_active_3",
     "description": {
       "purpose": "Modify active (picked-up) reservation \u2014 explain can't modify",
-      "relevant_policies": "Only confirmed reservations can be modified. Active = already picked up.",
+      "relevant_policies": "Insurance and categories can only be changed on confirmed reservations. Active rentals only allow extras changes.",
       "notes": "Jennifer Martinez tries to modify active reservation res_martinez_20251012."
     },
     "user_scenario": {
@@ -9543,7 +9548,7 @@
       ],
       "env_assertions": null,
       "nl_assertions": [
-        "The agent explained that reservations cannot be modified once the rental is active (vehicle has been picked up)."
+        "The agent explained that insurance and other reservation details (except extras) cannot be changed once the rental is active."
       ],
       "reward_basis": [
         "ACTION",
@@ -9555,7 +9560,7 @@
     "id": "modify_active_4",
     "description": {
       "purpose": "Modify active (picked-up) reservation \u2014 explain can't modify",
-      "relevant_policies": "Only confirmed reservations can be modified. Active = already picked up.",
+      "relevant_policies": "Insurance and categories can only be changed on confirmed reservations. Active rentals only allow extras changes.",
       "notes": "Arthur Kelly tries to modify active reservation res_kelly_20251014."
     },
     "user_scenario": {
@@ -9583,7 +9588,7 @@
       ],
       "env_assertions": null,
       "nl_assertions": [
-        "The agent explained that reservations cannot be modified once the rental is active (vehicle has been picked up)."
+        "The agent explained that insurance and other reservation details (except extras) cannot be changed once the rental is active."
       ],
       "reward_basis": [
         "ACTION",

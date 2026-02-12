@@ -320,7 +320,9 @@ class TestGetReservation:
 
 class TestSearchVehicles:
     def test_available(self, tools):
-        results = tools.search_vehicles("downtown", "economy", "2025-11-01", "2025-11-03")
+        results = tools.search_vehicles(
+            "downtown", "economy", "2025-11-01", "2025-11-03"
+        )
         assert len(results) == 1
         assert results[0].vehicle_id == "toyota_corolla_downtown"
 
@@ -330,7 +332,9 @@ class TestSearchVehicles:
 
     def test_invalid_location(self, tools):
         with pytest.raises(ValueError, match="not found"):
-            tools.search_vehicles("fake_location", "economy", "2025-11-01", "2025-11-03")
+            tools.search_vehicles(
+                "fake_location", "economy", "2025-11-01", "2025-11-03"
+            )
 
 
 class TestGetVehicleDetails:
@@ -352,6 +356,15 @@ class TestGetLocationDetails:
     def test_not_found(self, tools):
         with pytest.raises(ValueError, match="not found"):
             tools.get_location_details("nonexistent")
+
+
+class TestListLocations:
+    def test_returns_all(self, tools):
+        locations = tools.list_locations()
+        assert len(locations) == 2
+        ids = {loc.location_id for loc in locations}
+        assert "downtown" in ids
+        assert "airport" in ids
 
 
 class TestListExtras:
@@ -382,6 +395,21 @@ class TestGetRentalAgreement:
             tools.get_rental_agreement("nonexistent")
 
 
+class TestFindRentalAgreementsByCustomer:
+    def test_found(self, tools):
+        agreements = tools.find_rental_agreements_by_customer("john_smith")
+        assert len(agreements) == 1
+        assert agreements[0].agreement_id == "agr_smith_active"
+
+    def test_no_agreements(self, tools):
+        agreements = tools.find_rental_agreements_by_customer("jane_doe")
+        assert len(agreements) == 0
+
+    def test_not_found(self, tools):
+        with pytest.raises(ValueError, match="not found"):
+            tools.find_rental_agreements_by_customer("nonexistent")
+
+
 # ── WRITE Tools ─────────────────────────────────────────────────
 
 
@@ -402,23 +430,47 @@ class TestCreateReservation:
 
     def test_invalid_customer(self, tools):
         with pytest.raises(ValueError, match="not found"):
-            tools.create_reservation("nonexistent", "economy", "downtown", "downtown",
-                                     "2025-12-01 10:00", "2025-12-03 10:00")
+            tools.create_reservation(
+                "nonexistent",
+                "economy",
+                "downtown",
+                "downtown",
+                "2025-12-01 10:00",
+                "2025-12-03 10:00",
+            )
 
     def test_luxury_underage(self, tools):
         with pytest.raises(ValueError, match="at least 25"):
-            tools.create_reservation("jane_doe", "luxury", "airport", "airport",
-                                     "2025-12-01 10:00", "2025-12-03 10:00")
+            tools.create_reservation(
+                "jane_doe",
+                "luxury",
+                "airport",
+                "airport",
+                "2025-12-01 10:00",
+                "2025-12-03 10:00",
+            )
 
     def test_expired_license(self, tools):
         with pytest.raises(ValueError, match="license expired"):
-            tools.create_reservation("bob_expired", "economy", "downtown", "downtown",
-                                     "2025-12-01 10:00", "2025-12-03 10:00")
+            tools.create_reservation(
+                "bob_expired",
+                "economy",
+                "downtown",
+                "downtown",
+                "2025-12-01 10:00",
+                "2025-12-03 10:00",
+            )
 
     def test_invalid_category(self, tools):
         with pytest.raises(ValueError, match="Invalid category"):
-            tools.create_reservation("john_smith", "helicopter", "downtown", "downtown",
-                                     "2025-12-01 10:00", "2025-12-03 10:00")
+            tools.create_reservation(
+                "john_smith",
+                "helicopter",
+                "downtown",
+                "downtown",
+                "2025-12-01 10:00",
+                "2025-12-03 10:00",
+            )
 
     def test_one_way_surcharge(self, tools):
         res = tools.create_reservation(
@@ -460,18 +512,30 @@ class TestModifyReservation:
         assert res.dropoff_datetime == "2025-11-05 10:00"
 
     def test_modify_insurance(self, tools):
-        res = tools.modify_reservation(
-            "res_smith_20251101", insurance_type="basic"
-        )
+        res = tools.modify_reservation("res_smith_20251101", insurance_type="basic")
         assert res.insurance_type == "basic"
 
     def test_cannot_modify_cancelled(self, tools):
         with pytest.raises(ValueError, match="Cannot modify"):
             tools.modify_reservation("res_doe_20251105", insurance_type="basic")
 
-    def test_cannot_modify_active(self, tools):
+    def test_cannot_modify_active_insurance(self, tools):
         with pytest.raises(ValueError, match="Cannot modify"):
             tools.modify_reservation("res_smith_active", insurance_type="basic")
+
+    def test_cannot_modify_active_dates(self, tools):
+        with pytest.raises(ValueError, match="Cannot modify"):
+            tools.modify_reservation(
+                "res_smith_active", pickup_datetime="2025-10-13 10:00"
+            )
+
+    def test_cannot_modify_active_category(self, tools):
+        with pytest.raises(ValueError, match="Cannot modify"):
+            tools.modify_reservation("res_smith_active", category="economy")
+
+    def test_modify_active_extras_allowed(self, tools):
+        res = tools.modify_reservation("res_smith_active", extras=["gps", "child_seat"])
+        assert sorted(res.extras) == ["child_seat", "gps"]
 
     def test_not_found(self, tools):
         with pytest.raises(ValueError, match="not found"):

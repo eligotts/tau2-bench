@@ -48,6 +48,41 @@ ROADSIDE_FEE = 150.0
 MAX_CREDIT = 200.0
 CANCEL_FEE = 50.0
 
+# ── Grammar Helpers ──────────────────────────────────────────────
+
+CATEGORY_DISPLAY = {
+    "economy": "economy",
+    "compact": "compact",
+    "midsize": "midsize",
+    "suv": "SUV",
+    "luxury": "luxury",
+    "van": "van",
+}
+
+CATEGORY_ARTICLE = {
+    "economy": "an",
+    "compact": "a",
+    "midsize": "a",
+    "suv": "an",
+    "luxury": "a",
+    "van": "a",
+}
+
+
+def fmt_cat(cat):
+    """Display name for vehicle category ('suv' → 'SUV')."""
+    return CATEGORY_DISPLAY.get(cat, cat)
+
+
+def a_cat(cat):
+    """Article + display category: 'an economy', 'an SUV', 'a compact'."""
+    return f"{CATEGORY_ARTICLE.get(cat, 'a')} {fmt_cat(cat)}"
+
+
+def days_str(n):
+    """Pluralize day: '1 day', '2 days'."""
+    return f"{n} day" if n == 1 else f"{n} days"
+
 
 # ── Load DB ─────────────────────────────────────────────────────
 
@@ -528,19 +563,19 @@ def gen_create_reservation(db, ix, n):
             notes=f"{name} books a {cat} vehicle at {loc_name} for {rent_days} days.",
             persona=ep.label,
             task_instructions=(
-                f"You are {name}. You want to rent a {cat} car. "
+                f"You are {name}. You want to rent {a_cat(cat)} car. "
                 f"{ep.instructions} State your request clearly."
             ),
             reason_for_call=(
-                f"I'd like to book a {cat} car at {loc_name}, "
+                f"I'd like to book {a_cat(cat)} car at {loc_name}, "
                 f"picking up on {pickup.split(' ')[0]} and returning {rent_days} days later."
             ),
             known_info=(
-                f"Your name is {name}. You want a {cat} car at {loc_name}. "
+                f"Your name is {name}. You want {a_cat(cat)} car at {loc_name}. "
                 f"Pickup: {pickup}, return {rent_days} days later. No insurance needed."
             ),
             unknown_info="You don't know the exact vehicle ID or your customer ID.",
-            ticket=f"Customer {name} wants to book a {cat} at {loc_name}.",
+            ticket=f"Customer {name} wants to book {a_cat(cat)} at {loc_name}.",
             actions=[
                 action("find_1", "find_customer_by_name", {"name": name},
                        f"Look up customer {name}", compare_args=[]),
@@ -628,11 +663,11 @@ def gen_cancel_reservation(db, ix, n):
                 f"{ep.instructions}"
             ),
             reason_for_call=(
-                f"I need to cancel my reservation for the {cat} at {pickup_loc}. "
+                f"I need to cancel my reservation for the {fmt_cat(cat)} at {pickup_loc}. "
                 f"My plans changed."
             ),
             known_info=(
-                f"Your name is {name}. You have a reservation for a {cat} "
+                f"Your name is {name}. You have a reservation for {a_cat(cat)} "
                 f"at {pickup_loc}. You want to cancel because your plans changed."
             ),
             unknown_info="You don't know the reservation ID or exact cancellation fee.",
@@ -731,7 +766,7 @@ def gen_modify_reservation_dates(db, ix, n):
                 f"New pickup: {new_pickup_str.split(' ')[0]}."
             ),
             known_info=(
-                f"Your name is {name}. You have a {cat} reservation. "
+                f"Your name is {name}. You have {a_cat(cat)} reservation. "
                 f"You want to move pickup to {new_pickup_str} and "
                 f"dropoff to {new_dropoff_str}."
             ),
@@ -978,15 +1013,15 @@ def gen_extend_rental(db, ix, n):
             persona=ep.label,
             task_instructions=(
                 f"You are {name}. You currently have a car rented and need it for "
-                f"{extra_days} more days than planned. {ep.instructions}"
+                f"{days_str(extra_days)} more than planned. {ep.instructions}"
             ),
             reason_for_call=(
-                f"I need to keep my rental car for {extra_days} extra days. "
+                f"I need to keep my rental car for {days_str(extra_days)} extra. "
                 f"Can you extend my rental?"
             ),
             known_info=(
                 f"Your name is {name}. You have an active rental. "
-                f"You need {extra_days} more days."
+                f"You need {days_str(extra_days)} more."
             ),
             unknown_info="You don't know the agreement ID or new total cost.",
             ticket=f"{name} wants to extend active rental by {extra_days} days.",
@@ -1011,7 +1046,7 @@ def gen_extend_rental(db, ix, n):
             persona=hp.label,
             task_instructions=(
                 f"You are {name}. Your trip is taking longer than expected. "
-                f"{hp.instructions} Eventually confirm you need {extra_days} more days."
+                f"{hp.instructions} Eventually confirm you need {days_str(extra_days)} more."
             ),
             reason_for_call=(
                 f"My trip is running longer than I thought... "
@@ -1019,7 +1054,7 @@ def gen_extend_rental(db, ix, n):
             ),
             known_info=(
                 f"Your name is {name}. You have a rental. "
-                f"Confirm {extra_days} more days when asked."
+                f"Confirm {days_str(extra_days)} more when asked."
             ),
             unknown_info="You aren't sure exactly how many more days at first.",
             ticket=f"{name} wants to extend rental (vague).",
@@ -1403,17 +1438,17 @@ def gen_reservation_with_insurance_and_extras(db, ix, n):
             notes=f"{name} books {cat} with {ins} insurance and extras {chosen_extras}.",
             persona=ep.label,
             task_instructions=(
-                f"You are {name}. You want to rent a {cat} car with {ins} insurance "
+                f"You are {name}. You want to rent {a_cat(cat)} car with {ins} insurance "
                 f"and add {', '.join(db['extras'][e]['name'] for e in chosen_extras)}. "
                 f"{ep.instructions}"
             ),
             reason_for_call=(
-                f"I'd like to book a {cat} at {loc_name} with {ins} insurance. "
+                f"I'd like to book {a_cat(cat)} at {loc_name} with {ins} insurance. "
                 f"Also please add {' and '.join(db['extras'][e]['name'] for e in chosen_extras)}."
             ),
             known_info=(
                 f"Your name is {name}. Pickup: {pickup}, return: {dropoff}. "
-                f"Want {cat} with {ins} insurance. "
+                f"Want {a_cat(cat)} with {ins} insurance. "
                 f"Extras: {', '.join(db['extras'][e]['name'] for e in chosen_extras)}."
             ),
             unknown_info="You don't know exact pricing or vehicle ID.",
@@ -1514,12 +1549,12 @@ def gen_one_way_rental(db, ix, n):
                 f"and drop it off at {dropoff_name}. {ep.instructions}"
             ),
             reason_for_call=(
-                f"I need a {cat} from {pickup_name} to {dropoff_name}. "
+                f"I need {a_cat(cat)} from {pickup_name} to {dropoff_name}. "
                 f"Pickup {pickup.split(' ')[0]} for {rent_days} days."
             ),
             known_info=(
                 f"Your name is {name}. Pickup: {pickup_name}, dropoff: {dropoff_name}. "
-                f"Want {cat} for {rent_days} days."
+                f"Want {a_cat(cat)} for {rent_days} days."
             ),
             unknown_info="You don't know the one-way fee or vehicle ID.",
             ticket=f"{name} books one-way {cat} rental.",
@@ -1620,15 +1655,15 @@ def gen_modify_category_upgrade(db, ix, n):
             notes=f"{name} upgrades from {old_cat} to {new_cat} on reservation {rid}.",
             persona=ep.label,
             task_instructions=(
-                f"You are {name}. You want to upgrade your rental from {old_cat} "
-                f"to {new_cat}. {ep.instructions}"
+                f"You are {name}. You want to upgrade your rental from {fmt_cat(old_cat)} "
+                f"to {fmt_cat(new_cat)}. {ep.instructions}"
             ),
             reason_for_call=(
-                f"I'd like to upgrade my reservation from {old_cat} to {new_cat}, please."
+                f"I'd like to upgrade my reservation from {fmt_cat(old_cat)} to {fmt_cat(new_cat)}, please."
             ),
             known_info=(
-                f"Your name is {name}. You have a {old_cat} reservation. "
-                f"You want to upgrade to {new_cat}."
+                f"Your name is {name}. You have {a_cat(old_cat)} reservation. "
+                f"You want to upgrade to {fmt_cat(new_cat)}."
             ),
             unknown_info="You don't know the price difference or reservation ID.",
             ticket=f"{name} wants to upgrade from {old_cat} to {new_cat}.",
@@ -1664,8 +1699,8 @@ def gen_modify_category_upgrade(db, ix, n):
                 f"I'm worried my car might be too small... is there something bigger?"
             ),
             known_info=(
-                f"Your name is {name}. Your current reservation is for {old_cat}. "
-                f"Accept upgrade to {new_cat}."
+                f"Your name is {name}. Your current reservation is for {fmt_cat(old_cat)}. "
+                f"Accept upgrade to {fmt_cat(new_cat)}."
             ),
             unknown_info="You don't know the category hierarchy or pricing.",
             ticket=f"{name} wants upgrade (unsure of categories).",
@@ -1813,7 +1848,7 @@ def gen_issue_credit(db, ix, n):
                 action("credit_1", "issue_credit", {
                     "customer_id": cid, "amount": amount, "reason": formal,
                 }, f"Issue ${amount:.0f} credit",
-                       compare_args=["customer_id"]),
+                       compare_args=["customer_id", "amount"]),
             ],
             reward_basis=["ACTION"],
         ))
@@ -1873,17 +1908,17 @@ def gen_cancel_and_rebook(db, ix, n):
             notes=f"{name} cancels {rid} ({old_cat}) and books new {new_cat}.",
             persona=ep.label,
             task_instructions=(
-                f"You are {name}. Your plans changed. Cancel your current {old_cat} "
-                f"reservation and book a new {new_cat} instead for different dates. "
+                f"You are {name}. Your plans changed. Cancel your current {fmt_cat(old_cat)} "
+                f"reservation and book {a_cat(new_cat)} instead for different dates. "
                 f"{ep.instructions}"
             ),
             reason_for_call=(
-                f"I need to cancel my {old_cat} reservation and book a {new_cat} "
+                f"I need to cancel my {fmt_cat(old_cat)} reservation and book {a_cat(new_cat)} "
                 f"instead, for {pickup.split(' ')[0]} to {dropoff.split(' ')[0]}."
             ),
             known_info=(
-                f"Your name is {name}. Cancel the {old_cat} reservation. "
-                f"New booking: {new_cat} at {loc_name}, {pickup} to {dropoff}."
+                f"Your name is {name}. Cancel the {fmt_cat(old_cat)} reservation. "
+                f"New booking: {fmt_cat(new_cat)} at {loc_name}, {pickup} to {dropoff}."
             ),
             unknown_info="You don't know your reservation ID or the new total.",
             ticket=f"{name}: cancel {old_cat}, rebook {new_cat}.",
@@ -1919,14 +1954,14 @@ def gen_cancel_and_rebook(db, ix, n):
             task_instructions=(
                 f"You are {name}. You're not happy with your current booking and "
                 f"want to start over. {hp.instructions} "
-                f"Eventually decide on {new_cat} for {pickup.split(' ')[0]}."
+                f"Eventually decide on {fmt_cat(new_cat)} for {pickup.split(' ')[0]}."
             ),
             reason_for_call=(
                 f"I booked the wrong thing... I need to change everything about "
                 f"my reservation. Can we just cancel it and start fresh?"
             ),
             known_info=(
-                f"Your name is {name}. Cancel existing, rebook as {new_cat} "
+                f"Your name is {name}. Cancel existing, rebook as {fmt_cat(new_cat)} "
                 f"at {loc_name}. Accept dates when proposed."
             ),
             unknown_info="You're not sure what you want initially.",
@@ -2108,14 +2143,14 @@ def gen_loyalty_booking(db, ix, n):
             persona=ep.label,
             task_instructions=(
                 f"You are {name}, a {cust['loyalty_tier']} member. "
-                f"Book a {cat} and use {points} loyalty points. {ep.instructions}"
+                f"Book {a_cat(cat)} and use {points} loyalty points. {ep.instructions}"
             ),
             reason_for_call=(
-                f"I'd like to book a {cat} at {loc_name} and use {points} of my loyalty points."
+                f"I'd like to book {a_cat(cat)} at {loc_name} and use {points} of my loyalty points."
             ),
             known_info=(
                 f"Your name is {name}. {cust['loyalty_tier']} member. "
-                f"Want {cat} at {loc_name}, {rent_days} days. Use {points} points."
+                f"Want {a_cat(cat)} at {loc_name}, {rent_days} days. Use {points} points."
             ),
             unknown_info="You don't know exact pricing or vehicle ID.",
             ticket=f"{name}: loyalty booking + {points} points.",
@@ -2160,7 +2195,7 @@ def gen_loyalty_booking(db, ix, n):
             ),
             known_info=(
                 f"Your name is {name}. Want a car for {rent_days} days. "
-                f"Use {points} points. Accept {cat} when suggested."
+                f"Use {points} points. Accept {fmt_cat(cat)} when suggested."
             ),
             unknown_info="You don't understand the points system or categories.",
             ticket=f"{name}: loyalty booking (confused about points).",
@@ -2322,7 +2357,7 @@ def gen_modify_active_reservation(db, ix, n):
         tasks.append(make_task(
             task_id=f"modify_active_{i+1}",
             purpose="Modify active (picked-up) reservation — explain can't modify",
-            relevant_policies="Only confirmed reservations can be modified. Active = already picked up.",
+            relevant_policies="Insurance and categories can only be changed on confirmed reservations. Active rentals only allow extras changes.",
             notes=f"{name} tries to modify active reservation {rid}.",
             persona=pick_easy_persona().label,
             task_instructions=(
@@ -2338,7 +2373,7 @@ def gen_modify_active_reservation(db, ix, n):
                        f"Look up {name}", compare_args=[]),
             ],
             nl_assertions=[
-                "The agent explained that reservations cannot be modified once the rental is active (vehicle has been picked up).",
+                "The agent explained that insurance and other reservation details (except extras) cannot be changed once the rental is active.",
             ],
             reward_basis=["ACTION", "NL_ASSERTION"],
         ))
