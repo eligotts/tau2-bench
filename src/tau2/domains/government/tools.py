@@ -99,7 +99,8 @@ class GovernmentTools(ToolKitBase):
 
     @is_tool(ToolType.READ)
     def get_household_details(self, household_id: str) -> Household:
-        """Get details for a household.
+        """Get details for a household including address, members, zoning type,
+        property tax account, and waste collection day.
 
         Args:
             household_id: The ID of the household
@@ -308,6 +309,16 @@ class GovernmentTools(ToolKitBase):
         if department_id not in self.db.departments:
             raise ValueError(f"Department {department_id} not found")
         return self.db.departments[department_id]
+
+    @is_tool(ToolType.READ)
+    def list_departments(self) -> list[Department]:
+        """List all city departments with their IDs, names, contact info,
+        and services.
+
+        Returns:
+            A list of all department records
+        """
+        return list(self.db.departments.values())
 
     @is_tool(ToolType.READ)
     def list_citizen_cases(self, citizen_id: str) -> list[Case]:
@@ -628,6 +639,25 @@ class GovernmentTools(ToolKitBase):
             raise ValueError(
                 f"Invalid category: {category}. Valid categories: {valid_categories}"
             )
+
+        # Enforce 30-day appeal window
+        if case_type == "appeal":
+            citizen = self.db.citizens[citizen_id]
+            has_appealable = False
+            for pid in citizen.permit_ids:
+                permit = self.db.permits.get(pid)
+                if permit and permit.status == "denied" and permit.decision_date:
+                    decision_dt = datetime.strptime(permit.decision_date, "%Y-%m-%d")
+                    days_since = (REFERENCE_DATE - decision_dt).days
+                    if days_since <= APPEAL_WINDOW_DAYS:
+                        has_appealable = True
+                        break
+            if not has_appealable:
+                raise ValueError(
+                    f"Appeal window has expired. Appeals must be filed within "
+                    f"{APPEAL_WINDOW_DAYS} days of the decision date. "
+                    f"No denied permits for this citizen have an open appeal window."
+                )
 
         # Assign department based on category
         dept_mapping = {

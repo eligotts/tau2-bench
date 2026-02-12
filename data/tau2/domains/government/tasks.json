@@ -4,30 +4,30 @@
     "description": {
       "purpose": "Test parking permit application",
       "relevant_policies": "Permits require fee ($50.00). Agent can only submit, not approve.",
-      "notes": "Citizen Susan Harris applies for parking permit to get a residential parking permit."
+      "notes": "Citizen Kimberly Rivera applies for parking permit to get a residential parking permit."
     },
     "user_scenario": {
       "persona": "Distracted parent",
       "instructions": {
-        "task_instructions": "You are Susan Harris, born 1950-03-16. You want to apply for a permit. You have kids in the background. Your responses may be slightly scattered. You might answer a question, then go back to add something you forgot.",
+        "task_instructions": "You are Kimberly Rivera, born 1949-01-20. You want to apply for a permit. You have kids in the background. Your responses may be slightly scattered. You might answer a question, then go back to add something you forgot.",
         "domain": "government",
         "reason_for_call": "You'd like to apply for a parking permit to get a residential parking permit.",
-        "known_info": "Your name is Susan Harris and your date of birth is 1950-03-16. You want a parking permit to get a residential parking permit.",
+        "known_info": "Your name is Kimberly Rivera and your date of birth is 1949-01-20. You want a parking permit to get a residential parking permit.",
         "unknown_info": "You don't know the fee amount or processing time."
       }
     },
-    "ticket": "Citizen Susan Harris wants a parking permit to get a residential parking permit. Zone: residential.",
+    "ticket": "Citizen Kimberly Rivera wants a parking permit to get a residential parking permit. Zone: residential.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "susan_harris",
+            "citizen_id": "kimberly_rivera",
             "permit_type": "parking",
             "details": "get a residential parking permit"
           },
-          "info": "Submit parking permit for Susan Harris",
+          "info": "Submit parking permit for Kimberly Rivera",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -39,7 +39,7 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "susan_harris",
+            "citizen_id": "kimberly_rivera",
             "permit_type": "parking"
           }
         }
@@ -56,30 +56,30 @@
     "description": {
       "purpose": "Test parking permit application with vague request",
       "relevant_policies": "Permits require fee ($50.00). Agent can only submit, not approve.",
-      "notes": "Citizen Susan Harris vaguely describes wanting to figure out how to park legally on the street. Agent must identify permit type."
+      "notes": "Citizen Kimberly Rivera vaguely describes wanting to figure out how to park legally on the street. Agent must identify permit type."
     },
     "user_scenario": {
       "persona": "Frustrated citizen",
       "instructions": {
-        "task_instructions": "You are Susan Harris, born 1950-03-16. You need some kind of permission from the city. You are frustrated about dealing with the government. Vent before giving details. Your responses are curt. The agent may need to ask clarifying questions multiple times.",
+        "task_instructions": "You are Kimberly Rivera, born 1949-01-20. You need some kind of permission from the city. You are frustrated about dealing with the government. Vent before giving details. Your responses are curt. The agent may need to ask clarifying questions multiple times.",
         "domain": "government",
         "reason_for_call": "You want to figure out how to park legally on the street. You're not sure what you need exactly.",
-        "known_info": "Your name is Susan Harris and your date of birth is 1950-03-16.",
+        "known_info": "Your name is Kimberly Rivera and your date of birth is 1949-01-20.",
         "unknown_info": "You don't know what type of permit you need or the fees involved."
       }
     },
-    "ticket": "Citizen Susan Harris vaguely wants to figure out how to park legally on the street. Agent should identify parking permit and submit.",
+    "ticket": "Citizen Kimberly Rivera vaguely wants to figure out how to park legally on the street. Agent should identify parking permit and submit.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "susan_harris",
+            "citizen_id": "kimberly_rivera",
             "permit_type": "parking",
             "details": "get a residential parking permit"
           },
-          "info": "Submit parking permit for Susan Harris",
+          "info": "Submit parking permit for Kimberly Rivera",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -91,7 +91,7 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "susan_harris",
+            "citizen_id": "kimberly_rivera",
             "permit_type": "parking"
           }
         }
@@ -108,30 +108,30 @@
     "description": {
       "purpose": "Test event permit application",
       "relevant_policies": "Permits require fee ($75.00). Agent can only submit, not approve.",
-      "notes": "Citizen Elizabeth Carter applies for event permit to host a neighborhood block party."
+      "notes": "Citizen Linda Scott applies for event permit to host a neighborhood block party."
     },
     "user_scenario": {
       "persona": "Casual, provides info gradually",
       "instructions": {
-        "task_instructions": "You are Elizabeth Carter, born 1974-11-16. You want to apply for a permit. Don't volunteer all information at once. Wait for the agent to ask for specific details before providing them. Answer one question at a time.",
+        "task_instructions": "You are Linda Scott, born 1949-12-28. You want to apply for a permit. Don't volunteer all information at once. Wait for the agent to ask for specific details before providing them. Answer one question at a time.",
         "domain": "government",
         "reason_for_call": "You'd like to apply for a event permit to host a neighborhood block party.",
-        "known_info": "Your name is Elizabeth Carter and your date of birth is 1974-11-16. You want a event permit to host a neighborhood block party.",
+        "known_info": "Your name is Linda Scott and your date of birth is 1949-12-28. You want a event permit to host a neighborhood block party.",
         "unknown_info": "You don't know the fee amount or processing time."
       }
     },
-    "ticket": "Citizen Elizabeth Carter wants a event permit to host a neighborhood block party. Zone: residential.",
+    "ticket": "Citizen Linda Scott wants a event permit to host a neighborhood block party. Zone: residential.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "elizabeth_carter",
+            "citizen_id": "linda_scott",
             "permit_type": "event",
             "details": "host a neighborhood block party"
           },
-          "info": "Submit event permit for Elizabeth Carter",
+          "info": "Submit event permit for Linda Scott",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -143,7 +143,7 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "elizabeth_carter",
+            "citizen_id": "linda_scott",
             "permit_type": "event"
           }
         }
@@ -160,30 +160,30 @@
     "description": {
       "purpose": "Test event permit application with vague request",
       "relevant_policies": "Permits require fee ($75.00). Agent can only submit, not approve.",
-      "notes": "Citizen Elizabeth Carter vaguely describes wanting to have a party or gathering in the neighborhood. Agent must identify permit type."
+      "notes": "Citizen Linda Scott vaguely describes wanting to have a party or gathering in the neighborhood. Agent must identify permit type."
     },
     "user_scenario": {
       "persona": "Vague and uncertain",
       "instructions": {
-        "task_instructions": "You are Elizabeth Carter, born 1974-11-16. You need some kind of permission from the city. You don't remember exact details. Describe things approximately. Say things like 'I think I need some kind of permit' or 'there's something wrong with my taxes'.",
+        "task_instructions": "You are Linda Scott, born 1949-12-28. You need some kind of permission from the city. You don't remember exact details. Describe things approximately. Say things like 'I think I need some kind of permit' or 'there's something wrong with my taxes'.",
         "domain": "government",
         "reason_for_call": "You want to have a party or gathering in the neighborhood. You're not sure what you need exactly.",
-        "known_info": "Your name is Elizabeth Carter and your date of birth is 1974-11-16.",
+        "known_info": "Your name is Linda Scott and your date of birth is 1949-12-28.",
         "unknown_info": "You don't know what type of permit you need or the fees involved."
       }
     },
-    "ticket": "Citizen Elizabeth Carter vaguely wants to have a party or gathering in the neighborhood. Agent should identify event permit and submit.",
+    "ticket": "Citizen Linda Scott vaguely wants to have a party or gathering in the neighborhood. Agent should identify event permit and submit.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "elizabeth_carter",
+            "citizen_id": "linda_scott",
             "permit_type": "event",
             "details": "host a neighborhood block party"
           },
-          "info": "Submit event permit for Elizabeth Carter",
+          "info": "Submit event permit for Linda Scott",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -195,7 +195,7 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "elizabeth_carter",
+            "citizen_id": "linda_scott",
             "permit_type": "event"
           }
         }
@@ -212,30 +212,30 @@
     "description": {
       "purpose": "Test noise permit application",
       "relevant_policies": "Permits require fee ($40.00). Agent can only submit, not approve.",
-      "notes": "Citizen Sarah Allen applies for noise permit to do construction work during daytime."
+      "notes": "Citizen Betty Mitchell applies for noise permit to do construction work during daytime."
     },
     "user_scenario": {
       "persona": "Distracted parent",
       "instructions": {
-        "task_instructions": "You are Sarah Allen, born 1940-03-26. You want to apply for a permit. You have kids in the background. Your responses may be slightly scattered. You might answer a question, then go back to add something you forgot.",
+        "task_instructions": "You are Betty Mitchell, born 1947-04-21. You want to apply for a permit. You have kids in the background. Your responses may be slightly scattered. You might answer a question, then go back to add something you forgot.",
         "domain": "government",
         "reason_for_call": "You'd like to apply for a noise permit to do construction work during daytime.",
-        "known_info": "Your name is Sarah Allen and your date of birth is 1940-03-26. You want a noise permit to do construction work during daytime.",
+        "known_info": "Your name is Betty Mitchell and your date of birth is 1947-04-21. You want a noise permit to do construction work during daytime.",
         "unknown_info": "You don't know the fee amount or processing time."
       }
     },
-    "ticket": "Citizen Sarah Allen wants a noise permit to do construction work during daytime. Zone: residential.",
+    "ticket": "Citizen Betty Mitchell wants a noise permit to do construction work during daytime. Zone: residential.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "sarah_allen",
+            "citizen_id": "betty_mitchell",
             "permit_type": "noise",
             "details": "do construction work during daytime"
           },
-          "info": "Submit noise permit for Sarah Allen",
+          "info": "Submit noise permit for Betty Mitchell",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -247,7 +247,7 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "sarah_allen",
+            "citizen_id": "betty_mitchell",
             "permit_type": "noise"
           }
         }
@@ -264,30 +264,30 @@
     "description": {
       "purpose": "Test noise permit application with vague request",
       "relevant_policies": "Permits require fee ($40.00). Agent can only submit, not approve.",
-      "notes": "Citizen Sarah Allen vaguely describes wanting to do some loud work at the house during the day. Agent must identify permit type."
+      "notes": "Citizen Betty Mitchell vaguely describes wanting to do some loud work at the house during the day. Agent must identify permit type."
     },
     "user_scenario": {
       "persona": "New resident, unfamiliar with processes",
       "instructions": {
-        "task_instructions": "You are Sarah Allen, born 1940-03-26. You need some kind of permission from the city. You just moved to the city and don't know local procedures. You need everything explained. Express uncertainty frequently.",
+        "task_instructions": "You are Betty Mitchell, born 1947-04-21. You need some kind of permission from the city. You just moved to the city and don't know local procedures. You need everything explained. Express uncertainty frequently.",
         "domain": "government",
         "reason_for_call": "You want to do some loud work at the house during the day. You're not sure what you need exactly.",
-        "known_info": "Your name is Sarah Allen and your date of birth is 1940-03-26.",
+        "known_info": "Your name is Betty Mitchell and your date of birth is 1947-04-21.",
         "unknown_info": "You don't know what type of permit you need or the fees involved."
       }
     },
-    "ticket": "Citizen Sarah Allen vaguely wants to do some loud work at the house during the day. Agent should identify noise permit and submit.",
+    "ticket": "Citizen Betty Mitchell vaguely wants to do some loud work at the house during the day. Agent should identify noise permit and submit.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "sarah_allen",
+            "citizen_id": "betty_mitchell",
             "permit_type": "noise",
             "details": "do construction work during daytime"
           },
-          "info": "Submit noise permit for Sarah Allen",
+          "info": "Submit noise permit for Betty Mitchell",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -299,7 +299,7 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "sarah_allen",
+            "citizen_id": "betty_mitchell",
             "permit_type": "noise"
           }
         }
@@ -316,30 +316,30 @@
     "description": {
       "purpose": "Test building permit application",
       "relevant_policies": "Permits require fee ($150.00). Agent can only submit, not approve.",
-      "notes": "Citizen Mary Williams applies for building permit to build a wooden deck in the backyard."
+      "notes": "Citizen Charles Wilson applies for building permit to build a wooden deck in the backyard."
     },
     "user_scenario": {
       "persona": "Polite longtime resident",
       "instructions": {
-        "task_instructions": "You are Mary Williams, born 1972-02-28. You want to apply for a permit. You know local government procedures well. Provide information concisely and politely.",
+        "task_instructions": "You are Charles Wilson, born 1945-05-21. You want to apply for a permit. You know local government procedures well. Provide information concisely and politely.",
         "domain": "government",
         "reason_for_call": "You'd like to apply for a building permit to build a wooden deck in the backyard.",
-        "known_info": "Your name is Mary Williams and your date of birth is 1972-02-28. You want a building permit to build a wooden deck in the backyard.",
+        "known_info": "Your name is Charles Wilson and your date of birth is 1945-05-21. You want a building permit to build a wooden deck in the backyard.",
         "unknown_info": "You don't know the fee amount or processing time."
       }
     },
-    "ticket": "Citizen Mary Williams wants a building permit to build a wooden deck in the backyard. Zone: residential.",
+    "ticket": "Citizen Charles Wilson wants a building permit to build a wooden deck in the backyard. Zone: residential.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "mary_williams",
+            "citizen_id": "charles_wilson",
             "permit_type": "building",
             "details": "build a wooden deck in the backyard"
           },
-          "info": "Submit building permit for Mary Williams",
+          "info": "Submit building permit for Charles Wilson",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -351,7 +351,7 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "mary_williams",
+            "citizen_id": "charles_wilson",
             "permit_type": "building"
           }
         }
@@ -368,30 +368,30 @@
     "description": {
       "purpose": "Test building permit application with vague request",
       "relevant_policies": "Permits require fee ($150.00). Agent can only submit, not approve.",
-      "notes": "Citizen Mary Williams vaguely describes wanting to do some work on the house, maybe add something to the yard. Agent must identify permit type."
+      "notes": "Citizen Charles Wilson vaguely describes wanting to do some work on the house, maybe add something to the yard. Agent must identify permit type."
     },
     "user_scenario": {
       "persona": "Frustrated citizen",
       "instructions": {
-        "task_instructions": "You are Mary Williams, born 1972-02-28. You need some kind of permission from the city. You are frustrated about dealing with the government. Vent before giving details. Your responses are curt. The agent may need to ask clarifying questions multiple times.",
+        "task_instructions": "You are Charles Wilson, born 1945-05-21. You need some kind of permission from the city. You are frustrated about dealing with the government. Vent before giving details. Your responses are curt. The agent may need to ask clarifying questions multiple times.",
         "domain": "government",
         "reason_for_call": "You want to do some work on the house, maybe add something to the yard. You're not sure what you need exactly.",
-        "known_info": "Your name is Mary Williams and your date of birth is 1972-02-28.",
+        "known_info": "Your name is Charles Wilson and your date of birth is 1945-05-21.",
         "unknown_info": "You don't know what type of permit you need or the fees involved."
       }
     },
-    "ticket": "Citizen Mary Williams vaguely wants to do some work on the house, maybe add something to the yard. Agent should identify building permit and submit.",
+    "ticket": "Citizen Charles Wilson vaguely wants to do some work on the house, maybe add something to the yard. Agent should identify building permit and submit.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "mary_williams",
+            "citizen_id": "charles_wilson",
             "permit_type": "building",
             "details": "build a wooden deck in the backyard"
           },
-          "info": "Submit building permit for Mary Williams",
+          "info": "Submit building permit for Charles Wilson",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -403,7 +403,7 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "mary_williams",
+            "citizen_id": "charles_wilson",
             "permit_type": "building"
           }
         }
@@ -420,30 +420,30 @@
     "description": {
       "purpose": "Test building permit application",
       "relevant_policies": "Permits require fee ($150.00). Agent can only submit, not approve.",
-      "notes": "Citizen Daniel King applies for building permit to build a wooden deck in the backyard."
+      "notes": "Citizen Andrew Williams applies for building permit to build a wooden deck in the backyard."
     },
     "user_scenario": {
       "persona": "Busy small business owner",
       "instructions": {
-        "task_instructions": "You are Daniel King, born 1967-09-20. You want to apply for a permit. You have limited time. Be terse and direct. Give short answers. Omit details you assume the agent can figure out.",
+        "task_instructions": "You are Andrew Williams, born 1981-02-28. You want to apply for a permit. You have limited time. Be terse and direct. Give short answers. Omit details you assume the agent can figure out.",
         "domain": "government",
         "reason_for_call": "You'd like to apply for a building permit to build a wooden deck in the backyard.",
-        "known_info": "Your name is Daniel King and your date of birth is 1967-09-20. You want a building permit to build a wooden deck in the backyard.",
+        "known_info": "Your name is Andrew Williams and your date of birth is 1981-02-28. You want a building permit to build a wooden deck in the backyard.",
         "unknown_info": "You don't know the fee amount or processing time."
       }
     },
-    "ticket": "Citizen Daniel King wants a building permit to build a wooden deck in the backyard. Zone: residential.",
+    "ticket": "Citizen Andrew Williams wants a building permit to build a wooden deck in the backyard. Zone: residential.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "daniel_king",
+            "citizen_id": "andrew_williams",
             "permit_type": "building",
             "details": "build a wooden deck in the backyard"
           },
-          "info": "Submit building permit for Daniel King",
+          "info": "Submit building permit for Andrew Williams",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -455,7 +455,7 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "daniel_king",
+            "citizen_id": "andrew_williams",
             "permit_type": "building"
           }
         }
@@ -472,30 +472,30 @@
     "description": {
       "purpose": "Test building permit application with vague request",
       "relevant_policies": "Permits require fee ($150.00). Agent can only submit, not approve.",
-      "notes": "Citizen Daniel King vaguely describes wanting to do some work on the house, maybe add something to the yard. Agent must identify permit type."
+      "notes": "Citizen Andrew Williams vaguely describes wanting to do some work on the house, maybe add something to the yard. Agent must identify permit type."
     },
     "user_scenario": {
       "persona": "Confused elderly resident",
       "instructions": {
-        "task_instructions": "You are Daniel King, born 1967-09-20. You need some kind of permission from the city. You don't understand bureaucratic terminology. Confuse terms like 'permit' and 'license'. You need patient guidance. Ask the agent to explain things simply.",
+        "task_instructions": "You are Andrew Williams, born 1981-02-28. You need some kind of permission from the city. You don't understand bureaucratic terminology. Confuse terms like 'permit' and 'license'. You need patient guidance. Ask the agent to explain things simply.",
         "domain": "government",
         "reason_for_call": "You want to do some work on the house, maybe add something to the yard. You're not sure what you need exactly.",
-        "known_info": "Your name is Daniel King and your date of birth is 1967-09-20.",
+        "known_info": "Your name is Andrew Williams and your date of birth is 1981-02-28.",
         "unknown_info": "You don't know what type of permit you need or the fees involved."
       }
     },
-    "ticket": "Citizen Daniel King vaguely wants to do some work on the house, maybe add something to the yard. Agent should identify building permit and submit.",
+    "ticket": "Citizen Andrew Williams vaguely wants to do some work on the house, maybe add something to the yard. Agent should identify building permit and submit.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "daniel_king",
+            "citizen_id": "andrew_williams",
             "permit_type": "building",
             "details": "build a wooden deck in the backyard"
           },
-          "info": "Submit building permit for Daniel King",
+          "info": "Submit building permit for Andrew Williams",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -507,7 +507,7 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "daniel_king",
+            "citizen_id": "andrew_williams",
             "permit_type": "building"
           }
         }
@@ -522,32 +522,32 @@
   {
     "id": "submit_permit_6a",
     "description": {
-      "purpose": "Test parking permit application",
-      "relevant_policies": "Permits require fee ($50.00). Agent can only submit, not approve.",
-      "notes": "Citizen Kevin Wright applies for parking permit to get a residential parking permit."
+      "purpose": "Test business permit application",
+      "relevant_policies": "Permits require fee ($200.00). Agent can only submit, not approve.",
+      "notes": "Citizen Mary Garcia applies for business permit to open a small retail store."
     },
     "user_scenario": {
       "persona": "Distracted parent",
       "instructions": {
-        "task_instructions": "You are Kevin Wright, born 1944-04-07. You want to apply for a permit. You have kids in the background. Your responses may be slightly scattered. You might answer a question, then go back to add something you forgot.",
+        "task_instructions": "You are Mary Garcia, born 1997-11-28. You want to apply for a permit. You have kids in the background. Your responses may be slightly scattered. You might answer a question, then go back to add something you forgot.",
         "domain": "government",
-        "reason_for_call": "You'd like to apply for a parking permit to get a residential parking permit.",
-        "known_info": "Your name is Kevin Wright and your date of birth is 1944-04-07. You want a parking permit to get a residential parking permit.",
+        "reason_for_call": "You'd like to apply for a business permit to open a small retail store.",
+        "known_info": "Your name is Mary Garcia and your date of birth is 1997-11-28. You want a business permit to open a small retail store.",
         "unknown_info": "You don't know the fee amount or processing time."
       }
     },
-    "ticket": "Citizen Kevin Wright wants a parking permit to get a residential parking permit. Zone: residential.",
+    "ticket": "Citizen Mary Garcia wants a business permit to open a small retail store. Zone: commercial.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "kevin_wright",
-            "permit_type": "parking",
-            "details": "get a residential parking permit"
+            "citizen_id": "mary_garcia",
+            "permit_type": "business",
+            "details": "open a small retail store"
           },
-          "info": "Submit parking permit for Kevin Wright",
+          "info": "Submit business permit for Mary Garcia",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -559,8 +559,8 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "kevin_wright",
-            "permit_type": "parking"
+            "citizen_id": "mary_garcia",
+            "permit_type": "business"
           }
         }
       ],
@@ -574,32 +574,32 @@
   {
     "id": "submit_permit_6b",
     "description": {
-      "purpose": "Test parking permit application with vague request",
-      "relevant_policies": "Permits require fee ($50.00). Agent can only submit, not approve.",
-      "notes": "Citizen Kevin Wright vaguely describes wanting to figure out how to park legally on the street. Agent must identify permit type."
+      "purpose": "Test business permit application with vague request",
+      "relevant_policies": "Permits require fee ($200.00). Agent can only submit, not approve.",
+      "notes": "Citizen Mary Garcia vaguely describes wanting to start selling things from a shop. Agent must identify permit type."
     },
     "user_scenario": {
       "persona": "Frustrated citizen",
       "instructions": {
-        "task_instructions": "You are Kevin Wright, born 1944-04-07. You need some kind of permission from the city. You are frustrated about dealing with the government. Vent before giving details. Your responses are curt. The agent may need to ask clarifying questions multiple times.",
+        "task_instructions": "You are Mary Garcia, born 1997-11-28. You need some kind of permission from the city. You are frustrated about dealing with the government. Vent before giving details. Your responses are curt. The agent may need to ask clarifying questions multiple times.",
         "domain": "government",
-        "reason_for_call": "You want to figure out how to park legally on the street. You're not sure what you need exactly.",
-        "known_info": "Your name is Kevin Wright and your date of birth is 1944-04-07.",
+        "reason_for_call": "You want to start selling things from a shop. You're not sure what you need exactly.",
+        "known_info": "Your name is Mary Garcia and your date of birth is 1997-11-28.",
         "unknown_info": "You don't know what type of permit you need or the fees involved."
       }
     },
-    "ticket": "Citizen Kevin Wright vaguely wants to figure out how to park legally on the street. Agent should identify parking permit and submit.",
+    "ticket": "Citizen Mary Garcia vaguely wants to start selling things from a shop. Agent should identify business permit and submit.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "kevin_wright",
-            "permit_type": "parking",
-            "details": "get a residential parking permit"
+            "citizen_id": "mary_garcia",
+            "permit_type": "business",
+            "details": "open a small retail store"
           },
-          "info": "Submit parking permit for Kevin Wright",
+          "info": "Submit business permit for Mary Garcia",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -611,8 +611,8 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "kevin_wright",
-            "permit_type": "parking"
+            "citizen_id": "mary_garcia",
+            "permit_type": "business"
           }
         }
       ],
@@ -626,32 +626,32 @@
   {
     "id": "submit_permit_7a",
     "description": {
-      "purpose": "Test building permit application",
-      "relevant_policies": "Permits require fee ($150.00). Agent can only submit, not approve.",
-      "notes": "Citizen Carol Davis applies for building permit to build a wooden deck in the backyard."
+      "purpose": "Test parking permit application",
+      "relevant_policies": "Permits require fee ($50.00). Agent can only submit, not approve.",
+      "notes": "Citizen Sarah Hernandez applies for parking permit to get a residential parking permit."
     },
     "user_scenario": {
       "persona": "Organized homeowner",
       "instructions": {
-        "task_instructions": "You are Carol Davis, born 1950-01-09. You want to apply for a permit. Provide all requested information promptly and clearly. Be cooperative and concise.",
+        "task_instructions": "You are Sarah Hernandez, born 1971-02-25. You want to apply for a permit. Provide all requested information promptly and clearly. Be cooperative and concise.",
         "domain": "government",
-        "reason_for_call": "You'd like to apply for a building permit to build a wooden deck in the backyard.",
-        "known_info": "Your name is Carol Davis and your date of birth is 1950-01-09. You want a building permit to build a wooden deck in the backyard.",
+        "reason_for_call": "You'd like to apply for a parking permit to get a residential parking permit.",
+        "known_info": "Your name is Sarah Hernandez and your date of birth is 1971-02-25. You want a parking permit to get a residential parking permit.",
         "unknown_info": "You don't know the fee amount or processing time."
       }
     },
-    "ticket": "Citizen Carol Davis wants a building permit to build a wooden deck in the backyard. Zone: residential.",
+    "ticket": "Citizen Sarah Hernandez wants a parking permit to get a residential parking permit. Zone: residential.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "carol_davis",
-            "permit_type": "building",
-            "details": "build a wooden deck in the backyard"
+            "citizen_id": "sarah_hernandez",
+            "permit_type": "parking",
+            "details": "get a residential parking permit"
           },
-          "info": "Submit building permit for Carol Davis",
+          "info": "Submit parking permit for Sarah Hernandez",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -663,8 +663,8 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "carol_davis",
-            "permit_type": "building"
+            "citizen_id": "sarah_hernandez",
+            "permit_type": "parking"
           }
         }
       ],
@@ -678,32 +678,32 @@
   {
     "id": "submit_permit_7b",
     "description": {
-      "purpose": "Test building permit application with vague request",
-      "relevant_policies": "Permits require fee ($150.00). Agent can only submit, not approve.",
-      "notes": "Citizen Carol Davis vaguely describes wanting to do some work on the house, maybe add something to the yard. Agent must identify permit type."
+      "purpose": "Test parking permit application with vague request",
+      "relevant_policies": "Permits require fee ($50.00). Agent can only submit, not approve.",
+      "notes": "Citizen Sarah Hernandez vaguely describes wanting to figure out how to park legally on the street. Agent must identify permit type."
     },
     "user_scenario": {
       "persona": "Confused elderly resident",
       "instructions": {
-        "task_instructions": "You are Carol Davis, born 1950-01-09. You need some kind of permission from the city. You don't understand bureaucratic terminology. Confuse terms like 'permit' and 'license'. You need patient guidance. Ask the agent to explain things simply.",
+        "task_instructions": "You are Sarah Hernandez, born 1971-02-25. You need some kind of permission from the city. You don't understand bureaucratic terminology. Confuse terms like 'permit' and 'license'. You need patient guidance. Ask the agent to explain things simply.",
         "domain": "government",
-        "reason_for_call": "You want to do some work on the house, maybe add something to the yard. You're not sure what you need exactly.",
-        "known_info": "Your name is Carol Davis and your date of birth is 1950-01-09.",
+        "reason_for_call": "You want to figure out how to park legally on the street. You're not sure what you need exactly.",
+        "known_info": "Your name is Sarah Hernandez and your date of birth is 1971-02-25.",
         "unknown_info": "You don't know what type of permit you need or the fees involved."
       }
     },
-    "ticket": "Citizen Carol Davis vaguely wants to do some work on the house, maybe add something to the yard. Agent should identify building permit and submit.",
+    "ticket": "Citizen Sarah Hernandez vaguely wants to figure out how to park legally on the street. Agent should identify parking permit and submit.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "carol_davis",
-            "permit_type": "building",
-            "details": "build a wooden deck in the backyard"
+            "citizen_id": "sarah_hernandez",
+            "permit_type": "parking",
+            "details": "get a residential parking permit"
           },
-          "info": "Submit building permit for Carol Davis",
+          "info": "Submit parking permit for Sarah Hernandez",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -715,8 +715,8 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "carol_davis",
-            "permit_type": "building"
+            "citizen_id": "sarah_hernandez",
+            "permit_type": "parking"
           }
         }
       ],
@@ -730,32 +730,32 @@
   {
     "id": "submit_permit_8a",
     "description": {
-      "purpose": "Test parking permit application",
-      "relevant_policies": "Permits require fee ($50.00). Agent can only submit, not approve.",
-      "notes": "Citizen Sandra Martinez applies for parking permit to get a residential parking permit."
+      "purpose": "Test building permit application",
+      "relevant_policies": "Permits require fee ($150.00). Agent can only submit, not approve.",
+      "notes": "Citizen Jennifer Nelson applies for building permit to build a wooden deck in the backyard."
     },
     "user_scenario": {
-      "persona": "Organized homeowner",
+      "persona": "Polite longtime resident",
       "instructions": {
-        "task_instructions": "You are Sandra Martinez, born 1986-05-11. You want to apply for a permit. Provide all requested information promptly and clearly. Be cooperative and concise.",
+        "task_instructions": "You are Jennifer Nelson, born 1975-12-04. You want to apply for a permit. You know local government procedures well. Provide information concisely and politely.",
         "domain": "government",
-        "reason_for_call": "You'd like to apply for a parking permit to get a residential parking permit.",
-        "known_info": "Your name is Sandra Martinez and your date of birth is 1986-05-11. You want a parking permit to get a residential parking permit.",
+        "reason_for_call": "You'd like to apply for a building permit to build a wooden deck in the backyard.",
+        "known_info": "Your name is Jennifer Nelson and your date of birth is 1975-12-04. You want a building permit to build a wooden deck in the backyard.",
         "unknown_info": "You don't know the fee amount or processing time."
       }
     },
-    "ticket": "Citizen Sandra Martinez wants a parking permit to get a residential parking permit. Zone: residential.",
+    "ticket": "Citizen Jennifer Nelson wants a building permit to build a wooden deck in the backyard. Zone: commercial.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "sandra_martinez",
-            "permit_type": "parking",
-            "details": "get a residential parking permit"
+            "citizen_id": "jennifer_nelson",
+            "permit_type": "building",
+            "details": "build a wooden deck in the backyard"
           },
-          "info": "Submit parking permit for Sandra Martinez",
+          "info": "Submit building permit for Jennifer Nelson",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -767,8 +767,8 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "sandra_martinez",
-            "permit_type": "parking"
+            "citizen_id": "jennifer_nelson",
+            "permit_type": "building"
           }
         }
       ],
@@ -782,32 +782,32 @@
   {
     "id": "submit_permit_8b",
     "description": {
-      "purpose": "Test parking permit application with vague request",
-      "relevant_policies": "Permits require fee ($50.00). Agent can only submit, not approve.",
-      "notes": "Citizen Sandra Martinez vaguely describes wanting to figure out how to park legally on the street. Agent must identify permit type."
+      "purpose": "Test building permit application with vague request",
+      "relevant_policies": "Permits require fee ($150.00). Agent can only submit, not approve.",
+      "notes": "Citizen Jennifer Nelson vaguely describes wanting to do some work on the house, maybe add something to the yard. Agent must identify permit type."
     },
     "user_scenario": {
       "persona": "Confused elderly resident",
       "instructions": {
-        "task_instructions": "You are Sandra Martinez, born 1986-05-11. You need some kind of permission from the city. You don't understand bureaucratic terminology. Confuse terms like 'permit' and 'license'. You need patient guidance. Ask the agent to explain things simply.",
+        "task_instructions": "You are Jennifer Nelson, born 1975-12-04. You need some kind of permission from the city. You don't understand bureaucratic terminology. Confuse terms like 'permit' and 'license'. You need patient guidance. Ask the agent to explain things simply.",
         "domain": "government",
-        "reason_for_call": "You want to figure out how to park legally on the street. You're not sure what you need exactly.",
-        "known_info": "Your name is Sandra Martinez and your date of birth is 1986-05-11.",
+        "reason_for_call": "You want to do some work on the house, maybe add something to the yard. You're not sure what you need exactly.",
+        "known_info": "Your name is Jennifer Nelson and your date of birth is 1975-12-04.",
         "unknown_info": "You don't know what type of permit you need or the fees involved."
       }
     },
-    "ticket": "Citizen Sandra Martinez vaguely wants to figure out how to park legally on the street. Agent should identify parking permit and submit.",
+    "ticket": "Citizen Jennifer Nelson vaguely wants to do some work on the house, maybe add something to the yard. Agent should identify building permit and submit.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "submit_1",
           "name": "submit_permit_application",
           "arguments": {
-            "citizen_id": "sandra_martinez",
-            "permit_type": "parking",
-            "details": "get a residential parking permit"
+            "citizen_id": "jennifer_nelson",
+            "permit_type": "building",
+            "details": "build a wooden deck in the backyard"
           },
-          "info": "Submit parking permit for Sandra Martinez",
+          "info": "Submit building permit for Jennifer Nelson",
           "compare_args": [
             "citizen_id",
             "permit_type"
@@ -819,8 +819,8 @@
           "env_type": "assistant",
           "func_name": "assert_permit_exists",
           "arguments": {
-            "citizen_id": "sandra_martinez",
-            "permit_type": "parking"
+            "citizen_id": "jennifer_nelson",
+            "permit_type": "building"
           }
         }
       ],
@@ -934,31 +934,31 @@
   {
     "id": "renew_license_2a",
     "description": {
-      "purpose": "Test dog license renewal",
+      "purpose": "Test business license renewal",
       "relevant_policies": "Licenses renewable within 30 days of expiry.",
-      "notes": "Citizen Daniel King renews dog license (expires 2025-10-30)."
+      "notes": "Citizen Ashley Hill renews business license (expires 2025-10-20)."
     },
     "user_scenario": {
       "persona": "Polite longtime resident",
       "instructions": {
-        "task_instructions": "You are Daniel King, born 1967-09-20. You want to renew your dog license. You know local government procedures well. Provide information concisely and politely.",
+        "task_instructions": "You are Ashley Hill, born 2000-12-02. You want to renew your business license. You know local government procedures well. Provide information concisely and politely.",
         "domain": "government",
-        "reason_for_call": "You'd like to renew your dog license. It's expiring soon.",
-        "known_info": "Your name is Daniel King and your date of birth is 1967-09-20. Your dog license expires on 2025-10-30.",
+        "reason_for_call": "You'd like to renew your business license. It's expiring soon.",
+        "known_info": "Your name is Ashley Hill and your date of birth is 2000-12-02. Your business license expires on 2025-10-20.",
         "unknown_info": "You don't know the renewal fee. When asked for payment, use check."
       }
     },
-    "ticket": "Citizen Daniel King wants to renew dog license license_king_dog (expires 2025-10-30).",
+    "ticket": "Citizen Ashley Hill wants to renew business license license_hill_business (expires 2025-10-20).",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "renew_1",
           "name": "renew_license",
           "arguments": {
-            "license_id": "license_king_dog",
+            "license_id": "license_hill_business",
             "payment_method": "check"
           },
-          "info": "Renew dog license license_king_dog for Daniel King",
+          "info": "Renew business license license_hill_business for Ashley Hill",
           "compare_args": [
             "license_id"
           ]
@@ -969,7 +969,7 @@
           "env_type": "assistant",
           "func_name": "assert_license_status",
           "arguments": {
-            "license_id": "license_king_dog",
+            "license_id": "license_hill_business",
             "expected_status": "active"
           }
         }
@@ -984,31 +984,31 @@
   {
     "id": "renew_license_2b",
     "description": {
-      "purpose": "Test dog license renewal with vague request",
+      "purpose": "Test business license renewal with vague request",
       "relevant_policies": "Licenses renewable within 30 days of expiry.",
-      "notes": "Citizen Daniel King vaguely asks about renewing something."
+      "notes": "Citizen Ashley Hill vaguely asks about renewing something."
     },
     "user_scenario": {
       "persona": "New resident, unfamiliar with processes",
       "instructions": {
-        "task_instructions": "You are Daniel King, born 1967-09-20. You have a license that needs renewing. You just moved to the city and don't know local procedures. You need everything explained. Express uncertainty frequently.",
+        "task_instructions": "You are Ashley Hill, born 2000-12-02. You have a license that needs renewing. You just moved to the city and don't know local procedures. You need everything explained. Express uncertainty frequently.",
         "domain": "government",
         "reason_for_call": "You have some kind of license that's about to expire or maybe already expired. You need to renew it.",
-        "known_info": "Your name is Daniel King and your date of birth is 1967-09-20.",
+        "known_info": "Your name is Ashley Hill and your date of birth is 2000-12-02.",
         "unknown_info": "You don't remember the license type or expiry date. When asked for payment, use check."
       }
     },
-    "ticket": "Citizen Daniel King vaguely wants to renew a license. Agent should identify dog license license_king_dog and renew.",
+    "ticket": "Citizen Ashley Hill vaguely wants to renew a license. Agent should identify business license license_hill_business and renew.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "renew_1",
           "name": "renew_license",
           "arguments": {
-            "license_id": "license_king_dog",
+            "license_id": "license_hill_business",
             "payment_method": "check"
           },
-          "info": "Renew dog license license_king_dog for Daniel King",
+          "info": "Renew business license license_hill_business for Ashley Hill",
           "compare_args": [
             "license_id"
           ]
@@ -1019,7 +1019,7 @@
           "env_type": "assistant",
           "func_name": "assert_license_status",
           "arguments": {
-            "license_id": "license_king_dog",
+            "license_id": "license_hill_business",
             "expected_status": "active"
           }
         }
@@ -1136,29 +1136,29 @@
     "description": {
       "purpose": "Test dog license renewal",
       "relevant_policies": "Licenses renewable within 30 days of expiry.",
-      "notes": "Citizen Melissa Scott renews dog license (expires 2025-10-26)."
+      "notes": "Citizen Deborah Rodriguez renews dog license (expires 2025-10-28)."
     },
     "user_scenario": {
       "persona": "Casual, provides info gradually",
       "instructions": {
-        "task_instructions": "You are Melissa Scott, born 1984-06-08. You want to renew your dog license. Don't volunteer all information at once. Wait for the agent to ask for specific details before providing them. Answer one question at a time.",
+        "task_instructions": "You are Deborah Rodriguez, born 1971-06-03. You want to renew your dog license. Don't volunteer all information at once. Wait for the agent to ask for specific details before providing them. Answer one question at a time.",
         "domain": "government",
         "reason_for_call": "You'd like to renew your dog license. It's expiring soon.",
-        "known_info": "Your name is Melissa Scott and your date of birth is 1984-06-08. Your dog license expires on 2025-10-26.",
+        "known_info": "Your name is Deborah Rodriguez and your date of birth is 1971-06-03. Your dog license expires on 2025-10-28.",
         "unknown_info": "You don't know the renewal fee. When asked for payment, use credit_card."
       }
     },
-    "ticket": "Citizen Melissa Scott wants to renew dog license license_scott_dog_2 (expires 2025-10-26).",
+    "ticket": "Citizen Deborah Rodriguez wants to renew dog license license_rodriguez_dog_2 (expires 2025-10-28).",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "renew_1",
           "name": "renew_license",
           "arguments": {
-            "license_id": "license_scott_dog_2",
+            "license_id": "license_rodriguez_dog_2",
             "payment_method": "credit_card"
           },
-          "info": "Renew dog license license_scott_dog_2 for Melissa Scott",
+          "info": "Renew dog license license_rodriguez_dog_2 for Deborah Rodriguez",
           "compare_args": [
             "license_id"
           ]
@@ -1169,7 +1169,7 @@
           "env_type": "assistant",
           "func_name": "assert_license_status",
           "arguments": {
-            "license_id": "license_scott_dog_2",
+            "license_id": "license_rodriguez_dog_2",
             "expected_status": "active"
           }
         }
@@ -1186,29 +1186,29 @@
     "description": {
       "purpose": "Test dog license renewal with vague request",
       "relevant_policies": "Licenses renewable within 30 days of expiry.",
-      "notes": "Citizen Melissa Scott vaguely asks about renewing something."
+      "notes": "Citizen Deborah Rodriguez vaguely asks about renewing something."
     },
     "user_scenario": {
       "persona": "Vague and uncertain",
       "instructions": {
-        "task_instructions": "You are Melissa Scott, born 1984-06-08. You have a license that needs renewing. You don't remember exact details. Describe things approximately. Say things like 'I think I need some kind of permit' or 'there's something wrong with my taxes'.",
+        "task_instructions": "You are Deborah Rodriguez, born 1971-06-03. You have a license that needs renewing. You don't remember exact details. Describe things approximately. Say things like 'I think I need some kind of permit' or 'there's something wrong with my taxes'.",
         "domain": "government",
         "reason_for_call": "You have some kind of license that's about to expire or maybe already expired. You need to renew it.",
-        "known_info": "Your name is Melissa Scott and your date of birth is 1984-06-08.",
+        "known_info": "Your name is Deborah Rodriguez and your date of birth is 1971-06-03.",
         "unknown_info": "You don't remember the license type or expiry date. When asked for payment, use credit_card."
       }
     },
-    "ticket": "Citizen Melissa Scott vaguely wants to renew a license. Agent should identify dog license license_scott_dog_2 and renew.",
+    "ticket": "Citizen Deborah Rodriguez vaguely wants to renew a license. Agent should identify dog license license_rodriguez_dog_2 and renew.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "renew_1",
           "name": "renew_license",
           "arguments": {
-            "license_id": "license_scott_dog_2",
+            "license_id": "license_rodriguez_dog_2",
             "payment_method": "credit_card"
           },
-          "info": "Renew dog license license_scott_dog_2 for Melissa Scott",
+          "info": "Renew dog license license_rodriguez_dog_2 for Deborah Rodriguez",
           "compare_args": [
             "license_id"
           ]
@@ -1219,7 +1219,7 @@
           "env_type": "assistant",
           "func_name": "assert_license_status",
           "arguments": {
-            "license_id": "license_scott_dog_2",
+            "license_id": "license_rodriguez_dog_2",
             "expected_status": "active"
           }
         }
@@ -1334,31 +1334,31 @@
   {
     "id": "renew_license_6a",
     "description": {
-      "purpose": "Test business license renewal",
+      "purpose": "Test dog license renewal",
       "relevant_policies": "Licenses renewable within 30 days of expiry.",
-      "notes": "Citizen Ashley Hill renews business license (expires 2025-10-20)."
+      "notes": "Citizen Melissa Scott renews dog license (expires 2025-10-26)."
     },
     "user_scenario": {
       "persona": "Organized homeowner",
       "instructions": {
-        "task_instructions": "You are Ashley Hill, born 2000-12-02. You want to renew your business license. Provide all requested information promptly and clearly. Be cooperative and concise.",
+        "task_instructions": "You are Melissa Scott, born 1984-06-08. You want to renew your dog license. Provide all requested information promptly and clearly. Be cooperative and concise.",
         "domain": "government",
-        "reason_for_call": "You'd like to renew your business license. It's expiring soon.",
-        "known_info": "Your name is Ashley Hill and your date of birth is 2000-12-02. Your business license expires on 2025-10-20.",
+        "reason_for_call": "You'd like to renew your dog license. It's expiring soon.",
+        "known_info": "Your name is Melissa Scott and your date of birth is 1984-06-08. Your dog license expires on 2025-10-26.",
         "unknown_info": "You don't know the renewal fee. When asked for payment, use cash."
       }
     },
-    "ticket": "Citizen Ashley Hill wants to renew business license license_hill_business (expires 2025-10-20).",
+    "ticket": "Citizen Melissa Scott wants to renew dog license license_scott_dog_2 (expires 2025-10-26).",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "renew_1",
           "name": "renew_license",
           "arguments": {
-            "license_id": "license_hill_business",
+            "license_id": "license_scott_dog_2",
             "payment_method": "cash"
           },
-          "info": "Renew business license license_hill_business for Ashley Hill",
+          "info": "Renew dog license license_scott_dog_2 for Melissa Scott",
           "compare_args": [
             "license_id"
           ]
@@ -1369,7 +1369,7 @@
           "env_type": "assistant",
           "func_name": "assert_license_status",
           "arguments": {
-            "license_id": "license_hill_business",
+            "license_id": "license_scott_dog_2",
             "expected_status": "active"
           }
         }
@@ -1384,31 +1384,31 @@
   {
     "id": "renew_license_6b",
     "description": {
-      "purpose": "Test business license renewal with vague request",
+      "purpose": "Test dog license renewal with vague request",
       "relevant_policies": "Licenses renewable within 30 days of expiry.",
-      "notes": "Citizen Ashley Hill vaguely asks about renewing something."
+      "notes": "Citizen Melissa Scott vaguely asks about renewing something."
     },
     "user_scenario": {
       "persona": "Confused elderly resident",
       "instructions": {
-        "task_instructions": "You are Ashley Hill, born 2000-12-02. You have a license that needs renewing. You don't understand bureaucratic terminology. Confuse terms like 'permit' and 'license'. You need patient guidance. Ask the agent to explain things simply.",
+        "task_instructions": "You are Melissa Scott, born 1984-06-08. You have a license that needs renewing. You don't understand bureaucratic terminology. Confuse terms like 'permit' and 'license'. You need patient guidance. Ask the agent to explain things simply.",
         "domain": "government",
         "reason_for_call": "You have some kind of license that's about to expire or maybe already expired. You need to renew it.",
-        "known_info": "Your name is Ashley Hill and your date of birth is 2000-12-02.",
+        "known_info": "Your name is Melissa Scott and your date of birth is 1984-06-08.",
         "unknown_info": "You don't remember the license type or expiry date. When asked for payment, use cash."
       }
     },
-    "ticket": "Citizen Ashley Hill vaguely wants to renew a license. Agent should identify business license license_hill_business and renew.",
+    "ticket": "Citizen Melissa Scott vaguely wants to renew a license. Agent should identify dog license license_scott_dog_2 and renew.",
     "evaluation_criteria": {
       "actions": [
         {
           "action_id": "renew_1",
           "name": "renew_license",
           "arguments": {
-            "license_id": "license_hill_business",
+            "license_id": "license_scott_dog_2",
             "payment_method": "cash"
           },
-          "info": "Renew business license license_hill_business for Ashley Hill",
+          "info": "Renew dog license license_scott_dog_2 for Melissa Scott",
           "compare_args": [
             "license_id"
           ]
@@ -1419,7 +1419,7 @@
           "env_type": "assistant",
           "func_name": "assert_license_status",
           "arguments": {
-            "license_id": "license_hill_business",
+            "license_id": "license_scott_dog_2",
             "expected_status": "active"
           }
         }
