@@ -39,6 +39,13 @@ from tau2.domains.government.environment import get_tasks as government_domain_g
 from tau2.domains.government.environment import (
     get_tasks_split as government_domain_get_tasks_split,
 )
+from tau2.domains.helpdesk.environment import (
+    get_environment as helpdesk_domain_get_environment,
+)
+from tau2.domains.helpdesk.environment import get_tasks as helpdesk_domain_get_tasks
+from tau2.domains.helpdesk.environment import (
+    get_tasks_split as helpdesk_domain_get_tasks_split,
+)
 from tau2.environment.environment import Environment
 from tau2.user.base import BaseUser
 from tau2.user.user_simulator import DummyUser, UserSimulator
@@ -239,6 +246,13 @@ try:
         government_domain_get_tasks,
         "government",
         get_task_splits=government_domain_get_tasks_split,
+    )
+
+    registry.register_domain(helpdesk_domain_get_environment, "helpdesk")
+    registry.register_tasks(
+        helpdesk_domain_get_tasks,
+        "helpdesk",
+        get_task_splits=helpdesk_domain_get_tasks_split,
     )
 
     logger.debug(
