@@ -32,6 +32,13 @@ from tau2.domains.festival.environment import get_tasks as festival_domain_get_t
 from tau2.domains.festival.environment import (
     get_tasks_split as festival_domain_get_tasks_split,
 )
+from tau2.domains.government.environment import (
+    get_environment as government_domain_get_environment,
+)
+from tau2.domains.government.environment import get_tasks as government_domain_get_tasks
+from tau2.domains.government.environment import (
+    get_tasks_split as government_domain_get_tasks_split,
+)
 from tau2.environment.environment import Environment
 from tau2.user.base import BaseUser
 from tau2.user.user_simulator import DummyUser, UserSimulator
@@ -225,6 +232,13 @@ try:
         festival_domain_get_tasks,
         "festival",
         get_task_splits=festival_domain_get_tasks_split,
+    )
+
+    registry.register_domain(government_domain_get_environment, "government")
+    registry.register_tasks(
+        government_domain_get_tasks,
+        "government",
+        get_task_splits=government_domain_get_tasks_split,
     )
 
     logger.debug(
