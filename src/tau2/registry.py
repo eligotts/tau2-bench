@@ -39,13 +39,6 @@ from tau2.domains.telecom.environment import (
 from tau2.domains.telecom.environment import (
     get_tasks_split as telecom_domain_get_tasks_split,
 )
-from tau2.domains.restaurant.environment import (
-    get_environment as restaurant_domain_get_environment,
-)
-from tau2.domains.restaurant.environment import get_tasks as restaurant_domain_get_tasks
-from tau2.domains.restaurant.environment import (
-    get_tasks_split as restaurant_domain_get_tasks_split,
-)
 from tau2.domains.helpdesk.environment import (
     get_environment as helpdesk_domain_get_environment,
 )
@@ -256,13 +249,6 @@ try:
         telecom_domain_get_tasks,
         "telecom-workflow",
         get_task_splits=telecom_domain_get_tasks_split,
-    )
-
-    registry.register_domain(restaurant_domain_get_environment, "restaurant")
-    registry.register_tasks(
-        restaurant_domain_get_tasks,
-        "restaurant",
-        get_task_splits=restaurant_domain_get_tasks_split,
     )
 
     registry.register_domain(helpdesk_domain_get_environment, "helpdesk")
