@@ -1,0 +1,7 @@
+from tau2.utils.utils import DATA_DIR
+
+TECH_SUPPORT_DATA_DIR = DATA_DIR / "tau2" / "domains" / "tech_support"
+TECH_SUPPORT_DB_PATH = TECH_SUPPORT_DATA_DIR / "db.json"
+TECH_SUPPORT_USER_DB_PATH = TECH_SUPPORT_DATA_DIR / "user_db.json"
+TECH_SUPPORT_POLICY_PATH = TECH_SUPPORT_DATA_DIR / "policy.md"
+TECH_SUPPORT_TASK_SET_PATH = TECH_SUPPORT_DATA_DIR / "tasks.json"

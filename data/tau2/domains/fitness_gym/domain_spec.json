@@ -1,0 +1,202 @@
+{
+  "domain_name": "fitness_gym",
+  "description": "Customer service for a fitness gym handling membership, class bookings, personal training, billing, locker rentals, emergency contacts, and notification preferences.",
+  "entities": [
+    {
+      "name": "Member",
+      "fields": [
+        {"name": "member_id", "type": "str", "description": "Unique member identifier"},
+        {"name": "name", "type": "str", "description": "Full name"},
+        {"name": "phone", "type": "str", "description": "Phone number"},
+        {"name": "email", "type": "str", "description": "Email address"},
+        {"name": "membership_tier", "type": "str", "description": "basic, standard, premium, student"},
+        {"name": "membership_status", "type": "str", "description": "active, suspended, pending_cancellation"},
+        {"name": "notification_preference", "type": "str", "description": "email, sms, none"},
+        {"name": "emergency_contact_name", "type": "str", "description": "Emergency contact full name"},
+        {"name": "emergency_contact_phone", "type": "str", "description": "Emergency contact phone"}
+      ],
+      "is_primary": true
+    },
+    {
+      "name": "ClassBooking",
+      "fields": [
+        {"name": "booking_id", "type": "str", "description": "Unique booking identifier"},
+        {"name": "member_id", "type": "str", "description": "FK to Member"},
+        {"name": "class_name", "type": "str", "description": "Fitness class name"},
+        {"name": "instructor", "type": "str", "description": "Instructor name"},
+        {"name": "schedule_date", "type": "str", "description": "YYYY-MM-DD"},
+        {"name": "schedule_time", "type": "str", "description": "HH:MM"},
+        {"name": "location", "type": "str", "description": "Room/area in the gym"},
+        {"name": "status", "type": "str", "description": "registered, cancelled, waitlisted"}
+      ],
+      "is_primary": false
+    },
+    {
+      "name": "TrainingSession",
+      "fields": [
+        {"name": "session_id", "type": "str", "description": "Unique session identifier"},
+        {"name": "member_id", "type": "str", "description": "FK to Member"},
+        {"name": "trainer_name", "type": "str", "description": "Personal trainer name"},
+        {"name": "session_date", "type": "str", "description": "YYYY-MM-DD"},
+        {"name": "session_time", "type": "str", "description": "HH:MM"},
+        {"name": "session_type", "type": "str", "description": "strength, cardio, flexibility, assessment"},
+        {"name": "status", "type": "str", "description": "scheduled, cancelled, completed, medical_hold"}
+      ],
+      "is_primary": false
+    },
+    {
+      "name": "Invoice",
+      "fields": [
+        {"name": "invoice_id", "type": "str", "description": "Unique invoice identifier"},
+        {"name": "member_id", "type": "str", "description": "FK to Member"},
+        {"name": "amount", "type": "float", "description": "Invoice amount in dollars"},
+        {"name": "description", "type": "str", "description": "Charge description"},
+        {"name": "status", "type": "str", "description": "unpaid, paid, credited, overdue"},
+        {"name": "due_date", "type": "str", "description": "YYYY-MM-DD"}
+      ],
+      "is_primary": false
+    },
+    {
+      "name": "LockerRental",
+      "fields": [
+        {"name": "rental_id", "type": "str", "description": "Unique rental identifier"},
+        {"name": "member_id", "type": "str", "description": "FK to Member"},
+        {"name": "locker_number", "type": "str", "description": "Locker number"},
+        {"name": "location", "type": "str", "description": "Main Floor, Pool Area, Upper Level"},
+        {"name": "status", "type": "str", "description": "active, expired, transferred"}
+      ],
+      "is_primary": false
+    }
+  ],
+  "tools": [
+    {"name": "get_member_by_name", "type": "READ", "description": "Look up a member by full name", "args": [{"name": "name", "type": "str"}]},
+    {"name": "get_member_by_id", "type": "READ", "description": "Look up a member by ID", "args": [{"name": "member_id", "type": "str"}]},
+    {"name": "get_class_bookings", "type": "READ", "description": "Get all class bookings for a member", "args": [{"name": "member_id", "type": "str"}]},
+    {"name": "get_training_sessions", "type": "READ", "description": "Get all training sessions for a member", "args": [{"name": "member_id", "type": "str"}]},
+    {"name": "get_invoices", "type": "READ", "description": "Get all invoices for a member", "args": [{"name": "member_id", "type": "str"}]},
+    {"name": "get_locker_rentals", "type": "READ", "description": "Get all locker rentals for a member", "args": [{"name": "member_id", "type": "str"}]},
+    {"name": "reactivate_membership", "type": "WRITE", "description": "Reactivate a suspended membership", "args": [{"name": "member_id", "type": "str"}]},
+    {"name": "restore_membership_tier", "type": "WRITE", "description": "Restore membership to correct tier", "args": [{"name": "member_id", "type": "str"}, {"name": "tier", "type": "str"}]},
+    {"name": "reinstate_class_booking", "type": "WRITE", "description": "Reinstate a cancelled class booking", "args": [{"name": "booking_id", "type": "str"}]},
+    {"name": "reschedule_class_booking", "type": "WRITE", "description": "Change the schedule for a class booking", "args": [{"name": "booking_id", "type": "str"}, {"name": "new_date", "type": "str"}, {"name": "new_time", "type": "str"}]},
+    {"name": "reinstate_training_session", "type": "WRITE", "description": "Reinstate a cancelled training session", "args": [{"name": "session_id", "type": "str"}]},
+    {"name": "reassign_trainer", "type": "WRITE", "description": "Reassign a training session to a different trainer", "args": [{"name": "session_id", "type": "str"}, {"name": "new_trainer", "type": "str"}]},
+    {"name": "issue_credit", "type": "WRITE", "description": "Issue a credit/waive an incorrect invoice", "args": [{"name": "invoice_id", "type": "str"}, {"name": "reason", "type": "str"}]},
+    {"name": "transfer_locker", "type": "WRITE", "description": "Transfer a locker rental to a different location", "args": [{"name": "rental_id", "type": "str"}, {"name": "new_location", "type": "str"}]},
+    {"name": "update_emergency_contact", "type": "WRITE", "description": "Update emergency contact info", "args": [{"name": "member_id", "type": "str"}, {"name": "contact_name", "type": "str"}, {"name": "contact_phone", "type": "str"}]},
+    {"name": "update_notification_preference", "type": "WRITE", "description": "Update notification preference", "args": [{"name": "member_id", "type": "str"}, {"name": "preference", "type": "str"}]},
+    {"name": "transfer_to_human", "type": "GENERIC", "description": "Transfer to human agent", "args": [{"name": "summary", "type": "str"}]}
+  ],
+  "user_tools": [
+    {"name": "view_my_bookings", "type": "READ", "description": "View class bookings", "args": []},
+    {"name": "view_my_sessions", "type": "READ", "description": "View training sessions", "args": []},
+    {"name": "view_my_invoices", "type": "READ", "description": "View invoices", "args": []},
+    {"name": "acknowledge_resolution", "type": "WRITE", "description": "Acknowledge an issue resolution", "args": [{"name": "member_id", "type": "str"}]},
+    {"name": "confirm_class_attendance", "type": "WRITE", "description": "Confirm attendance after class booking change", "args": [{"name": "booking_id", "type": "str"}]},
+    {"name": "confirm_training_session", "type": "WRITE", "description": "Confirm session after training change", "args": [{"name": "session_id", "type": "str"}]},
+    {"name": "make_invoice_payment", "type": "WRITE", "description": "Make a payment toward an invoice", "args": [{"name": "invoice_id", "type": "str"}, {"name": "amount", "type": "float"}]},
+    {"name": "confirm_locker_assignment", "type": "WRITE", "description": "Confirm locker assignment after transfer", "args": [{"name": "rental_id", "type": "str"}]}
+  ],
+  "fault_groups": [
+    {
+      "group_name": "membership_status",
+      "faults": [
+        {"name": "suspended_membership", "description": "Membership incorrectly suspended", "init_action": "set status to suspended", "fix_tool": "reactivate_membership", "entity_field_affected": "membership_status", "unfixable": false, "user_fix_tools": ["acknowledge_resolution"]},
+        {"name": "wrong_membership_tier", "description": "Membership tier downgraded to basic by mistake", "init_action": "set tier to basic", "fix_tool": "restore_membership_tier", "entity_field_affected": "membership_tier", "unfixable": false, "user_fix_tools": ["acknowledge_resolution"]}
+      ]
+    },
+    {
+      "group_name": "class_booking",
+      "faults": [
+        {"name": "cancelled_class_booking", "description": "Class booking cancelled by mistake", "init_action": "set booking status to cancelled", "fix_tool": "reinstate_class_booking", "entity_field_affected": "booking.status", "unfixable": false, "user_fix_tools": ["confirm_class_attendance"]},
+        {"name": "wrong_class_schedule", "description": "Class booking has wrong date/time", "init_action": "set date/time to wrong values", "fix_tool": "reschedule_class_booking", "entity_field_affected": "booking.schedule_date/time", "unfixable": false, "user_fix_tools": ["confirm_class_attendance"]}
+      ]
+    },
+    {
+      "group_name": "training_session",
+      "faults": [
+        {"name": "cancelled_training_session", "description": "Training session cancelled by mistake", "init_action": "set session status to cancelled", "fix_tool": "reinstate_training_session", "entity_field_affected": "session.status", "unfixable": false, "user_fix_tools": ["confirm_training_session"]},
+        {"name": "wrong_trainer", "description": "Wrong trainer assigned to session", "init_action": "set trainer to wrong value", "fix_tool": "reassign_trainer", "entity_field_affected": "session.trainer_name", "unfixable": false, "user_fix_tools": ["confirm_training_session"]}
+      ]
+    },
+    {
+      "group_name": "billing",
+      "faults": [
+        {"name": "overcharged_invoice", "description": "Invoice has incorrect overcharge amount", "init_action": "set amount to 999.99, status to unpaid", "fix_tool": "issue_credit", "entity_field_affected": "invoice.status", "unfixable": false, "user_fix_tools": []},
+        {"name": "unpaid_invoice", "description": "Member ready to pay outstanding invoice", "init_action": "set invoice status to unpaid", "fix_tool": "make_invoice_payment (user)", "entity_field_affected": "invoice.status", "unfixable": false, "user_fix_tools": ["make_invoice_payment"]}
+      ]
+    },
+    {
+      "group_name": "locker",
+      "faults": [
+        {"name": "wrong_locker_location", "description": "Locker assigned at wrong location", "init_action": "set location to Storage Basement", "fix_tool": "transfer_locker", "entity_field_affected": "rental.location", "unfixable": false, "user_fix_tools": ["confirm_locker_assignment"]}
+      ]
+    },
+    {
+      "group_name": "emergency_contact",
+      "faults": [
+        {"name": "wrong_emergency_contact", "description": "Emergency contact info changed incorrectly", "init_action": "set contact to wrong values", "fix_tool": "update_emergency_contact", "entity_field_affected": "member.emergency_contact_name/phone", "unfixable": false, "user_fix_tools": ["acknowledge_resolution"]}
+      ]
+    },
+    {
+      "group_name": "notification_preference",
+      "faults": [
+        {"name": "wrong_notification_preference", "description": "Notification preference changed to none by mistake", "init_action": "set preference to none", "fix_tool": "update_notification_preference", "entity_field_affected": "member.notification_preference", "unfixable": false, "user_fix_tools": ["acknowledge_resolution"]}
+      ]
+    }
+  ],
+  "unfixable_faults": [
+    {"name": "medical_clearance_hold", "description": "Training session on medical hold, no tool to clear it", "init_action": "set session status to medical_hold", "known_info": "Training session on medical hold but member has doctor clearance"},
+    {"name": "contract_cancellation", "description": "Member wants to cancel membership contract, no tool available", "init_action": "set status to pending_cancellation", "known_info": "Member wants to cancel their gym membership contract"}
+  ],
+  "policy_sections": [
+    "General Guidelines",
+    "Identity Verification",
+    "Membership Management",
+    "Class Booking Management",
+    "Personal Training Management",
+    "Billing and Invoices",
+    "Locker Rentals",
+    "Emergency Contact Updates",
+    "Notification Preferences",
+    "Escalation"
+  ],
+  "sync_rules": [
+    {"agent_field": "class_bookings", "user_field": "my_bookings", "description": "Project class booking summaries to user"},
+    {"agent_field": "training_sessions", "user_field": "my_sessions", "description": "Project training session summaries to user"},
+    {"agent_field": "invoices", "user_field": "my_invoices", "description": "Project invoice summaries to user"},
+    {"agent_field": "locker_rentals", "user_field": "my_lockers", "description": "Project locker rental summaries to user"},
+    {"agent_field": "user.invoice_payment_made", "user_field": "agent.invoice.status", "description": "Bridge user payments to agent invoice status"}
+  ],
+  "assertion_helpers": [
+    {"name": "assert_membership_status", "description": "Check member status matches expected", "env_type": "assistant"},
+    {"name": "assert_membership_tier", "description": "Check member tier matches expected", "env_type": "assistant"},
+    {"name": "assert_booking_status", "description": "Check class booking status", "env_type": "assistant"},
+    {"name": "assert_booking_schedule", "description": "Check class booking date/time", "env_type": "assistant"},
+    {"name": "assert_session_status", "description": "Check training session status", "env_type": "assistant"},
+    {"name": "assert_session_trainer", "description": "Check trainer assignment", "env_type": "assistant"},
+    {"name": "assert_invoice_status", "description": "Check invoice status", "env_type": "assistant"},
+    {"name": "assert_locker_location", "description": "Check locker location", "env_type": "assistant"},
+    {"name": "assert_emergency_contact", "description": "Check emergency contact info", "env_type": "assistant"},
+    {"name": "assert_notification_preference", "description": "Check notification preference", "env_type": "assistant"},
+    {"name": "assert_resolution_acknowledged", "description": "Check user acknowledged resolution", "env_type": "user"},
+    {"name": "assert_class_attendance_confirmed", "description": "Check user confirmed class attendance", "env_type": "user"},
+    {"name": "assert_training_session_confirmed", "description": "Check user confirmed training session", "env_type": "user"},
+    {"name": "assert_invoice_payment_made", "description": "Check user made invoice payment", "env_type": "user"},
+    {"name": "assert_locker_assignment_confirmed", "description": "Check user confirmed locker assignment", "env_type": "user"}
+  ],
+  "setup_helpers": [
+    {"name": "set_membership_status", "description": "Set member status directly", "env_type": "assistant"},
+    {"name": "set_membership_tier", "description": "Set member tier directly", "env_type": "assistant"},
+    {"name": "set_booking_status", "description": "Set class booking status", "env_type": "assistant"},
+    {"name": "set_booking_schedule", "description": "Set class booking date/time", "env_type": "assistant"},
+    {"name": "set_session_status", "description": "Set training session status", "env_type": "assistant"},
+    {"name": "set_session_trainer", "description": "Set trainer for a session", "env_type": "assistant"},
+    {"name": "set_invoice_amount", "description": "Set invoice amount", "env_type": "assistant"},
+    {"name": "set_invoice_status", "description": "Set invoice status", "env_type": "assistant"},
+    {"name": "set_locker_location", "description": "Set locker location", "env_type": "assistant"},
+    {"name": "set_emergency_contact", "description": "Set emergency contact info", "env_type": "assistant"},
+    {"name": "set_notification_preference", "description": "Set notification preference", "env_type": "assistant"},
+    {"name": "set_member_info", "description": "Set user identity", "env_type": "user"}
+  ]
+}
