@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Annotated, Any, Callable, Dict, Optional, TypeVar
+from typing import Annotated, Any, Callable, Dict, Optional, TypeVar, get_args, get_origin
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, TypeAdapter
 
 from tau2.environment.db import DB
 from tau2.environment.tool import Tool, as_tool
@@ -121,6 +121,51 @@ class ToolKitBase(metaclass=ToolKitType):
             "num_think_tools": num_think_tools,
             "num_generic_tools": num_generic_tools,
         }
+
+    @staticmethod
+    def _coerce_and_set_field(model: BaseModel, field: str, value: Any) -> None:
+        """Set a field on a Pydantic model with automatic type coercion.
+
+        Handles common LLM type mismatches before delegating to Pydantic
+        for final validation. Use this in tools that accept generic
+        ``value: Any`` parameters (e.g. ``update_pet_record``).
+
+        Coercion rules applied before Pydantic validation:
+        - Wraps non-list scalars into a list when the field type is ``List[X]``
+        - Stringifies non-str list elements when the field type is ``List[str]``
+
+        Args:
+            model: The Pydantic model instance to update.
+            field: The name of the field to set.
+            value: The raw value (potentially from an LLM).
+
+        Raises:
+            ValueError: If *field* does not exist on *model*.
+            pydantic.ValidationError: If *value* cannot be coerced.
+        """
+        field_info = model.model_fields.get(field)
+        if field_info is None:
+            raise ValueError(
+                f"Field '{field}' not found on {type(model).__name__}. "
+                f"Valid fields: {set(model.model_fields.keys())}"
+            )
+
+        target_type = field_info.annotation
+        origin = get_origin(target_type)
+        args = get_args(target_type)
+
+        # Pre-coerce: wrap scalar → list when target is list
+        if origin is list and not isinstance(value, (list, tuple)):
+            value = [value]
+
+        # Pre-coerce: stringify non-str elements when target is List[str]
+        if origin is list and args and args[0] is str and isinstance(value, list):
+            value = [str(v) if not isinstance(v, str) else v for v in value]
+
+        # Delegate to Pydantic for final validation + coercion
+        adapter = TypeAdapter(target_type)
+        coerced = adapter.validate_python(value)
+        setattr(model, field, coerced)
 
     def update_db(self, update_data: Optional[dict[str, Any]] = None):
         """Update the database of the ToolKit."""

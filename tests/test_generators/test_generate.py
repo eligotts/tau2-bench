@@ -1,10 +1,25 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from tau2.data_model.message import ToolCall
 from tau2.data_model.tasks import EnvAssertion, EnvFunctionCall
-from tau2.generators import Persona, Scenario, ScenarioGroup, UserTemplate, generate_tasks
-from tau2.domains.smart_home.environment import get_environment
+from tau2.generators import (
+    Difficulty,
+    Persona,
+    Scenario,
+    ScenarioGroup,
+    UserTemplate,
+    VariantConfig,
+    generate_tasks,
+    generate_tasks_with_variants,
+)
+
+
+def _mock_get_env():
+    """Return a mock Environment that accepts any function calls."""
+    env = MagicMock()
+    env.run_env_function_calls = MagicMock()
+    return env
 
 
 def _noop_setup(env):
@@ -26,71 +41,48 @@ def _get_assertions(expected_success):
         return [
             EnvAssertion(
                 env_type="user",
-                func_name="assert_room_temp_in_range",
-                arguments={"room_name": "living_room", "min_temp": 68.0, "max_temp": 76.0},
+                func_name="assert_something",
+                arguments={"key": "value"},
             ),
         ]
     return []
 
 
+def _make_init(device_id="D001", setting="target_temp", value=55):
+    def init(env):
+        return [
+            EnvFunctionCall(
+                env_type="assistant",
+                func_name="set_setting",
+                arguments={"device_id": device_id, "setting_name": setting, "setting_value": value},
+            ),
+        ]
+    return init
+
+
+def _make_fix(device_id="D001", setting="target_temp", value=72):
+    def fix(env):
+        return [
+            ToolCall(
+                requestor="assistant",
+                name="update_setting",
+                arguments={"device_id": device_id, "setting_name": setting, "setting_value": value},
+            ),
+        ]
+    return fix
+
+
 class TestGenerateTasks(unittest.TestCase):
     def test_basic_generation(self):
         """Generate tasks from two small scenario groups and verify count and structure."""
-
-        def init_a(env):
-            return [
-                EnvFunctionCall(
-                    env_type="assistant",
-                    func_name="set_device_setting",
-                    arguments={"device_id": "D001", "setting_name": "target_temp", "setting_value": 55},
-                ),
-                EnvFunctionCall(
-                    env_type="user",
-                    func_name="set_room_temperature",
-                    arguments={"room_name": "living_room", "temperature": 55.0},
-                ),
-            ]
-
-        def fix_a(env):
-            return [
-                ToolCall(
-                    requestor="assistant",
-                    name="update_device_setting",
-                    arguments={"device_id": "D001", "setting_name": "target_temp", "setting_value": 72},
-                ),
-            ]
-
-        def init_b(env):
-            return [
-                EnvFunctionCall(
-                    env_type="assistant",
-                    func_name="set_device_setting",
-                    arguments={"device_id": "D002", "setting_name": "on", "setting_value": False},
-                ),
-                EnvFunctionCall(
-                    env_type="user",
-                    func_name="set_light_state",
-                    arguments={"room_name": "living_room", "lights_on": False, "brightness": 0},
-                ),
-            ]
-
-        def fix_b(env):
-            return [
-                ToolCall(
-                    requestor="assistant",
-                    name="update_device_setting",
-                    arguments={"device_id": "D002", "setting_name": "on", "setting_value": True},
-                ),
-            ]
-
         g1 = ScenarioGroup(
             scenarios=[
-                Scenario(name="temp_low", description="Temp too low", init_funcs=[init_a], fix_funcs=[fix_a]),
+                Scenario(name="issue_a", description="Issue A", init_funcs=[_make_init()], fix_funcs=[_make_fix()]),
             ]
         )
         g2 = ScenarioGroup(
             scenarios=[
-                Scenario(name="light_off", description="Light off", init_funcs=[init_b], fix_funcs=[fix_b]),
+                Scenario(name="issue_b", description="Issue B", init_funcs=[_make_init("D002")], fix_funcs=[_make_fix("D002")]),
             ]
         )
 
@@ -100,17 +92,17 @@ class TestGenerateTasks(unittest.TestCase):
         ]
 
         template = UserTemplate(
-            domain="smart_home",
-            reason_for_call="Issues with smart home",
+            domain="test",
+            reason_for_call="Test issues",
             known_info="You are {name} (user ID: {user_id}).",
             task_instructions="Follow agent instructions.",
             ticket="User {name} (ID: {user_id}) has issues.",
-            purpose="Test smart home issues.",
+            purpose="Test issues.",
         )
 
         tasks = generate_tasks(
             groups=[g1, g2],
-            get_env=get_environment,
+            get_env=_mock_get_env,
             user_template=template,
             personas=personas,
             get_env_assertions=_get_assertions,
@@ -124,7 +116,7 @@ class TestGenerateTasks(unittest.TestCase):
         # Check task structure
         for task in tasks:
             self.assertIsNotNone(task.id)
-            self.assertIn("[smart_home]", task.id)
+            self.assertIn("[test]", task.id)
             self.assertIn("[PERSONA:", task.id)
             self.assertIsNotNone(task.initial_state)
             self.assertIsNotNone(task.evaluation_criteria)
@@ -132,32 +124,8 @@ class TestGenerateTasks(unittest.TestCase):
 
     def test_round_robin_personas(self):
         """Personas are assigned round-robin."""
-
-        def init_s(env):
-            return [
-                EnvFunctionCall(
-                    env_type="assistant",
-                    func_name="set_device_setting",
-                    arguments={"device_id": "D001", "setting_name": "target_temp", "setting_value": 55},
-                ),
-                EnvFunctionCall(
-                    env_type="user",
-                    func_name="set_room_temperature",
-                    arguments={"room_name": "living_room", "temperature": 55.0},
-                ),
-            ]
-
-        def fix_s(env):
-            return [
-                ToolCall(
-                    requestor="assistant",
-                    name="update_device_setting",
-                    arguments={"device_id": "D001", "setting_name": "target_temp", "setting_value": 72},
-                ),
-            ]
-
-        s1 = Scenario(name="s1", description="S1", init_funcs=[init_s], fix_funcs=[fix_s])
-        s2 = Scenario(name="s2", description="S2", init_funcs=[init_s], fix_funcs=[fix_s])
+        s1 = Scenario(name="s1", description="S1", init_funcs=[_make_init()], fix_funcs=[_make_fix()])
+        s2 = Scenario(name="s2", description="S2", init_funcs=[_make_init()], fix_funcs=[_make_fix()])
         g = ScenarioGroup(scenarios=[s1, s2])
 
         personas = [
@@ -166,7 +134,7 @@ class TestGenerateTasks(unittest.TestCase):
         ]
 
         template = UserTemplate(
-            domain="smart_home",
+            domain="test",
             reason_for_call="Test",
             known_info="{name} {user_id}",
             task_instructions="Test",
@@ -176,7 +144,7 @@ class TestGenerateTasks(unittest.TestCase):
 
         tasks = generate_tasks(
             groups=[g],
-            get_env=get_environment,
+            get_env=_mock_get_env,
             user_template=template,
             personas=personas,
             get_env_assertions=_get_assertions,
@@ -187,6 +155,159 @@ class TestGenerateTasks(unittest.TestCase):
         self.assertEqual(len(tasks), 2)
         self.assertIn("[PERSONA:A]", tasks[0].id)
         self.assertIn("[PERSONA:B]", tasks[1].id)
+
+
+    def test_compare_args_on_actions(self):
+        """When scenarios have compare_args_map, generated actions include compare_args."""
+        compare_args_map = {
+            "update_setting": ["device_id", "setting_name", "setting_value"],
+            "verify_result": [],
+        }
+
+        def fix_with_verify(env):
+            return [
+                ToolCall(
+                    requestor="assistant",
+                    name="update_setting",
+                    arguments={"device_id": "D001", "setting_name": "target_temp", "setting_value": 72},
+                ),
+                ToolCall(
+                    requestor="user",
+                    name="verify_result",
+                    arguments={"key": "value"},
+                ),
+            ]
+
+        g1 = ScenarioGroup(
+            scenarios=[
+                Scenario(
+                    name="issue_a",
+                    description="Issue A",
+                    init_funcs=[_make_init()],
+                    fix_funcs=[fix_with_verify],
+                    compare_args_map=compare_args_map,
+                ),
+            ]
+        )
+
+        personas = [Persona(name="None", description=None)]
+        template = UserTemplate(
+            domain="test",
+            reason_for_call="Test issues",
+            known_info="You are {name} (user ID: {user_id}).",
+            task_instructions="Follow agent instructions.",
+            ticket="User {name} (ID: {user_id}) has issues.",
+            purpose="Test issues.",
+        )
+
+        tasks = generate_tasks(
+            groups=[g1],
+            get_env=_mock_get_env,
+            user_template=template,
+            personas=personas,
+            get_env_assertions=_get_assertions,
+            env_setup=_noop_setup,
+            get_template_vars=_get_template_vars,
+        )
+
+        self.assertEqual(len(tasks), 1)
+        actions = tasks[0].evaluation_criteria.actions
+        # update_setting should have compare_args
+        update_action = [a for a in actions if a.name == "update_setting"][0]
+        self.assertEqual(update_action.compare_args, ["device_id", "setting_name", "setting_value"])
+        # verify_result should have compare_args = []
+        verify_action = [a for a in actions if a.name == "verify_result"][0]
+        self.assertEqual(verify_action.compare_args, [])
+
+    def test_nl_assertions_in_output(self):
+        """When scenarios have nl_assertions, tasks include them but NOT in reward_basis."""
+        g1 = ScenarioGroup(
+            scenarios=[
+                Scenario(
+                    name="issue_a",
+                    description="Issue A",
+                    init_funcs=[_make_init()],
+                    fix_funcs=[_make_fix()],
+                    nl_assertions=["Agent should explain the problem"],
+                ),
+            ]
+        )
+
+        personas = [Persona(name="None", description=None)]
+        template = UserTemplate(
+            domain="test",
+            reason_for_call="Test issues",
+            known_info="You are {name} (user ID: {user_id}).",
+            task_instructions="Follow agent instructions.",
+            ticket="User {name} (ID: {user_id}) has issues.",
+            purpose="Test issues.",
+        )
+
+        tasks = generate_tasks(
+            groups=[g1],
+            get_env=_mock_get_env,
+            user_template=template,
+            personas=personas,
+            get_env_assertions=_get_assertions,
+            env_setup=_noop_setup,
+            get_template_vars=_get_template_vars,
+        )
+
+        self.assertEqual(len(tasks), 1)
+        task = tasks[0]
+        self.assertEqual(task.evaluation_criteria.nl_assertions, ["Agent should explain the problem"])
+        # nl_assertions are stored on the task but NOT in reward_basis by default
+        # (requires EvaluationType.ALL_WITH_NL_ASSERTIONS to evaluate)
+        reward_values = [r.value for r in task.evaluation_criteria.reward_basis]
+        self.assertNotIn("NL_ASSERTION", reward_values)
+
+    def test_variant_generation(self):
+        """generate_tasks_with_variants produces A and B variants."""
+        g1 = ScenarioGroup(
+            scenarios=[
+                Scenario(name="issue_a", description="Issue A", init_funcs=[_make_init()], fix_funcs=[_make_fix()]),
+            ]
+        )
+
+        easy_persona = Persona(name="easy", description=None, difficulty=Difficulty.EASY)
+        hard_persona = Persona(name="hard", description="Impatient user", difficulty=Difficulty.HARD)
+
+        variant_config = VariantConfig(
+            easy_personas=[easy_persona],
+            hard_personas=[hard_persona],
+        )
+
+        template = UserTemplate(
+            domain="test",
+            reason_for_call="Test issues",
+            known_info="You are {name} (user ID: {user_id}).",
+            task_instructions="Follow agent instructions.",
+            ticket="User {name} (ID: {user_id}) has issues.",
+            purpose="Test issues.",
+        )
+
+        tasks = generate_tasks_with_variants(
+            groups=[g1],
+            get_env=_mock_get_env,
+            user_template=template,
+            personas=[easy_persona, hard_persona],
+            get_env_assertions=_get_assertions,
+            env_setup=_noop_setup,
+            get_template_vars=_get_template_vars,
+            variant_config=variant_config,
+        )
+
+        self.assertEqual(len(tasks), 2)
+        self.assertTrue(tasks[0].id.endswith("[VARIANT:a]"))
+        self.assertTrue(tasks[1].id.endswith("[VARIANT:b]"))
+        self.assertIn("[PERSONA:easy]", tasks[0].id)
+        self.assertIn("[PERSONA:hard]", tasks[1].id)
+
+        # Variant B should have same known_info as A (difficulty from persona only)
+        self.assertEqual(
+            tasks[0].user_scenario.instructions.known_info,
+            tasks[1].user_scenario.instructions.known_info,
+        )
 
 
 if __name__ == "__main__":

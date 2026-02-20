@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Callable, Optional
 
 from pydantic import BaseModel, Field
@@ -11,6 +12,14 @@ FixFuncType = Callable[[Environment], list[ToolCall]] | None
 EnvAssertionType = Callable[[Environment], list[EnvAssertion]]
 
 
+class Difficulty(str, Enum):
+    """Difficulty level for personas and task variants."""
+
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
+
+
 class Scenario(BaseModel):
     """Atomic fault definition. Maps to telecom's BaseTask."""
 
@@ -19,6 +28,8 @@ class Scenario(BaseModel):
     init_funcs: list[InitFuncType]
     fix_funcs: list[FixFuncType]
     extra_env_assertions: list[EnvAssertionType] = Field(default_factory=list)
+    nl_assertions: list[str] = Field(default_factory=list)
+    compare_args_map: Optional[dict[str, Optional[list[str]]]] = None
 
 
 class ScenarioGroup(BaseModel):
@@ -36,6 +47,8 @@ class ComposedScenario(BaseModel):
     init_funcs: list[InitFuncType]
     fix_funcs: list[FixFuncType]
     extra_env_assertions: list[EnvAssertionType] = Field(default_factory=list)
+    nl_assertions: list[str] = Field(default_factory=list)
+    compare_args_map: Optional[dict[str, Optional[list[str]]]] = None
 
     def __str__(self):
         lines = []
@@ -55,6 +68,10 @@ class ComposedScenario(BaseModel):
         lines.append("Extra Env Assertions:")
         for func in self.extra_env_assertions:
             lines.append(f"  - {func.__name__}")
+        if self.nl_assertions:
+            lines.append("NL Assertions:")
+            for a in self.nl_assertions:
+                lines.append(f"  - {a}")
         return "\n".join(lines)
 
     def __repr__(self):
@@ -66,6 +83,8 @@ class Persona(BaseModel):
 
     name: str
     description: Optional[str] = None
+    difficulty: Optional[Difficulty] = None
+    instructions: Optional[str] = None
 
 
 class UserTemplate(BaseModel):
@@ -77,3 +96,15 @@ class UserTemplate(BaseModel):
     task_instructions: str
     ticket: str
     purpose: str
+
+
+class VariantConfig(BaseModel):
+    """Configuration for generating A/B task variants.
+
+    Difficulty comes from persona behavior (cooperative vs anxious/confused),
+    NOT from withholding information. Both variants get the same known_info.
+    This matches the telecom domain's PERSONA pattern.
+    """
+
+    easy_personas: list[Persona] = Field(default_factory=list)
+    hard_personas: list[Persona] = Field(default_factory=list)

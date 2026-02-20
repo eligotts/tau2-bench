@@ -26,6 +26,18 @@ def compose_scenarios(
         init_funcs = [f for s in scenarios for f in s.init_funcs]
         fix_funcs = [f for s in scenarios for f in s.fix_funcs]
         extra_env_assertions = [f for s in scenarios for f in s.extra_env_assertions]
+
+        # Merge nl_assertions (concatenate from all scenarios)
+        nl_assertions = [a for s in scenarios for a in s.nl_assertions]
+
+        # Merge compare_args_map (dict update, later scenario wins on conflicts)
+        merged_compare_args: dict[str, list[str] | None] | None = None
+        for s in scenarios:
+            if s.compare_args_map is not None:
+                if merged_compare_args is None:
+                    merged_compare_args = {}
+                merged_compare_args.update(s.compare_args_map)
+
         composed.append(
             ComposedScenario(
                 name="|".join([s.name for s in scenarios]),
@@ -34,6 +46,8 @@ def compose_scenarios(
                 init_funcs=init_funcs,
                 fix_funcs=fix_funcs,
                 extra_env_assertions=extra_env_assertions,
+                nl_assertions=nl_assertions,
+                compare_args_map=merged_compare_args,
             )
         )
     return composed

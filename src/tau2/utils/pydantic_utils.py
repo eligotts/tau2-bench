@@ -9,7 +9,7 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class BaseModelNoExtra(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
 
 def get_pydantic_hash(obj: BaseModel) -> str:
