@@ -496,6 +496,129 @@ def _check_base_specs(
 
 
 # ---------------------------------------------------------------------------
+# Check 11: assertion_density (DI-4)
+# ---------------------------------------------------------------------------
+
+
+def _check_assertion_density(recipe_book: RecipeBook) -> list[str]:
+    """DI-4: ≥40% of fixable layers must have 2+ assertions."""
+    issues = []
+    total_fixable = 0
+    multi_assert = 0
+
+    for flc, group, layer in _all_layers(recipe_book):
+        if layer.unfixable:
+            continue
+        total_fixable += 1
+        assertion_count = len(layer.get_assertions())
+        if assertion_count >= 2:
+            multi_assert += 1
+
+    if total_fixable > 0:
+        pct = multi_assert / total_fixable * 100
+        if pct < 40:
+            issues.append(
+                f"WARNING: [DI-4 assertion density] Only {multi_assert}/{total_fixable} "
+                f"fixable layers ({pct:.0f}%) have 2+ assertions. "
+                f"Minimum is 40%. Add composite or multi-field assertions."
+            )
+
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 12: user_tool_diversity (DI-5)
+# ---------------------------------------------------------------------------
+
+
+def _check_user_tool_diversity(recipe_book: RecipeBook, env: Environment) -> list[str]:
+    """DI-5: Count distinct user tools in fault atoms."""
+    issues = []
+    user_tool_counts: dict[str, int] = {}  # tool_name -> number of layers using it
+    total_layers_with_user_action = 0
+
+    for flc, group, layer in _all_layers(recipe_book):
+        if layer.unfixable:
+            continue
+        user_actions = layer.get_user_actions()
+        if user_actions:
+            total_layers_with_user_action += 1
+            for action in user_actions:
+                user_tool_counts[action.tool_name] = user_tool_counts.get(action.tool_name, 0) + 1
+
+    distinct_count = len(user_tool_counts)
+
+    if distinct_count < 3:
+        issues.append(
+            f"WARNING: [DI-5 user tool diversity] Only {distinct_count} distinct "
+            f"user WRITE tools in fault atoms. Minimum is 3. "
+            f"Design distinct user tools per fault domain."
+        )
+
+    # Check if >50% of layers share one tool
+    if total_layers_with_user_action > 0:
+        for tool_name, count in user_tool_counts.items():
+            pct = count / total_layers_with_user_action * 100
+            if pct > 50:
+                issues.append(
+                    f"WARNING: [DI-5 user tool diversity] User tool '{tool_name}' "
+                    f"appears in {count}/{total_layers_with_user_action} layers "
+                    f"({pct:.0f}%). >50% sharing one tool is banned."
+                )
+
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 13: action_density (DI-6)
+# ---------------------------------------------------------------------------
+
+
+def _check_action_density(recipe_book: RecipeBook) -> list[str]:
+    """DI-6: Median fault count * avg atoms/layer must be ≥6."""
+    issues = []
+
+    for flc in recipe_book.fault_layer_configs:
+        # Skip transfer/unfixable configs (they have max_faults=1)
+        if flc.max_faults <= 1:
+            continue
+
+        num_groups = len(flc.groups)
+        if num_groups == 0:
+            continue
+
+        # Count total atoms across all fixable layers
+        total_atoms = 0
+        total_fixable_layers = 0
+        for group in flc.groups:
+            for layer in group.layers:
+                if not layer.unfixable:
+                    total_fixable_layers += 1
+                    total_atoms += len(layer.atoms) if layer.atoms else (
+                        len(layer.get_actions()) + len(layer.get_user_actions())
+                    )
+
+        if total_fixable_layers == 0:
+            continue
+
+        avg_atoms = total_atoms / total_fixable_layers
+        # Median faults ≈ min(max_faults, num_groups) / 2 rounded up
+        effective_max = min(flc.max_faults, num_groups)
+        median_faults = (effective_max + 1) // 2
+        estimated_median_actions = median_faults * avg_atoms
+
+        if estimated_median_actions < 6:
+            issues.append(
+                f"WARNING: [DI-6 action density] Config '{flc.name}': "
+                f"{num_groups} groups, ~{median_faults} median faults, "
+                f"{avg_atoms:.1f} avg atoms/layer → ~{estimated_median_actions:.0f} "
+                f"median actions. Minimum is 6. Increase groups or atoms/layer."
+            )
+
+    return issues
+
+
+# ---------------------------------------------------------------------------
 # Main: verify_authoring
 # ---------------------------------------------------------------------------
 
@@ -505,7 +628,7 @@ def verify_authoring(
     get_env: Callable[[], Environment],
     get_db: Callable[[], Any],
 ) -> list[str]:
-    """Run 10 structural checks on authored definitions before task generation.
+    """Run 13 structural checks on authored definitions before task generation.
 
     Returns a list of issue strings with ERROR: or WARNING: prefixes.
     """
@@ -556,6 +679,11 @@ def verify_authoring(
         entity = _find_sample_entity(flc, get_db)
         if entity is not None:
             issues.extend(_check_base_specs(env, flc, entity))
+
+    # Difficulty invariant checks (DI-4, DI-5, DI-6)
+    issues.extend(_check_assertion_density(recipe_book))
+    issues.extend(_check_user_tool_diversity(recipe_book, env))
+    issues.extend(_check_action_density(recipe_book))
 
     return issues
 
@@ -685,7 +813,7 @@ Your job is to find bugs in these definitions BEFORE tasks are generated.
 
 {structural_issues}
 
-## Your 10 Checks
+## Your 13 Checks
 
 Perform each check independently. For each, output ERROR: or WARNING: lines.
 
@@ -729,6 +857,25 @@ Perform each check independently. For each, output ERROR: or WARNING: lines.
 10. **Tool Precondition Safety**: Could sync_tools or user tools invalidate
     agent tool preconditions between turns? Flag state changes that could make
     required agent tools unreachable.
+
+11. **DI-1 Diagnostic Disambiguation**: Count fixable layers that have a unique
+    fix tool (no other layer uses that same tool). If >70% have unique tools
+    (1:1 fault→tool mapping), report ERROR. Also check: are there any
+    information-hiding READ tools or diagnostic tools that return computed
+    results? If the agent can always pattern-match fault→tool without reasoning,
+    report ERROR.
+
+12. **DI-2 Value Computation**: For each ActionSpec on fixable layers, check if
+    ALL args are either template pass-throughs (e.g. "{{entity_id}}") or
+    hard-coded literals. If ZERO fix actions require the agent to compute,
+    derive, or look up a value, report ERROR. Check whether the policy describes
+    any computation the agent must perform.
+
+13. **DI-3 Ordering Dependency**: Check for ordering patterns in the domain.
+    Look for: (a) information-hiding READ tools that gate downstream faults,
+    (b) policy instructions saying "do X before Y", (c) user action
+    precondition gates. If ALL faults are completely independent with no ordering
+    constraints, report ERROR.
 
 Respond in this exact format:
 ISSUES_FOUND: <yes|no>

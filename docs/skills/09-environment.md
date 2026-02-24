@@ -5,7 +5,7 @@ Generate the environment module — the glue that connects agent tools, user too
 ## Reference
 
 - Read `docs/domain-authoring-guide.md` lines 462-552 (Environment) and 1172-1257 (Gotchas)
-- Read `src/tau2/domains/library/environment.py` for the exact pattern
+- Read `src/tau2/domains/auto_repair/environment.py` for the exact pattern
 
 ## Context
 
@@ -65,7 +65,7 @@ class <DomainClass>Environment(Environment):
 
 CRITICAL: `sync_tools()` is called after EVERY `run_env_function_call`. This means during init, sync happens between each step. Design it to be idempotent and resilient.
 
-1. **Early return** if identity is not set: `if self.user_tools.db.patron_id is None: return`
+1. **Early return** if identity is not set: `if self.user_tools.db.customer_id is None: return`
 2. **Project agent DB → user summaries** for each sync rule in the domain spec
 3. **Bridge user actions back to agent DB** (the bridging pattern):
    - When a user WRITE tool modifies user_db state that an agent tool depends on, sync_tools MUST bridge that state from user_db to agent_db
@@ -98,7 +98,7 @@ def get_environment(
 
 ### Task Loading Functions
 
-Include `load_tasks(path)`, `get_tasks(task_split_name="base")`, and `get_tasks_split()` — follow the library example exactly.
+Include `load_tasks(path)`, `get_tasks(task_split_name="base")`, and `get_tasks_split()` — follow the auto_repair example exactly.
 
 ## Validation
 

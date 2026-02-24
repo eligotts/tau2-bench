@@ -5,7 +5,7 @@ Generate realistic test data that populates the agent-side database.
 ## Reference
 
 - Read `docs/domain-authoring-guide.md` lines 116-176 (Agent DB section)
-- Read `data/tau2/domains/library/db.json` for the reference data format
+- Read `data/tau2/domains/auto_repair/db.json` for the reference data format
 
 ## Context
 

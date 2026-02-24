@@ -10,15 +10,13 @@ from tau2.generators.entity_engine import (
     TaskTier,
     generate_entity_tasks,
 )
-from tau2.generators.generate import generate_tasks, generate_tasks_with_variants
+from tau2.generators.generate import generate_tasks
 from tau2.generators.types import (
     ComposedScenario,
-    Difficulty,
     Persona,
     Scenario,
     ScenarioGroup,
     UserTemplate,
-    VariantConfig,
 )
 from tau2.generators.recipe import (
     ActionSpec,
@@ -49,11 +47,8 @@ __all__ = [
     "ComposedScenario",
     "UserTemplate",
     "Persona",
-    "Difficulty",
-    "VariantConfig",
     "compose_scenarios",
     "generate_tasks",
-    "generate_tasks_with_variants",
     "verify_task",
     "verify_tasks",
     "DiversityTracker",

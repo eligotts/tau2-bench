@@ -1501,6 +1501,72 @@ class TestVerifyAssertionValueDiscoverability(unittest.TestCase):
         issues = verify_assertion_value_discoverability(task, [])
         self.assertEqual(issues, [])
 
+    def test_entity_id_args_skipped(self):
+        """Entity ID args (*_id) are skipped — they are tool-discoverable."""
+        task = _make_task(
+            env_assertions=[
+                {"func_name": "assert_tire_pressure",
+                 "arguments": {"vehicle_id": "VH010", "min_psi": 30},
+                 "env_type": "assistant", "assert_value": True, "message": ""},
+            ],
+        )
+        # vehicle_id not in context, but should not warn (it's an _id arg)
+        issues = verify_assertion_value_discoverability(task, ["Some context"])
+        id_issues = [i for i in issues if "vehicle_id" in i]
+        self.assertEqual(id_issues, [])
+
+    def test_threshold_args_skipped(self):
+        """Threshold args (min_*, max_*) are skipped — assertion-internal criteria."""
+        task = _make_task(
+            env_assertions=[
+                {"func_name": "assert_battery_voltage",
+                 "arguments": {"vehicle_id": "VH010", "min_voltage": 12.4},
+                 "env_type": "assistant", "assert_value": True, "message": ""},
+                {"func_name": "assert_tire_pressure",
+                 "arguments": {"vehicle_id": "VH010", "max_deviation": 5.0},
+                 "env_type": "assistant", "assert_value": True, "message": ""},
+            ],
+        )
+        issues = verify_assertion_value_discoverability(task, ["Some context"])
+        threshold_issues = [i for i in issues
+                           if "min_voltage" in i or "max_deviation" in i]
+        self.assertEqual(threshold_issues, [])
+
+    def test_end_state_values_skipped(self):
+        """End-state values (normal, clean, aligned, etc.) are trivial."""
+        task = _make_task(
+            env_assertions=[
+                {"func_name": "assert_brake_fluid",
+                 "arguments": {"expected": "normal"},
+                 "env_type": "assistant", "assert_value": True, "message": ""},
+                {"func_name": "assert_air_filter",
+                 "arguments": {"expected": "clean"},
+                 "env_type": "assistant", "assert_value": True, "message": ""},
+                {"func_name": "assert_wheels",
+                 "arguments": {"expected": "aligned"},
+                 "env_type": "assistant", "assert_value": True, "message": ""},
+            ],
+        )
+        issues = verify_assertion_value_discoverability(task, [])
+        self.assertEqual(issues, [])
+
+    def test_nontrivial_values_still_warn(self):
+        """Non-trivial, non-_id, non-threshold values that are absent still warn."""
+        task = _make_task(
+            env_assertions=[
+                {"func_name": "assert_membership_type",
+                 "arguments": {"expected_type": "diamond"},
+                 "env_type": "assistant", "assert_value": True, "message": ""},
+            ],
+        )
+        issues = verify_assertion_value_discoverability(
+            task, ["Patron needs membership help."]
+        )
+        self.assertTrue(
+            any("diamond" in i for i in issues),
+            f"Expected warning about undiscoverable 'diamond', got: {issues}",
+        )
+
 
 # ---------------------------------------------------------------------------
 # verify_user_action_feasibility — conditional action warning tests

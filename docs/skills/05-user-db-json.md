@@ -4,7 +4,7 @@ Generate the initial (empty) state of the user-side database.
 
 ## Reference
 
-- Read `data/tau2/domains/library/user_db.json` for the reference format
+- Read `data/tau2/domains/auto_repair/user_db.json` for the reference format
 
 ## Context
 

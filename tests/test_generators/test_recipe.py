@@ -30,7 +30,7 @@ from tau2.generators.recipe import (
     generate_recipe_tasks,
     recipe_to_spec,
 )
-from tau2.generators.types import Persona, UserTemplate, VariantConfig
+from tau2.generators.types import Persona, UserTemplate
 
 
 # ---------------------------------------------------------------------------
@@ -355,7 +355,7 @@ class TestGenerateRecipeTasks(unittest.TestCase):
             user_template=_make_user_template(),
             personas=_make_personas(),
         )
-        self.assertEqual(len(tasks), 5)
+        self.assertEqual(len(tasks), 10)  # 5 entities * 2 personas
 
     def test_diversity_tracking(self):
         """Entities used across tasks (basic check that all show up)."""
@@ -367,26 +367,11 @@ class TestGenerateRecipeTasks(unittest.TestCase):
             user_template=_make_user_template(),
             personas=_make_personas(),
         )
-        # Each entity should produce a unique task_id
+        # Each entity should produce 2 tasks (one per persona)
+        self.assertEqual(len(tasks), 8)
+        # Each entity ID appears in exactly 2 task IDs
         task_ids = [t.id for t in tasks]
-        self.assertEqual(len(set(task_ids)), 4)
-
-    def test_variant_generation(self):
-        """variant_config produces 2x tasks."""
-        book = self._make_book(n_entities=3)
-        vc = VariantConfig(
-            easy_personas=[Persona(name="easy", description="Easy user")],
-            hard_personas=[Persona(name="hard", description="Hard user")],
-        )
-        tasks = generate_recipe_tasks(
-            recipe_book=book,
-            build_indexes=lambda db: db,
-            get_db=lambda: {},
-            user_template=_make_user_template(),
-            personas=_make_personas(),
-            variant_config=vc,
-        )
-        self.assertEqual(len(tasks), 6)  # 3 entities * 2 variants
+        self.assertEqual(len(set(task_ids)), 8)
 
     def test_deterministic_seed(self):
         """Same seed -> identical output."""
@@ -415,8 +400,8 @@ class TestGenerateRecipeTasks(unittest.TestCase):
             user_template=_make_user_template(),
             personas=_make_personas(),
         )
-        # 3 single + 3 composed = 6
-        self.assertEqual(len(tasks), 6)
+        # (3 single + 3 composed) * 2 personas = 12
+        self.assertEqual(len(tasks), 12)
 
 
 # ---------------------------------------------------------------------------
@@ -487,7 +472,7 @@ class TestDomainConfigIntegration(unittest.TestCase):
         )
 
         tasks = create_domain_tasks(config)
-        self.assertEqual(len(tasks), 1)
+        self.assertEqual(len(tasks), 2)  # 1 spec * 2 personas
         self.assertIn("test_r_T1", tasks[0].id)
 
     def test_missing_recipe_book_raises(self):
@@ -808,8 +793,8 @@ class TestGenerateFaultLayerSpecs(unittest.TestCase):
             user_template=_make_user_template(),
             personas=_make_personas(),
         )
-        # 3 specs from fault layers
-        self.assertEqual(len(tasks), 3)
+        # 3 specs from fault layers * 2 personas = 6
+        self.assertEqual(len(tasks), 6)
 
 
 class TestUnfixableLayers(unittest.TestCase):
@@ -1359,8 +1344,9 @@ class TestUserActions(unittest.TestCase):
         ids = [a["action_id"] for a in spec.actions]
         self.assertEqual(ids, ["0", "1", "2"])
 
-    def test_user_task_instructions_generated(self):
-        """user_task_instructions auto-generated from user_actions."""
+    def test_spec_user_task_instructions_always_none(self):
+        """Specs never auto-generate user_task_instructions (domain UserTemplate provides them)."""
+        # With user actions
         layer = self._make_layer_with_user_actions()
         flc = _make_fault_layer_config(
             groups=[FaultLayerGroup(name="g1", layers=[layer])],
@@ -1368,23 +1354,18 @@ class TestUserActions(unittest.TestCase):
         )
         entity = _make_fault_entity()
         spec = _fault_layers_to_spec(flc, entity, [layer])
-
-        self.assertIsNotNone(spec.user_task_instructions)
-        self.assertIn("user_toggle_ua_fault", spec.user_task_instructions)
-
-    def test_user_task_instructions_none_without_user_actions(self):
-        """user_task_instructions is None when no user_actions."""
-        layer = _make_fault_layer("agent_only")
-        flc = _make_fault_layer_config(
-            groups=[FaultLayerGroup(name="g1", layers=[layer])],
-            min_faults=1,
-        )
-        entity = _make_fault_entity()
-        spec = _fault_layers_to_spec(flc, entity, [layer])
-
         self.assertIsNone(spec.user_task_instructions)
 
-    def test_user_task_instructions_none_for_unfixable(self):
+        # Without user actions
+        layer2 = _make_fault_layer("agent_only")
+        flc2 = _make_fault_layer_config(
+            groups=[FaultLayerGroup(name="g1", layers=[layer2])],
+            min_faults=1,
+        )
+        spec2 = _fault_layers_to_spec(flc2, entity, [layer2])
+        self.assertIsNone(spec2.user_task_instructions)
+
+    def test_spec_user_task_instructions_none_for_unfixable(self):
         """user_task_instructions is None for unfixable combos."""
         unfixable = FaultLayer(
             name="unfixable",
@@ -1404,35 +1385,8 @@ class TestUserActions(unittest.TestCase):
 
         self.assertIsNone(spec.user_task_instructions)
 
-    def test_user_task_instructions_includes_base_user_actions(self):
-        """base_user_actions also appear in user_task_instructions."""
-        layer = _make_fault_layer("agent_only")  # no user_actions
-        flc = FaultLayerConfig(
-            name="test_config",
-            entity_query=lambda idx: [_make_fault_entity()],
-            groups=[FaultLayerGroup(name="g1", layers=[layer])],
-            base_init_calls=[],
-            base_known_info_template="I'm {name}. {fault_descriptions}.",
-            base_ticket_template="Fix for {name}: {fault_descriptions}.",
-            reason_for_call="Need help",
-            purpose="Test purpose",
-            base_user_actions=[
-                ActionSpec(
-                    tool_name="confirm_changes",
-                    args={"id": "{id}"},
-                ),
-            ],
-            entity_id_field="id",
-            min_faults=1,
-        )
-        entity = _make_fault_entity()
-        spec = _fault_layers_to_spec(flc, entity, [layer])
-
-        self.assertIsNotNone(spec.user_task_instructions)
-        self.assertIn("confirm_changes", spec.user_task_instructions)
-
-    def test_user_task_instructions_flows_to_task(self):
-        """user_task_instructions propagates through to Task.user_scenario.instructions."""
+    def test_user_template_instructions_flow_to_task(self):
+        """UserTemplate.task_instructions flow through to Task (telecom-style behavioral guidance)."""
         layer = self._make_layer_with_user_actions()
         entities = [_make_fault_entity()]
         flc = FaultLayerConfig(
@@ -1448,12 +1402,11 @@ class TestUserActions(unittest.TestCase):
             min_faults=1,
         )
         book = RecipeBook(fault_layer_configs=[flc])
-        # UserTemplate with empty task_instructions so spec's override takes effect
         ut = UserTemplate(
             domain="test",
             reason_for_call="Testing",
             known_info="Test info",
-            task_instructions="",
+            task_instructions="If the agent asks you to confirm, use your confirm tool.",
             ticket="Test ticket",
             purpose="Test purpose",
         )
@@ -1467,7 +1420,7 @@ class TestUserActions(unittest.TestCase):
         self.assertTrue(len(tasks) >= 1)
         task = tasks[0]
         instructions = task.user_scenario.instructions.task_instructions
-        self.assertIn("user_toggle_ua_fault", instructions)
+        self.assertEqual(instructions, "If the agent asks you to confirm, use your confirm tool.")
 
 
 # ---------------------------------------------------------------------------

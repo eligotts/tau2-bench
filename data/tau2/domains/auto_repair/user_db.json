@@ -1,0 +1,11 @@
+{
+  "customer_id": null,
+  "customer_name": null,
+  "my_vehicles": [],
+  "my_orders": [],
+  "my_invoices": [],
+  "repair_approved": {},
+  "payment_made": {},
+  "resolution_acknowledged": {},
+  "warranty_renewal_confirmed": {}
+}

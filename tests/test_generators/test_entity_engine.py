@@ -5,11 +5,10 @@ from tau2.generators.diversity import DiversityTracker
 from tau2.generators.entity_engine import (
     GeneratedTaskSpec,
     TaskTier,
-    _select_persona,
     _spec_to_task,
     generate_entity_tasks,
 )
-from tau2.generators.types import Difficulty, Persona, UserTemplate, VariantConfig
+from tau2.generators.types import Persona, UserTemplate
 
 
 def _make_template():
@@ -61,37 +60,6 @@ class TestTaskTier(unittest.TestCase):
         self.assertTrue(TaskTier.TIER_1 < TaskTier.TIER_5)
 
 
-class TestSelectPersona(unittest.TestCase):
-    def test_selects_by_difficulty(self):
-        personas = [
-            Persona(name="easy", difficulty=Difficulty.EASY),
-            Persona(name="med", difficulty=Difficulty.MEDIUM),
-            Persona(name="hard", difficulty=Difficulty.HARD),
-        ]
-        # Tier 1 -> EASY
-        p = _select_persona(TaskTier.TIER_1, personas, 0)
-        self.assertEqual(p.name, "easy")
-
-        # Tier 3 -> MEDIUM
-        p = _select_persona(TaskTier.TIER_3, personas, 0)
-        self.assertEqual(p.name, "med")
-
-        # Tier 5 -> HARD
-        p = _select_persona(TaskTier.TIER_5, personas, 0)
-        self.assertEqual(p.name, "hard")
-
-    def test_falls_back_to_round_robin(self):
-        """When no persona matches difficulty, falls back to round-robin."""
-        personas = [
-            Persona(name="a"),
-            Persona(name="b"),
-        ]
-        p0 = _select_persona(TaskTier.TIER_1, personas, 0)
-        p1 = _select_persona(TaskTier.TIER_1, personas, 1)
-        self.assertEqual(p0.name, "a")
-        self.assertEqual(p1.name, "b")
-
-
 class TestSpecToTask(unittest.TestCase):
     def test_basic_conversion(self):
         spec = _make_spec()
@@ -124,13 +92,6 @@ class TestSpecToTask(unittest.TestCase):
 
         reward_values = [r.value for r in task.evaluation_criteria.reward_basis]
         self.assertNotIn("ACTION", reward_values)
-
-    def test_id_suffix(self):
-        spec = _make_spec()
-        template = _make_template()
-        persona = Persona(name="test_user")
-        task = _spec_to_task(spec, template, persona, id_suffix="[VARIANT:a]")
-        self.assertTrue(task.id.endswith("[VARIANT:a]"))
 
     def test_known_info_from_spec(self):
         spec = _make_spec(known_info="Exact info")
@@ -168,17 +129,15 @@ class TestGenerateEntityTasks(unittest.TestCase):
         self.assertEqual(len(tasks), 1)
         self.assertIn("[test_domain]", tasks[0].id)
 
-    def test_variant_generation(self):
+    def test_persona_iteration(self):
+        """Each spec produces one task per persona."""
         spec = _make_spec()
         template_func = self._make_template_func([spec])
-        easy = [Persona(name="easy", difficulty=Difficulty.EASY)]
-        hard = [Persona(name="hard", difficulty=Difficulty.HARD)]
+        personas = [
+            Persona(name="friendly", description="A friendly user"),
+            Persona(name="impatient", description="An impatient user"),
+        ]
         user_template = _make_template()
-
-        variant_config = VariantConfig(
-            easy_personas=easy,
-            hard_personas=hard,
-        )
 
         tasks = generate_entity_tasks(
             templates=[template_func],
@@ -186,13 +145,12 @@ class TestGenerateEntityTasks(unittest.TestCase):
             get_env=lambda: None,
             get_db=lambda: None,
             user_template=user_template,
-            personas=easy + hard,
-            variant_config=variant_config,
+            personas=personas,
         )
 
         self.assertEqual(len(tasks), 2)
-        self.assertTrue(tasks[0].id.endswith("[VARIANT:a]"))
-        self.assertTrue(tasks[1].id.endswith("[VARIANT:b]"))
+        self.assertIn("[PERSONA:friendly]", tasks[0].id)
+        self.assertIn("[PERSONA:impatient]", tasks[1].id)
 
     def test_multiple_templates(self):
         spec1 = _make_spec(task_id="task_1")

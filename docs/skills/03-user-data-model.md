@@ -5,7 +5,7 @@ Generate the user-side database model — what the user (customer) can observe.
 ## Reference
 
 - Read `docs/domain-authoring-guide.md` lines 177-208 (User DB section)
-- Read `src/tau2/domains/library/user_data_model.py` for the exact pattern
+- Read `src/tau2/domains/auto_repair/user_data_model.py` for the exact pattern
 
 ## Context
 
@@ -44,4 +44,4 @@ Write to `src/tau2/domains/<domain_name>/user_data_model.py`.
 
 ## Pattern
 
-Follow the library example — the UserDB is a PROJECTION of the agent DB (what the user can observe), plus tracking dicts for user actions.
+Follow the auto_repair example — the UserDB is a PROJECTION of the agent DB (what the user can observe), plus tracking fields for user actions (e.g. `repair_approved`, `payment_made`).

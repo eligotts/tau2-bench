@@ -4,14 +4,11 @@ from unittest.mock import MagicMock, patch
 from tau2.data_model.message import ToolCall
 from tau2.data_model.tasks import EnvAssertion, EnvFunctionCall
 from tau2.generators import (
-    Difficulty,
     Persona,
     Scenario,
     ScenarioGroup,
     UserTemplate,
-    VariantConfig,
     generate_tasks,
-    generate_tasks_with_variants,
 )
 
 
@@ -110,8 +107,8 @@ class TestGenerateTasks(unittest.TestCase):
             get_template_vars=_get_template_vars,
         )
 
-        # (1+1) * (1+1) - 1 = 3 composed scenarios
-        self.assertEqual(len(tasks), 3)
+        # (1+1) * (1+1) - 1 = 3 composed scenarios × 2 personas = 6
+        self.assertEqual(len(tasks), 6)
 
         # Check task structure
         for task in tasks:
@@ -122,11 +119,10 @@ class TestGenerateTasks(unittest.TestCase):
             self.assertIsNotNone(task.evaluation_criteria)
             self.assertIsNotNone(task.evaluation_criteria.actions)
 
-    def test_round_robin_personas(self):
-        """Personas are assigned round-robin."""
+    def test_persona_iteration(self):
+        """Each composed scenario produces one task per persona."""
         s1 = Scenario(name="s1", description="S1", init_funcs=[_make_init()], fix_funcs=[_make_fix()])
-        s2 = Scenario(name="s2", description="S2", init_funcs=[_make_init()], fix_funcs=[_make_fix()])
-        g = ScenarioGroup(scenarios=[s1, s2])
+        g = ScenarioGroup(scenarios=[s1])
 
         personas = [
             Persona(name="A", description=None),
@@ -152,6 +148,7 @@ class TestGenerateTasks(unittest.TestCase):
             get_template_vars=_get_template_vars,
         )
 
+        # 1 composed scenario × 2 personas = 2 tasks
         self.assertEqual(len(tasks), 2)
         self.assertIn("[PERSONA:A]", tasks[0].id)
         self.assertIn("[PERSONA:B]", tasks[1].id)
@@ -260,54 +257,6 @@ class TestGenerateTasks(unittest.TestCase):
         # (requires EvaluationType.ALL_WITH_NL_ASSERTIONS to evaluate)
         reward_values = [r.value for r in task.evaluation_criteria.reward_basis]
         self.assertNotIn("NL_ASSERTION", reward_values)
-
-    def test_variant_generation(self):
-        """generate_tasks_with_variants produces A and B variants."""
-        g1 = ScenarioGroup(
-            scenarios=[
-                Scenario(name="issue_a", description="Issue A", init_funcs=[_make_init()], fix_funcs=[_make_fix()]),
-            ]
-        )
-
-        easy_persona = Persona(name="easy", description=None, difficulty=Difficulty.EASY)
-        hard_persona = Persona(name="hard", description="Impatient user", difficulty=Difficulty.HARD)
-
-        variant_config = VariantConfig(
-            easy_personas=[easy_persona],
-            hard_personas=[hard_persona],
-        )
-
-        template = UserTemplate(
-            domain="test",
-            reason_for_call="Test issues",
-            known_info="You are {name} (user ID: {user_id}).",
-            task_instructions="Follow agent instructions.",
-            ticket="User {name} (ID: {user_id}) has issues.",
-            purpose="Test issues.",
-        )
-
-        tasks = generate_tasks_with_variants(
-            groups=[g1],
-            get_env=_mock_get_env,
-            user_template=template,
-            personas=[easy_persona, hard_persona],
-            get_env_assertions=_get_assertions,
-            env_setup=_noop_setup,
-            get_template_vars=_get_template_vars,
-            variant_config=variant_config,
-        )
-
-        self.assertEqual(len(tasks), 2)
-        self.assertTrue(tasks[0].id.endswith("[VARIANT:a]"))
-        self.assertTrue(tasks[1].id.endswith("[VARIANT:b]"))
-        self.assertIn("[PERSONA:easy]", tasks[0].id)
-        self.assertIn("[PERSONA:hard]", tasks[1].id)
-
-        # Variant B should have same known_info as A (difficulty from persona only)
-        self.assertEqual(
-            tasks[0].user_scenario.instructions.known_info,
-            tasks[1].user_scenario.instructions.known_info,
-        )
 
 
 if __name__ == "__main__":

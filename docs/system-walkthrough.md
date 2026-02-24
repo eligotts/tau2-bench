@@ -148,14 +148,9 @@ RecipeBook.fault_layer_configs
   → _spec_to_task: attach persona, user_template, format as Task JSON
 ```
 
-### Personas and Variants
+### Personas
 
-Each task gets a persona based on its tier:
-- Tier 1-2 (1 fault) → easy persona (cooperative, clear communicator)
-- Tier 3-4 (2-3 faults) → medium persona
-- Tier 5 (4+ faults) → hard persona (anxious, vague)
-
-Optional `VariantConfig` produces A/B variants: same task with easy and hard personas, so you can measure persona impact on agent performance.
+Every task spec produces one task per persona. Domain authors define 2-4 personas with different interaction styles (e.g., friendly, frustrated, verbose, terse). The total task count is `specs × N_personas`.
 
 ## Layer 5: Verification Pipeline
 
@@ -219,7 +214,7 @@ The orchestrator skill at `.claude/skills/generate-domain/SKILL.md` walks Claude
        ▼
   Step 0: scaffold_domain CLI         ← Creates dirs, utils.py, __init__.py
   Steps 1-10: Per-step instruction    ← Claude reads docs/skills/<NN>.md,
-               files                     reads library reference files,
+               files                     reads auto_repair reference files,
                                          writes the domain file
        │
        └── After each: validate_domain CLI  ← Claude runs to check its work,
@@ -248,7 +243,7 @@ Each of the 10 domain files has a corresponding instruction file in `docs/skills
 | `docs/skills/10-scenarios.md` | RecipeBook with FaultLayerConfigs (largest step) |
 | `docs/skills/11-llm-review.md` | 9-audit exhaustive checklist |
 
-Each instruction file contains the specific requirements, gotchas, and constraints for that step. The library domain (`src/tau2/domains/library/`) serves as the reference pattern that Claude reads alongside each instruction file.
+Each instruction file contains the specific requirements, gotchas, and constraints for that step. The auto_repair domain (`src/tau2/domains/auto_repair/`) serves as the reference exemplar that Claude reads alongside each instruction file. It demonstrates information-hiding READ tools, the agent→user tool chain (policy naming user tools explicitly), and 9 fault groups with progressive discovery.
 
 ### CLI Tools
 
@@ -263,7 +258,7 @@ Four CLI scripts support the skill workflow:
 
 ### The Reference Domain
 
-The `docs/domain-authoring-guide.md` (1500+ lines) is the authoritative design guide that Claude reads first. It covers entity design, tool patterns, fault layer architecture, sync_tools gotchas, user action feasibility rules, and difficulty calibration. The library domain is the canonical reference implementation.
+The `docs/domain-authoring-guide.md` (1700+ lines) is the authoritative design guide that Claude reads first. It covers entity design, tool patterns, fault layer architecture, sync_tools gotchas, user action feasibility rules, and difficulty calibration. The auto_repair domain is the canonical reference implementation — it demonstrates information-hiding READ tools, the agent→user tool chain, and 9 fault groups with progressive discovery.
 
 ### Full Generation Flow
 

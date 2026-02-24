@@ -12,7 +12,6 @@ from tau2.generators.types import (
     Scenario,
     ScenarioGroup,
     UserTemplate,
-    VariantConfig,
 )
 from tau2.utils import DATA_DIR
 
@@ -30,96 +29,29 @@ def generate_tasks(
 ) -> list[Task]:
     """
     Main entry point for generating tasks.
-    Composes scenarios, iterates combos x personas (round-robin), builds Task objects.
-    Mirrors telecom's TaskManager.create_task/create_tasks but generalized.
+    Composes scenarios, iterates all personas per scenario, builds Task objects.
     """
     composed = compose_scenarios(groups, validator)
     composed = sorted(composed, key=lambda x: len(x.composed_from))
     print(f"Number of composed scenarios: {len(composed)}")
 
-    persona_options = personas
     tasks = []
 
     for i, cs in enumerate(composed):
         print(f"Task {i + 1}")
         print(cs.name)
-        persona = persona_options[i % len(persona_options)]
-        task = _create_task(
-            composed_scenario=cs,
-            get_env=get_env,
-            user_template=user_template,
-            persona=persona,
-            get_env_assertions=get_env_assertions,
-            env_setup=env_setup,
-            get_template_vars=get_template_vars,
-            transfer_action_name=transfer_action_name,
-        )
-        print(task)
-        print("-" * 100)
-        tasks.append(task)
-
-    return tasks
-
-
-def generate_tasks_with_variants(
-    groups: list[ScenarioGroup],
-    get_env: Callable[[], Environment],
-    user_template: UserTemplate,
-    personas: list[Persona],
-    get_env_assertions: Callable[[bool], list[EnvAssertion]],
-    env_setup: Callable[[Environment], list[EnvFunctionCall]],
-    get_template_vars: Callable[[Environment], dict[str, str]],
-    variant_config: VariantConfig,
-    validator: Optional[Callable[[list[Optional[Scenario]]], bool]] = None,
-    transfer_action_name: str = "transfer_to_human",
-) -> list[Task]:
-    """
-    Generate A/B task variants for each composed scenario.
-    Variant A: easy persona, exact known_info from user_template.
-    Variant B: hard persona, vague known_info from variant_config.
-    """
-    composed = compose_scenarios(groups, validator)
-    composed = sorted(composed, key=lambda x: len(x.composed_from))
-    print(f"Number of composed scenarios: {len(composed)}")
-
-    easy_personas = variant_config.easy_personas or personas
-    hard_personas = variant_config.hard_personas or personas
-    tasks = []
-
-    for i, cs in enumerate(composed):
-        print(f"Task {i + 1} (variants)")
-        print(cs.name)
-
-        # Variant A: easy persona, exact known_info
-        easy_persona = easy_personas[i % len(easy_personas)]
-        task_a = _create_task(
-            composed_scenario=cs,
-            get_env=get_env,
-            user_template=user_template,
-            persona=easy_persona,
-            get_env_assertions=get_env_assertions,
-            env_setup=env_setup,
-            get_template_vars=get_template_vars,
-            transfer_action_name=transfer_action_name,
-            id_suffix="[VARIANT:a]",
-        )
-        tasks.append(task_a)
-
-        # Variant B: hard persona, SAME known_info (difficulty from persona only)
-        hard_persona = hard_personas[i % len(hard_personas)]
-        task_b = _create_task(
-            composed_scenario=cs,
-            get_env=get_env,
-            user_template=user_template,
-            persona=hard_persona,
-            get_env_assertions=get_env_assertions,
-            env_setup=env_setup,
-            get_template_vars=get_template_vars,
-            transfer_action_name=transfer_action_name,
-            id_suffix="[VARIANT:b]",
-        )
-        tasks.append(task_b)
-
+        for persona in personas:
+            task = _create_task(
+                composed_scenario=cs,
+                get_env=get_env,
+                user_template=user_template,
+                persona=persona,
+                get_env_assertions=get_env_assertions,
+                env_setup=env_setup,
+                get_template_vars=get_template_vars,
+                transfer_action_name=transfer_action_name,
+            )
+            tasks.append(task)
         print("-" * 100)
 
     return tasks
@@ -134,7 +66,6 @@ def _create_task(
     env_setup: Callable[[Environment], list[EnvFunctionCall]],
     get_template_vars: Callable[[Environment], dict[str, str]],
     transfer_action_name: str = "transfer_to_human",
-    id_suffix: str = "",
 ) -> Task:
     """Create a single Task from a ComposedScenario."""
     env = get_env()
@@ -216,7 +147,7 @@ def _create_task(
         eval_criteria["nl_assertions"] = nl_assertions
 
     task_dict = {
-        "id": f"[{user_template.domain}]{composed_scenario.name}[PERSONA:{persona.name}]{id_suffix}",
+        "id": f"[{user_template.domain}]{composed_scenario.name}[PERSONA:{persona.name}]",
         "description": {
             "purpose": user_template.purpose,
             "info": composed_scenario.description,

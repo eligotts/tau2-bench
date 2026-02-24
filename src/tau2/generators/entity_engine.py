@@ -7,7 +7,7 @@ from typing import Any, Callable, Optional
 from tau2.data_model.tasks import EnvAssertion, EnvFunctionCall, Task
 from tau2.environment.environment import Environment
 from tau2.generators.diversity import DiversityTracker
-from tau2.generators.types import Difficulty, Persona, UserTemplate, VariantConfig
+from tau2.generators.types import Persona, UserTemplate
 
 
 class TaskTier(IntEnum):
@@ -18,16 +18,6 @@ class TaskTier(IntEnum):
     TIER_3 = 3
     TIER_4 = 4
     TIER_5 = 5
-
-
-# Map tiers to Difficulty levels
-_TIER_TO_DIFFICULTY: dict[TaskTier, Difficulty] = {
-    TaskTier.TIER_1: Difficulty.EASY,
-    TaskTier.TIER_2: Difficulty.EASY,
-    TaskTier.TIER_3: Difficulty.MEDIUM,
-    TaskTier.TIER_4: Difficulty.MEDIUM,
-    TaskTier.TIER_5: Difficulty.HARD,
-}
 
 
 @dataclass
@@ -53,29 +43,10 @@ TemplateFunc = Callable[[Any, DiversityTracker], list[GeneratedTaskSpec]]
 BuildIndexesFunc = Callable[[Any], Any]
 
 
-def _select_persona(
-    tier: TaskTier,
-    personas: list[Persona],
-    index: int,
-) -> Persona:
-    """Select persona based on tier→difficulty mapping when personas have difficulty set."""
-    target_difficulty = _TIER_TO_DIFFICULTY[tier]
-
-    # Filter personas by matching difficulty
-    matching = [p for p in personas if p.difficulty == target_difficulty]
-    if matching:
-        return matching[index % len(matching)]
-
-    # Fall back to round-robin over all personas
-    return personas[index % len(personas)]
-
-
 def _spec_to_task(
     spec: GeneratedTaskSpec,
     user_template: UserTemplate,
     persona: Persona,
-    task_instructions: Optional[str] = None,
-    id_suffix: str = "",
 ) -> Task:
     """Convert a GeneratedTaskSpec to a Task object."""
     known_info = spec.known_info
@@ -99,15 +70,23 @@ def _spec_to_task(
     if spec.nl_assertions:
         eval_criteria["nl_assertions"] = spec.nl_assertions
 
+    # Recipe engine sets spec.user_task_instructions for specs with user actions.
+    # For specs without user actions (unfixable, agent-only), it's None and
+    # we fall back to the domain's default instructions from UserTemplate.
+    if spec.user_task_instructions is not None:
+        task_instructions = spec.user_task_instructions
+    else:
+        task_instructions = user_template.task_instructions
+
     task_dict = {
-        "id": f"[{user_template.domain}]{spec.task_id}[PERSONA:{persona.name}]{id_suffix}",
+        "id": f"[{user_template.domain}]{spec.task_id}[PERSONA:{persona.name}]",
         "description": {
             "purpose": spec.purpose,
             "info": spec.description,
         },
         "user_scenario": {
             "instructions": {
-                "task_instructions": task_instructions or spec.user_task_instructions or user_template.task_instructions,
+                "task_instructions": task_instructions,
                 "domain": user_template.domain,
                 "reason_for_call": spec.reason_for_call,
                 "known_info": known_info,
@@ -131,8 +110,6 @@ def generate_entity_tasks(
     get_db: Callable[[], Any],
     user_template: UserTemplate,
     personas: list[Persona],
-    task_instructions: Optional[str] = None,
-    variant_config: Optional[VariantConfig] = None,
     seed: int = 42,
 ) -> list[Task]:
     """
@@ -144,9 +121,7 @@ def generate_entity_tasks(
         get_env: Factory for fresh environment instances.
         get_db: Factory for database instances.
         user_template: Template for user scenario fields.
-        personas: Available personas for assignment.
-        task_instructions: Override for task instructions (optional).
-        variant_config: If provided, generate A/B variants for each spec.
+        personas: Available personas for assignment (one task per persona per spec).
         seed: Random seed for diversity tracker.
 
     Returns:
@@ -164,35 +139,11 @@ def generate_entity_tasks(
 
     print(f"Entity engine: {len(all_specs)} specs from {len(templates)} templates")
 
+    # Phase 3: iterate all personas per spec
     tasks: list[Task] = []
-    for i, spec in enumerate(all_specs):
-        persona = _select_persona(spec.tier, personas, i)
-
-        if variant_config is not None:
-            # Variant A: easy persona, exact known_info
-            easy_personas = variant_config.easy_personas or personas
-            easy_persona = _select_persona(spec.tier, easy_personas, i)
-            task_a = _spec_to_task(
-                spec, user_template, easy_persona,
-                task_instructions=task_instructions,
-                id_suffix="[VARIANT:a]",
-            )
-            tasks.append(task_a)
-
-            # Variant B: hard persona, SAME known_info (difficulty from persona only)
-            hard_personas = variant_config.hard_personas or personas
-            hard_persona = _select_persona(spec.tier, hard_personas, i)
-            task_b = _spec_to_task(
-                spec, user_template, hard_persona,
-                task_instructions=task_instructions,
-                id_suffix="[VARIANT:b]",
-            )
-            tasks.append(task_b)
-        else:
-            task = _spec_to_task(
-                spec, user_template, persona,
-                task_instructions=task_instructions,
-            )
+    for spec in all_specs:
+        for persona in personas:
+            task = _spec_to_task(spec, user_template, persona)
             tasks.append(task)
 
     print(f"Entity engine: {len(tasks)} tasks generated")

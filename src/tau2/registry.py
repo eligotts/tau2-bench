@@ -53,6 +53,28 @@ from tau2.domains.fitness_gym.environment import get_tasks as fitness_gym_domain
 from tau2.domains.fitness_gym.environment import (
     get_tasks_split as fitness_gym_domain_get_tasks_split,
 )
+from tau2.domains.tech_support.environment import (
+    get_environment as tech_support_domain_get_environment,
+)
+from tau2.domains.tech_support.environment import get_tasks as tech_support_domain_get_tasks
+from tau2.domains.tech_support.environment import (
+    get_tasks_split as tech_support_domain_get_tasks_split,
+)
+from tau2.domains.auto_repair.environment import (
+    get_environment as auto_repair_domain_get_environment,
+)
+from tau2.domains.auto_repair.environment import get_tasks as auto_repair_domain_get_tasks
+from tau2.domains.auto_repair.environment import (
+    get_tasks_split as auto_repair_domain_get_tasks_split,
+)
+from tau2.domains.online_shopping.environment import (
+    get_environment as online_shopping_domain_get_environment,
+)
+from tau2.domains.online_shopping.environment import get_tasks as online_shopping_domain_get_tasks
+from tau2.domains.online_shopping.environment import (
+    get_tasks_split as online_shopping_domain_get_tasks_split,
+)
+
 from tau2.environment.environment import Environment
 from tau2.user.base import BaseUser
 from tau2.user.user_simulator import DummyUser, UserSimulator
@@ -219,6 +241,13 @@ try:
     registry = Registry()
 
 
+
+    registry.register_domain(online_shopping_domain_get_environment, "online_shopping")
+    registry.register_tasks(
+        online_shopping_domain_get_tasks,
+        "online_shopping",
+        get_task_splits=online_shopping_domain_get_tasks_split,
+    )
     logger.debug("Registering default components...")
     registry.register_user(UserSimulator, "user_simulator")
     registry.register_user(DummyUser, "dummy_user")
@@ -273,6 +302,21 @@ try:
         "fitness_gym",
         get_task_splits=fitness_gym_domain_get_tasks_split,
     )
+
+    registry.register_domain(tech_support_domain_get_environment, "tech_support")
+    registry.register_tasks(
+        tech_support_domain_get_tasks,
+        "tech_support",
+        get_task_splits=tech_support_domain_get_tasks_split,
+    )
+
+    registry.register_domain(auto_repair_domain_get_environment, "auto_repair")
+    registry.register_tasks(
+        auto_repair_domain_get_tasks,
+        "auto_repair",
+        get_task_splits=auto_repair_domain_get_tasks_split,
+    )
+
     logger.debug(
         f"Default components registered successfully. Registry info: {json.dumps(registry.get_info().model_dump(), indent=2)}"
     )

@@ -16,10 +16,9 @@ from tau2.generators.diversity import DiversityTracker
 from tau2.generators.entity_engine import (
     GeneratedTaskSpec,
     TaskTier,
-    _select_persona,
     _spec_to_task,
 )
-from tau2.generators.types import Persona, UserTemplate, VariantConfig
+from tau2.generators.types import Persona, UserTemplate
 
 
 # ---------------------------------------------------------------------------
@@ -311,6 +310,7 @@ class FaultLayerConfig:
     max_faults: int = 99
     max_tasks_per_bin: Optional[int] = None  # cap N specs per (entity, fault_count) bin
     max_total_tasks: Optional[int] = None  # global budget, proportional sampling per tier
+    required_groups: list[str] = field(default_factory=list)  # combos must include ≥1 layer from these groups
 
 
 @dataclass
@@ -688,27 +688,11 @@ def _fault_layers_to_spec(
         # actions (e.g. acknowledge_treatment_plan for the same pet_id).
         actions = _dedup_actions(actions)
 
-        # Collect all user action specs for task_instructions generation
-        # (deduplicate by tool_name for readable instructions)
-        seen_tool_names: set[str] = set()
-        deduped_user_specs: list[ActionSpec] = []
-        for aspec in all_layer_user_specs + all_base_user_specs:
-            if aspec.tool_name not in seen_tool_names:
-                seen_tool_names.add(aspec.tool_name)
-                deduped_user_specs.append(aspec)
-        all_user_action_specs = deduped_user_specs
-
-        # Auto-generate user_task_instructions from user actions
+        # No auto-generated user_task_instructions. The domain's
+        # UserTemplate.task_instructions provides behavioral guidance
+        # (telecom-style: reactive, agent-driven) which _spec_to_task
+        # uses as the fallback when spec.user_task_instructions is None.
         user_task_instructions: Optional[str] = None
-        if all_user_action_specs:
-            instruction_parts = []
-            for aspec in all_user_action_specs:
-                readable = aspec.tool_name.replace("_", " ")
-                instruction_parts.append(
-                    f"When the agent instructs you to {readable}, "
-                    f"use the {aspec.tool_name} tool to do so."
-                )
-            user_task_instructions = " ".join(instruction_parts)
 
         # Assertions: layer assertions + base assertions
         all_assertion_specs: list[AssertionSpec] = []
@@ -925,6 +909,16 @@ def _generate_fault_layer_specs(
                         stacklevel=3,
                     )
 
+    # Validate required_groups reference actual group names
+    if flc.required_groups:
+        group_names = {g.name for g in flc.groups}
+        bad = [rg for rg in flc.required_groups if rg not in group_names]
+        if bad:
+            raise ValueError(
+                f"FaultLayerConfig '{flc.name}': required_groups {bad} "
+                f"don't match any group names {sorted(group_names)}."
+            )
+
     # Validate mutual exclusion of sampling strategies
     if flc.max_tasks_per_bin is not None and flc.max_total_tasks is not None:
         raise ValueError(
@@ -955,6 +949,16 @@ def _generate_fault_layer_specs(
             active = [layer for layer in combo if layer is not None]
             if not (flc.min_faults <= len(active) <= flc.max_faults):
                 continue
+            # Filter: if required_groups is set, combo must include ≥1 layer
+            # from each required group
+            if flc.required_groups:
+                active_group_names = {
+                    g.name for g in flc.groups
+                    for layer in g.layers
+                    if layer in active
+                }
+                if not all(rg in active_group_names for rg in flc.required_groups):
+                    continue
             all_combos.append((entity, active))
 
     # Phase 2: Sample if a sampling strategy is set
@@ -1231,15 +1235,13 @@ def generate_recipe_tasks(
     get_db: Callable[[], Any],
     user_template: UserTemplate,
     personas: list[Persona],
-    task_instructions: Optional[str] = None,
-    variant_config: Optional[VariantConfig] = None,
     seed: int = 42,
 ) -> list[Task]:
     """Generate tasks from a RecipeBook.
 
     Phase 1: Single recipes (do + fix).
     Phase 2: Composed recipes.
-    Phase 3: Spec -> Task conversion with optional A/B variants.
+    Phase 3: Spec -> Task conversion (one task per persona per spec).
     """
     db = get_db()
     indexes = build_indexes(db)
@@ -1312,41 +1314,11 @@ def generate_recipe_tasks(
         f"{len(recipe_book.fault_layer_configs)} fault-layer configs"
     )
 
-    # Phase 3: Spec -> Task
+    # Phase 3: Spec -> Task (one task per persona per spec)
     tasks: list[Task] = []
-    for i, spec in enumerate(all_specs):
-        persona = _select_persona(spec.tier, personas, i)
-
-        if variant_config is not None:
-            easy_personas = variant_config.easy_personas or personas
-            easy_persona = _select_persona(spec.tier, easy_personas, i)
-            task_a = _spec_to_task(
-                spec,
-                user_template,
-                easy_persona,
-                task_instructions=task_instructions,
-                id_suffix="[VARIANT:a]",
-            )
-            tasks.append(task_a)
-
-            # Variant B: hard persona, SAME known_info (difficulty from persona only)
-            hard_personas = variant_config.hard_personas or personas
-            hard_persona = _select_persona(spec.tier, hard_personas, i)
-            task_b = _spec_to_task(
-                spec,
-                user_template,
-                hard_persona,
-                task_instructions=task_instructions,
-                id_suffix="[VARIANT:b]",
-            )
-            tasks.append(task_b)
-        else:
-            task = _spec_to_task(
-                spec,
-                user_template,
-                persona,
-                task_instructions=task_instructions,
-            )
+    for spec in all_specs:
+        for persona in personas:
+            task = _spec_to_task(spec, user_template, persona)
             tasks.append(task)
 
     print(f"Recipe engine: {len(tasks)} tasks generated")

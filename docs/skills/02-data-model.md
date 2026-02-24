@@ -5,7 +5,7 @@ Generate the agent-side database model — the Pydantic classes representing all
 ## Reference
 
 - Read `docs/domain-authoring-guide.md` lines 116-176 (Agent DB section)
-- Read `src/tau2/domains/library/data_model.py` for the exact pattern to follow
+- Read `src/tau2/domains/auto_repair/data_model.py` for the exact pattern to follow
 
 ## Context
 
@@ -41,7 +41,7 @@ Write to `src/tau2/domains/<domain_name>/data_model.py`.
 
 ## Pattern
 
-Follow the library example exactly:
+Follow the auto_repair example exactly:
 
 ```python
 class Patron(BaseModelNoExtra):

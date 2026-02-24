@@ -1020,12 +1020,17 @@ def verify_assertion_value_discoverability(
     for action in actions:
         _collect_leaf_values(action.arguments, known_values)
 
-    # Common "end state" values that don't need to be in context
+    # Common "end state" values that don't need to be in context.
+    # These are target states produced by fix tools — the agent calls the
+    # tool and the tool always sets the correct value.
     trivial_values = {
         "0", "0.0", "0.00", "1", "1.0",
         "true", "false", "True", "False",
         "active", "inactive", "scheduled", "cancelled",
         "paid", "pending", "overdue", "current", "expired",
+        # Post-fix end states for progressive-discovery domains
+        "normal", "clean", "aligned",
+        "requested", "ready", "registered",
     }
 
     for assertion in assertions:
@@ -1035,6 +1040,20 @@ def verify_assertion_value_discoverability(
             val_str = str(arg_value)
 
             if val_str.lower() in trivial_values:
+                continue
+
+            # Threshold / comparison args (min_*, max_*) are assertion-
+            # internal criteria, not values the agent must target.  The
+            # agent calls a fix tool which always sets a correct value;
+            # the assertion merely checks the result exceeds a threshold.
+            if arg_name.startswith("min_") or arg_name.startswith("max_"):
+                continue
+
+            # Entity ID args (*_id) are discovered through tool call
+            # chains (e.g. customer_name → get_customer → customer_id →
+            # get_vehicles → vehicle_id).  They are never user-provided
+            # knowledge, so their absence from user context is expected.
+            if arg_name.endswith("_id"):
                 continue
 
             # Build numeric variants

@@ -581,12 +581,11 @@ def validate_scenarios(domain_name: str) -> list[str]:
     if not tasks:
         return ["create_tasks() returned 0 tasks"]
 
-    # Check for variants (warning, not error — some domains use persona variants instead)
+    # Check that tasks have persona suffixes
     task_ids = [t.id for t in tasks]
-    has_variant_a = any("[VARIANT:a]" in tid for tid in task_ids)
-    has_variant_b = any("[VARIANT:b]" in tid for tid in task_ids)
-    if not (has_variant_a and has_variant_b):
-        print("  WARNING: Tasks don't have VARIANT:a and VARIANT:b variants")
+    has_persona = any("[PERSONA:" in tid for tid in task_ids)
+    if not has_persona:
+        print("  WARNING: Tasks don't have [PERSONA:] suffixes")
 
     # Check for resource conflicts in multi-fault tasks
     _DESTRUCTIVE_ACTIONS = {"cancel_appointment", "cancel_order", "remove_", "delete_"}

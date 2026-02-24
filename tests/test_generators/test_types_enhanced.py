@@ -2,35 +2,22 @@ import unittest
 
 from tau2.generators.types import (
     ComposedScenario,
-    Difficulty,
     Persona,
     Scenario,
-    VariantConfig,
 )
 
 
-class TestDifficulty(unittest.TestCase):
-    def test_enum_values(self):
-        self.assertEqual(Difficulty.EASY, "easy")
-        self.assertEqual(Difficulty.MEDIUM, "medium")
-        self.assertEqual(Difficulty.HARD, "hard")
-
-
 class TestPersonaBackwardCompat(unittest.TestCase):
-    def test_persona_without_new_fields(self):
-        """Existing code creating Persona(name=..., description=...) still works."""
+    def test_persona_with_name_and_description(self):
+        """Persona(name=..., description=...) works."""
         p = Persona(name="test", description="A test persona")
         self.assertEqual(p.name, "test")
-        self.assertIsNone(p.difficulty)
-        self.assertIsNone(p.instructions)
+        self.assertEqual(p.description, "A test persona")
 
-    def test_persona_with_difficulty(self):
-        p = Persona(name="easy", description="Easy persona", difficulty=Difficulty.EASY)
-        self.assertEqual(p.difficulty, Difficulty.EASY)
-
-    def test_persona_with_instructions(self):
-        p = Persona(name="custom", instructions="Be brief")
-        self.assertEqual(p.instructions, "Be brief")
+    def test_persona_name_only(self):
+        p = Persona(name="minimal")
+        self.assertEqual(p.name, "minimal")
+        self.assertIsNone(p.description)
 
 
 class TestScenarioEnhanced(unittest.TestCase):
@@ -113,23 +100,6 @@ class TestComposedScenarioEnhanced(unittest.TestCase):
         )
         output = str(cs)
         self.assertNotIn("NL Assertions", output)
-
-
-class TestVariantConfig(unittest.TestCase):
-    def test_defaults(self):
-        vc = VariantConfig()
-        self.assertEqual(vc.easy_personas, [])
-        self.assertEqual(vc.hard_personas, [])
-
-    def test_with_values(self):
-        easy = [Persona(name="easy", difficulty=Difficulty.EASY)]
-        hard = [Persona(name="hard", difficulty=Difficulty.HARD)]
-        vc = VariantConfig(
-            easy_personas=easy,
-            hard_personas=hard,
-        )
-        self.assertEqual(len(vc.easy_personas), 1)
-        self.assertEqual(len(vc.hard_personas), 1)
 
 
 if __name__ == "__main__":

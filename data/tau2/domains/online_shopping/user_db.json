@@ -1,0 +1,15 @@
+{
+  "customer_id": null,
+  "customer_name": null,
+  "my_orders": [],
+  "my_returns": [],
+  "resolution_acknowledged": {},
+  "pricing_update_confirmed": {},
+  "shipping_update_confirmed": {},
+  "tracking_update_confirmed": {},
+  "return_resolution_confirmed": {},
+  "payment_info_updated": {},
+  "payment_update_confirmed": {},
+  "membership_renewal_confirmed": {},
+  "billing_correction_confirmed": {}
+}

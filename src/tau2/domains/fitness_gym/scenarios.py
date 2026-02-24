@@ -29,7 +29,7 @@ from tau2.generators.recipe import (
     generate_recipe_tasks,
     verify_fault_atoms,
 )
-from tau2.generators.types import Persona, UserTemplate, VariantConfig
+from tau2.generators.types import Persona, UserTemplate
 from tau2.generators.verify import verify_tasks
 from tau2.generators.verify_authoring import (
     collect_authored_files,
@@ -901,7 +901,7 @@ FITNESS_GYM_FAULT_CONFIG = FaultLayerConfig(
     entity_id_field="member_id",
     min_faults=1,
     max_faults=7,
-    max_tasks_per_bin=3,
+    max_total_tasks=600,
 )
 
 # Transfer config — unfixable layers only (small set)
@@ -936,7 +936,7 @@ FITNESS_GYM_TRANSFER_CONFIG = FaultLayerConfig(
     entity_id_field="member_id",
     min_faults=1,
     max_faults=1,
-    max_tasks_per_bin=1,
+    max_total_tasks=16,
 )
 
 
@@ -1003,18 +1003,12 @@ def create_tasks(
                 RECIPE_BOOK, authored_files, authoring_issues, llm_call_fn
             )
 
-    variant_config = VariantConfig(
-        easy_personas=[PERSONAS[0]],   # regular_member
-        hard_personas=[PERSONAS[1]],   # frustrated_member
-    )
-
     tasks = generate_recipe_tasks(
         recipe_book=RECIPE_BOOK,
         build_indexes=lambda db: db,
         get_db=get_db,
         user_template=USER_TEMPLATE,
         personas=PERSONAS,
-        variant_config=variant_config,
         seed=seed,
     )
 

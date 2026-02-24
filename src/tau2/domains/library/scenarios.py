@@ -29,7 +29,7 @@ from tau2.generators.recipe import (
     generate_recipe_tasks,
     verify_fault_atoms,
 )
-from tau2.generators.types import Persona, UserTemplate, VariantConfig
+from tau2.generators.types import Persona, UserTemplate
 from tau2.generators.verify import verify_tasks
 from tau2.generators.verify_authoring import (
     collect_authored_files,
@@ -918,6 +918,7 @@ LIBRARY_FAULT_CONFIG = FaultLayerConfig(
     entity_id_field="patron_id",
     min_faults=1,
     max_faults=8,
+    max_total_tasks=600,
 )
 
 

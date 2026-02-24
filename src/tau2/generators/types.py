@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Callable, Optional
 
 from pydantic import BaseModel, Field
@@ -10,14 +9,6 @@ from tau2.environment.environment import Environment
 InitFuncType = Callable[[Environment], list[EnvFunctionCall | EnvAssertion]]
 FixFuncType = Callable[[Environment], list[ToolCall]] | None
 EnvAssertionType = Callable[[Environment], list[EnvAssertion]]
-
-
-class Difficulty(str, Enum):
-    """Difficulty level for personas and task variants."""
-
-    EASY = "easy"
-    MEDIUM = "medium"
-    HARD = "hard"
 
 
 class Scenario(BaseModel):
@@ -83,8 +74,6 @@ class Persona(BaseModel):
 
     name: str
     description: Optional[str] = None
-    difficulty: Optional[Difficulty] = None
-    instructions: Optional[str] = None
 
 
 class UserTemplate(BaseModel):
@@ -96,15 +85,3 @@ class UserTemplate(BaseModel):
     task_instructions: str
     ticket: str
     purpose: str
-
-
-class VariantConfig(BaseModel):
-    """Configuration for generating A/B task variants.
-
-    Difficulty comes from persona behavior (cooperative vs anxious/confused),
-    NOT from withholding information. Both variants get the same known_info.
-    This matches the telecom domain's PERSONA pattern.
-    """
-
-    easy_personas: list[Persona] = Field(default_factory=list)
-    hard_personas: list[Persona] = Field(default_factory=list)

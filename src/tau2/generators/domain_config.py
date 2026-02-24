@@ -12,13 +12,12 @@ from tau2.generators.entity_engine import (
     generate_entity_tasks,
 )
 from tau2.generators.recipe import RecipeBook, generate_recipe_tasks
-from tau2.generators.generate import generate_tasks, generate_tasks_with_variants
+from tau2.generators.generate import generate_tasks
 from tau2.generators.types import (
     Persona,
     Scenario,
     ScenarioGroup,
     UserTemplate,
-    VariantConfig,
 )
 from tau2.generators.verify import verify_tasks
 
@@ -52,14 +51,10 @@ class DomainConfig:
     templates: list[TemplateFunc] = field(default_factory=list)
     build_indexes: Optional[BuildIndexesFunc] = None
     get_db: Optional[Callable[[], Any]] = None
-    task_instructions: Optional[str] = None
     seed: int = 42
 
     # Recipe params
     recipe_book: Optional[RecipeBook] = None
-
-    # Shared variant params
-    variant_config: Optional[VariantConfig] = None
 
     # Verification
     verify: bool = True
@@ -73,31 +68,17 @@ def create_domain_tasks(config: DomainConfig) -> list[Task]:
         assert config.env_setup is not None, "env_setup required"
         assert config.get_template_vars is not None, "get_template_vars required"
 
-        if config.variant_config is not None:
-            tasks = generate_tasks_with_variants(
-                groups=config.groups,
-                get_env=config.get_env,
-                user_template=config.user_template,
-                personas=config.personas,
-                get_env_assertions=config.get_env_assertions,
-                env_setup=config.env_setup,
-                get_template_vars=config.get_template_vars,
-                variant_config=config.variant_config,
-                validator=config.validator,
-                transfer_action_name=config.transfer_action_name,
-            )
-        else:
-            tasks = generate_tasks(
-                groups=config.groups,
-                get_env=config.get_env,
-                user_template=config.user_template,
-                personas=config.personas,
-                get_env_assertions=config.get_env_assertions,
-                env_setup=config.env_setup,
-                get_template_vars=config.get_template_vars,
-                validator=config.validator,
-                transfer_action_name=config.transfer_action_name,
-            )
+        tasks = generate_tasks(
+            groups=config.groups,
+            get_env=config.get_env,
+            user_template=config.user_template,
+            personas=config.personas,
+            get_env_assertions=config.get_env_assertions,
+            env_setup=config.env_setup,
+            get_template_vars=config.get_template_vars,
+            validator=config.validator,
+            transfer_action_name=config.transfer_action_name,
+        )
 
     elif config.strategy == GenerationStrategy.ENTITY_TEMPLATE:
         assert config.get_env is not None, "get_env required for entity_template"
@@ -112,8 +93,6 @@ def create_domain_tasks(config: DomainConfig) -> list[Task]:
             get_db=config.get_db,
             user_template=config.user_template,
             personas=config.personas,
-            task_instructions=config.task_instructions,
-            variant_config=config.variant_config,
             seed=config.seed,
         )
 
@@ -128,8 +107,6 @@ def create_domain_tasks(config: DomainConfig) -> list[Task]:
             get_db=config.get_db,
             user_template=config.user_template,
             personas=config.personas,
-            task_instructions=config.task_instructions,
-            variant_config=config.variant_config,
             seed=config.seed,
         )
 
