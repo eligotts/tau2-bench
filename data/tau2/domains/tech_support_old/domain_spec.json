@@ -1,0 +1,300 @@
+{
+  "domain_name": "tech_support",
+  "description": "ISP technical support helpdesk where agents diagnose connectivity issues and guide customers through hands-on troubleshooting steps on their devices",
+  "entities": [
+    {
+      "name": "Customer",
+      "fields": [
+        {"name": "customer_id", "type": "str", "description": "Unique customer identifier"},
+        {"name": "name", "type": "str", "description": "Customer full name"},
+        {"name": "email", "type": "str", "description": "Customer email"},
+        {"name": "phone", "type": "str", "description": "Customer phone number"},
+        {"name": "area_code", "type": "str", "description": "Service area code"},
+        {"name": "account_status", "type": "str", "description": "active, suspended, flagged"},
+        {"name": "dns_config", "type": "str", "description": "normal, misconfigured"},
+        {"name": "network_profile", "type": "str", "description": "normal, corrupted"}
+      ],
+      "is_primary": true
+    },
+    {
+      "name": "Device",
+      "fields": [
+        {"name": "device_id", "type": "str", "description": "Unique device identifier"},
+        {"name": "customer_id", "type": "str", "description": "FK to Customer"},
+        {"name": "device_type", "type": "str", "description": "router, modem, gateway"},
+        {"name": "model", "type": "str", "description": "Device model name"},
+        {"name": "status", "type": "str", "description": "online, offline, unresponsive"},
+        {"name": "firmware_version", "type": "str", "description": "Current firmware version"},
+        {"name": "firmware_status", "type": "str", "description": "current, outdated, corrupted, update_pending"},
+        {"name": "wifi_band", "type": "str", "description": "2.4ghz, 5ghz, dual"},
+        {"name": "channel_congested", "type": "bool", "description": "Whether WiFi channel is congested"},
+        {"name": "cable_status", "type": "str", "description": "connected, disconnected"},
+        {"name": "last_restart", "type": "str", "description": "Date of last restart"}
+      ],
+      "is_primary": false
+    },
+    {
+      "name": "ServicePlan",
+      "fields": [
+        {"name": "plan_id", "type": "str", "description": "Unique plan identifier"},
+        {"name": "customer_id", "type": "str", "description": "FK to Customer"},
+        {"name": "plan_name", "type": "str", "description": "Plan display name"},
+        {"name": "speed_tier", "type": "str", "description": "basic_50, standard_100, premium_200, ultra_500"},
+        {"name": "monthly_cost", "type": "float", "description": "Monthly cost"},
+        {"name": "speed_status", "type": "str", "description": "normal, throttled"},
+        {"name": "billing_credit", "type": "float", "description": "Pending credit amount"}
+      ],
+      "is_primary": false
+    },
+    {
+      "name": "SupportTicket",
+      "fields": [
+        {"name": "ticket_id", "type": "str", "description": "Unique ticket identifier"},
+        {"name": "customer_id", "type": "str", "description": "FK to Customer"},
+        {"name": "issue_description", "type": "str", "description": "Description of the issue"},
+        {"name": "status", "type": "str", "description": "open, resolved, escalated"},
+        {"name": "created_date", "type": "str", "description": "Date ticket was created"},
+        {"name": "resolved_date", "type": "Optional[str]", "description": "Date ticket was resolved"}
+      ],
+      "is_primary": false
+    },
+    {
+      "name": "Outage",
+      "fields": [
+        {"name": "outage_id", "type": "str", "description": "Unique outage identifier"},
+        {"name": "area_code", "type": "str", "description": "Affected area code"},
+        {"name": "description", "type": "str", "description": "Outage description"},
+        {"name": "start_time", "type": "str", "description": "Outage start time"},
+        {"name": "estimated_resolution", "type": "str", "description": "Estimated fix time"},
+        {"name": "status", "type": "str", "description": "active, resolved"},
+        {"name": "credit_amount", "type": "float", "description": "Credit amount for affected customers"}
+      ],
+      "is_primary": false
+    }
+  ],
+  "tools": [
+    {"name": "lookup_customer", "type": "READ", "description": "Find a customer by name", "args": [{"name": "name", "type": "str"}]},
+    {"name": "get_customer_by_id", "type": "READ", "description": "Get customer details by ID", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "get_devices_by_customer", "type": "READ", "description": "Get all devices registered to a customer", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "get_service_plan", "type": "READ", "description": "Get service plan details for a customer", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "run_remote_diagnostic", "type": "READ", "description": "Run remote diagnostic on a device to identify issues", "args": [{"name": "device_id", "type": "str"}]},
+    {"name": "check_area_outages", "type": "READ", "description": "Check for known outages in an area", "args": [{"name": "area_code", "type": "str"}]},
+    {"name": "get_tickets_by_customer", "type": "READ", "description": "Get support ticket history for a customer", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "push_firmware_update", "type": "WRITE", "description": "Push a firmware update to a customer device", "args": [{"name": "device_id", "type": "str"}]},
+    {"name": "reset_network_profile", "type": "WRITE", "description": "Reset the server-side network configuration profile for a customer", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "apply_service_credit", "type": "WRITE", "description": "Apply a billing credit to the customer account", "args": [{"name": "customer_id", "type": "str"}, {"name": "amount", "type": "float"}]},
+    {"name": "escalate_speed_tier", "type": "WRITE", "description": "Temporarily escalate the customer speed tier to the next level", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "optimize_wifi_channel", "type": "WRITE", "description": "Optimize the WiFi channel allocation for a device to reduce congestion", "args": [{"name": "device_id", "type": "str"}]},
+    {"name": "flush_dns_records", "type": "WRITE", "description": "Flush server-side DNS records for a customer", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "transfer_to_human", "type": "GENERIC", "description": "Transfer the call to a Level 2 support specialist", "args": [{"name": "summary", "type": "str"}]}
+  ],
+  "user_tools": [
+    {"name": "restart_router", "type": "WRITE", "description": "Power cycle (restart) the router", "args": []},
+    {"name": "factory_reset_router", "type": "WRITE", "description": "Perform a factory reset on the router", "args": []},
+    {"name": "check_cable_connections", "type": "WRITE", "description": "Physically check and resecure all cable connections", "args": []},
+    {"name": "switch_wifi_band", "type": "WRITE", "description": "Switch between 2.4GHz and 5GHz WiFi bands", "args": []},
+    {"name": "clear_dns_cache", "type": "WRITE", "description": "Clear the local DNS cache on the device", "args": []},
+    {"name": "run_speed_test", "type": "WRITE", "description": "Run a speed test to verify connection bandwidth", "args": []},
+    {"name": "check_my_connection", "type": "READ", "description": "Check current connection status from user side", "args": []}
+  ],
+  "fault_groups": [
+    {
+      "group_name": "router_status",
+      "faults": [
+        {
+          "name": "router_hung",
+          "description": "Router is unresponsive and needs a restart",
+          "init_action": "Set device status to unresponsive",
+          "fix_tool": null,
+          "user_fix_tools": ["restart_router"],
+          "entity_field_affected": "device.status",
+          "unfixable": false
+        },
+        {
+          "name": "router_corrupted",
+          "description": "Router firmware is corrupted and needs factory reset",
+          "init_action": "Set device firmware_status to corrupted",
+          "fix_tool": null,
+          "user_fix_tools": ["factory_reset_router"],
+          "entity_field_affected": "device.firmware_status",
+          "unfixable": false
+        }
+      ]
+    },
+    {
+      "group_name": "cable_connection",
+      "faults": [
+        {
+          "name": "loose_cable",
+          "description": "Network cable is disconnected or loose",
+          "init_action": "Set device cable_status to disconnected",
+          "fix_tool": null,
+          "user_fix_tools": ["check_cable_connections"],
+          "entity_field_affected": "device.cable_status",
+          "unfixable": false
+        }
+      ]
+    },
+    {
+      "group_name": "wifi_config",
+      "faults": [
+        {
+          "name": "wrong_band",
+          "description": "Device connected to congested 2.4GHz band instead of 5GHz",
+          "init_action": "Set device wifi_band to 2.4ghz",
+          "fix_tool": null,
+          "user_fix_tools": ["switch_wifi_band"],
+          "entity_field_affected": "device.wifi_band",
+          "unfixable": false
+        },
+        {
+          "name": "channel_congestion",
+          "description": "WiFi channel is congested and needs server-side optimization",
+          "init_action": "Set device channel_congested to true",
+          "fix_tool": "optimize_wifi_channel",
+          "user_fix_tools": ["switch_wifi_band"],
+          "entity_field_affected": "device.channel_congested",
+          "unfixable": false
+        }
+      ]
+    },
+    {
+      "group_name": "dns_issue",
+      "faults": [
+        {
+          "name": "stale_dns",
+          "description": "Local DNS cache is stale causing resolution failures",
+          "init_action": "Set customer dns_config to stale_cache",
+          "fix_tool": null,
+          "user_fix_tools": ["clear_dns_cache"],
+          "entity_field_affected": "customer.dns_config",
+          "unfixable": false
+        },
+        {
+          "name": "wrong_dns_server",
+          "description": "DNS server is misconfigured requiring both server and client fix",
+          "init_action": "Set customer dns_config to misconfigured",
+          "fix_tool": "flush_dns_records",
+          "user_fix_tools": ["clear_dns_cache"],
+          "entity_field_affected": "customer.dns_config",
+          "unfixable": false
+        }
+      ]
+    },
+    {
+      "group_name": "firmware_status",
+      "faults": [
+        {
+          "name": "outdated_firmware",
+          "description": "Device firmware is outdated and needs remote push update",
+          "init_action": "Set device firmware_status to outdated",
+          "fix_tool": "push_firmware_update",
+          "user_fix_tools": [],
+          "entity_field_affected": "device.firmware_status",
+          "unfixable": false
+        }
+      ]
+    },
+    {
+      "group_name": "network_profile",
+      "faults": [
+        {
+          "name": "corrupted_profile",
+          "description": "Server-side network profile is corrupted",
+          "init_action": "Set customer network_profile to corrupted",
+          "fix_tool": "reset_network_profile",
+          "user_fix_tools": [],
+          "entity_field_affected": "customer.network_profile",
+          "unfixable": false
+        }
+      ]
+    },
+    {
+      "group_name": "speed_issue",
+      "faults": [
+        {
+          "name": "throttled_speed",
+          "description": "Speed is throttled below plan tier, needs escalation and verification",
+          "init_action": "Set plan speed_status to throttled",
+          "fix_tool": "escalate_speed_tier",
+          "user_fix_tools": ["run_speed_test"],
+          "entity_field_affected": "plan.speed_status",
+          "unfixable": false
+        }
+      ]
+    }
+  ],
+  "unfixable_faults": [
+    {
+      "name": "hardware_failure",
+      "description": "Physical hardware damage to the router requiring replacement",
+      "init_action": "Set device status to hardware_failure",
+      "entity_field_affected": "device.status"
+    },
+    {
+      "name": "account_security_breach",
+      "description": "Account has been flagged for a suspected security breach",
+      "init_action": "Set customer account_status to flagged",
+      "entity_field_affected": "customer.account_status"
+    },
+    {
+      "name": "infrastructure_outage",
+      "description": "Major infrastructure outage in the area with no ETA",
+      "init_action": "Create an active outage for the customer area with no resolution time",
+      "entity_field_affected": "outage.status"
+    }
+  ],
+  "policy_sections": [
+    "Identity Verification",
+    "Diagnostic Procedure",
+    "Router Troubleshooting",
+    "Cable and Connection Issues",
+    "WiFi Configuration",
+    "DNS Troubleshooting",
+    "Firmware Updates",
+    "Network Profile Reset",
+    "Speed and Performance Issues",
+    "Billing Credits",
+    "Escalation to Level 2 Support",
+    "Communication Guidelines"
+  ],
+  "sync_rules": [
+    {"agent_field": "device.status", "user_field": "connection_status", "description": "User sees device online/offline status"},
+    {"agent_field": "device.wifi_band", "user_field": "wifi_band", "description": "User sees current WiFi band"},
+    {"agent_field": "device.firmware_status", "user_field": "firmware_status", "description": "User sees firmware status"},
+    {"agent_field": "device.cable_status", "user_field": "cable_status", "description": "User sees cable connection status"},
+    {"agent_field": "plan.speed_tier", "user_field": "speed_tier", "description": "User sees their speed tier"},
+    {"agent_field": "plan.speed_status", "user_field": "speed_status", "description": "User sees if speed is throttled"},
+    {"agent_field": "customer.dns_config", "user_field": "dns_status", "description": "User sees DNS configuration status"}
+  ],
+  "assertion_helpers": [
+    {"name": "assert_device_status", "description": "Assert device has expected status", "env_type": "assistant"},
+    {"name": "assert_device_firmware", "description": "Assert firmware status matches expected", "env_type": "assistant"},
+    {"name": "assert_device_wifi_band", "description": "Assert WiFi band matches expected", "env_type": "assistant"},
+    {"name": "assert_device_cable_status", "description": "Assert cable status matches expected", "env_type": "assistant"},
+    {"name": "assert_device_channel_congested", "description": "Assert channel congestion flag matches expected", "env_type": "assistant"},
+    {"name": "assert_customer_dns_config", "description": "Assert DNS config matches expected", "env_type": "assistant"},
+    {"name": "assert_customer_network_profile", "description": "Assert network profile matches expected", "env_type": "assistant"},
+    {"name": "assert_plan_speed_status", "description": "Assert speed status matches expected", "env_type": "assistant"},
+    {"name": "assert_plan_speed_tier", "description": "Assert speed tier matches expected", "env_type": "assistant"},
+    {"name": "assert_connection_status", "description": "Assert user sees expected connection status", "env_type": "user"},
+    {"name": "assert_wifi_band", "description": "Assert user sees expected WiFi band", "env_type": "user"},
+    {"name": "assert_firmware_status", "description": "Assert user sees expected firmware status", "env_type": "user"},
+    {"name": "assert_cable_status", "description": "Assert user sees expected cable status", "env_type": "user"},
+    {"name": "assert_speed_status", "description": "Assert user sees expected speed status", "env_type": "user"},
+    {"name": "assert_dns_status", "description": "Assert user sees expected DNS status", "env_type": "user"}
+  ],
+  "setup_helpers": [
+    {"name": "set_device_status", "description": "Set device status directly", "env_type": "assistant"},
+    {"name": "set_device_firmware_status", "description": "Set device firmware status", "env_type": "assistant"},
+    {"name": "set_device_wifi_band", "description": "Set device WiFi band", "env_type": "assistant"},
+    {"name": "set_device_cable_status", "description": "Set device cable status", "env_type": "assistant"},
+    {"name": "set_device_channel_congested", "description": "Set device channel congestion flag", "env_type": "assistant"},
+    {"name": "set_customer_dns_config", "description": "Set customer DNS configuration", "env_type": "assistant"},
+    {"name": "set_customer_network_profile", "description": "Set customer network profile", "env_type": "assistant"},
+    {"name": "set_plan_speed_status", "description": "Set plan speed status", "env_type": "assistant"},
+    {"name": "set_plan_speed_tier", "description": "Set plan speed tier", "env_type": "assistant"},
+    {"name": "set_customer_account_status", "description": "Set customer account status", "env_type": "assistant"},
+    {"name": "set_user_info", "description": "Set user identity for scenario", "env_type": "user"}
+  ]
+}

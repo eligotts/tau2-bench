@@ -1,0 +1,7 @@
+from tau2.utils.utils import DATA_DIR
+
+AUTO_REPAIR_DATA_DIR = DATA_DIR / "tau2" / "domains" / "auto_repair"
+AUTO_REPAIR_DB_PATH = AUTO_REPAIR_DATA_DIR / "db.json"
+AUTO_REPAIR_USER_DB_PATH = AUTO_REPAIR_DATA_DIR / "user_db.json"
+AUTO_REPAIR_POLICY_PATH = AUTO_REPAIR_DATA_DIR / "policy.md"
+AUTO_REPAIR_TASK_SET_PATH = AUTO_REPAIR_DATA_DIR / "tasks.json"

@@ -29,7 +29,7 @@ from tau2.generators.recipe import (
     generate_recipe_tasks,
     verify_fault_atoms,
 )
-from tau2.generators.types import Persona, UserTemplate, VariantConfig
+from tau2.generators.types import Persona, UserTemplate
 from tau2.generators.verify import verify_tasks
 from tau2.generators.verify_authoring import (
     collect_authored_files,
@@ -72,12 +72,11 @@ USER_TEMPLATE = UserTemplate(
         "You are {patron_name} (patron ID: {patron_id}). {fault_descriptions}"
     ),
     task_instructions=(
-        "If the agent resolves an issue and asks you to acknowledge, use your acknowledge_resolution tool. "
-        "If the agent changes a hold and asks you to confirm pickup, use your confirm_hold_pickup tool. "
-        "If the agent asks you to make a fine payment, use your make_fine_payment tool. "
-        "If the agent fixes an event registration and asks you to confirm, use your confirm_event tool. "
-        "If the agent updates a loan and asks you to acknowledge, use your acknowledge_loan tool. "
-        "You will consider the issue resolved only when the agent confirms the problem has been fixed."
+        "Follow the agent's instructions throughout the conversation. "
+        "When the agent asks you to perform an action or use one of your tools, do so. "
+        "You must actually call the tool \u2014 describing the action in words is not sufficient. "
+        "You will consider your issues resolved when the agent confirms all problems "
+        "have been addressed."
     ),
     ticket=(
         "Patron {patron_name} (ID: {patron_id}) contacting about library account. "
@@ -210,7 +209,8 @@ overdue_checkout = FaultLayer(
         "My checkout {checkout_id} for '{book_title}' is showing as overdue. "
         "The due date should be {checkout_due_date} — please renew it."
     ),
-    atoms=[
+    completion_fragment="your checkout record for {book_title} shows as returned",
+        atoms=[
         FaultAtom(
             init=[
                 InitCall(
@@ -267,7 +267,8 @@ lost_book_record = FaultLayer(
         "My book '{book_title}' (checkout {checkout_id}) is incorrectly marked as "
         "lost in the system. I have the book right here."
     ),
-    atoms=[
+    completion_fragment="your library record shows {book_title} is no longer listed as lost",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -323,7 +324,8 @@ expired_hold = FaultLayer(
         "My hold {hold_id} for '{hold_book_title}' was expired by mistake. "
         "I still want to pick it up at {hold_pickup_branch}."
     ),
-    atoms=[
+    completion_fragment="your hold on {hold_title} shows as active and ready for pickup",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -367,7 +369,8 @@ wrong_pickup_branch = FaultLayer(
         "My hold {hold_id} for '{hold_book_title}' is set to pick up at the wrong "
         "branch. It should be at {hold_pickup_branch}, not Remote Storage."
     ),
-    atoms=[
+    completion_fragment="your hold for {hold_title} shows the correct pickup branch of {original_hold_branch}",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -425,7 +428,8 @@ overcharged_fine = FaultLayer(
         "Fine {fine_id} shows $99.99 but this charge is completely incorrect — "
         "the full amount should be waived."
     ),
-    atoms=[
+    completion_fragment="your fine balance shows the correct amount",
+        atoms=[
         FaultAtom(
             init=[
                 InitCall(
@@ -465,7 +469,8 @@ unpaid_fine = FaultLayer(
         "I have an unpaid fine {fine_id} and I'm ready to pay it now. "
         "Please look up the balance so I can make my payment."
     ),
-    atoms=[
+    completion_fragment="your fine payment has been processed",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -515,7 +520,8 @@ wrong_membership_type = FaultLayer(
         "My library membership was downgraded to standard by mistake. "
         "I should be on the {original_membership_type} tier."
     ),
-    atoms=[
+    completion_fragment="your membership shows the correct type of {original_membership_type}",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -559,7 +565,8 @@ wrong_book_location = FaultLayer(
         "The system shows '{book_title}' ({book_id}) at the wrong branch. "
         "It should be at {book_location} but it's showing Remote Storage."
     ),
-    atoms=[
+    completion_fragment="the location for {book_title} shows as {original_book_location}",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -619,7 +626,8 @@ cancelled_event = FaultLayer(
         "My registration for '{event_name}' ({event_id}) on {event_date} was "
         "cancelled by mistake. I still want to attend."
     ),
-    atoms=[
+    completion_fragment="your event registration for {event_name} shows as active",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -663,7 +671,8 @@ wrong_event_location = FaultLayer(
         "My event '{event_name}' ({event_id}) is listed at the wrong location. "
         "It should be at {event_location}, not Remote Storage."
     ),
-    atoms=[
+    completion_fragment="the event {event_name} shows the correct location of {original_event_location}",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -722,7 +731,8 @@ cancelled_loan = FaultLayer(
         "My inter-library loan request {loan_id} for '{loan_book_title}' from "
         "{loan_source_library} was cancelled by mistake. Please reinstate it."
     ),
-    atoms=[
+    completion_fragment="your inter-library loan for {loan_title} shows as active",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -766,7 +776,8 @@ wrong_loan_source = FaultLayer(
         "My ILL request {loan_id} for '{loan_book_title}' is coming from the wrong "
         "library. It should be from {loan_source_library}, not 'Obsolete Branch Library'."
     ),
-    atoms=[
+    completion_fragment="your inter-library loan for {loan_title} shows the correct source library of {original_loan_source}",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -827,7 +838,8 @@ wrong_notification_preference = FaultLayer(
         "My notification preference was changed to 'none' by mistake. "
         "I want to receive notifications via {original_notification_preference}."
     ),
-    atoms=[
+    completion_fragment="your notification preference shows as {original_notification_preference}",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -918,7 +930,7 @@ LIBRARY_FAULT_CONFIG = FaultLayerConfig(
     entity_id_field="patron_id",
     min_faults=1,
     max_faults=8,
-    max_total_tasks=1200,
+    max_total_tasks=600,
 )
 
 
@@ -1007,7 +1019,8 @@ def create_tasks(
             )
 
         # Full task verification
-        report = verify_tasks(tasks, get_environment)
+        policy_text = Path(LIBRARY_POLICY_PATH).read_text()
+        report = verify_tasks(tasks, get_environment, policy_text=policy_text)
         errors = {}
         warnings_count = 0
         for task_id, issues in report.items():

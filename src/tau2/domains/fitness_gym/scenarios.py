@@ -29,7 +29,7 @@ from tau2.generators.recipe import (
     generate_recipe_tasks,
     verify_fault_atoms,
 )
-from tau2.generators.types import Persona, UserTemplate, VariantConfig
+from tau2.generators.types import Persona, UserTemplate
 from tau2.generators.verify import verify_tasks
 from tau2.generators.verify_authoring import (
     collect_authored_files,
@@ -72,12 +72,11 @@ USER_TEMPLATE = UserTemplate(
         "You are {member_name} (member ID: {member_id}). {fault_descriptions}"
     ),
     task_instructions=(
-        "If the agent resolves an issue and asks you to acknowledge, use your acknowledge_resolution tool. "
-        "If the agent changes a class booking and asks you to confirm, use your confirm_class_attendance tool. "
-        "If the agent changes a training session and asks you to confirm, use your confirm_training_session tool. "
-        "If the agent asks you to make an invoice payment, use your make_invoice_payment tool. "
-        "If the agent changes a locker assignment and asks you to confirm, use your confirm_locker_assignment tool. "
-        "You will consider the issue resolved only when the agent confirms the problem has been fixed."
+        "Follow the agent's instructions throughout the conversation. "
+        "When the agent asks you to perform an action or use one of your tools, do so. "
+        "You must actually call the tool \u2014 describing the action in words is not sufficient. "
+        "You will consider your issues resolved when the agent confirms all problems "
+        "have been addressed."
     ),
     ticket=(
         "Member {member_name} (ID: {member_id}) contacting about gym account. "
@@ -206,7 +205,8 @@ suspended_membership = FaultLayer(
         "My gym membership was suspended by mistake. "
         "I need it reactivated so I can access the facilities."
     ),
-    atoms=[
+    completion_fragment="your gym membership shows as active",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -252,7 +252,8 @@ wrong_membership_tier = FaultLayer(
         "My gym membership was downgraded to basic by mistake. "
         "I should be on the {original_membership_tier} tier."
     ),
-    atoms=[
+    completion_fragment="your membership shows the correct tier of {original_membership_tier}",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -309,7 +310,8 @@ cancelled_class_booking = FaultLayer(
         "{booking_schedule_date} at {booking_schedule_time} was cancelled by mistake. "
         "I still want to attend."
     ),
-    atoms=[
+    completion_fragment="your class booking for {class_name} shows as confirmed",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -357,7 +359,8 @@ wrong_class_schedule = FaultLayer(
         "It should be on {booking_schedule_date} at {booking_schedule_time}, "
         "not on 2025-01-01 at 05:00."
     ),
-    atoms=[
+    completion_fragment="your class booking for {class_name} shows the correct schedule of {original_class_day} at {original_class_time}",
+        atoms=[
         FaultAtom(
             init=[
                 InitCall(
@@ -423,7 +426,8 @@ cancelled_training_session = FaultLayer(
         "{session_trainer_name} on {session_date} was cancelled by mistake. "
         "Please reinstate it."
     ),
-    atoms=[
+    completion_fragment="your personal training session with {trainer_name} shows as active",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -471,7 +475,8 @@ wrong_trainer = FaultLayer(
         "was assigned to the wrong trainer. It should be with "
         "{original_session_trainer}, not 'Unassigned Temp Staff'."
     ),
-    atoms=[
+    completion_fragment="your training session shows the correct trainer {original_trainer_name}",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -531,7 +536,8 @@ overcharged_invoice = FaultLayer(
         "Invoice {invoice_id} shows $999.99 but this charge is completely "
         "incorrect — the full amount should be credited."
     ),
-    atoms=[
+    completion_fragment="your invoice shows the correct amount",
+        atoms=[
         FaultAtom(
             init=[
                 InitCall(
@@ -574,7 +580,8 @@ unpaid_invoice = FaultLayer(
         "I have an unpaid invoice {invoice_id} and I'm ready to pay it now. "
         "Please look up the balance so I can make my payment."
     ),
-    atoms=[
+    completion_fragment="your invoice payment has been processed",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -629,7 +636,8 @@ wrong_locker_location = FaultLayer(
         "the wrong location. It should be at {original_locker_location}, "
         "not 'Storage Basement'."
     ),
-    atoms=[
+    completion_fragment="your locker assignment shows the correct location of {original_locker_location}",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -688,7 +696,8 @@ wrong_emergency_contact = FaultLayer(
         "It should be {original_emergency_contact_name} at "
         "{original_emergency_contact_phone}, not 'Unknown Person' at '000-0000'."
     ),
-    atoms=[
+    completion_fragment="your emergency contact shows as {original_emergency_contact_name}",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -751,7 +760,8 @@ wrong_notification_preference = FaultLayer(
         "My notification preference was changed to 'none' by mistake. "
         "I want to receive notifications via {original_notification_preference}."
     ),
-    atoms=[
+    completion_fragment="your notification preference shows as {original_notification_preference}",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant",
@@ -1003,18 +1013,12 @@ def create_tasks(
                 RECIPE_BOOK, authored_files, authoring_issues, llm_call_fn
             )
 
-    variant_config = VariantConfig(
-        easy_personas=[PERSONAS[0]],   # regular_member
-        hard_personas=[PERSONAS[1]],   # frustrated_member
-    )
-
     tasks = generate_recipe_tasks(
         recipe_book=RECIPE_BOOK,
         build_indexes=lambda db: db,
         get_db=get_db,
         user_template=USER_TEMPLATE,
         personas=PERSONAS,
-        variant_config=variant_config,
         seed=seed,
     )
 
@@ -1031,7 +1035,8 @@ def create_tasks(
             )
 
         # Full task verification
-        report = verify_tasks(tasks, get_environment)
+        policy_text = Path(FITNESS_GYM_POLICY_PATH).read_text()
+        report = verify_tasks(tasks, get_environment, policy_text=policy_text)
         errors = {}
         warnings_count = 0
         for task_id, issues in report.items():

@@ -60,6 +60,20 @@ from tau2.domains.telecom.environment import (
 from tau2.domains.telecom.environment import (
     get_tasks_split as telecom_domain_get_tasks_split,
 )
+from tau2.domains.auto_repair.environment import (
+    get_environment as auto_repair_domain_get_environment,
+)
+from tau2.domains.auto_repair.environment import get_tasks as auto_repair_domain_get_tasks
+from tau2.domains.auto_repair.environment import (
+    get_tasks_split as auto_repair_domain_get_tasks_split,
+)
+from tau2.domains.online_shopping.environment import (
+    get_environment as online_shopping_domain_get_environment,
+)
+from tau2.domains.online_shopping.environment import get_tasks as online_shopping_domain_get_tasks
+from tau2.domains.online_shopping.environment import (
+    get_tasks_split as online_shopping_domain_get_tasks_split,
+)
 from tau2.environment.environment import Environment
 from tau2.user.base import BaseUser
 from tau2.user.user_simulator import DummyUser, UserSimulator
@@ -284,6 +298,20 @@ try:
         telecom_domain_get_tasks,
         "telecom-workflow",
         get_task_splits=telecom_domain_get_tasks_split,
+    )
+
+    registry.register_domain(auto_repair_domain_get_environment, "auto_repair")
+    registry.register_tasks(
+        auto_repair_domain_get_tasks,
+        "auto_repair",
+        get_task_splits=auto_repair_domain_get_tasks_split,
+    )
+
+    registry.register_domain(online_shopping_domain_get_environment, "online_shopping")
+    registry.register_tasks(
+        online_shopping_domain_get_tasks,
+        "online_shopping",
+        get_task_splits=online_shopping_domain_get_tasks_split,
     )
 
     logger.debug(

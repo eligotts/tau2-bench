@@ -30,7 +30,7 @@ from tau2.generators.recipe import (
     generate_recipe_tasks,
     verify_fault_atoms,
 )
-from tau2.generators.types import Persona, UserTemplate, VariantConfig
+from tau2.generators.types import Persona, UserTemplate
 from tau2.generators.verify import verify_tasks
 from tau2.generators.verify_authoring import (
     collect_authored_files,
@@ -73,13 +73,11 @@ USER_TEMPLATE = UserTemplate(
         "You are {customer_name} (customer ID: {customer_id}). {fault_descriptions}"
     ),
     task_instructions=(
-        "When the agent asks you to restart your router, use your restart_router tool. "
-        "When the agent asks you to factory reset your router, use your factory_reset_router tool. "
-        "When the agent asks you to check your cable connections, use your check_cable_connections tool. "
-        "When the agent asks you to switch your WiFi band, use your switch_wifi_band tool. "
-        "When the agent asks you to clear your DNS cache, use your clear_dns_cache tool. "
-        "When the agent asks you to run a speed test, use your run_speed_test tool. "
-        "You will consider the issue resolved only when the agent confirms the problem has been fixed."
+        "Follow the agent's instructions throughout the conversation. "
+        "When the agent asks you to perform an action or use one of your tools, do so. "
+        "You must actually call the tool \u2014 describing the action in words is not sufficient. "
+        "You will consider your issues resolved when the agent confirms all problems "
+        "have been addressed."
     ),
     ticket=(
         "Customer {customer_name} (ID: {customer_id}) contacting about internet issues. "
@@ -219,7 +217,8 @@ router_hung = FaultLayer(
     known_info_fragment=(
         "my router seems completely frozen - no internet and the lights are stuck"
     ),
-    atoms=[
+    completion_fragment="your router is back online and responsive",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant", func_name="set_device_status",
@@ -257,7 +256,8 @@ router_corrupted = FaultLayer(
     known_info_fragment=(
         "my router has been acting up since a power outage and now nothing works properly"
     ),
-    atoms=[
+    completion_fragment="your router has been factory reset and is working properly",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant", func_name="set_device_firmware_status",
@@ -296,7 +296,8 @@ outdated_firmware = FaultLayer(
         "I heard there might be a firmware update available for my router "
         "and I'd like it installed"
     ),
-    atoms=[
+    completion_fragment="your router firmware has been updated",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant", func_name="set_device_firmware_status",
@@ -340,7 +341,8 @@ loose_cable = FaultLayer(
         "my internet went out suddenly and I noticed the connection light "
         "on my router is off"
     ),
-    atoms=[
+    completion_fragment="your cable connections are secure and showing a good link",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant", func_name="set_device_cable_status",
@@ -386,7 +388,8 @@ wrong_band = FaultLayer(
     known_info_fragment=(
         "my WiFi is really slow - I think I might be on the wrong frequency band"
     ),
-    atoms=[
+    completion_fragment="your WiFi is connected on the correct band",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant", func_name="set_device_wifi_band",
@@ -425,7 +428,8 @@ channel_congestion = FaultLayer(
         "my WiFi keeps dropping and is very slow, especially when my "
         "neighbors are home - I think there might be interference"
     ),
-    atoms=[
+    completion_fragment="your WiFi channel has been optimized and connection is stable",
+        atoms=[
         # Atom 1: Agent optimizes WiFi channel server-side
         FaultAtom(
             init=[
@@ -487,7 +491,8 @@ stale_dns = FaultLayer(
         "some websites won't load even though my internet connection "
         "seems fine otherwise"
     ),
-    atoms=[
+    completion_fragment="your DNS cache has been cleared and websites load correctly",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant", func_name="set_customer_dns_config",
@@ -526,7 +531,8 @@ wrong_dns_server = FaultLayer(
         "none of my websites are loading - I keep getting DNS errors "
         "in my browser"
     ),
-    atoms=[
+    completion_fragment="your DNS server settings are correct and resolving properly",
+        atoms=[
         # Atom 1: Agent flushes server-side DNS (intermediate state verified
         # by atom-level test; no final-state check since atom 2 resolves it)
         FaultAtom(
@@ -583,7 +589,8 @@ corrupted_profile = FaultLayer(
         "my internet speeds dropped dramatically and I think something "
         "is wrong on your end"
     ),
-    atoms=[
+    completion_fragment="your network profile has been reset and is working",
+        atoms=[
         FaultAtom(
             init=InitCall(
                 env_type="assistant", func_name="set_customer_network_profile",
@@ -620,7 +627,8 @@ throttled_speed = FaultLayer(
         "my internet speed is way below what my {plan_name} plan should "
         "provide and I'd like this fixed"
     ),
-    atoms=[
+    completion_fragment="your speed test shows the expected download speed",
+        atoms=[
         # Atom 1: Agent escalates speed tier
         FaultAtom(
             init=InitCall(
@@ -830,11 +838,6 @@ RECIPE_BOOK = RecipeBook(
     fault_layer_configs=[FIXABLE_CONFIG, TRANSFER_CONFIG],
 )
 
-VARIANT_CONFIG = VariantConfig(
-    easy_personas=[PERSONAS[0]],   # calm_customer
-    hard_personas=[PERSONAS[1]],   # anxious_customer
-)
-
 
 # ===================================================================
 # Task generation entry point
@@ -896,7 +899,6 @@ def create_tasks(
         get_db=get_db,
         user_template=USER_TEMPLATE,
         personas=PERSONAS,
-        variant_config=VARIANT_CONFIG,
         seed=seed,
     )
 
@@ -913,7 +915,8 @@ def create_tasks(
             )
 
         # Full task verification
-        report = verify_tasks(tasks, get_environment)
+        policy_text = Path(TECH_SUPPORT_POLICY_PATH).read_text()
+        report = verify_tasks(tasks, get_environment, policy_text=policy_text)
         errors = {}
         warnings_count = 0
         for task_id, issues in report.items():
