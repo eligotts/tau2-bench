@@ -1,0 +1,219 @@
+{
+  "domain_name": "online_shopping",
+  "description": "E-commerce customer support center handling order issues, returns, payments, shipping, and membership problems.",
+  "archetype": "transaction_processor",
+  "archetype_notes": "Primary archetype C: transparent READ tools, prescriptive protocols for each transaction type, numeric computation for pricing/tax/refunds, guarded WRITE tools. Difficulty from protocol complexity and value computation, not information hiding.",
+  "entities": [
+    {
+      "name": "Customer",
+      "fields": [
+        {"name": "customer_id", "type": "str", "description": "Unique customer ID"},
+        {"name": "name", "type": "str", "description": "Full name"},
+        {"name": "email", "type": "str", "description": "Email address"},
+        {"name": "phone", "type": "str", "description": "Phone number"},
+        {"name": "account_status", "type": "str", "description": "active/locked/restricted"},
+        {"name": "membership_tier", "type": "str", "description": "standard/silver/gold/platinum"},
+        {"name": "membership_expiry", "type": "str", "description": "Membership expiry date YYYY-MM-DD"}
+      ],
+      "is_primary": true
+    },
+    {
+      "name": "Order",
+      "fields": [
+        {"name": "order_id", "type": "str", "description": "Unique order ID"},
+        {"name": "customer_id", "type": "str", "description": "FK to customer"},
+        {"name": "product_name", "type": "str", "description": "Product ordered"},
+        {"name": "quantity", "type": "int", "description": "Quantity ordered"},
+        {"name": "unit_price", "type": "float", "description": "Price per unit"},
+        {"name": "shipping_cost", "type": "float", "description": "Shipping charge"},
+        {"name": "tax_amount", "type": "float", "description": "Tax amount"},
+        {"name": "promo_code", "type": "Optional[str]", "description": "Applied promo code or null"},
+        {"name": "promo_discount_pct", "type": "float", "description": "Promo discount percentage"},
+        {"name": "total", "type": "float", "description": "Order total"},
+        {"name": "status", "type": "str", "description": "pending/processing/shipped/delivered/cancelled"},
+        {"name": "order_date", "type": "str", "description": "Order date YYYY-MM-DD"},
+        {"name": "shipping_method", "type": "str", "description": "standard/express/overnight"},
+        {"name": "shipping_address", "type": "str", "description": "Delivery address"},
+        {"name": "tracking_number", "type": "str", "description": "Tracking number or empty"},
+        {"name": "payment_method_id", "type": "str", "description": "FK to payment method"}
+      ],
+      "is_primary": false
+    },
+    {
+      "name": "ReturnRequest",
+      "fields": [
+        {"name": "return_id", "type": "str", "description": "Unique return ID"},
+        {"name": "order_id", "type": "str", "description": "FK to order"},
+        {"name": "customer_id", "type": "str", "description": "FK to customer"},
+        {"name": "product_name", "type": "str", "description": "Product being returned"},
+        {"name": "quantity", "type": "int", "description": "Quantity returned"},
+        {"name": "unit_price", "type": "float", "description": "Original unit price"},
+        {"name": "reason", "type": "str", "description": "Return reason"},
+        {"name": "status", "type": "str", "description": "pending/approved/denied/completed"},
+        {"name": "refund_amount", "type": "float", "description": "Refund amount"},
+        {"name": "refund_method", "type": "str", "description": "original_payment/store_credit"}
+      ],
+      "is_primary": false
+    },
+    {
+      "name": "PaymentMethod",
+      "fields": [
+        {"name": "payment_id", "type": "str", "description": "Unique payment method ID"},
+        {"name": "customer_id", "type": "str", "description": "FK to customer"},
+        {"name": "card_type", "type": "str", "description": "visa/mastercard/amex"},
+        {"name": "last_four", "type": "str", "description": "Last 4 digits"},
+        {"name": "is_default", "type": "bool", "description": "Whether this is the default method"},
+        {"name": "status", "type": "str", "description": "active/expired/suspended"}
+      ],
+      "is_primary": false
+    }
+  ],
+  "tools": [
+    {"name": "get_customer_by_name", "type": "READ", "description": "Look up customer by name", "args": [{"name": "name", "type": "str"}]},
+    {"name": "get_customer_by_id", "type": "READ", "description": "Look up customer by ID", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "get_orders", "type": "READ", "description": "Get all orders for a customer", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "get_order_details", "type": "READ", "description": "Get full details of one order", "args": [{"name": "order_id", "type": "str"}]},
+    {"name": "get_returns", "type": "READ", "description": "Get all return requests for a customer", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "get_payment_methods", "type": "READ", "description": "Get all payment methods for a customer", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "review_order_charges", "type": "READ", "description": "Diagnostic: compute expected charges and flag discrepancies", "args": [{"name": "order_id", "type": "str"}]},
+    {"name": "unlock_account", "type": "WRITE", "description": "Unlock a locked customer account", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "lift_account_restriction", "type": "WRITE", "description": "Lift a restriction on a customer account", "args": [{"name": "customer_id", "type": "str"}]},
+    {"name": "adjust_item_price", "type": "WRITE", "description": "Correct the unit price on an order", "args": [{"name": "order_id", "type": "str"}, {"name": "unit_price", "type": "float"}]},
+    {"name": "apply_promo_code", "type": "WRITE", "description": "Apply a promo code and discount to an order", "args": [{"name": "order_id", "type": "str"}, {"name": "promo_code", "type": "str"}, {"name": "discount_pct", "type": "float"}]},
+    {"name": "update_shipping_address", "type": "WRITE", "description": "Update the shipping address on an order", "args": [{"name": "order_id", "type": "str"}, {"name": "address", "type": "str"}]},
+    {"name": "update_shipping_method", "type": "WRITE", "description": "Update the shipping method on an order", "args": [{"name": "order_id", "type": "str"}, {"name": "method", "type": "str"}]},
+    {"name": "assign_tracking_number", "type": "WRITE", "description": "Assign a tracking number to an order", "args": [{"name": "order_id", "type": "str"}, {"name": "tracking_number", "type": "str"}]},
+    {"name": "approve_return", "type": "WRITE", "description": "Approve a pending return request", "args": [{"name": "return_id", "type": "str"}]},
+    {"name": "adjust_refund_amount", "type": "WRITE", "description": "Adjust the refund amount on a return", "args": [{"name": "return_id", "type": "str"}, {"name": "amount", "type": "float"}]},
+    {"name": "reprocess_payment", "type": "WRITE", "description": "Reprocess payment on an order (requires updated payment method)", "args": [{"name": "order_id", "type": "str"}]},
+    {"name": "update_order_payment", "type": "WRITE", "description": "Change the payment method on an order", "args": [{"name": "order_id", "type": "str"}, {"name": "payment_id", "type": "str"}]},
+    {"name": "renew_membership", "type": "WRITE", "description": "Renew an expired membership", "args": [{"name": "customer_id", "type": "str"}, {"name": "tier", "type": "str"}]},
+    {"name": "adjust_tax", "type": "WRITE", "description": "Correct the tax amount on an order", "args": [{"name": "order_id", "type": "str"}, {"name": "amount", "type": "float"}]},
+    {"name": "adjust_shipping_cost", "type": "WRITE", "description": "Correct the shipping cost on an order", "args": [{"name": "order_id", "type": "str"}, {"name": "amount", "type": "float"}]},
+    {"name": "transfer_to_human", "type": "GENERIC", "description": "Transfer to human specialist", "args": [{"name": "summary", "type": "str"}]}
+  ],
+  "user_tools": [
+    {"name": "view_my_orders", "type": "READ", "description": "View my orders", "args": []},
+    {"name": "view_my_returns", "type": "READ", "description": "View my return requests", "args": []},
+    {"name": "acknowledge_resolution", "type": "WRITE", "description": "Acknowledge account issue resolved", "args": []},
+    {"name": "confirm_order_update", "type": "WRITE", "description": "Confirm an order modification", "args": [{"name": "order_id", "type": "str"}]},
+    {"name": "confirm_return_resolution", "type": "WRITE", "description": "Confirm a return has been handled", "args": [{"name": "return_id", "type": "str"}]},
+    {"name": "update_payment_info", "type": "WRITE", "description": "Update expired payment method", "args": [{"name": "payment_id", "type": "str"}]},
+    {"name": "confirm_membership_renewal", "type": "WRITE", "description": "Confirm membership renewal", "args": []}
+  ],
+  "fault_groups": [
+    {
+      "group_name": "account_issues",
+      "faults": [
+        {"name": "locked_account", "description": "Account is locked", "init_action": "set account_status to locked", "fix_tool": "unlock_account", "entity_field_affected": "account_status", "unfixable": false, "user_fix_tools": ["acknowledge_resolution"]},
+        {"name": "restricted_account", "description": "Account is restricted", "init_action": "set account_status to restricted", "fix_tool": "lift_account_restriction", "entity_field_affected": "account_status", "unfixable": false, "user_fix_tools": ["acknowledge_resolution"]}
+      ]
+    },
+    {
+      "group_name": "pricing_issues",
+      "faults": [
+        {"name": "overcharged_item", "description": "Unit price is higher than it should be", "init_action": "inflate unit_price", "fix_tool": "adjust_item_price", "entity_field_affected": "unit_price", "unfixable": false, "user_fix_tools": ["confirm_order_update"]},
+        {"name": "missing_promo", "description": "Promo code not applied", "init_action": "set promo_discount_pct to 0", "fix_tool": "apply_promo_code", "entity_field_affected": "promo_discount_pct", "unfixable": false, "user_fix_tools": ["confirm_order_update"]}
+      ]
+    },
+    {
+      "group_name": "shipping_config_issues",
+      "faults": [
+        {"name": "wrong_shipping_address", "description": "Shipping address is incorrect", "init_action": "set wrong address", "fix_tool": "update_shipping_address", "entity_field_affected": "shipping_address", "unfixable": false, "user_fix_tools": ["confirm_order_update"]},
+        {"name": "wrong_shipping_method", "description": "Wrong shipping method selected", "init_action": "set wrong method", "fix_tool": "update_shipping_method", "entity_field_affected": "shipping_method", "unfixable": false, "user_fix_tools": ["confirm_order_update"]}
+      ]
+    },
+    {
+      "group_name": "tracking_issues",
+      "faults": [
+        {"name": "missing_tracking", "description": "Tracking number not assigned", "init_action": "clear tracking_number", "fix_tool": "assign_tracking_number", "entity_field_affected": "tracking_number", "unfixable": false, "user_fix_tools": ["confirm_order_update"]}
+      ]
+    },
+    {
+      "group_name": "return_issues",
+      "faults": [
+        {"name": "return_stuck_pending", "description": "Return stuck in pending status", "init_action": "set return status to pending", "fix_tool": "approve_return", "entity_field_affected": "return_status", "unfixable": false, "user_fix_tools": ["confirm_return_resolution"]},
+        {"name": "wrong_refund_amount", "description": "Refund amount is incorrect", "init_action": "set wrong refund_amount", "fix_tool": "adjust_refund_amount", "entity_field_affected": "refund_amount", "unfixable": false, "user_fix_tools": ["confirm_return_resolution"]}
+      ]
+    },
+    {
+      "group_name": "payment_issues",
+      "faults": [
+        {"name": "expired_payment_method", "description": "Payment method has expired", "init_action": "set payment status to expired", "fix_tool": "reprocess_payment", "entity_field_affected": "payment_status", "unfixable": false, "user_fix_tools": ["update_payment_info"]},
+        {"name": "wrong_payment_charged", "description": "Wrong payment method was charged", "init_action": "set wrong payment_method_id", "fix_tool": "update_order_payment", "entity_field_affected": "payment_method_id", "unfixable": false, "user_fix_tools": ["confirm_order_update"]}
+      ]
+    },
+    {
+      "group_name": "membership_issues",
+      "faults": [
+        {"name": "expired_membership", "description": "Membership has expired", "init_action": "set membership as expired", "fix_tool": "renew_membership", "entity_field_affected": "membership_tier", "unfixable": false, "user_fix_tools": ["confirm_membership_renewal"]}
+      ]
+    },
+    {
+      "group_name": "billing_computation_issues",
+      "faults": [
+        {"name": "wrong_tax_amount", "description": "Tax amount calculated incorrectly", "init_action": "set wrong tax_amount", "fix_tool": "adjust_tax", "entity_field_affected": "tax_amount", "unfixable": false, "user_fix_tools": ["confirm_order_update"]},
+        {"name": "wrong_shipping_charge", "description": "Shipping cost is incorrect for the method", "init_action": "set wrong shipping_cost", "fix_tool": "adjust_shipping_cost", "entity_field_affected": "shipping_cost", "unfixable": false, "user_fix_tools": ["confirm_order_update"]}
+      ]
+    }
+  ],
+  "unfixable_faults": [
+    {"name": "counterfeit_product", "description": "Customer received a counterfeit product requiring specialist investigation"},
+    {"name": "chargeback_dispute", "description": "Customer bank filed a chargeback requiring finance team review"}
+  ],
+  "policy_sections": [
+    "Identity Verification",
+    "Order Investigation Protocol",
+    "Account Issues",
+    "Order Pricing Corrections",
+    "Shipping Configuration",
+    "Tracking Assignment",
+    "Return Processing",
+    "Payment Issues",
+    "Membership Management",
+    "Billing Computation Rules",
+    "Transfer to Human"
+  ],
+  "sync_rules": [
+    {"agent_field": "order details", "user_field": "my_orders", "description": "Project order summaries to user view"},
+    {"agent_field": "return details", "user_field": "my_returns", "description": "Project return summaries to user view"},
+    {"agent_field": "user payment_updated", "user_field": "payment_updated flag", "description": "Bridge user payment update to agent DB for reprocess_payment gate"}
+  ],
+  "assertion_helpers": [
+    {"name": "assert_account_status", "description": "Check customer account_status", "env_type": "assistant"},
+    {"name": "assert_unit_price", "description": "Check order unit_price", "env_type": "assistant"},
+    {"name": "assert_promo_discount", "description": "Check order promo_discount_pct", "env_type": "assistant"},
+    {"name": "assert_shipping_address", "description": "Check order shipping_address", "env_type": "assistant"},
+    {"name": "assert_shipping_method", "description": "Check order shipping_method", "env_type": "assistant"},
+    {"name": "assert_tracking_number_assigned", "description": "Check tracking_number is not empty", "env_type": "assistant"},
+    {"name": "assert_return_status", "description": "Check return request status", "env_type": "assistant"},
+    {"name": "assert_refund_amount", "description": "Check return refund_amount", "env_type": "assistant"},
+    {"name": "assert_payment_method_status", "description": "Check payment method status", "env_type": "assistant"},
+    {"name": "assert_order_payment_method", "description": "Check order payment_method_id", "env_type": "assistant"},
+    {"name": "assert_membership_tier", "description": "Check customer membership_tier", "env_type": "assistant"},
+    {"name": "assert_tax_amount", "description": "Check order tax_amount", "env_type": "assistant"},
+    {"name": "assert_shipping_cost", "description": "Check order shipping_cost", "env_type": "assistant"},
+    {"name": "assert_order_total", "description": "Check order total is correct", "env_type": "assistant"},
+    {"name": "assert_resolution_acknowledged", "description": "Check user acknowledged resolution", "env_type": "user"},
+    {"name": "assert_order_update_confirmed", "description": "Check user confirmed order update", "env_type": "user"},
+    {"name": "assert_return_resolution_confirmed", "description": "Check user confirmed return resolution", "env_type": "user"},
+    {"name": "assert_payment_info_updated", "description": "Check user updated payment info", "env_type": "user"},
+    {"name": "assert_membership_renewal_confirmed", "description": "Check user confirmed membership renewal", "env_type": "user"}
+  ],
+  "setup_helpers": [
+    {"name": "set_account_status", "description": "Set customer account_status", "env_type": "assistant"},
+    {"name": "set_unit_price", "description": "Set order unit_price and recompute total", "env_type": "assistant"},
+    {"name": "set_promo_discount", "description": "Set order promo_discount_pct and recompute total", "env_type": "assistant"},
+    {"name": "set_shipping_address", "description": "Set order shipping_address", "env_type": "assistant"},
+    {"name": "set_shipping_method", "description": "Set order shipping_method", "env_type": "assistant"},
+    {"name": "set_tracking_number", "description": "Set order tracking_number", "env_type": "assistant"},
+    {"name": "set_return_status", "description": "Set return request status", "env_type": "assistant"},
+    {"name": "set_refund_amount", "description": "Set return refund_amount", "env_type": "assistant"},
+    {"name": "set_payment_method_status", "description": "Set payment method status", "env_type": "assistant"},
+    {"name": "set_order_payment_method", "description": "Set order payment_method_id", "env_type": "assistant"},
+    {"name": "set_membership_tier", "description": "Set customer membership_tier", "env_type": "assistant"},
+    {"name": "set_tax_amount", "description": "Set order tax_amount and recompute total", "env_type": "assistant"},
+    {"name": "set_shipping_cost", "description": "Set order shipping_cost and recompute total", "env_type": "assistant"},
+    {"name": "set_customer_info", "description": "Set user identity fields", "env_type": "user"}
+  ]
+}
