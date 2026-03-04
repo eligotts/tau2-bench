@@ -64,6 +64,7 @@ class BindingSourceSpec(BaseModel):
     binding_id: str
     source_tool: str
     extraction_path: str
+    world_path: Optional[str] = None
     observability_all_of: list[WorldPredicateSpec] = Field(default_factory=list)
     observability_any_of: list[WorldPredicateSpec] = Field(default_factory=list)
 
@@ -75,6 +76,8 @@ class BindingSourceSpec(BaseModel):
             raise ValueError("binding source source_tool cannot be empty")
         if not self.extraction_path.strip():
             raise ValueError("binding source extraction_path cannot be empty")
+        if self.world_path is not None and not self.world_path.strip():
+            raise ValueError("binding source world_path cannot be blank when provided")
         return self
 
 

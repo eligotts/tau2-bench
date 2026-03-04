@@ -3,22 +3,32 @@ from typing import Optional
 
 from tau2.data_model.tasks import Task
 from tau2.domains.ev_charging_support.data_model import (
+    BackendLinkState,
+    CertState,
     ChargeState,
+    DiagnosticsState,
     EVAccount,
     EVChargeSession,
     EVChargingSupportDB,
+    EVNetworkPath,
     EVStation,
+    FirmwareState,
+    FraudLockState,
     HoldStatus,
+    PaymentTokenStatus,
     ProfileState,
     ReachabilityState,
     RetryState,
 )
 from tau2.domains.ev_charging_support.tools import EVChargingSupportTools
 from tau2.domains.ev_charging_support.user_data_model import (
+    AppRefreshState,
+    CableInspectionState,
     ConnectorReseatState,
     EVChargingSupportUserDB,
     StationPowerCycleState,
     TestChargeState,
+    VehicleReadyState,
 )
 from tau2.domains.ev_charging_support.user_tools import EVChargingSupportUserTools
 from tau2.domains.ev_charging_support.utils import (
@@ -61,6 +71,14 @@ class EVChargingSupportEnvironment(Environment):
                     return station
         return self.tools.db.stations[0]
 
+    def _get_active_network_path(self) -> EVNetworkPath:
+        station_id = self.user_tools.db.context.station_id
+        if station_id:
+            for path in self.tools.db.network_paths:
+                if path.station_id == station_id:
+                    return path
+        return self.tools.db.network_paths[0]
+
     def _get_active_session(self) -> EVChargeSession:
         session_id = self.user_tools.db.context.session_id
         if session_id:
@@ -71,11 +89,17 @@ class EVChargingSupportEnvironment(Environment):
 
     def sync_tools(self):
         """Mirror contract semantics between user and assistant state."""
-        if not self.tools.db.accounts or not self.tools.db.stations or not self.tools.db.sessions:
+        if (
+            not self.tools.db.accounts
+            or not self.tools.db.stations
+            or not self.tools.db.network_paths
+            or not self.tools.db.sessions
+        ):
             return
 
         account = self._get_active_account()
         station = self._get_active_station()
+        network = self._get_active_network_path()
         session = self._get_active_session()
         user = self.user_tools.db
 
@@ -83,48 +107,88 @@ class EVChargingSupportEnvironment(Environment):
         if (
             user.physical.test_charge_state == TestChargeState.RUN
             and account.hold_status == HoldStatus.CLEARED
+            and account.payment_token_status == PaymentTokenStatus.VALID
+            and account.fraud_lock_state == FraudLockState.OFF
+            and station.reachability_state == ReachabilityState.REACHABLE
+            and station.firmware_state == FirmwareState.CURRENT
+            and network.backend_link_state == BackendLinkState.UP
+            and network.cert_state == CertState.FRESH
             and session.profile_state == ProfileState.READY
             and session.retry_state == RetryState.READY
-            and station.reachability_state == ReachabilityState.REACHABLE
             and user.physical.station_power_cycle_state == StationPowerCycleState.DONE
             and user.physical.connector_reseat_state == ConnectorReseatState.RESEATED
+            and user.physical.cable_inspection_state == CableInspectionState.CHECKED_OK
+            and user.physical.vehicle_ready_state == VehicleReadyState.READY
+            and user.physical.app_refresh_state == AppRefreshState.REFRESHED
         ):
             session.charge_state = ChargeState.ACTIVE
 
-        # assistant/world -> user projection fields
+        # assistant/world -> user projection fields for stop-gate observability
+        user.view.display_charge_status = session.charge_state.value
+        user.view.display_hold_status = account.hold_status.value
+        user.view.display_payment_token_status = account.payment_token_status.value
+        user.view.display_fraud_lock_state = account.fraud_lock_state.value
+        user.view.display_reachability_state = station.reachability_state.value
+        user.view.display_firmware_state = station.firmware_state.value
+        user.view.display_profile_state = session.profile_state.value
+        user.view.display_retry_state = session.retry_state.value
+        user.view.display_backend_link_state = network.backend_link_state.value
+        user.view.display_cert_state = network.cert_state.value
+        user.view.display_diagnostics_state = station.diagnostics_state.value
+
         if station.reachability_state == ReachabilityState.UNREACHABLE:
             user.view.display_fault_code = "STATION_UNREACHABLE"
             user.view.display_station_message = "Station is unreachable."
-            user.view.display_next_step_hint = "Check station power/network and retry."
-        elif session.last_fault_code != "NONE":
-            user.view.display_fault_code = session.last_fault_code
-            user.view.display_station_message = f"Station reports fault {session.last_fault_code}."
-            user.view.display_next_step_hint = "Share this fault code with support."
-        elif account.hold_status == HoldStatus.PRESENT:
+            user.view.display_next_step_hint = "Ask support to restore station reachability."
+            return
+        if network.backend_link_state == BackendLinkState.DOWN:
+            user.view.display_fault_code = "NET-410"
+            user.view.display_station_message = "Backend link is down."
+            user.view.display_next_step_hint = "Ask support to restore backend link."
+            return
+        if network.cert_state == CertState.STALE:
+            user.view.display_fault_code = "CERT-409"
+            user.view.display_station_message = "Station certificate is stale."
+            user.view.display_next_step_hint = "Ask support to rotate station certificate."
+            return
+        if account.hold_status == HoldStatus.PRESENT:
             user.view.display_fault_code = "BH-101"
-            user.view.display_station_message = "Backend hold is blocking charging."
-            user.view.display_next_step_hint = "Contact support to clear hold."
-        elif session.profile_state == ProfileState.NOT_READY:
+            user.view.display_station_message = "Account hold is blocking charging."
+            user.view.display_next_step_hint = "Ask support to clear billing hold."
+            return
+        if account.payment_token_status == PaymentTokenStatus.INVALID:
+            user.view.display_fault_code = "PAY-201"
+            user.view.display_station_message = "Payment token is invalid."
+            user.view.display_next_step_hint = "Ask support to refresh payment token."
+            return
+        if account.fraud_lock_state == FraudLockState.ON:
+            user.view.display_fault_code = "FRD-301"
+            user.view.display_station_message = "Fraud lock is active."
+            user.view.display_next_step_hint = "Ask support to release fraud lock."
+            return
+        if station.firmware_state == FirmwareState.OUTDATED:
+            user.view.display_fault_code = "FW-410"
+            user.view.display_station_message = "Station firmware is outdated."
+            user.view.display_next_step_hint = "Ask support to update station firmware."
+            return
+        if session.profile_state == ProfileState.NOT_READY:
             user.view.display_fault_code = "PROFILE-201"
-            user.view.display_station_message = "Charging profile not ready."
+            user.view.display_station_message = "Charging profile is not ready."
             user.view.display_next_step_hint = "Wait for profile reprovision."
-        elif session.retry_state == RetryState.NOT_READY:
+            return
+        if session.retry_state == RetryState.NOT_READY:
             user.view.display_fault_code = "RETRY-301"
-            user.view.display_station_message = "Retry path not ready."
-            user.view.display_next_step_hint = "Wait for retry state reset."
-        else:
-            user.view.display_fault_code = "NONE"
-            if session.charge_state == ChargeState.ACTIVE:
-                user.view.display_station_message = "Charging is active."
-                user.view.display_next_step_hint = None
-            else:
-                user.view.display_station_message = "Station ready for charging."
-                user.view.display_next_step_hint = "Run a test charge now."
+            user.view.display_station_message = "Retry path is not ready."
+            user.view.display_next_step_hint = "Wait for retry reset."
+            return
 
-        user.view.display_charge_status = session.charge_state.value
-        user.view.display_hold_status = account.hold_status.value
-        user.view.display_profile_state = session.profile_state.value
-        user.view.display_retry_state = session.retry_state.value
+        user.view.display_fault_code = "NONE"
+        if session.charge_state == ChargeState.ACTIVE:
+            user.view.display_station_message = "Charging is active."
+            user.view.display_next_step_hint = None
+        else:
+            user.view.display_station_message = "Station is ready for charging."
+            user.view.display_next_step_hint = "Run a test charge now."
 
 
 def get_environment(

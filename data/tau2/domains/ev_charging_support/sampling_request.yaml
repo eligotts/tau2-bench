@@ -1,15 +1,27 @@
 version: 1
-max_tasks: 8
+max_tasks: 20
 goal_world_path_prefixes:
   - agent.
 goal_binding_prefixes: []
 seeds:
-  - seed_id: ev_recovery_full
+  - seed_id: ev_full_recovery
     start_world:
       - path: agent.accounts[active_account].hold_status
         set: present
+      - path: agent.accounts[active_account].payment_token_status
+        set: invalid
+      - path: agent.accounts[active_account].fraud_lock_state
+        set: "on"
       - path: agent.stations[active_station].reachability_state
         set: reachable
+      - path: agent.stations[active_station].firmware_state
+        set: outdated
+      - path: agent.stations[active_station].diagnostics_state
+        set: idle
+      - path: agent.network_paths[active_station].backend_link_state
+        set: down
+      - path: agent.network_paths[active_station].cert_state
+        set: stale
       - path: agent.sessions[active_session].profile_state
         set: not_ready
       - path: agent.sessions[active_session].retry_state
@@ -24,17 +36,80 @@ seeds:
         set: not_done
       - path: user.physical.connector_reseat_state
         set: not_reseated
+      - path: user.physical.cable_inspection_state
+        set: not_checked
+      - path: user.physical.vehicle_ready_state
+        set: not_ready
+      - path: user.physical.app_refresh_state
+        set: stale
       - path: user.physical.test_charge_state
         set: not_run
     start_bindings: []
-    min_depth: 4
-    max_depth: 7
-  - seed_id: ev_recovery_post_hold
+    min_depth: 9
+    max_depth: 16
+
+  - seed_id: ev_network_mid_recovery
+    start_world:
+      - path: agent.accounts[active_account].hold_status
+        set: present
+      - path: agent.accounts[active_account].payment_token_status
+        set: invalid
+      - path: agent.accounts[active_account].fraud_lock_state
+        set: "on"
+      - path: agent.stations[active_station].reachability_state
+        set: reachable
+      - path: agent.stations[active_station].firmware_state
+        set: outdated
+      - path: agent.stations[active_station].diagnostics_state
+        set: idle
+      - path: agent.network_paths[active_station].backend_link_state
+        set: up
+      - path: agent.network_paths[active_station].cert_state
+        set: stale
+      - path: agent.sessions[active_session].profile_state
+        set: not_ready
+      - path: agent.sessions[active_session].retry_state
+        set: not_ready
+      - path: agent.sessions[active_session].charge_state
+        set: inactive
+      - path: agent.sessions[active_session].last_fault_code
+        set: CERT-409
+      - path: user.physical.screen_accessible
+        set: true
+      - path: user.physical.station_power_cycle_state
+        set: not_done
+      - path: user.physical.connector_reseat_state
+        set: not_reseated
+      - path: user.physical.cable_inspection_state
+        set: not_checked
+      - path: user.physical.vehicle_ready_state
+        set: not_ready
+      - path: user.physical.app_refresh_state
+        set: stale
+      - path: user.physical.test_charge_state
+        set: not_run
+    start_bindings: []
+    min_depth: 8
+    max_depth: 14
+
+  - seed_id: ev_post_account_recovery
     start_world:
       - path: agent.accounts[active_account].hold_status
         set: cleared
+      - path: agent.accounts[active_account].payment_token_status
+        set: valid
+      - path: agent.accounts[active_account].fraud_lock_state
+        set: "off"
       - path: agent.stations[active_station].reachability_state
         set: reachable
+      - path: agent.stations[active_station].firmware_state
+        set: outdated
+      - path: agent.stations[active_station].diagnostics_state
+        set: ran
+      - path: agent.network_paths[active_station].backend_link_state
+        set: up
+      - path: agent.network_paths[active_station].cert_state
+        set: fresh
       - path: agent.sessions[active_session].profile_state
         set: not_ready
       - path: agent.sessions[active_session].retry_state
@@ -42,15 +117,109 @@ seeds:
       - path: agent.sessions[active_session].charge_state
         set: inactive
       - path: agent.sessions[active_session].last_fault_code
-        set: BH-101
+        set: FW-410
       - path: user.physical.screen_accessible
         set: true
       - path: user.physical.station_power_cycle_state
         set: not_done
       - path: user.physical.connector_reseat_state
         set: not_reseated
+      - path: user.physical.cable_inspection_state
+        set: not_checked
+      - path: user.physical.vehicle_ready_state
+        set: not_ready
+      - path: user.physical.app_refresh_state
+        set: stale
       - path: user.physical.test_charge_state
         set: not_run
     start_bindings: []
-    min_depth: 4
+    min_depth: 6
+    max_depth: 12
+
+  - seed_id: ev_profile_recovery
+    start_world:
+      - path: agent.accounts[active_account].hold_status
+        set: cleared
+      - path: agent.accounts[active_account].payment_token_status
+        set: valid
+      - path: agent.accounts[active_account].fraud_lock_state
+        set: "off"
+      - path: agent.stations[active_station].reachability_state
+        set: reachable
+      - path: agent.stations[active_station].firmware_state
+        set: current
+      - path: agent.stations[active_station].diagnostics_state
+        set: ran
+      - path: agent.network_paths[active_station].backend_link_state
+        set: up
+      - path: agent.network_paths[active_station].cert_state
+        set: fresh
+      - path: agent.sessions[active_session].profile_state
+        set: not_ready
+      - path: agent.sessions[active_session].retry_state
+        set: not_ready
+      - path: agent.sessions[active_session].charge_state
+        set: inactive
+      - path: agent.sessions[active_session].last_fault_code
+        set: PROFILE-201
+      - path: user.physical.screen_accessible
+        set: true
+      - path: user.physical.station_power_cycle_state
+        set: not_done
+      - path: user.physical.connector_reseat_state
+        set: not_reseated
+      - path: user.physical.cable_inspection_state
+        set: not_checked
+      - path: user.physical.vehicle_ready_state
+        set: not_ready
+      - path: user.physical.app_refresh_state
+        set: stale
+      - path: user.physical.test_charge_state
+        set: not_run
+    start_bindings: []
+    min_depth: 5
+    max_depth: 10
+
+  - seed_id: ev_retry_recovery
+    start_world:
+      - path: agent.accounts[active_account].hold_status
+        set: cleared
+      - path: agent.accounts[active_account].payment_token_status
+        set: valid
+      - path: agent.accounts[active_account].fraud_lock_state
+        set: "off"
+      - path: agent.stations[active_station].reachability_state
+        set: reachable
+      - path: agent.stations[active_station].firmware_state
+        set: current
+      - path: agent.stations[active_station].diagnostics_state
+        set: ran
+      - path: agent.network_paths[active_station].backend_link_state
+        set: up
+      - path: agent.network_paths[active_station].cert_state
+        set: fresh
+      - path: agent.sessions[active_session].profile_state
+        set: ready
+      - path: agent.sessions[active_session].retry_state
+        set: not_ready
+      - path: agent.sessions[active_session].charge_state
+        set: inactive
+      - path: agent.sessions[active_session].last_fault_code
+        set: RETRY-301
+      - path: user.physical.screen_accessible
+        set: true
+      - path: user.physical.station_power_cycle_state
+        set: done
+      - path: user.physical.connector_reseat_state
+        set: reseated
+      - path: user.physical.cable_inspection_state
+        set: checked_ok
+      - path: user.physical.vehicle_ready_state
+        set: ready
+      - path: user.physical.app_refresh_state
+        set: refreshed
+      - path: user.physical.test_charge_state
+        set: not_run
+    start_bindings: []
+    min_depth: 3
     max_depth: 7

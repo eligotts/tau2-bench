@@ -83,6 +83,29 @@ Required checks per task:
    - explicit `###STOP###` instruction
    - checker-based stop text when `set_stop_gate` is present
 
+Start-bindings visibility (required when `start_bindings` is non-empty):
+
+When a task has `start_bindings` (e.g. `start_bindings: [fault_code]`), the agent structurally
+starts with that knowledge already acquired. Both the agent and the user sim need the concrete
+value. To resolve the value:
+
+1. Look up the binding in `graph_contract.yaml` → `bindings[]` and find its `world_path`.
+2. Look up that `world_path` in the task's `start_world` to get the concrete value.
+3. Include that value naturally in both:
+   - `ticket` (agent-visible) — e.g. "The station screen shows fault code BH-101"
+   - `known_info` (user-sim-visible) — e.g. "You can see fault code BH-101 on the station screen"
+
+The agent needs the value to use in tool calls. The user sim needs it so it can discuss
+the issue naturally and confirm details when asked.
+
+Example: if `start_bindings: [fault_code]` and `start_world` sets
+`agent.sessions[active_session].last_fault_code: BH-101`, and the binding's
+`world_path` is `agent.sessions[active_session].last_fault_code`, then both the ticket
+and known_info must contain "BH-101" in natural context.
+
+The preflight runtime check `check_start_bindings_visibility` will fail if a start-binding
+value is missing from either the ticket or known_info.
+
 Consistency audit before compile (required):
 
 1. `start_world` -> `initialization_actions` mapping is complete and exact.
@@ -95,6 +118,7 @@ Consistency audit before compile (required):
 7. No narrative shortcuts that imply unavailable tools or hidden state.
 8. Exactly one `user.set_stop_gate` initialization action exists per runtime task.
 9. Task instructions explicitly forbid early STOP on partial progress.
+10. Start-binding values appear in the ticket (see "Start-bindings in the ticket" above).
 
 Validation command sequence (required):
 

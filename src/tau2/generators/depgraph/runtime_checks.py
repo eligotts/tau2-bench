@@ -354,6 +354,76 @@ def check_runtime_against_environment(
     return issues
 
 
+def check_start_bindings_visibility(
+    task_doc: TaskSpecsDoc,
+    contract: GraphContractSpec,
+) -> list[str]:
+    """Validate that start_bindings values are visible in ticket and known_info.
+
+    When a task starts with a binding already present (start_bindings is non-empty),
+    the concrete value must appear in:
+    - ticket (so the agent has the information)
+    - known_info (so the user sim knows it too and can discuss it naturally)
+    """
+    issues: list[str] = []
+    binding_map = {b.binding_id: b for b in contract.bindings}
+
+    for task in task_doc.tasks:
+        if not task.start_bindings:
+            continue
+        if task.runtime is None:
+            continue
+
+        sw: dict[str, Any] = {}
+        for effect in task.start_world:
+            sw[effect.path] = effect.set
+
+        for binding_id in task.start_bindings:
+            source = binding_map.get(binding_id)
+            if source is None:
+                issues.append(
+                    f"Task '{task.task_id}' lists start_binding '{binding_id}' "
+                    f"not found in contract bindings"
+                )
+                continue
+
+            if source.world_path is None:
+                issues.append(
+                    f"Task '{task.task_id}' has start_binding '{binding_id}' but "
+                    f"binding source has no world_path — cannot resolve concrete value"
+                )
+                continue
+
+            value = sw.get(source.world_path)
+            if value is None:
+                issues.append(
+                    f"Task '{task.task_id}' has start_binding '{binding_id}' with "
+                    f"world_path '{source.world_path}' but no matching entry in start_world"
+                )
+                continue
+
+            value_str = str(value)
+            ticket_text = task.runtime.ticket or ""
+            known_info_text = task.runtime.known_info or ""
+
+            if value_str not in ticket_text:
+                issues.append(
+                    f"Task '{task.task_id}' has start_binding '{binding_id}' "
+                    f"with value '{value_str}' (from world_path '{source.world_path}') "
+                    f"but this value does not appear in the ticket — "
+                    f"the agent will not know the binding value"
+                )
+            if value_str not in known_info_text:
+                issues.append(
+                    f"Task '{task.task_id}' has start_binding '{binding_id}' "
+                    f"with value '{value_str}' (from world_path '{source.world_path}') "
+                    f"but this value does not appear in known_info — "
+                    f"the user sim will not know the binding value"
+                )
+
+    return issues
+
+
 def check_stop_gate_runtime(
     task_doc: TaskSpecsDoc,
     stop_gate_map_path: str,

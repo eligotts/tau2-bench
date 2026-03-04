@@ -10,6 +10,9 @@
     "screen_accessible": true,
     "station_power_cycle_state": "not_done",
     "connector_reseat_state": "not_reseated",
+    "cable_inspection_state": "not_checked",
+    "vehicle_ready_state": "not_ready",
+    "app_refresh_state": "stale",
     "test_charge_state": "not_run"
   },
   "view": {
@@ -18,8 +21,15 @@
     "display_charge_status": "inactive",
     "display_next_step_hint": null,
     "display_hold_status": null,
+    "display_payment_token_status": null,
+    "display_fraud_lock_state": null,
+    "display_reachability_state": null,
+    "display_firmware_state": null,
     "display_profile_state": null,
-    "display_retry_state": null
+    "display_retry_state": null,
+    "display_backend_link_state": null,
+    "display_cert_state": null,
+    "display_diagnostics_state": null
   },
   "stop_gate": {
     "criteria": []

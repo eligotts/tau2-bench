@@ -16,6 +16,7 @@ from tau2.generators.depgraph.preflight import run_task_preflight
 from tau2.generators.depgraph.runtime_checks import (
     check_contract_against_environment,
     check_runtime_against_environment,
+    check_start_bindings_visibility,
     check_stop_gate_runtime,
     check_task_runtime_fields,
 )
@@ -71,6 +72,15 @@ def main() -> int:
                 print(f"  - {issue}")
         else:
             print("[PASS] Stop-gate runtime alignment")
+
+    binding_vis_issues = check_start_bindings_visibility(task_doc, contract)
+    if binding_vis_issues:
+        overall_ok = False
+        print("[FAIL] Start-binding visibility in ticket")
+        for issue in binding_vis_issues:
+            print(f"  - {issue}")
+    else:
+        print("[PASS] Start-binding visibility in ticket")
 
     for task in task_doc.tasks:
         report = run_task_preflight(contract, task, max_depth=args.max_depth)

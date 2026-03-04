@@ -12,6 +12,7 @@ from tau2.generators.depgraph.loaders import load_graph_contract, load_task_spec
 from tau2.generators.depgraph.runtime_checks import (
     check_contract_against_environment,
     check_runtime_against_environment,
+    check_start_bindings_visibility,
     check_stop_gate_runtime,
 )
 from tau2.registry import registry
@@ -66,6 +67,13 @@ def main() -> int:
             for issue in stop_gate_issues:
                 print(f"  - {issue}")
             return 1
+
+    binding_vis_issues = check_start_bindings_visibility(task_doc, contract)
+    if binding_vis_issues:
+        print("[FAIL] Start-binding visibility in ticket:")
+        for issue in binding_vis_issues:
+            print(f"  - {issue}")
+        return 1
 
     result = preflight_and_compile(
         contract,

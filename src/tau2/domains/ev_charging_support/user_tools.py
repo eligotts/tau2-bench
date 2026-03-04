@@ -1,10 +1,13 @@
 from tau2.domains.ev_charging_support.user_data_model import (
+    AppRefreshState,
+    CableInspectionState,
     ConnectorReseatState,
     EVChargingSupportUserDB,
+    StationPowerCycleState,
     StopCriterion,
     StopGateOp,
-    StationPowerCycleState,
     TestChargeState,
+    VehicleReadyState,
 )
 from tau2.environment.toolkit import ToolKitBase, ToolType, is_tool
 from tau2.utils.pydantic_utils import BaseModelNoExtra
@@ -31,7 +34,7 @@ class EVChargingSupportUserTools(ToolKitBase):
 
     @is_tool(ToolType.READ)
     def check_station_screen(self) -> StationScreenResult:
-        """Read station-screen status used for fault-code acquisition."""
+        """Read station-screen fault details for agent diagnosis."""
         if not self.db.physical.screen_accessible:
             raise ValueError("Station screen is not accessible right now.")
         return StationScreenResult(
@@ -41,19 +44,37 @@ class EVChargingSupportUserTools(ToolKitBase):
 
     @is_tool(ToolType.WRITE)
     def power_cycle_station(self) -> str:
-        """Power cycle the station when it is reachable."""
-        if self.db.view.display_fault_code == "STATION_UNREACHABLE":
+        """Power cycle station hardware."""
+        if self.db.view.display_reachability_state == "unreachable":
             return "Power cycle failed: station is unreachable."
         self.db.physical.station_power_cycle_state = StationPowerCycleState.DONE
         return "Station has been power cycled."
 
     @is_tool(ToolType.WRITE)
     def reseat_connector(self) -> str:
-        """Reseat connector when station is reachable."""
-        if self.db.view.display_fault_code == "STATION_UNREACHABLE":
+        """Reseat charging connector."""
+        if self.db.view.display_reachability_state == "unreachable":
             return "Reseat failed: station is unreachable."
         self.db.physical.connector_reseat_state = ConnectorReseatState.RESEATED
         return "Connector has been reseated."
+
+    @is_tool(ToolType.WRITE)
+    def inspect_cable_path(self) -> str:
+        """Inspect cable path and report healthy cable state."""
+        self.db.physical.cable_inspection_state = CableInspectionState.CHECKED_OK
+        return "Cable path inspected and looks good."
+
+    @is_tool(ToolType.WRITE)
+    def set_vehicle_ready_mode(self) -> str:
+        """Set vehicle to charge-ready mode."""
+        self.db.physical.vehicle_ready_state = VehicleReadyState.READY
+        return "Vehicle is now in charge-ready mode."
+
+    @is_tool(ToolType.WRITE)
+    def refresh_charging_app_session(self) -> str:
+        """Refresh the charging app session token locally."""
+        self.db.physical.app_refresh_state = AppRefreshState.REFRESHED
+        return "Charging app session refreshed."
 
     @is_tool(ToolType.WRITE)
     def run_test_charge(self) -> str:
@@ -86,8 +107,15 @@ class EVChargingSupportUserTools(ToolKitBase):
             "fault_code": self.db.view.display_fault_code or "UNKNOWN",
             "charge_status": self.db.view.display_charge_status,
             "hold_status": self.db.view.display_hold_status or "unknown",
+            "payment_token_status": self.db.view.display_payment_token_status or "unknown",
+            "fraud_lock_state": self.db.view.display_fraud_lock_state or "unknown",
+            "reachability_state": self.db.view.display_reachability_state or "unknown",
+            "firmware_state": self.db.view.display_firmware_state or "unknown",
             "profile_state": self.db.view.display_profile_state or "unknown",
             "retry_state": self.db.view.display_retry_state or "unknown",
+            "backend_link_state": self.db.view.display_backend_link_state or "unknown",
+            "cert_state": self.db.view.display_cert_state or "unknown",
+            "diagnostics_state": self.db.view.display_diagnostics_state or "unknown",
             "test_charge_state": self.db.physical.test_charge_state.value,
         }
 
@@ -118,6 +146,15 @@ class EVChargingSupportUserTools(ToolKitBase):
     def set_connector_reseat_state(self, value: str) -> None:
         self.db.physical.connector_reseat_state = ConnectorReseatState(value)
 
+    def set_cable_inspection_state(self, value: str) -> None:
+        self.db.physical.cable_inspection_state = CableInspectionState(value)
+
+    def set_vehicle_ready_state(self, value: str) -> None:
+        self.db.physical.vehicle_ready_state = VehicleReadyState(value)
+
+    def set_app_refresh_state(self, value: str) -> None:
+        self.db.physical.app_refresh_state = AppRefreshState(value)
+
     def set_test_charge_state(self, value: str) -> None:
         self.db.physical.test_charge_state = TestChargeState(value)
 
@@ -136,6 +173,15 @@ class EVChargingSupportUserTools(ToolKitBase):
 
     def assert_connector_reseat_state(self, expected: str) -> bool:
         return self.db.physical.connector_reseat_state == ConnectorReseatState(expected)
+
+    def assert_cable_inspection_state(self, expected: str) -> bool:
+        return self.db.physical.cable_inspection_state == CableInspectionState(expected)
+
+    def assert_vehicle_ready_state(self, expected: str) -> bool:
+        return self.db.physical.vehicle_ready_state == VehicleReadyState(expected)
+
+    def assert_app_refresh_state(self, expected: str) -> bool:
+        return self.db.physical.app_refresh_state == AppRefreshState(expected)
 
     def assert_test_charge_state(self, expected: str) -> bool:
         return self.db.physical.test_charge_state == TestChargeState(expected)

@@ -13,6 +13,7 @@ from tau2.generators.depgraph.preflight import (
 from tau2.generators.depgraph.runtime_checks import (
     check_contract_against_environment,
     check_runtime_against_environment,
+    check_start_bindings_visibility,
     check_task_runtime_fields,
 )
 from tau2.generators.depgraph.sampler import SampledTask, sample_task_intents
@@ -51,6 +52,7 @@ __all__ = [
     "TaskSpecsDoc",
     "check_contract_against_environment",
     "check_runtime_against_environment",
+    "check_start_bindings_visibility",
     "check_task_runtime_fields",
     "find_plan",
     "load_graph_contract",

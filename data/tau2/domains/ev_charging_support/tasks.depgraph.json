@@ -1,22 +1,22 @@
 [
   {
-    "id": "ev_recovery_full_d5_001",
+    "id": "ev_full_recovery_d14_159",
     "description": {
       "purpose": null,
       "relevant_policies": null,
-      "notes": null
+      "notes": "Structural required_actions/required_precedence were sampled from depgraph and must remain unchanged."
     },
     "user_scenario": {
-      "persona": "You are Jordan Lee, a practical EV driver in a hurry who follows clear instructions.",
+      "persona": "You are Jordan Lee, a practical EV driver under time pressure who follows clear troubleshooting instructions.",
       "instructions": {
         "domain": "ev_charging_support",
-        "reason_for_call": "My charging session at station ST1001 will not start and the station shows an error.",
-        "known_info": "You are Jordan Lee using account A1001 at station ST1001 for session S1001. The station screen is accessible.",
-        "unknown_info": "You do not know backend hold or profile status until the assistant diagnoses and fixes it.",
-        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when the station screen no longer shows a fault code and indicates the station is ready to charge. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
+        "reason_for_call": "My EV session will not start at this station and I need full recovery all the way to a successful charge.",
+        "known_info": "You are Jordan Lee using account A1001 at station ST1001 for session S1001.",
+        "unknown_info": "You do not know backend gate states until the assistant performs diagnostics and remediation steps.",
+        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when all required recovery conditions are satisfied in tool-observable status checks. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
       }
     },
-    "ticket": "Customer Jordan Lee reports failed charge start at station ST1001 (session S1001). Diagnose from station fault code, clear backend hold, and reprovision profile until station shows ready state.",
+    "ticket": "Customer Jordan Lee reports charging failure at ST1001 (session S1001). Target outcome: agent.accounts[active_account].fraud_lock_state=off; agent.accounts[active_account].hold_status=cleared; agent.accounts[active_account].payment_token_status=valid; agent.network_paths[active_station].backend_link_state=up; agent.network_paths[active_station].cert_state=fresh; agent.sessions[active_session].last_fault_code=NONE; agent.sessions[active_session].profile_state=ready; agent.stations[active_station].diagnostics_state=ran; agent.stations[active_station].firmware_state=current.",
     "initial_state": {
       "initialization_data": null,
       "initialization_actions": [
@@ -40,9 +40,51 @@
         },
         {
           "env_type": "assistant",
+          "func_name": "set_payment_token_status",
+          "arguments": {
+            "value": "invalid"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_fraud_lock_state",
+          "arguments": {
+            "value": "on"
+          }
+        },
+        {
+          "env_type": "assistant",
           "func_name": "set_reachability_state",
           "arguments": {
             "value": "reachable"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_firmware_state",
+          "arguments": {
+            "value": "outdated"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_diagnostics_state",
+          "arguments": {
+            "value": "idle"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_backend_link_state",
+          "arguments": {
+            "value": "down"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_cert_state",
+          "arguments": {
+            "value": "stale"
           }
         },
         {
@@ -96,6 +138,27 @@
         },
         {
           "env_type": "user",
+          "func_name": "set_cable_inspection_state",
+          "arguments": {
+            "value": "not_checked"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_vehicle_ready_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_app_refresh_state",
+          "arguments": {
+            "value": "stale"
+          }
+        },
+        {
+          "env_type": "user",
           "func_name": "set_test_charge_state",
           "arguments": {
             "value": "not_run"
@@ -107,6 +170,13 @@
           "arguments": {
             "criteria": [
               {
+                "check_field": "fraud_lock_state",
+                "op": "eq",
+                "expected": "off",
+                "unmet_reason": "Fraud lock is still active.",
+                "observed_from": "check_resolution_status.observed.fraud_lock_state"
+              },
+              {
                 "check_field": "hold_status",
                 "op": "eq",
                 "expected": "cleared",
@@ -114,10 +184,31 @@
                 "observed_from": "check_resolution_status.observed.hold_status"
               },
               {
+                "check_field": "payment_token_status",
+                "op": "eq",
+                "expected": "valid",
+                "unmet_reason": "Payment token is not valid yet.",
+                "observed_from": "check_resolution_status.observed.payment_token_status"
+              },
+              {
+                "check_field": "backend_link_state",
+                "op": "eq",
+                "expected": "up",
+                "unmet_reason": "Backend link is still down.",
+                "observed_from": "check_resolution_status.observed.backend_link_state"
+              },
+              {
+                "check_field": "cert_state",
+                "op": "eq",
+                "expected": "fresh",
+                "unmet_reason": "Station certificate is still stale.",
+                "observed_from": "check_resolution_status.observed.cert_state"
+              },
+              {
                 "check_field": "fault_code",
                 "op": "eq",
                 "expected": "NONE",
-                "unmet_reason": "Station still reports a fault code.",
+                "unmet_reason": "Station still reports an unresolved fault code.",
                 "observed_from": "check_resolution_status.observed.fault_code"
               },
               {
@@ -128,11 +219,18 @@
                 "observed_from": "check_resolution_status.observed.profile_state"
               },
               {
-                "check_field": "retry_state",
+                "check_field": "diagnostics_state",
                 "op": "eq",
-                "expected": "ready",
-                "unmet_reason": "Retry path is not ready yet.",
-                "observed_from": "check_resolution_status.observed.retry_state"
+                "expected": "ran",
+                "unmet_reason": "Backend diagnostics have not run yet.",
+                "observed_from": "check_resolution_status.observed.diagnostics_state"
+              },
+              {
+                "check_field": "firmware_state",
+                "op": "eq",
+                "expected": "current",
+                "unmet_reason": "Station firmware is not current yet.",
+                "observed_from": "check_resolution_status.observed.firmware_state"
               }
             ]
           }
@@ -167,6 +265,40 @@
           "compare_args": []
         },
         {
+          "action_id": "user_inspect_cable_path",
+          "requestor": "user",
+          "name": "inspect_cable_path",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_set_vehicle_ready_mode",
+          "requestor": "user",
+          "name": "set_vehicle_ready_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_refresh_charging_app_session",
+          "requestor": "user",
+          "name": "refresh_charging_app_session",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_run_backend_diagnostics",
+          "requestor": "assistant",
+          "name": "run_backend_diagnostics",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
           "action_id": "assistant_clear_backend_hold",
           "requestor": "assistant",
           "name": "clear_billing_hold",
@@ -174,9 +306,57 @@
             "fault_code": "BH-101"
           },
           "info": null,
-          "compare_args": [
-            "fault_code"
-          ]
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_refresh_payment_token",
+          "requestor": "assistant",
+          "name": "refresh_payment_token",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_release_fraud_lock",
+          "requestor": "assistant",
+          "name": "release_fraud_lock",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_restore_backend_link",
+          "requestor": "assistant",
+          "name": "restore_backend_link",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_rotate_station_certificate",
+          "requestor": "assistant",
+          "name": "rotate_station_certificate",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_update_station_firmware",
+          "requestor": "assistant",
+          "name": "update_station_firmware",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
         },
         {
           "action_id": "assistant_reprovision_charging_profile",
@@ -186,17 +366,60 @@
             "fault_code": "BH-101"
           },
           "info": null,
-          "compare_args": [
-            "fault_code"
-          ]
+          "compare_args": []
         }
       ],
       "env_assertions": [
         {
           "env_type": "assistant",
+          "func_name": "assert_fraud_lock_state",
+          "arguments": {
+            "expected": "off"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
           "func_name": "assert_hold_status",
           "arguments": {
             "expected": "cleared"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_payment_token_status",
+          "arguments": {
+            "expected": "valid"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_backend_link_state",
+          "arguments": {
+            "expected": "up"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_cert_state",
+          "arguments": {
+            "expected": "fresh"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_last_fault_code",
+          "arguments": {
+            "expected": "NONE"
           },
           "assert_value": true,
           "message": null
@@ -212,18 +435,18 @@
         },
         {
           "env_type": "assistant",
-          "func_name": "assert_retry_state",
+          "func_name": "assert_diagnostics_state",
           "arguments": {
-            "expected": "ready"
+            "expected": "ran"
           },
           "assert_value": true,
           "message": null
         },
         {
           "env_type": "assistant",
-          "func_name": "assert_last_fault_code",
+          "func_name": "assert_firmware_state",
           "arguments": {
-            "expected": "NONE"
+            "expected": "current"
           },
           "assert_value": true,
           "message": null
@@ -238,23 +461,23 @@
     }
   },
   {
-    "id": "ev_recovery_full_d6_002",
+    "id": "ev_full_recovery_d15_160",
     "description": {
       "purpose": null,
       "relevant_policies": null,
-      "notes": null
+      "notes": "Structural required_actions/required_precedence were sampled from depgraph and must remain unchanged."
     },
     "user_scenario": {
-      "persona": "You are Jordan Lee, an EV driver under time pressure but willing to follow troubleshooting steps.",
+      "persona": "You are Jordan Lee, a practical EV driver under time pressure who follows clear troubleshooting instructions.",
       "instructions": {
         "domain": "ev_charging_support",
-        "reason_for_call": "My charging session at station ST1001 fails to start and I need it working now.",
-        "known_info": "You are Jordan Lee using account A1001 at station ST1001 for session S1001. The station screen is accessible.",
-        "unknown_info": "You do not know backend hold/profile/retry state until the assistant performs diagnostics.",
-        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when a test charge runs successfully and the station shows charging as active. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
+        "reason_for_call": "My EV session will not start at this station and I need full recovery all the way to a successful charge.",
+        "known_info": "You are Jordan Lee using account A1001 at station ST1001 for session S1001.",
+        "unknown_info": "You do not know backend gate states until the assistant performs diagnostics and remediation steps.",
+        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when all required recovery conditions are satisfied in tool-observable status checks. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
       }
     },
-    "ticket": "Customer Jordan Lee reports charge-start failure at station ST1001 (session S1001). Resolve backend and physical prerequisites and confirm active charging through a test run.",
+    "ticket": "Customer Jordan Lee reports charging failure at ST1001 (session S1001). Target outcome: agent.accounts[active_account].fraud_lock_state=off; agent.accounts[active_account].hold_status=cleared; agent.accounts[active_account].payment_token_status=valid; agent.network_paths[active_station].backend_link_state=up; agent.network_paths[active_station].cert_state=fresh; agent.sessions[active_session].last_fault_code=NONE; agent.sessions[active_session].profile_state=ready; agent.sessions[active_session].retry_state=ready; agent.stations[active_station].diagnostics_state=ran; agent.stations[active_station].firmware_state=current.",
     "initial_state": {
       "initialization_data": null,
       "initialization_actions": [
@@ -278,9 +501,51 @@
         },
         {
           "env_type": "assistant",
+          "func_name": "set_payment_token_status",
+          "arguments": {
+            "value": "invalid"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_fraud_lock_state",
+          "arguments": {
+            "value": "on"
+          }
+        },
+        {
+          "env_type": "assistant",
           "func_name": "set_reachability_state",
           "arguments": {
             "value": "reachable"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_firmware_state",
+          "arguments": {
+            "value": "outdated"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_diagnostics_state",
+          "arguments": {
+            "value": "idle"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_backend_link_state",
+          "arguments": {
+            "value": "down"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_cert_state",
+          "arguments": {
+            "value": "stale"
           }
         },
         {
@@ -334,6 +599,27 @@
         },
         {
           "env_type": "user",
+          "func_name": "set_cable_inspection_state",
+          "arguments": {
+            "value": "not_checked"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_vehicle_ready_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_app_refresh_state",
+          "arguments": {
+            "value": "stale"
+          }
+        },
+        {
+          "env_type": "user",
           "func_name": "set_test_charge_state",
           "arguments": {
             "value": "not_run"
@@ -345,6 +631,13 @@
           "arguments": {
             "criteria": [
               {
+                "check_field": "fraud_lock_state",
+                "op": "eq",
+                "expected": "off",
+                "unmet_reason": "Fraud lock is still active.",
+                "observed_from": "check_resolution_status.observed.fraud_lock_state"
+              },
+              {
                 "check_field": "hold_status",
                 "op": "eq",
                 "expected": "cleared",
@@ -352,17 +645,31 @@
                 "observed_from": "check_resolution_status.observed.hold_status"
               },
               {
-                "check_field": "charge_status",
+                "check_field": "payment_token_status",
                 "op": "eq",
-                "expected": "active",
-                "unmet_reason": "Charging is not active yet.",
-                "observed_from": "check_resolution_status.observed.charge_status"
+                "expected": "valid",
+                "unmet_reason": "Payment token is not valid yet.",
+                "observed_from": "check_resolution_status.observed.payment_token_status"
+              },
+              {
+                "check_field": "backend_link_state",
+                "op": "eq",
+                "expected": "up",
+                "unmet_reason": "Backend link is still down.",
+                "observed_from": "check_resolution_status.observed.backend_link_state"
+              },
+              {
+                "check_field": "cert_state",
+                "op": "eq",
+                "expected": "fresh",
+                "unmet_reason": "Station certificate is still stale.",
+                "observed_from": "check_resolution_status.observed.cert_state"
               },
               {
                 "check_field": "fault_code",
                 "op": "eq",
                 "expected": "NONE",
-                "unmet_reason": "Station still reports a fault code.",
+                "unmet_reason": "Station still reports an unresolved fault code.",
                 "observed_from": "check_resolution_status.observed.fault_code"
               },
               {
@@ -378,6 +685,20 @@
                 "expected": "ready",
                 "unmet_reason": "Retry path is not ready yet.",
                 "observed_from": "check_resolution_status.observed.retry_state"
+              },
+              {
+                "check_field": "diagnostics_state",
+                "op": "eq",
+                "expected": "ran",
+                "unmet_reason": "Backend diagnostics have not run yet.",
+                "observed_from": "check_resolution_status.observed.diagnostics_state"
+              },
+              {
+                "check_field": "firmware_state",
+                "op": "eq",
+                "expected": "current",
+                "unmet_reason": "Station firmware is not current yet.",
+                "observed_from": "check_resolution_status.observed.firmware_state"
               }
             ]
           }
@@ -408,6 +729,40 @@
           "requestor": "user",
           "name": "reseat_connector",
           "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_inspect_cable_path",
+          "requestor": "user",
+          "name": "inspect_cable_path",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_set_vehicle_ready_mode",
+          "requestor": "user",
+          "name": "set_vehicle_ready_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_refresh_charging_app_session",
+          "requestor": "user",
+          "name": "refresh_charging_app_session",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_run_backend_diagnostics",
+          "requestor": "assistant",
+          "name": "run_backend_diagnostics",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
           "info": null,
           "compare_args": []
         },
@@ -419,9 +774,57 @@
             "fault_code": "BH-101"
           },
           "info": null,
-          "compare_args": [
-            "fault_code"
-          ]
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_refresh_payment_token",
+          "requestor": "assistant",
+          "name": "refresh_payment_token",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_release_fraud_lock",
+          "requestor": "assistant",
+          "name": "release_fraud_lock",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_restore_backend_link",
+          "requestor": "assistant",
+          "name": "restore_backend_link",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_rotate_station_certificate",
+          "requestor": "assistant",
+          "name": "rotate_station_certificate",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_update_station_firmware",
+          "requestor": "assistant",
+          "name": "update_station_firmware",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
         },
         {
           "action_id": "assistant_reprovision_charging_profile",
@@ -431,15 +834,15 @@
             "fault_code": "BH-101"
           },
           "info": null,
-          "compare_args": [
-            "fault_code"
-          ]
+          "compare_args": []
         },
         {
-          "action_id": "user_run_test_charge",
-          "requestor": "user",
-          "name": "run_test_charge",
-          "arguments": {},
+          "action_id": "assistant_reset_retry_path",
+          "requestor": "assistant",
+          "name": "reset_retry_path",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
           "info": null,
           "compare_args": []
         }
@@ -447,9 +850,54 @@
       "env_assertions": [
         {
           "env_type": "assistant",
+          "func_name": "assert_fraud_lock_state",
+          "arguments": {
+            "expected": "off"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
           "func_name": "assert_hold_status",
           "arguments": {
             "expected": "cleared"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_payment_token_status",
+          "arguments": {
+            "expected": "valid"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_backend_link_state",
+          "arguments": {
+            "expected": "up"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_cert_state",
+          "arguments": {
+            "expected": "fresh"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_last_fault_code",
+          "arguments": {
+            "expected": "NONE"
           },
           "assert_value": true,
           "message": null
@@ -474,18 +922,18 @@
         },
         {
           "env_type": "assistant",
-          "func_name": "assert_last_fault_code",
+          "func_name": "assert_diagnostics_state",
           "arguments": {
-            "expected": "NONE"
+            "expected": "ran"
           },
           "assert_value": true,
           "message": null
         },
         {
           "env_type": "assistant",
-          "func_name": "assert_charge_state",
+          "func_name": "assert_firmware_state",
           "arguments": {
-            "expected": "active"
+            "expected": "current"
           },
           "assert_value": true,
           "message": null
@@ -500,23 +948,23 @@
     }
   },
   {
-    "id": "ev_recovery_post_hold_d4_003",
+    "id": "ev_full_recovery_d16_161",
     "description": {
       "purpose": null,
       "relevant_policies": null,
-      "notes": null
+      "notes": "Structural required_actions/required_precedence were sampled from depgraph and must remain unchanged."
     },
     "user_scenario": {
-      "persona": "You are Jordan Lee, cooperative but impatient after an earlier failed support attempt.",
+      "persona": "You are Jordan Lee, a practical EV driver under time pressure who follows clear troubleshooting instructions.",
       "instructions": {
         "domain": "ev_charging_support",
-        "reason_for_call": "Charging still fails even though billing was already handled earlier.",
-        "known_info": "You are Jordan Lee using account A1001 at station ST1001 for session S1001. The hold has already been cleared.",
-        "unknown_info": "You do not know whether profile and retry state are ready until support completes remediation.",
-        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when the station fault clears and the station indicates the profile/retry path is ready for charging. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
+        "reason_for_call": "My EV session will not start at this station and I need full recovery all the way to a successful charge.",
+        "known_info": "You are Jordan Lee using account A1001 at station ST1001 for session S1001.",
+        "unknown_info": "You do not know backend gate states until the assistant performs diagnostics and remediation steps.",
+        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when all required recovery conditions are satisfied in tool-observable status checks. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
       }
     },
-    "ticket": "Customer Jordan Lee reports persistent charge-start failure after prior hold clearance. Collect fault code, complete physical checks, and reprovision profile/retry state.",
+    "ticket": "Customer Jordan Lee reports charging failure at ST1001 (session S1001). Target outcome: agent.accounts[active_account].fraud_lock_state=off; agent.accounts[active_account].hold_status=cleared; agent.accounts[active_account].payment_token_status=valid; agent.network_paths[active_station].backend_link_state=up; agent.network_paths[active_station].cert_state=fresh; agent.sessions[active_session].charge_state=active; agent.sessions[active_session].last_fault_code=NONE; agent.sessions[active_session].profile_state=ready; agent.sessions[active_session].retry_state=ready; agent.stations[active_station].diagnostics_state=ran; agent.stations[active_station].firmware_state=current.",
     "initial_state": {
       "initialization_data": null,
       "initialization_actions": [
@@ -535,7 +983,21 @@
           "env_type": "assistant",
           "func_name": "set_hold_status",
           "arguments": {
-            "value": "cleared"
+            "value": "present"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_payment_token_status",
+          "arguments": {
+            "value": "invalid"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_fraud_lock_state",
+          "arguments": {
+            "value": "on"
           }
         },
         {
@@ -543,6 +1005,34 @@
           "func_name": "set_reachability_state",
           "arguments": {
             "value": "reachable"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_firmware_state",
+          "arguments": {
+            "value": "outdated"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_diagnostics_state",
+          "arguments": {
+            "value": "idle"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_backend_link_state",
+          "arguments": {
+            "value": "down"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_cert_state",
+          "arguments": {
+            "value": "stale"
           }
         },
         {
@@ -596,6 +1086,27 @@
         },
         {
           "env_type": "user",
+          "func_name": "set_cable_inspection_state",
+          "arguments": {
+            "value": "not_checked"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_vehicle_ready_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_app_refresh_state",
+          "arguments": {
+            "value": "stale"
+          }
+        },
+        {
+          "env_type": "user",
           "func_name": "set_test_charge_state",
           "arguments": {
             "value": "not_run"
@@ -607,10 +1118,52 @@
           "arguments": {
             "criteria": [
               {
+                "check_field": "fraud_lock_state",
+                "op": "eq",
+                "expected": "off",
+                "unmet_reason": "Fraud lock is still active.",
+                "observed_from": "check_resolution_status.observed.fraud_lock_state"
+              },
+              {
+                "check_field": "hold_status",
+                "op": "eq",
+                "expected": "cleared",
+                "unmet_reason": "Backend hold is not cleared yet.",
+                "observed_from": "check_resolution_status.observed.hold_status"
+              },
+              {
+                "check_field": "payment_token_status",
+                "op": "eq",
+                "expected": "valid",
+                "unmet_reason": "Payment token is not valid yet.",
+                "observed_from": "check_resolution_status.observed.payment_token_status"
+              },
+              {
+                "check_field": "backend_link_state",
+                "op": "eq",
+                "expected": "up",
+                "unmet_reason": "Backend link is still down.",
+                "observed_from": "check_resolution_status.observed.backend_link_state"
+              },
+              {
+                "check_field": "cert_state",
+                "op": "eq",
+                "expected": "fresh",
+                "unmet_reason": "Station certificate is still stale.",
+                "observed_from": "check_resolution_status.observed.cert_state"
+              },
+              {
+                "check_field": "charge_status",
+                "op": "eq",
+                "expected": "active",
+                "unmet_reason": "Charging is not active yet.",
+                "observed_from": "check_resolution_status.observed.charge_status"
+              },
+              {
                 "check_field": "fault_code",
                 "op": "eq",
                 "expected": "NONE",
-                "unmet_reason": "Station still reports a fault code.",
+                "unmet_reason": "Station still reports an unresolved fault code.",
                 "observed_from": "check_resolution_status.observed.fault_code"
               },
               {
@@ -626,6 +1179,20 @@
                 "expected": "ready",
                 "unmet_reason": "Retry path is not ready yet.",
                 "observed_from": "check_resolution_status.observed.retry_state"
+              },
+              {
+                "check_field": "diagnostics_state",
+                "op": "eq",
+                "expected": "ran",
+                "unmet_reason": "Backend diagnostics have not run yet.",
+                "observed_from": "check_resolution_status.observed.diagnostics_state"
+              },
+              {
+                "check_field": "firmware_state",
+                "op": "eq",
+                "expected": "current",
+                "unmet_reason": "Station firmware is not current yet.",
+                "observed_from": "check_resolution_status.observed.firmware_state"
               }
             ]
           }
@@ -660,6 +1227,100 @@
           "compare_args": []
         },
         {
+          "action_id": "user_inspect_cable_path",
+          "requestor": "user",
+          "name": "inspect_cable_path",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_set_vehicle_ready_mode",
+          "requestor": "user",
+          "name": "set_vehicle_ready_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_refresh_charging_app_session",
+          "requestor": "user",
+          "name": "refresh_charging_app_session",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_run_backend_diagnostics",
+          "requestor": "assistant",
+          "name": "run_backend_diagnostics",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_clear_backend_hold",
+          "requestor": "assistant",
+          "name": "clear_billing_hold",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_refresh_payment_token",
+          "requestor": "assistant",
+          "name": "refresh_payment_token",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_release_fraud_lock",
+          "requestor": "assistant",
+          "name": "release_fraud_lock",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_restore_backend_link",
+          "requestor": "assistant",
+          "name": "restore_backend_link",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_rotate_station_certificate",
+          "requestor": "assistant",
+          "name": "rotate_station_certificate",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_update_station_firmware",
+          "requestor": "assistant",
+          "name": "update_station_firmware",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
           "action_id": "assistant_reprovision_charging_profile",
           "requestor": "assistant",
           "name": "reprovision_charging_profile",
@@ -667,12 +1328,91 @@
             "fault_code": "BH-101"
           },
           "info": null,
-          "compare_args": [
-            "fault_code"
-          ]
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reset_retry_path",
+          "requestor": "assistant",
+          "name": "reset_retry_path",
+          "arguments": {
+            "fault_code": "BH-101"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_run_test_charge",
+          "requestor": "user",
+          "name": "run_test_charge",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
         }
       ],
       "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_fraud_lock_state",
+          "arguments": {
+            "expected": "off"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_hold_status",
+          "arguments": {
+            "expected": "cleared"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_payment_token_status",
+          "arguments": {
+            "expected": "valid"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_backend_link_state",
+          "arguments": {
+            "expected": "up"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_cert_state",
+          "arguments": {
+            "expected": "fresh"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_charge_state",
+          "arguments": {
+            "expected": "active"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_last_fault_code",
+          "arguments": {
+            "expected": "NONE"
+          },
+          "assert_value": true,
+          "message": null
+        },
         {
           "env_type": "assistant",
           "func_name": "assert_profile_state",
@@ -693,9 +1433,18 @@
         },
         {
           "env_type": "assistant",
-          "func_name": "assert_last_fault_code",
+          "func_name": "assert_diagnostics_state",
           "arguments": {
-            "expected": "NONE"
+            "expected": "ran"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_firmware_state",
+          "arguments": {
+            "expected": "current"
           },
           "assert_value": true,
           "message": null
@@ -710,23 +1459,23 @@
     }
   },
   {
-    "id": "ev_recovery_post_hold_d5_004",
+    "id": "ev_network_mid_recovery_d13_307",
     "description": {
       "purpose": null,
       "relevant_policies": null,
-      "notes": null
+      "notes": "Structural required_actions/required_precedence were sampled from depgraph and must remain unchanged."
     },
     "user_scenario": {
-      "persona": "You are Jordan Lee, detail-oriented and willing to verify results with a test charge.",
+      "persona": "You are Jordan Lee, a practical EV driver who can execute technical steps when guided clearly.",
       "instructions": {
         "domain": "ev_charging_support",
-        "reason_for_call": "Charging still will not start, and I need to confirm an actual charging session.",
-        "known_info": "You are Jordan Lee using account A1001 at station ST1001 for session S1001. Billing hold is already cleared, but charging still fails.",
-        "unknown_info": "You do not know profile/retry readiness until remediation is completed.",
-        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when the station fault clears and a test charge shows charging is active. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
+        "reason_for_call": "My EV session still fails to start and support told me there may be network-side station issues.",
+        "known_info": "You are Jordan Lee using account A1001 at station ST1001 for session S1001.",
+        "unknown_info": "You do not know backend gate states until the assistant performs diagnostics and remediation steps.",
+        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when all required recovery conditions are satisfied in tool-observable status checks. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
       }
     },
-    "ticket": "Customer Jordan Lee requires full recovery verification after prior hold clearance: clear fault, reprovision session, and confirm active charging with test charge.",
+    "ticket": "Customer Jordan Lee reports charging failure at ST1001 (session S1001). Target outcome: agent.accounts[active_account].fraud_lock_state=off; agent.accounts[active_account].hold_status=cleared; agent.accounts[active_account].payment_token_status=valid; agent.network_paths[active_station].cert_state=fresh; agent.sessions[active_session].last_fault_code=NONE; agent.sessions[active_session].profile_state=ready; agent.stations[active_station].diagnostics_state=ran; agent.stations[active_station].firmware_state=current.",
     "initial_state": {
       "initialization_data": null,
       "initialization_actions": [
@@ -745,7 +1494,21 @@
           "env_type": "assistant",
           "func_name": "set_hold_status",
           "arguments": {
-            "value": "cleared"
+            "value": "present"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_payment_token_status",
+          "arguments": {
+            "value": "invalid"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_fraud_lock_state",
+          "arguments": {
+            "value": "on"
           }
         },
         {
@@ -753,6 +1516,34 @@
           "func_name": "set_reachability_state",
           "arguments": {
             "value": "reachable"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_firmware_state",
+          "arguments": {
+            "value": "outdated"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_diagnostics_state",
+          "arguments": {
+            "value": "idle"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_backend_link_state",
+          "arguments": {
+            "value": "up"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_cert_state",
+          "arguments": {
+            "value": "stale"
           }
         },
         {
@@ -780,7 +1571,7 @@
           "env_type": "assistant",
           "func_name": "set_last_fault_code",
           "arguments": {
-            "value": "BH-101"
+            "value": "CERT-409"
           }
         },
         {
@@ -802,6 +1593,1559 @@
           "func_name": "set_connector_reseat_state",
           "arguments": {
             "value": "not_reseated"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_cable_inspection_state",
+          "arguments": {
+            "value": "not_checked"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_vehicle_ready_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_app_refresh_state",
+          "arguments": {
+            "value": "stale"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_test_charge_state",
+          "arguments": {
+            "value": "not_run"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_stop_gate",
+          "arguments": {
+            "criteria": [
+              {
+                "check_field": "fraud_lock_state",
+                "op": "eq",
+                "expected": "off",
+                "unmet_reason": "Fraud lock is still active.",
+                "observed_from": "check_resolution_status.observed.fraud_lock_state"
+              },
+              {
+                "check_field": "hold_status",
+                "op": "eq",
+                "expected": "cleared",
+                "unmet_reason": "Backend hold is not cleared yet.",
+                "observed_from": "check_resolution_status.observed.hold_status"
+              },
+              {
+                "check_field": "payment_token_status",
+                "op": "eq",
+                "expected": "valid",
+                "unmet_reason": "Payment token is not valid yet.",
+                "observed_from": "check_resolution_status.observed.payment_token_status"
+              },
+              {
+                "check_field": "cert_state",
+                "op": "eq",
+                "expected": "fresh",
+                "unmet_reason": "Station certificate is still stale.",
+                "observed_from": "check_resolution_status.observed.cert_state"
+              },
+              {
+                "check_field": "fault_code",
+                "op": "eq",
+                "expected": "NONE",
+                "unmet_reason": "Station still reports an unresolved fault code.",
+                "observed_from": "check_resolution_status.observed.fault_code"
+              },
+              {
+                "check_field": "profile_state",
+                "op": "eq",
+                "expected": "ready",
+                "unmet_reason": "Charging profile is not ready yet.",
+                "observed_from": "check_resolution_status.observed.profile_state"
+              },
+              {
+                "check_field": "diagnostics_state",
+                "op": "eq",
+                "expected": "ran",
+                "unmet_reason": "Backend diagnostics have not run yet.",
+                "observed_from": "check_resolution_status.observed.diagnostics_state"
+              },
+              {
+                "check_field": "firmware_state",
+                "op": "eq",
+                "expected": "current",
+                "unmet_reason": "Station firmware is not current yet.",
+                "observed_from": "check_resolution_status.observed.firmware_state"
+              }
+            ]
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "acquire_fault_code_from_user",
+          "requestor": "user",
+          "name": "check_station_screen",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_power_cycle_station",
+          "requestor": "user",
+          "name": "power_cycle_station",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_reseat_connector",
+          "requestor": "user",
+          "name": "reseat_connector",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_inspect_cable_path",
+          "requestor": "user",
+          "name": "inspect_cable_path",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_set_vehicle_ready_mode",
+          "requestor": "user",
+          "name": "set_vehicle_ready_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_refresh_charging_app_session",
+          "requestor": "user",
+          "name": "refresh_charging_app_session",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_run_backend_diagnostics",
+          "requestor": "assistant",
+          "name": "run_backend_diagnostics",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_clear_backend_hold",
+          "requestor": "assistant",
+          "name": "clear_billing_hold",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_refresh_payment_token",
+          "requestor": "assistant",
+          "name": "refresh_payment_token",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_release_fraud_lock",
+          "requestor": "assistant",
+          "name": "release_fraud_lock",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_rotate_station_certificate",
+          "requestor": "assistant",
+          "name": "rotate_station_certificate",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_update_station_firmware",
+          "requestor": "assistant",
+          "name": "update_station_firmware",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reprovision_charging_profile",
+          "requestor": "assistant",
+          "name": "reprovision_charging_profile",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_fraud_lock_state",
+          "arguments": {
+            "expected": "off"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_hold_status",
+          "arguments": {
+            "expected": "cleared"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_payment_token_status",
+          "arguments": {
+            "expected": "valid"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_cert_state",
+          "arguments": {
+            "expected": "fresh"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_last_fault_code",
+          "arguments": {
+            "expected": "NONE"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_profile_state",
+          "arguments": {
+            "expected": "ready"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_diagnostics_state",
+          "arguments": {
+            "expected": "ran"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_firmware_state",
+          "arguments": {
+            "expected": "current"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION",
+        "ACTION"
+      ]
+    }
+  },
+  {
+    "id": "ev_network_mid_recovery_d14_308",
+    "description": {
+      "purpose": null,
+      "relevant_policies": null,
+      "notes": "Structural required_actions/required_precedence were sampled from depgraph and must remain unchanged."
+    },
+    "user_scenario": {
+      "persona": "You are Jordan Lee, a practical EV driver who can execute technical steps when guided clearly.",
+      "instructions": {
+        "domain": "ev_charging_support",
+        "reason_for_call": "My EV session still fails to start and support told me there may be network-side station issues.",
+        "known_info": "You are Jordan Lee using account A1001 at station ST1001 for session S1001.",
+        "unknown_info": "You do not know backend gate states until the assistant performs diagnostics and remediation steps.",
+        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when all required recovery conditions are satisfied in tool-observable status checks. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
+      }
+    },
+    "ticket": "Customer Jordan Lee reports charging failure at ST1001 (session S1001). Target outcome: agent.accounts[active_account].fraud_lock_state=off; agent.accounts[active_account].hold_status=cleared; agent.accounts[active_account].payment_token_status=valid; agent.network_paths[active_station].cert_state=fresh; agent.sessions[active_session].last_fault_code=NONE; agent.sessions[active_session].profile_state=ready; agent.sessions[active_session].retry_state=ready; agent.stations[active_station].diagnostics_state=ran; agent.stations[active_station].firmware_state=current.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_context",
+          "arguments": {
+            "user_id": "U1001",
+            "name": "Jordan Lee",
+            "account_id": "A1001",
+            "station_id": "ST1001",
+            "session_id": "S1001"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_hold_status",
+          "arguments": {
+            "value": "present"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_payment_token_status",
+          "arguments": {
+            "value": "invalid"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_fraud_lock_state",
+          "arguments": {
+            "value": "on"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_reachability_state",
+          "arguments": {
+            "value": "reachable"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_firmware_state",
+          "arguments": {
+            "value": "outdated"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_diagnostics_state",
+          "arguments": {
+            "value": "idle"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_backend_link_state",
+          "arguments": {
+            "value": "up"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_cert_state",
+          "arguments": {
+            "value": "stale"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_profile_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_retry_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_charge_state",
+          "arguments": {
+            "value": "inactive"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_last_fault_code",
+          "arguments": {
+            "value": "CERT-409"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_screen_accessible",
+          "arguments": {
+            "value": true
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_station_power_cycle_state",
+          "arguments": {
+            "value": "not_done"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_connector_reseat_state",
+          "arguments": {
+            "value": "not_reseated"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_cable_inspection_state",
+          "arguments": {
+            "value": "not_checked"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_vehicle_ready_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_app_refresh_state",
+          "arguments": {
+            "value": "stale"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_test_charge_state",
+          "arguments": {
+            "value": "not_run"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_stop_gate",
+          "arguments": {
+            "criteria": [
+              {
+                "check_field": "fraud_lock_state",
+                "op": "eq",
+                "expected": "off",
+                "unmet_reason": "Fraud lock is still active.",
+                "observed_from": "check_resolution_status.observed.fraud_lock_state"
+              },
+              {
+                "check_field": "hold_status",
+                "op": "eq",
+                "expected": "cleared",
+                "unmet_reason": "Backend hold is not cleared yet.",
+                "observed_from": "check_resolution_status.observed.hold_status"
+              },
+              {
+                "check_field": "payment_token_status",
+                "op": "eq",
+                "expected": "valid",
+                "unmet_reason": "Payment token is not valid yet.",
+                "observed_from": "check_resolution_status.observed.payment_token_status"
+              },
+              {
+                "check_field": "cert_state",
+                "op": "eq",
+                "expected": "fresh",
+                "unmet_reason": "Station certificate is still stale.",
+                "observed_from": "check_resolution_status.observed.cert_state"
+              },
+              {
+                "check_field": "fault_code",
+                "op": "eq",
+                "expected": "NONE",
+                "unmet_reason": "Station still reports an unresolved fault code.",
+                "observed_from": "check_resolution_status.observed.fault_code"
+              },
+              {
+                "check_field": "profile_state",
+                "op": "eq",
+                "expected": "ready",
+                "unmet_reason": "Charging profile is not ready yet.",
+                "observed_from": "check_resolution_status.observed.profile_state"
+              },
+              {
+                "check_field": "retry_state",
+                "op": "eq",
+                "expected": "ready",
+                "unmet_reason": "Retry path is not ready yet.",
+                "observed_from": "check_resolution_status.observed.retry_state"
+              },
+              {
+                "check_field": "diagnostics_state",
+                "op": "eq",
+                "expected": "ran",
+                "unmet_reason": "Backend diagnostics have not run yet.",
+                "observed_from": "check_resolution_status.observed.diagnostics_state"
+              },
+              {
+                "check_field": "firmware_state",
+                "op": "eq",
+                "expected": "current",
+                "unmet_reason": "Station firmware is not current yet.",
+                "observed_from": "check_resolution_status.observed.firmware_state"
+              }
+            ]
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "acquire_fault_code_from_user",
+          "requestor": "user",
+          "name": "check_station_screen",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_power_cycle_station",
+          "requestor": "user",
+          "name": "power_cycle_station",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_reseat_connector",
+          "requestor": "user",
+          "name": "reseat_connector",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_inspect_cable_path",
+          "requestor": "user",
+          "name": "inspect_cable_path",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_set_vehicle_ready_mode",
+          "requestor": "user",
+          "name": "set_vehicle_ready_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_refresh_charging_app_session",
+          "requestor": "user",
+          "name": "refresh_charging_app_session",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_run_backend_diagnostics",
+          "requestor": "assistant",
+          "name": "run_backend_diagnostics",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_clear_backend_hold",
+          "requestor": "assistant",
+          "name": "clear_billing_hold",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_refresh_payment_token",
+          "requestor": "assistant",
+          "name": "refresh_payment_token",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_release_fraud_lock",
+          "requestor": "assistant",
+          "name": "release_fraud_lock",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_rotate_station_certificate",
+          "requestor": "assistant",
+          "name": "rotate_station_certificate",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_update_station_firmware",
+          "requestor": "assistant",
+          "name": "update_station_firmware",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reprovision_charging_profile",
+          "requestor": "assistant",
+          "name": "reprovision_charging_profile",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reset_retry_path",
+          "requestor": "assistant",
+          "name": "reset_retry_path",
+          "arguments": {
+            "fault_code": "CERT-409"
+          },
+          "info": null,
+          "compare_args": []
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_fraud_lock_state",
+          "arguments": {
+            "expected": "off"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_hold_status",
+          "arguments": {
+            "expected": "cleared"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_payment_token_status",
+          "arguments": {
+            "expected": "valid"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_cert_state",
+          "arguments": {
+            "expected": "fresh"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_last_fault_code",
+          "arguments": {
+            "expected": "NONE"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_profile_state",
+          "arguments": {
+            "expected": "ready"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_retry_state",
+          "arguments": {
+            "expected": "ready"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_diagnostics_state",
+          "arguments": {
+            "expected": "ran"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_firmware_state",
+          "arguments": {
+            "expected": "current"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION",
+        "ACTION"
+      ]
+    }
+  },
+  {
+    "id": "ev_post_account_recovery_d8_316",
+    "description": {
+      "purpose": null,
+      "relevant_policies": null,
+      "notes": "Structural required_actions/required_precedence were sampled from depgraph and must remain unchanged."
+    },
+    "user_scenario": {
+      "persona": "You are Avery Chen, methodical and detail-oriented, and you follow assistant instructions precisely.",
+      "instructions": {
+        "domain": "ev_charging_support",
+        "reason_for_call": "My account was already checked, but charging still fails and I need the remaining recovery steps completed.",
+        "known_info": "You are Avery Chen using account A2001 at station ST2001 for session S2001.",
+        "unknown_info": "You do not know backend gate states until the assistant performs diagnostics and remediation steps.",
+        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when all required recovery conditions are satisfied in tool-observable status checks. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
+      }
+    },
+    "ticket": "Customer Avery Chen reports charging failure at ST2001 (session S2001). Target outcome: agent.sessions[active_session].last_fault_code=NONE; agent.sessions[active_session].profile_state=ready; agent.stations[active_station].firmware_state=current.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_context",
+          "arguments": {
+            "user_id": "U2001",
+            "name": "Avery Chen",
+            "account_id": "A2001",
+            "station_id": "ST2001",
+            "session_id": "S2001"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_hold_status",
+          "arguments": {
+            "value": "cleared"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_payment_token_status",
+          "arguments": {
+            "value": "valid"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_fraud_lock_state",
+          "arguments": {
+            "value": "off"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_reachability_state",
+          "arguments": {
+            "value": "reachable"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_firmware_state",
+          "arguments": {
+            "value": "outdated"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_diagnostics_state",
+          "arguments": {
+            "value": "ran"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_backend_link_state",
+          "arguments": {
+            "value": "up"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_cert_state",
+          "arguments": {
+            "value": "fresh"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_profile_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_retry_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_charge_state",
+          "arguments": {
+            "value": "inactive"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_last_fault_code",
+          "arguments": {
+            "value": "FW-410"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_screen_accessible",
+          "arguments": {
+            "value": true
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_station_power_cycle_state",
+          "arguments": {
+            "value": "not_done"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_connector_reseat_state",
+          "arguments": {
+            "value": "not_reseated"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_cable_inspection_state",
+          "arguments": {
+            "value": "not_checked"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_vehicle_ready_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_app_refresh_state",
+          "arguments": {
+            "value": "stale"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_test_charge_state",
+          "arguments": {
+            "value": "not_run"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_stop_gate",
+          "arguments": {
+            "criteria": [
+              {
+                "check_field": "fault_code",
+                "op": "eq",
+                "expected": "NONE",
+                "unmet_reason": "Station still reports an unresolved fault code.",
+                "observed_from": "check_resolution_status.observed.fault_code"
+              },
+              {
+                "check_field": "profile_state",
+                "op": "eq",
+                "expected": "ready",
+                "unmet_reason": "Charging profile is not ready yet.",
+                "observed_from": "check_resolution_status.observed.profile_state"
+              },
+              {
+                "check_field": "firmware_state",
+                "op": "eq",
+                "expected": "current",
+                "unmet_reason": "Station firmware is not current yet.",
+                "observed_from": "check_resolution_status.observed.firmware_state"
+              }
+            ]
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "acquire_fault_code_from_user",
+          "requestor": "user",
+          "name": "check_station_screen",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_power_cycle_station",
+          "requestor": "user",
+          "name": "power_cycle_station",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_reseat_connector",
+          "requestor": "user",
+          "name": "reseat_connector",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_inspect_cable_path",
+          "requestor": "user",
+          "name": "inspect_cable_path",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_set_vehicle_ready_mode",
+          "requestor": "user",
+          "name": "set_vehicle_ready_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_refresh_charging_app_session",
+          "requestor": "user",
+          "name": "refresh_charging_app_session",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_update_station_firmware",
+          "requestor": "assistant",
+          "name": "update_station_firmware",
+          "arguments": {
+            "fault_code": "FW-410"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reprovision_charging_profile",
+          "requestor": "assistant",
+          "name": "reprovision_charging_profile",
+          "arguments": {
+            "fault_code": "FW-410"
+          },
+          "info": null,
+          "compare_args": []
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_last_fault_code",
+          "arguments": {
+            "expected": "NONE"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_profile_state",
+          "arguments": {
+            "expected": "ready"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_firmware_state",
+          "arguments": {
+            "expected": "current"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION",
+        "ACTION"
+      ]
+    }
+  },
+  {
+    "id": "ev_post_account_recovery_d9_317",
+    "description": {
+      "purpose": null,
+      "relevant_policies": null,
+      "notes": "Structural required_actions/required_precedence were sampled from depgraph and must remain unchanged."
+    },
+    "user_scenario": {
+      "persona": "You are Avery Chen, methodical and detail-oriented, and you follow assistant instructions precisely.",
+      "instructions": {
+        "domain": "ev_charging_support",
+        "reason_for_call": "My account was already checked, but charging still fails and I need the remaining recovery steps completed.",
+        "known_info": "You are Avery Chen using account A2001 at station ST2001 for session S2001.",
+        "unknown_info": "You do not know backend gate states until the assistant performs diagnostics and remediation steps.",
+        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when all required recovery conditions are satisfied in tool-observable status checks. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
+      }
+    },
+    "ticket": "Customer Avery Chen reports charging failure at ST2001 (session S2001). Target outcome: agent.sessions[active_session].last_fault_code=NONE; agent.sessions[active_session].profile_state=ready; agent.sessions[active_session].retry_state=ready; agent.stations[active_station].firmware_state=current.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_context",
+          "arguments": {
+            "user_id": "U2001",
+            "name": "Avery Chen",
+            "account_id": "A2001",
+            "station_id": "ST2001",
+            "session_id": "S2001"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_hold_status",
+          "arguments": {
+            "value": "cleared"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_payment_token_status",
+          "arguments": {
+            "value": "valid"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_fraud_lock_state",
+          "arguments": {
+            "value": "off"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_reachability_state",
+          "arguments": {
+            "value": "reachable"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_firmware_state",
+          "arguments": {
+            "value": "outdated"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_diagnostics_state",
+          "arguments": {
+            "value": "ran"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_backend_link_state",
+          "arguments": {
+            "value": "up"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_cert_state",
+          "arguments": {
+            "value": "fresh"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_profile_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_retry_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_charge_state",
+          "arguments": {
+            "value": "inactive"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_last_fault_code",
+          "arguments": {
+            "value": "FW-410"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_screen_accessible",
+          "arguments": {
+            "value": true
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_station_power_cycle_state",
+          "arguments": {
+            "value": "not_done"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_connector_reseat_state",
+          "arguments": {
+            "value": "not_reseated"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_cable_inspection_state",
+          "arguments": {
+            "value": "not_checked"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_vehicle_ready_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_app_refresh_state",
+          "arguments": {
+            "value": "stale"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_test_charge_state",
+          "arguments": {
+            "value": "not_run"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_stop_gate",
+          "arguments": {
+            "criteria": [
+              {
+                "check_field": "fault_code",
+                "op": "eq",
+                "expected": "NONE",
+                "unmet_reason": "Station still reports an unresolved fault code.",
+                "observed_from": "check_resolution_status.observed.fault_code"
+              },
+              {
+                "check_field": "profile_state",
+                "op": "eq",
+                "expected": "ready",
+                "unmet_reason": "Charging profile is not ready yet.",
+                "observed_from": "check_resolution_status.observed.profile_state"
+              },
+              {
+                "check_field": "retry_state",
+                "op": "eq",
+                "expected": "ready",
+                "unmet_reason": "Retry path is not ready yet.",
+                "observed_from": "check_resolution_status.observed.retry_state"
+              },
+              {
+                "check_field": "firmware_state",
+                "op": "eq",
+                "expected": "current",
+                "unmet_reason": "Station firmware is not current yet.",
+                "observed_from": "check_resolution_status.observed.firmware_state"
+              }
+            ]
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "acquire_fault_code_from_user",
+          "requestor": "user",
+          "name": "check_station_screen",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_power_cycle_station",
+          "requestor": "user",
+          "name": "power_cycle_station",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_reseat_connector",
+          "requestor": "user",
+          "name": "reseat_connector",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_inspect_cable_path",
+          "requestor": "user",
+          "name": "inspect_cable_path",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_set_vehicle_ready_mode",
+          "requestor": "user",
+          "name": "set_vehicle_ready_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_refresh_charging_app_session",
+          "requestor": "user",
+          "name": "refresh_charging_app_session",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_update_station_firmware",
+          "requestor": "assistant",
+          "name": "update_station_firmware",
+          "arguments": {
+            "fault_code": "FW-410"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reprovision_charging_profile",
+          "requestor": "assistant",
+          "name": "reprovision_charging_profile",
+          "arguments": {
+            "fault_code": "FW-410"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reset_retry_path",
+          "requestor": "assistant",
+          "name": "reset_retry_path",
+          "arguments": {
+            "fault_code": "FW-410"
+          },
+          "info": null,
+          "compare_args": []
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_last_fault_code",
+          "arguments": {
+            "expected": "NONE"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_profile_state",
+          "arguments": {
+            "expected": "ready"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_retry_state",
+          "arguments": {
+            "expected": "ready"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_firmware_state",
+          "arguments": {
+            "expected": "current"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION",
+        "ACTION"
+      ]
+    }
+  },
+  {
+    "id": "ev_post_account_recovery_d10_318",
+    "description": {
+      "purpose": null,
+      "relevant_policies": null,
+      "notes": "Structural required_actions/required_precedence were sampled from depgraph and must remain unchanged."
+    },
+    "user_scenario": {
+      "persona": "You are Avery Chen, methodical and detail-oriented, and you follow assistant instructions precisely.",
+      "instructions": {
+        "domain": "ev_charging_support",
+        "reason_for_call": "My account was already checked, but charging still fails and I need the remaining recovery steps completed.",
+        "known_info": "You are Avery Chen using account A2001 at station ST2001 for session S2001.",
+        "unknown_info": "You do not know backend gate states until the assistant performs diagnostics and remediation steps.",
+        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when all required recovery conditions are satisfied in tool-observable status checks. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
+      }
+    },
+    "ticket": "Customer Avery Chen reports charging failure at ST2001 (session S2001). Target outcome: agent.sessions[active_session].charge_state=active; agent.sessions[active_session].last_fault_code=NONE; agent.sessions[active_session].profile_state=ready; agent.sessions[active_session].retry_state=ready; agent.stations[active_station].firmware_state=current.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_context",
+          "arguments": {
+            "user_id": "U2001",
+            "name": "Avery Chen",
+            "account_id": "A2001",
+            "station_id": "ST2001",
+            "session_id": "S2001"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_hold_status",
+          "arguments": {
+            "value": "cleared"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_payment_token_status",
+          "arguments": {
+            "value": "valid"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_fraud_lock_state",
+          "arguments": {
+            "value": "off"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_reachability_state",
+          "arguments": {
+            "value": "reachable"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_firmware_state",
+          "arguments": {
+            "value": "outdated"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_diagnostics_state",
+          "arguments": {
+            "value": "ran"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_backend_link_state",
+          "arguments": {
+            "value": "up"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_cert_state",
+          "arguments": {
+            "value": "fresh"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_profile_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_retry_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_charge_state",
+          "arguments": {
+            "value": "inactive"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_last_fault_code",
+          "arguments": {
+            "value": "FW-410"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_screen_accessible",
+          "arguments": {
+            "value": true
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_station_power_cycle_state",
+          "arguments": {
+            "value": "not_done"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_connector_reseat_state",
+          "arguments": {
+            "value": "not_reseated"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_cable_inspection_state",
+          "arguments": {
+            "value": "not_checked"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_vehicle_ready_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_app_refresh_state",
+          "arguments": {
+            "value": "stale"
           }
         },
         {
@@ -827,7 +3171,634 @@
                 "check_field": "fault_code",
                 "op": "eq",
                 "expected": "NONE",
-                "unmet_reason": "Station still reports a fault code.",
+                "unmet_reason": "Station still reports an unresolved fault code.",
+                "observed_from": "check_resolution_status.observed.fault_code"
+              },
+              {
+                "check_field": "profile_state",
+                "op": "eq",
+                "expected": "ready",
+                "unmet_reason": "Charging profile is not ready yet.",
+                "observed_from": "check_resolution_status.observed.profile_state"
+              },
+              {
+                "check_field": "retry_state",
+                "op": "eq",
+                "expected": "ready",
+                "unmet_reason": "Retry path is not ready yet.",
+                "observed_from": "check_resolution_status.observed.retry_state"
+              },
+              {
+                "check_field": "firmware_state",
+                "op": "eq",
+                "expected": "current",
+                "unmet_reason": "Station firmware is not current yet.",
+                "observed_from": "check_resolution_status.observed.firmware_state"
+              }
+            ]
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "acquire_fault_code_from_user",
+          "requestor": "user",
+          "name": "check_station_screen",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_power_cycle_station",
+          "requestor": "user",
+          "name": "power_cycle_station",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_reseat_connector",
+          "requestor": "user",
+          "name": "reseat_connector",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_inspect_cable_path",
+          "requestor": "user",
+          "name": "inspect_cable_path",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_set_vehicle_ready_mode",
+          "requestor": "user",
+          "name": "set_vehicle_ready_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_refresh_charging_app_session",
+          "requestor": "user",
+          "name": "refresh_charging_app_session",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_update_station_firmware",
+          "requestor": "assistant",
+          "name": "update_station_firmware",
+          "arguments": {
+            "fault_code": "FW-410"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reprovision_charging_profile",
+          "requestor": "assistant",
+          "name": "reprovision_charging_profile",
+          "arguments": {
+            "fault_code": "FW-410"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reset_retry_path",
+          "requestor": "assistant",
+          "name": "reset_retry_path",
+          "arguments": {
+            "fault_code": "FW-410"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_run_test_charge",
+          "requestor": "user",
+          "name": "run_test_charge",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_charge_state",
+          "arguments": {
+            "expected": "active"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_last_fault_code",
+          "arguments": {
+            "expected": "NONE"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_profile_state",
+          "arguments": {
+            "expected": "ready"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_retry_state",
+          "arguments": {
+            "expected": "ready"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_firmware_state",
+          "arguments": {
+            "expected": "current"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION",
+        "ACTION"
+      ]
+    }
+  },
+  {
+    "id": "ev_profile_recovery_d7_324",
+    "description": {
+      "purpose": null,
+      "relevant_policies": null,
+      "notes": "Structural required_actions/required_precedence were sampled from depgraph and must remain unchanged."
+    },
+    "user_scenario": {
+      "persona": "You are Avery Chen, calm and cooperative, and you provide tool-grounded updates only.",
+      "instructions": {
+        "domain": "ev_charging_support",
+        "reason_for_call": "Charging still fails even though backend account/network checks look fine; I need profile recovery.",
+        "known_info": "You are Avery Chen using account A2001 at station ST2001 for session S2001.",
+        "unknown_info": "You do not know backend gate states until the assistant performs diagnostics and remediation steps.",
+        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when all required recovery conditions are satisfied in tool-observable status checks. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
+      }
+    },
+    "ticket": "Customer Avery Chen reports charging failure at ST2001 (session S2001). Target outcome: agent.sessions[active_session].last_fault_code=NONE; agent.sessions[active_session].profile_state=ready.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_context",
+          "arguments": {
+            "user_id": "U2001",
+            "name": "Avery Chen",
+            "account_id": "A2001",
+            "station_id": "ST2001",
+            "session_id": "S2001"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_hold_status",
+          "arguments": {
+            "value": "cleared"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_payment_token_status",
+          "arguments": {
+            "value": "valid"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_fraud_lock_state",
+          "arguments": {
+            "value": "off"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_reachability_state",
+          "arguments": {
+            "value": "reachable"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_firmware_state",
+          "arguments": {
+            "value": "current"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_diagnostics_state",
+          "arguments": {
+            "value": "ran"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_backend_link_state",
+          "arguments": {
+            "value": "up"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_cert_state",
+          "arguments": {
+            "value": "fresh"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_profile_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_retry_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_charge_state",
+          "arguments": {
+            "value": "inactive"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_last_fault_code",
+          "arguments": {
+            "value": "PROFILE-201"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_screen_accessible",
+          "arguments": {
+            "value": true
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_station_power_cycle_state",
+          "arguments": {
+            "value": "not_done"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_connector_reseat_state",
+          "arguments": {
+            "value": "not_reseated"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_cable_inspection_state",
+          "arguments": {
+            "value": "not_checked"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_vehicle_ready_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_app_refresh_state",
+          "arguments": {
+            "value": "stale"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_test_charge_state",
+          "arguments": {
+            "value": "not_run"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_stop_gate",
+          "arguments": {
+            "criteria": [
+              {
+                "check_field": "fault_code",
+                "op": "eq",
+                "expected": "NONE",
+                "unmet_reason": "Station still reports an unresolved fault code.",
+                "observed_from": "check_resolution_status.observed.fault_code"
+              },
+              {
+                "check_field": "profile_state",
+                "op": "eq",
+                "expected": "ready",
+                "unmet_reason": "Charging profile is not ready yet.",
+                "observed_from": "check_resolution_status.observed.profile_state"
+              }
+            ]
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "acquire_fault_code_from_user",
+          "requestor": "user",
+          "name": "check_station_screen",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_power_cycle_station",
+          "requestor": "user",
+          "name": "power_cycle_station",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_reseat_connector",
+          "requestor": "user",
+          "name": "reseat_connector",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_inspect_cable_path",
+          "requestor": "user",
+          "name": "inspect_cable_path",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_set_vehicle_ready_mode",
+          "requestor": "user",
+          "name": "set_vehicle_ready_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_refresh_charging_app_session",
+          "requestor": "user",
+          "name": "refresh_charging_app_session",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reprovision_charging_profile",
+          "requestor": "assistant",
+          "name": "reprovision_charging_profile",
+          "arguments": {
+            "fault_code": "PROFILE-201"
+          },
+          "info": null,
+          "compare_args": []
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_last_fault_code",
+          "arguments": {
+            "expected": "NONE"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_profile_state",
+          "arguments": {
+            "expected": "ready"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION",
+        "ACTION"
+      ]
+    }
+  },
+  {
+    "id": "ev_profile_recovery_d8_325",
+    "description": {
+      "purpose": null,
+      "relevant_policies": null,
+      "notes": "Structural required_actions/required_precedence were sampled from depgraph and must remain unchanged."
+    },
+    "user_scenario": {
+      "persona": "You are Avery Chen, calm and cooperative, and you provide tool-grounded updates only.",
+      "instructions": {
+        "domain": "ev_charging_support",
+        "reason_for_call": "Charging still fails even though backend account/network checks look fine; I need profile recovery.",
+        "known_info": "You are Avery Chen using account A2001 at station ST2001 for session S2001.",
+        "unknown_info": "You do not know backend gate states until the assistant performs diagnostics and remediation steps.",
+        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when all required recovery conditions are satisfied in tool-observable status checks. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
+      }
+    },
+    "ticket": "Customer Avery Chen reports charging failure at ST2001 (session S2001). Target outcome: agent.sessions[active_session].last_fault_code=NONE; agent.sessions[active_session].profile_state=ready; agent.sessions[active_session].retry_state=ready.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_context",
+          "arguments": {
+            "user_id": "U2001",
+            "name": "Avery Chen",
+            "account_id": "A2001",
+            "station_id": "ST2001",
+            "session_id": "S2001"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_hold_status",
+          "arguments": {
+            "value": "cleared"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_payment_token_status",
+          "arguments": {
+            "value": "valid"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_fraud_lock_state",
+          "arguments": {
+            "value": "off"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_reachability_state",
+          "arguments": {
+            "value": "reachable"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_firmware_state",
+          "arguments": {
+            "value": "current"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_diagnostics_state",
+          "arguments": {
+            "value": "ran"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_backend_link_state",
+          "arguments": {
+            "value": "up"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_cert_state",
+          "arguments": {
+            "value": "fresh"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_profile_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_retry_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_charge_state",
+          "arguments": {
+            "value": "inactive"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_last_fault_code",
+          "arguments": {
+            "value": "PROFILE-201"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_screen_accessible",
+          "arguments": {
+            "value": true
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_station_power_cycle_state",
+          "arguments": {
+            "value": "not_done"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_connector_reseat_state",
+          "arguments": {
+            "value": "not_reseated"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_cable_inspection_state",
+          "arguments": {
+            "value": "not_checked"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_vehicle_ready_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_app_refresh_state",
+          "arguments": {
+            "value": "stale"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_test_charge_state",
+          "arguments": {
+            "value": "not_run"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_stop_gate",
+          "arguments": {
+            "criteria": [
+              {
+                "check_field": "fault_code",
+                "op": "eq",
+                "expected": "NONE",
+                "unmet_reason": "Station still reports an unresolved fault code.",
                 "observed_from": "check_resolution_status.observed.fault_code"
               },
               {
@@ -877,27 +3848,60 @@
           "compare_args": []
         },
         {
+          "action_id": "user_inspect_cable_path",
+          "requestor": "user",
+          "name": "inspect_cable_path",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_set_vehicle_ready_mode",
+          "requestor": "user",
+          "name": "set_vehicle_ready_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_refresh_charging_app_session",
+          "requestor": "user",
+          "name": "refresh_charging_app_session",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
           "action_id": "assistant_reprovision_charging_profile",
           "requestor": "assistant",
           "name": "reprovision_charging_profile",
           "arguments": {
-            "fault_code": "BH-101"
+            "fault_code": "PROFILE-201"
           },
           "info": null,
-          "compare_args": [
-            "fault_code"
-          ]
+          "compare_args": []
         },
         {
-          "action_id": "user_run_test_charge",
-          "requestor": "user",
-          "name": "run_test_charge",
-          "arguments": {},
+          "action_id": "assistant_reset_retry_path",
+          "requestor": "assistant",
+          "name": "reset_retry_path",
+          "arguments": {
+            "fault_code": "PROFILE-201"
+          },
           "info": null,
           "compare_args": []
         }
       ],
       "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_last_fault_code",
+          "arguments": {
+            "expected": "NONE"
+          },
+          "assert_value": true,
+          "message": null
+        },
         {
           "env_type": "assistant",
           "func_name": "assert_profile_state",
@@ -915,6 +3919,308 @@
           },
           "assert_value": true,
           "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION",
+        "ACTION"
+      ]
+    }
+  },
+  {
+    "id": "ev_profile_recovery_d9_326",
+    "description": {
+      "purpose": null,
+      "relevant_policies": null,
+      "notes": "Structural required_actions/required_precedence were sampled from depgraph and must remain unchanged."
+    },
+    "user_scenario": {
+      "persona": "You are Avery Chen, calm and cooperative, and you provide tool-grounded updates only.",
+      "instructions": {
+        "domain": "ev_charging_support",
+        "reason_for_call": "Charging still fails even though backend account/network checks look fine; I need profile recovery.",
+        "known_info": "You are Avery Chen using account A2001 at station ST2001 for session S2001.",
+        "unknown_info": "You do not know backend gate states until the assistant performs diagnostics and remediation steps.",
+        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when all required recovery conditions are satisfied in tool-observable status checks. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
+      }
+    },
+    "ticket": "Customer Avery Chen reports charging failure at ST2001 (session S2001). Target outcome: agent.sessions[active_session].charge_state=active; agent.sessions[active_session].last_fault_code=NONE; agent.sessions[active_session].profile_state=ready; agent.sessions[active_session].retry_state=ready.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_context",
+          "arguments": {
+            "user_id": "U2001",
+            "name": "Avery Chen",
+            "account_id": "A2001",
+            "station_id": "ST2001",
+            "session_id": "S2001"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_hold_status",
+          "arguments": {
+            "value": "cleared"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_payment_token_status",
+          "arguments": {
+            "value": "valid"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_fraud_lock_state",
+          "arguments": {
+            "value": "off"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_reachability_state",
+          "arguments": {
+            "value": "reachable"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_firmware_state",
+          "arguments": {
+            "value": "current"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_diagnostics_state",
+          "arguments": {
+            "value": "ran"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_backend_link_state",
+          "arguments": {
+            "value": "up"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_cert_state",
+          "arguments": {
+            "value": "fresh"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_profile_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_retry_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_charge_state",
+          "arguments": {
+            "value": "inactive"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_last_fault_code",
+          "arguments": {
+            "value": "PROFILE-201"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_screen_accessible",
+          "arguments": {
+            "value": true
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_station_power_cycle_state",
+          "arguments": {
+            "value": "not_done"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_connector_reseat_state",
+          "arguments": {
+            "value": "not_reseated"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_cable_inspection_state",
+          "arguments": {
+            "value": "not_checked"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_vehicle_ready_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_app_refresh_state",
+          "arguments": {
+            "value": "stale"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_test_charge_state",
+          "arguments": {
+            "value": "not_run"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_stop_gate",
+          "arguments": {
+            "criteria": [
+              {
+                "check_field": "charge_status",
+                "op": "eq",
+                "expected": "active",
+                "unmet_reason": "Charging is not active yet.",
+                "observed_from": "check_resolution_status.observed.charge_status"
+              },
+              {
+                "check_field": "fault_code",
+                "op": "eq",
+                "expected": "NONE",
+                "unmet_reason": "Station still reports an unresolved fault code.",
+                "observed_from": "check_resolution_status.observed.fault_code"
+              },
+              {
+                "check_field": "profile_state",
+                "op": "eq",
+                "expected": "ready",
+                "unmet_reason": "Charging profile is not ready yet.",
+                "observed_from": "check_resolution_status.observed.profile_state"
+              },
+              {
+                "check_field": "retry_state",
+                "op": "eq",
+                "expected": "ready",
+                "unmet_reason": "Retry path is not ready yet.",
+                "observed_from": "check_resolution_status.observed.retry_state"
+              }
+            ]
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "acquire_fault_code_from_user",
+          "requestor": "user",
+          "name": "check_station_screen",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_power_cycle_station",
+          "requestor": "user",
+          "name": "power_cycle_station",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_reseat_connector",
+          "requestor": "user",
+          "name": "reseat_connector",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_inspect_cable_path",
+          "requestor": "user",
+          "name": "inspect_cable_path",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_set_vehicle_ready_mode",
+          "requestor": "user",
+          "name": "set_vehicle_ready_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_refresh_charging_app_session",
+          "requestor": "user",
+          "name": "refresh_charging_app_session",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reprovision_charging_profile",
+          "requestor": "assistant",
+          "name": "reprovision_charging_profile",
+          "arguments": {
+            "fault_code": "PROFILE-201"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reset_retry_path",
+          "requestor": "assistant",
+          "name": "reset_retry_path",
+          "arguments": {
+            "fault_code": "PROFILE-201"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_run_test_charge",
+          "requestor": "user",
+          "name": "run_test_charge",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_charge_state",
+          "arguments": {
+            "expected": "active"
+          },
+          "assert_value": true,
+          "message": null
         },
         {
           "env_type": "assistant",
@@ -927,9 +4233,265 @@
         },
         {
           "env_type": "assistant",
+          "func_name": "assert_profile_state",
+          "arguments": {
+            "expected": "ready"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_retry_state",
+          "arguments": {
+            "expected": "ready"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION",
+        "ACTION"
+      ]
+    }
+  },
+  {
+    "id": "ev_retry_recovery_d3_327",
+    "description": {
+      "purpose": null,
+      "relevant_policies": null,
+      "notes": "Structural required_actions/required_precedence were sampled from depgraph and must remain unchanged."
+    },
+    "user_scenario": {
+      "persona": "You are Sam Rivera, direct and pragmatic, and you execute assistant requests one step at a time.",
+      "instructions": {
+        "domain": "ev_charging_support",
+        "reason_for_call": "The station is almost fixed but retry still fails and I need to get charging active now.",
+        "known_info": "You are Sam Rivera using account A3001 at station ST3001 for session S3001.",
+        "unknown_info": "You do not know backend gate states until the assistant performs diagnostics and remediation steps.",
+        "task_instructions": "Follow the assistant's guidance and perform one action at a time. Use user tools only when the assistant asks you to. Ground all status updates in tool outputs and do not invent tool results. You will consider the issue resolved when all required recovery conditions are satisfied in tool-observable status checks. When that condition is met, reply with ###STOP###. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report the unmet items and ask the assistant for the next step."
+      }
+    },
+    "ticket": "Customer Sam Rivera reports charging failure at ST3001 (session S3001). Target outcome: agent.sessions[active_session].charge_state=active; agent.sessions[active_session].retry_state=ready.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_context",
+          "arguments": {
+            "user_id": "U3001",
+            "name": "Sam Rivera",
+            "account_id": "A3001",
+            "station_id": "ST3001",
+            "session_id": "S3001"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_hold_status",
+          "arguments": {
+            "value": "cleared"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_payment_token_status",
+          "arguments": {
+            "value": "valid"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_fraud_lock_state",
+          "arguments": {
+            "value": "off"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_reachability_state",
+          "arguments": {
+            "value": "reachable"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_firmware_state",
+          "arguments": {
+            "value": "current"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_diagnostics_state",
+          "arguments": {
+            "value": "ran"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_backend_link_state",
+          "arguments": {
+            "value": "up"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_cert_state",
+          "arguments": {
+            "value": "fresh"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_profile_state",
+          "arguments": {
+            "value": "ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_retry_state",
+          "arguments": {
+            "value": "not_ready"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_charge_state",
+          "arguments": {
+            "value": "inactive"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_last_fault_code",
+          "arguments": {
+            "value": "RETRY-301"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_screen_accessible",
+          "arguments": {
+            "value": true
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_station_power_cycle_state",
+          "arguments": {
+            "value": "done"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_connector_reseat_state",
+          "arguments": {
+            "value": "reseated"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_cable_inspection_state",
+          "arguments": {
+            "value": "checked_ok"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_vehicle_ready_state",
+          "arguments": {
+            "value": "ready"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_app_refresh_state",
+          "arguments": {
+            "value": "refreshed"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_test_charge_state",
+          "arguments": {
+            "value": "not_run"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_stop_gate",
+          "arguments": {
+            "criteria": [
+              {
+                "check_field": "charge_status",
+                "op": "eq",
+                "expected": "active",
+                "unmet_reason": "Charging is not active yet.",
+                "observed_from": "check_resolution_status.observed.charge_status"
+              },
+              {
+                "check_field": "retry_state",
+                "op": "eq",
+                "expected": "ready",
+                "unmet_reason": "Retry path is not ready yet.",
+                "observed_from": "check_resolution_status.observed.retry_state"
+              }
+            ]
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "acquire_fault_code_from_user",
+          "requestor": "user",
+          "name": "check_station_screen",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "assistant_reset_retry_path",
+          "requestor": "assistant",
+          "name": "reset_retry_path",
+          "arguments": {
+            "fault_code": "RETRY-301"
+          },
+          "info": null,
+          "compare_args": []
+        },
+        {
+          "action_id": "user_run_test_charge",
+          "requestor": "user",
+          "name": "run_test_charge",
+          "arguments": {},
+          "info": null,
+          "compare_args": []
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
           "func_name": "assert_charge_state",
           "arguments": {
             "expected": "active"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_retry_state",
+          "arguments": {
+            "expected": "ready"
           },
           "assert_value": true,
           "message": null
