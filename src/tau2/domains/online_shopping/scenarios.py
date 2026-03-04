@@ -279,6 +279,7 @@ restricted_account = FaultLayer(
 account_group = FaultLayerGroup(
     name="account_issues",
     layers=[locked_account, restricted_account],
+    resolution_category="account",
 )
 
 
@@ -389,6 +390,7 @@ missing_promo = FaultLayer(
 pricing_group = FaultLayerGroup(
     name="pricing_issues",
     layers=[wrong_unit_price, missing_promo],
+    resolution_category="pricing",
 )
 
 
@@ -570,6 +572,7 @@ wrong_shipping_cost = FaultLayer(
 shipping_group = FaultLayerGroup(
     name="shipping_config_issues",
     layers=[wrong_shipping_address, wrong_shipping_method, wrong_shipping_cost],
+    resolution_category="shipping",
 )
 
 
@@ -624,6 +627,7 @@ missing_tracking = FaultLayer(
 tracking_group = FaultLayerGroup(
     name="tracking_issues",
     layers=[missing_tracking],
+    resolution_category="shipping",
 )
 
 
@@ -727,6 +731,7 @@ wrong_refund = FaultLayer(
 return_group = FaultLayerGroup(
     name="return_issues",
     layers=[stuck_return, wrong_refund],
+    resolution_category="return",
 )
 
 
@@ -846,6 +851,7 @@ wrong_payment_method = FaultLayer(
 payment_group = FaultLayerGroup(
     name="payment_issues",
     layers=[expired_payment, wrong_payment_method],
+    resolution_category="payment",
 )
 
 
@@ -906,6 +912,7 @@ expired_membership = FaultLayer(
 membership_group = FaultLayerGroup(
     name="membership_issues",
     layers=[expired_membership],
+    resolution_category="account",
 )
 
 
@@ -964,6 +971,7 @@ wrong_tax = FaultLayer(
 billing_group = FaultLayerGroup(
     name="billing_computation_issues",
     layers=[wrong_tax],
+    resolution_category="pricing",
 )
 
 
@@ -978,6 +986,9 @@ counterfeit_product = FaultLayer(
         "I believe the {product_name} I received from order {order_id} "
         "is counterfeit. It does not match the brand packaging at all."
     ),
+    completion_fragment=(
+        "your order {order_id} shows the {product_name} has been verified as authentic"
+    ),
     atoms=[],
     resource_scope="counterfeit:{order_id}",
 )
@@ -989,6 +1000,7 @@ chargeback_dispute = FaultLayer(
         "I have filed a chargeback with my bank for order {order_id}. "
         "I need to discuss the payment dispute."
     ),
+    completion_fragment="your payment dispute for order {order_id} has been fully resolved",
     atoms=[],
     resource_scope="chargeback:{order_id}",
 )
@@ -996,6 +1008,7 @@ chargeback_dispute = FaultLayer(
 unfixable_group = FaultLayerGroup(
     name="unfixable_issues",
     layers=[counterfeit_product, chargeback_dispute],
+    resolution_category="order",
 )
 
 
@@ -1082,6 +1095,10 @@ TRANSFER_CONFIG = FaultLayerConfig(
 
 RECIPE_BOOK = RecipeBook(
     fault_layer_configs=[FIXABLE_CONFIG, TRANSFER_CONFIG],
+    resolution_instruction=(
+        "your order, account, and payment details are all correct and any "
+        "shipping, pricing, or return issues have been resolved"
+    ),
 )
 
 

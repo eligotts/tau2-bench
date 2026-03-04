@@ -1,0 +1,14 @@
+{
+  "client_id": null,
+  "client_name": null,
+  "my_trips": [],
+  "my_flights": [],
+  "my_hotels": [],
+  "my_rentals": [],
+  "flight_change_confirmed": {},
+  "hotel_change_confirmed": {},
+  "rental_change_confirmed": {},
+  "insurance_renewal_confirmed": {},
+  "resolution_acknowledged": {},
+  "trip_modification_authorized": {}
+}

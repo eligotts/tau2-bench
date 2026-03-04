@@ -74,6 +74,29 @@ from tau2.domains.online_shopping.environment import get_tasks as online_shoppin
 from tau2.domains.online_shopping.environment import (
     get_tasks_split as online_shopping_domain_get_tasks_split,
 )
+from tau2.domains.ev_charging_support.environment import (
+    get_environment as ev_charging_support_domain_get_environment,
+)
+from tau2.domains.ev_charging_support.environment import (
+    get_tasks as ev_charging_support_domain_get_tasks,
+)
+from tau2.domains.ev_charging_support.environment import (
+    get_tasks_split as ev_charging_support_domain_get_tasks_split,
+)
+from tau2.domains.travel_agency.environment import (
+    get_environment as travel_agency_domain_get_environment,
+)
+from tau2.domains.travel_agency.environment import get_tasks as travel_agency_domain_get_tasks
+from tau2.domains.travel_agency.environment import (
+    get_tasks_split as travel_agency_domain_get_tasks_split,
+)
+from tau2.domains.vet_clinic.environment import (
+    get_environment as vet_clinic_domain_get_environment,
+)
+from tau2.domains.vet_clinic.environment import get_tasks as vet_clinic_domain_get_tasks
+from tau2.domains.vet_clinic.environment import (
+    get_tasks_split as vet_clinic_domain_get_tasks_split,
+)
 from tau2.environment.environment import Environment
 from tau2.user.base import BaseUser
 from tau2.user.user_simulator import DummyUser, UserSimulator
@@ -238,6 +261,13 @@ class Registry:
 # Create a global registry instance
 try:
     registry = Registry()
+
+    registry.register_domain(travel_agency_domain_get_environment, "travel_agency")
+    registry.register_tasks(
+        travel_agency_domain_get_tasks,
+        "travel_agency",
+        get_task_splits=travel_agency_domain_get_tasks_split,
+    )
     logger.debug("Registering default components...")
     registry.register_user(UserSimulator, "user_simulator")
     registry.register_user(DummyUser, "dummy_user")
@@ -312,6 +342,22 @@ try:
         online_shopping_domain_get_tasks,
         "online_shopping",
         get_task_splits=online_shopping_domain_get_tasks_split,
+    )
+
+    registry.register_domain(
+        ev_charging_support_domain_get_environment, "ev_charging_support"
+    )
+    registry.register_tasks(
+        ev_charging_support_domain_get_tasks,
+        "ev_charging_support",
+        get_task_splits=ev_charging_support_domain_get_tasks_split,
+    )
+
+    registry.register_domain(vet_clinic_domain_get_environment, "vet_clinic")
+    registry.register_tasks(
+        vet_clinic_domain_get_tasks,
+        "vet_clinic",
+        get_task_splits=vet_clinic_domain_get_tasks_split,
     )
 
     logger.debug(

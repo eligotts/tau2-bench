@@ -1,0 +1,201 @@
+version: 2
+
+context_slots:
+  - slot_id: active_account
+    entity_type: Account
+  - slot_id: active_station
+    entity_type: Station
+  - slot_id: active_session
+    entity_type: ChargeSession
+
+projection_fields:
+  - agent.accounts[active_account].hold_status
+  - agent.stations[active_station].reachability_state
+  - agent.sessions[active_session].profile_state
+  - agent.sessions[active_session].retry_state
+  - agent.sessions[active_session].charge_state
+  - agent.sessions[active_session].last_fault_code
+  - user.physical.screen_accessible
+  - user.physical.station_power_cycle_state
+  - user.physical.connector_reseat_state
+  - user.physical.test_charge_state
+
+bindings:
+  - binding_id: fault_code
+    source_tool: check_station_screen
+    extraction_path: result.fault_code
+    observability_all_of:
+      - op: eq
+        path: user.physical.screen_accessible
+        value: true
+      - op: eq
+        path: agent.stations[active_station].reachability_state
+        value: reachable
+    observability_any_of: []
+
+actions:
+  - action_id: acquire_fault_code_from_user
+    requestor: user
+    tool_name: check_station_screen
+    classification: knowledge-only
+    requires_world:
+      - op: eq
+        path: user.physical.screen_accessible
+        value: true
+      - op: eq
+        path: agent.stations[active_station].reachability_state
+        value: reachable
+    requires_absent_world: []
+    requires_bindings: []
+    requires_absent_bindings:
+      - fault_code
+    effects_world: []
+    effects_bindings:
+      - fault_code
+    tool_arg_bindings: {}
+    stutter_on_fail: true
+
+  - action_id: user_power_cycle_station
+    requestor: user
+    tool_name: power_cycle_station
+    classification: causal
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].reachability_state
+        value: reachable
+    requires_absent_world:
+      - op: eq
+        path: user.physical.station_power_cycle_state
+        value: done
+    requires_bindings: []
+    requires_absent_bindings: []
+    effects_world:
+      - path: user.physical.station_power_cycle_state
+        set: done
+    effects_bindings: []
+    tool_arg_bindings: {}
+    stutter_on_fail: true
+
+  - action_id: user_reseat_connector
+    requestor: user
+    tool_name: reseat_connector
+    classification: causal
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].reachability_state
+        value: reachable
+    requires_absent_world:
+      - op: eq
+        path: user.physical.connector_reseat_state
+        value: reseated
+    requires_bindings: []
+    requires_absent_bindings: []
+    effects_world:
+      - path: user.physical.connector_reseat_state
+        set: reseated
+    effects_bindings: []
+    tool_arg_bindings: {}
+    stutter_on_fail: true
+
+  - action_id: assistant_clear_backend_hold
+    requestor: assistant
+    tool_name: clear_billing_hold
+    classification: causal
+    requires_world:
+      - op: eq
+        path: agent.accounts[active_account].hold_status
+        value: present
+    requires_absent_world: []
+    requires_bindings:
+      - fault_code
+    requires_absent_bindings: []
+    effects_world:
+      - path: agent.accounts[active_account].hold_status
+        set: cleared
+    effects_bindings: []
+    tool_arg_bindings:
+      fault_code: fault_code
+    stutter_on_fail: true
+
+  - action_id: assistant_reprovision_charging_profile
+    requestor: assistant
+    tool_name: reprovision_charging_profile
+    classification: causal
+    requires_world:
+      - op: eq
+        path: agent.accounts[active_account].hold_status
+        value: cleared
+      - op: eq
+        path: user.physical.station_power_cycle_state
+        value: done
+      - op: eq
+        path: user.physical.connector_reseat_state
+        value: reseated
+      - op: eq
+        path: agent.sessions[active_session].profile_state
+        value: not_ready
+    requires_absent_world: []
+    requires_bindings:
+      - fault_code
+    requires_absent_bindings: []
+    effects_world:
+      - path: agent.sessions[active_session].profile_state
+        set: ready
+      - path: agent.sessions[active_session].retry_state
+        set: ready
+      - path: agent.sessions[active_session].last_fault_code
+        set: NONE
+    effects_bindings: []
+    tool_arg_bindings:
+      fault_code: fault_code
+    stutter_on_fail: true
+
+  - action_id: user_run_test_charge
+    requestor: user
+    tool_name: run_test_charge
+    classification: causal
+    requires_world:
+      - op: eq
+        path: agent.accounts[active_account].hold_status
+        value: cleared
+      - op: eq
+        path: agent.sessions[active_session].profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].retry_state
+        value: ready
+      - op: eq
+        path: user.physical.station_power_cycle_state
+        value: done
+      - op: eq
+        path: user.physical.connector_reseat_state
+        value: reseated
+    requires_absent_world:
+      - op: eq
+        path: agent.sessions[active_session].charge_state
+        value: active
+    requires_bindings: []
+    requires_absent_bindings: []
+    effects_world:
+      - path: user.physical.test_charge_state
+        set: run
+      - path: agent.sessions[active_session].charge_state
+        set: active
+    effects_bindings: []
+    tool_arg_bindings: {}
+    stutter_on_fail: true
+
+  - action_id: user_check_resolution_status
+    requestor: user
+    tool_name: check_resolution_status
+    classification: stutter-only
+    requires_world: []
+    requires_absent_world: []
+    requires_bindings: []
+    requires_absent_bindings: []
+    effects_world: []
+    effects_bindings: []
+    tool_arg_bindings: {}
+    stutter_on_fail: true
+
+assistant_stutter_allowlist: []

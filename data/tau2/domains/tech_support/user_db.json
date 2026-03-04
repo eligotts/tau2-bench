@@ -1,6 +1,7 @@
 {
   "customer_id": null,
   "customer_name": null,
+  "account_status": "active",
   "connection_status": "online",
   "wifi_band": "5ghz",
   "firmware_status": "current",

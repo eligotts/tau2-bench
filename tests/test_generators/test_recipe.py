@@ -32,6 +32,7 @@ from tau2.generators.recipe import (
     recipe_to_spec,
     verify_completion_fragments,
     verify_fault_atoms,
+    verify_resolution_instruction,
 )
 from tau2.generators.types import Persona, UserTemplate
 
@@ -1388,6 +1389,29 @@ class TestUserActions(unittest.TestCase):
 
         self.assertIsNone(spec.user_task_instructions)
 
+    def test_spec_user_task_instructions_composed_for_unfixable_with_fragment(self):
+        """user_task_instructions is composed when unfixable layer has completion_fragment."""
+        unfixable = FaultLayer(
+            name="unfixable",
+            unfixable=True,
+            init_calls=[],
+            actions=[],
+            assertions=[],
+            known_info_fragment="unfixable",
+            completion_fragment="the broken thing is fully repaired and working",
+            resource_scope="unfixable:{id}",
+        )
+        flc = _make_fault_layer_config(
+            groups=[FaultLayerGroup(name="g1", layers=[unfixable])],
+            min_faults=1,
+        )
+        entity = _make_fault_entity()
+        spec = _fault_layers_to_spec(flc, entity, [unfixable])
+
+        self.assertIsNotNone(spec.user_task_instructions)
+        self.assertIn("fully repaired and working", spec.user_task_instructions)
+        self.assertIn("You will consider your issues resolved when", spec.user_task_instructions)
+
     def test_user_template_instructions_flow_to_task(self):
         """UserTemplate.task_instructions flow through to Task (telecom-style behavioral guidance)."""
         layer = self._make_layer_with_user_actions()
@@ -1872,14 +1896,29 @@ class TestVerifyCompletionFragments(unittest.TestCase):
         self.assertTrue(len(errors) >= 1)
         self.assertIn("completion_fragment", errors[0])
 
-    def test_unfixable_layer_missing_fragment_ok(self):
-        """Unfixable layer without completion_fragment produces no errors."""
+    def test_unfixable_layer_missing_fragment_errors(self):
+        """Unfixable layer without completion_fragment produces ERROR."""
         layer = FaultLayer(
             name="unfixable_fault",
             unfixable=True,
             atoms=[],
             known_info_fragment="unfixable issue",
             completion_fragment="",
+        )
+        flc = self._make_flc([layer])
+        issues = verify_completion_fragments(flc)
+        errors = [i for i in issues if i.startswith("ERROR")]
+        self.assertTrue(len(errors) >= 1)
+        self.assertIn("unfixable", errors[0])
+
+    def test_unfixable_layer_with_fragment_passes(self):
+        """Unfixable layer with completion_fragment produces no errors."""
+        layer = FaultLayer(
+            name="unfixable_fault",
+            unfixable=True,
+            atoms=[],
+            known_info_fragment="unfixable issue",
+            completion_fragment="the broken thing is fully repaired and working",
         )
         flc = self._make_flc([layer])
         issues = verify_completion_fragments(flc)
@@ -1904,6 +1943,1337 @@ class TestVerifyCompletionFragments(unittest.TestCase):
         warnings = [i for i in issues if i.startswith("WARNING")]
         self.assertTrue(len(warnings) >= 1)
         self.assertIn("frame phrase", warnings[0])
+
+    def test_transfer_leak_rejected(self):
+        """Unfixable layer with 'transferred' in completion_fragment → ERROR."""
+        layer = FaultLayer(
+            name="unfixable",
+            unfixable=True,
+            atoms=[],
+            known_info_fragment="unfixable issue",
+            completion_fragment="the agent has transferred you to a specialist team",
+        )
+        flc = self._make_flc([layer])
+        issues = verify_completion_fragments(flc)
+        errors = [i for i in issues if i.startswith("ERROR") and "leak" in i.lower()]
+        self.assertTrue(
+            len(errors) >= 1,
+            f"Expected transfer-leak error, got: {issues}",
+        )
+
+    def test_impossible_goal_passes(self):
+        """Unfixable layer with proper impossible-goal fragment passes."""
+        layer = FaultLayer(
+            name="unfixable",
+            unfixable=True,
+            atoms=[],
+            known_info_fragment="unfixable issue",
+            completion_fragment="your router is back online with all lights normal",
+        )
+        flc = self._make_flc([layer])
+        issues = verify_completion_fragments(flc)
+        errors = [i for i in issues if i.startswith("ERROR")]
+        self.assertEqual(errors, [])
+
+    def test_escalated_rejected(self):
+        """'escalated' in unfixable completion_fragment → ERROR."""
+        layer = FaultLayer(
+            name="unfixable",
+            unfixable=True,
+            atoms=[],
+            known_info_fragment="unfixable issue",
+            completion_fragment="your issue has been escalated to management",
+        )
+        flc = self._make_flc([layer])
+        issues = verify_completion_fragments(flc)
+        errors = [i for i in issues if i.startswith("ERROR") and "leak" in i.lower()]
+        self.assertTrue(len(errors) >= 1)
+
+    def test_supervisor_rejected(self):
+        """'supervisor' in unfixable completion_fragment → ERROR."""
+        layer = FaultLayer(
+            name="unfixable",
+            unfixable=True,
+            atoms=[],
+            known_info_fragment="unfixable issue",
+            completion_fragment="a supervisor has taken over your case",
+        )
+        flc = self._make_flc([layer])
+        issues = verify_completion_fragments(flc)
+        errors = [i for i in issues if i.startswith("ERROR") and "leak" in i.lower()]
+        self.assertTrue(len(errors) >= 1)
+
+
+# ---------------------------------------------------------------------------
+# TestVerifyResolutionInstruction
+# ---------------------------------------------------------------------------
+
+
+class TestVerifyResolutionInstruction(unittest.TestCase):
+    """Tests for verify_resolution_instruction validation."""
+
+    def _make_recipe_book(self, resolution_instruction="", groups=None):
+        """Create a minimal RecipeBook with given resolution_instruction."""
+        if groups is None:
+            groups = [FaultLayerGroup(
+                name="g1",
+                layers=[FaultLayer(
+                    name="test_fault",
+                    atoms=[
+                        FaultAtom(
+                            fix=ActionSpec(tool_name="fix_it", args={"id": "{id}"}),
+                            check=AssertionSpec(func_name="assert_fixed", args={"id": "{id}"}),
+                        ),
+                    ],
+                    known_info_fragment="something is broken",
+                    completion_fragment="your thing is fixed",
+                )],
+                resolution_category="connectivity",
+            )]
+        flc = FaultLayerConfig(
+            name="test_flc",
+            entity_query=lambda db: [{"id": "E001"}],
+            groups=groups,
+            base_init_calls=[],
+            base_known_info_template="{fault_descriptions}",
+            base_ticket_template="{fault_descriptions}",
+            reason_for_call="test",
+            purpose="test",
+            entity_id_field="id",
+            min_faults=1,
+        )
+        return RecipeBook(
+            fault_layer_configs=[flc],
+            resolution_instruction=resolution_instruction,
+        )
+
+    def test_empty_resolution_instruction_no_issues(self):
+        """Empty resolution_instruction produces no issues (legacy mode)."""
+        rb = self._make_recipe_book(resolution_instruction="")
+        issues = verify_resolution_instruction(rb)
+        self.assertEqual(issues, [])
+
+    def test_valid_resolution_instruction_passes(self):
+        """Valid resolution_instruction with matching categories produces no issues."""
+        rb = self._make_recipe_book(
+            resolution_instruction="your internet connectivity is working normally",
+        )
+        issues = verify_resolution_instruction(rb)
+        self.assertEqual(issues, [])
+
+    def test_frame_phrase_warns(self):
+        """resolution_instruction containing frame phrases produces WARNING."""
+        rb = self._make_recipe_book(
+            resolution_instruction="you will consider your issues resolved when things work",
+        )
+        issues = verify_resolution_instruction(rb)
+        warnings = [i for i in issues if "frame phrase" in i.lower()]
+        self.assertTrue(len(warnings) >= 1)
+
+    def test_missing_resolution_category_warns(self):
+        """Groups without resolution_category produce WARNING."""
+        groups = [FaultLayerGroup(
+            name="g1",
+            layers=[FaultLayer(
+                name="test_fault",
+                atoms=[
+                    FaultAtom(
+                        fix=ActionSpec(tool_name="fix_it", args={"id": "{id}"}),
+                        check=AssertionSpec(func_name="assert_fixed", args={"id": "{id}"}),
+                    ),
+                ],
+                known_info_fragment="something is broken",
+                completion_fragment="your thing is fixed",
+            )],
+            # No resolution_category
+        )]
+        rb = self._make_recipe_book(
+            resolution_instruction="your internet connectivity is working normally",
+            groups=groups,
+        )
+        issues = verify_resolution_instruction(rb)
+        warnings = [i for i in issues if "resolution_category" in i.lower()]
+        self.assertTrue(len(warnings) >= 1)
+
+    def test_uncovered_category_warns(self):
+        """Categories not covered by resolution_instruction produce WARNING."""
+        rb = self._make_recipe_book(
+            resolution_instruction="your billing has been corrected",
+            groups=[FaultLayerGroup(
+                name="g1",
+                layers=[FaultLayer(
+                    name="test_fault",
+                    atoms=[
+                        FaultAtom(
+                            fix=ActionSpec(tool_name="fix_it", args={"id": "{id}"}),
+                            check=AssertionSpec(func_name="assert_fixed", args={"id": "{id}"}),
+                        ),
+                    ],
+                    known_info_fragment="something is broken",
+                    completion_fragment="your thing is fixed",
+                )],
+                resolution_category="connectivity",
+            )],
+        )
+        issues = verify_resolution_instruction(rb)
+        warnings = [i for i in issues if "may not cover" in i.lower()]
+        self.assertTrue(len(warnings) >= 1)
+
+    def test_resolution_instruction_used_in_task_instructions(self):
+        """When resolution_instruction is set, it appears in composed task instructions."""
+        from tau2.generators.recipe import _compose_task_instructions
+
+        layer = FaultLayer(
+            name="test_fault",
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="fix_it", args={"id": "{id}"}),
+                    check=AssertionSpec(func_name="assert_fixed", args={"id": "{id}"}),
+                ),
+            ],
+            known_info_fragment="something is broken",
+            completion_fragment="your thing is fixed",
+        )
+        flc = FaultLayerConfig(
+            name="test_flc",
+            entity_query=lambda db: [{"id": "E001"}],
+            groups=[FaultLayerGroup(name="g1", layers=[layer])],
+            base_init_calls=[],
+            base_known_info_template="{fault_descriptions}",
+            base_ticket_template="{fault_descriptions}",
+            reason_for_call="test",
+            purpose="test",
+            entity_id_field="id",
+            min_faults=1,
+        )
+
+        # With resolution_instruction
+        result = _compose_task_instructions(
+            [layer], flc, {"id": "E001"},
+            resolution_instruction="everything works perfectly",
+        )
+        self.assertIn("everything works perfectly", result)
+        # Should NOT contain the per-layer fragment as the stop criterion
+        self.assertNotIn("your thing is fixed", result)
+
+    def test_without_resolution_instruction_uses_fragments(self):
+        """Without resolution_instruction, task instructions AND-chain fragments."""
+        from tau2.generators.recipe import _compose_task_instructions
+
+        layer = FaultLayer(
+            name="test_fault",
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="fix_it", args={"id": "{id}"}),
+                    check=AssertionSpec(func_name="assert_fixed", args={"id": "{id}"}),
+                ),
+            ],
+            known_info_fragment="something is broken",
+            completion_fragment="your thing is fixed",
+        )
+        flc = FaultLayerConfig(
+            name="test_flc",
+            entity_query=lambda db: [{"id": "E001"}],
+            groups=[FaultLayerGroup(name="g1", layers=[layer])],
+            base_init_calls=[],
+            base_known_info_template="{fault_descriptions}",
+            base_ticket_template="{fault_descriptions}",
+            reason_for_call="test",
+            purpose="test",
+            entity_id_field="id",
+            min_faults=1,
+        )
+
+        # Without resolution_instruction (legacy)
+        result = _compose_task_instructions(
+            [layer], flc, {"id": "E001"},
+        )
+        self.assertIn("your thing is fixed", result)
+
+
+# ---------------------------------------------------------------------------
+# TestPhaseOrdering
+# ---------------------------------------------------------------------------
+
+
+class TestPhaseOrdering(unittest.TestCase):
+    """Tests that atoms with different phases produce actions in phase order."""
+
+    def test_atoms_ordered_by_phase(self):
+        """Atoms at phases 0, 1, 2 produce actions in phase order."""
+        layer = FaultLayer(
+            name="phased",
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="step_a", args={"id": "{id}"}),
+                    phase=0,
+                ),
+                FaultAtom(
+                    fix=ActionSpec(tool_name="step_b", args={"id": "{id}"}),
+                    phase=1,
+                ),
+                FaultAtom(
+                    fix=ActionSpec(tool_name="step_c", args={"id": "{id}"}),
+                    phase=2,
+                ),
+            ],
+            known_info_fragment="phased problem",
+            completion_fragment="everything is fixed",
+            resource_scope="phased:{id}",
+        )
+        flc = _make_fault_layer_config(
+            groups=[FaultLayerGroup(name="g1", layers=[layer])],
+            min_faults=1,
+        )
+        entity = _make_fault_entity()
+        spec = _fault_layers_to_spec(flc, entity, [layer])
+
+        self.assertEqual(len(spec.actions), 3)
+        self.assertEqual(spec.actions[0]["name"], "step_a")
+        self.assertEqual(spec.actions[1]["name"], "step_b")
+        self.assertEqual(spec.actions[2]["name"], "step_c")
+
+    def test_same_phase_requestor_tiebreaker(self):
+        """Within same phase, user actions come before agent actions."""
+        layer = FaultLayer(
+            name="same_phase",
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="agent_fix", args={"id": "{id}"}),
+                    phase=0,
+                ),
+                FaultAtom(
+                    fix=ActionSpec(tool_name="user_check", args={"id": "{id}"}, requestor="user"),
+                    phase=0,
+                ),
+            ],
+            known_info_fragment="same phase problem",
+            completion_fragment="fixed",
+            resource_scope="sp:{id}",
+        )
+        flc = _make_fault_layer_config(
+            groups=[FaultLayerGroup(name="g1", layers=[layer])],
+            min_faults=1,
+        )
+        entity = _make_fault_entity()
+        spec = _fault_layers_to_spec(flc, entity, [layer])
+
+        self.assertEqual(len(spec.actions), 2)
+        # user (requestor_priority=0) before agent (requestor_priority=1)
+        self.assertEqual(spec.actions[0]["name"], "user_check")
+        self.assertEqual(spec.actions[0]["requestor"], "user")
+        self.assertEqual(spec.actions[1]["name"], "agent_fix")
+        self.assertEqual(spec.actions[1]["requestor"], "assistant")
+
+
+# ---------------------------------------------------------------------------
+# TestPhaseOverridesRequestor
+# ---------------------------------------------------------------------------
+
+
+class TestPhaseOverridesRequestor(unittest.TestCase):
+    """Tests that phase takes precedence over requestor."""
+
+    def test_phase_0_agent_before_phase_1_user(self):
+        """Phase 0 agent action comes before phase 1 user action."""
+        layer = FaultLayer(
+            name="phase_override",
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="agent_first", args={"id": "{id}"}),
+                    phase=0,
+                ),
+                FaultAtom(
+                    fix=ActionSpec(tool_name="user_second", args={"id": "{id}"}, requestor="user"),
+                    phase=1,
+                ),
+            ],
+            known_info_fragment="phase override",
+            completion_fragment="fixed",
+            resource_scope="po:{id}",
+        )
+        flc = _make_fault_layer_config(
+            groups=[FaultLayerGroup(name="g1", layers=[layer])],
+            min_faults=1,
+        )
+        entity = _make_fault_entity()
+        spec = _fault_layers_to_spec(flc, entity, [layer])
+
+        self.assertEqual(len(spec.actions), 2)
+        self.assertEqual(spec.actions[0]["name"], "agent_first")
+        self.assertEqual(spec.actions[0]["requestor"], "assistant")
+        self.assertEqual(spec.actions[1]["name"], "user_second")
+        self.assertEqual(spec.actions[1]["requestor"], "user")
+
+
+# ---------------------------------------------------------------------------
+# TestGateTierOrdering
+# ---------------------------------------------------------------------------
+
+
+class TestGateTierOrdering(unittest.TestCase):
+    """Tests that layers at different gate_tiers produce actions in tier order."""
+
+    def test_tier_0_before_tier_1(self):
+        """Tier-0 layer actions come before tier-1 layer actions."""
+        tier0_layer = FaultLayer(
+            name="unlock",
+            gate_tier=0,
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="unlock_account", args={"id": "{id}"}),
+                    init=InitCall(env_type="assistant", func_name="lock_account", args={"id": "{id}"}),
+                    check=AssertionSpec(func_name="assert_unlocked", args={"id": "{id}"}),
+                ),
+            ],
+            known_info_fragment="account locked",
+            completion_fragment="account accessible",
+            resource_scope="account:{id}",
+        )
+        tier1_layer = FaultLayer(
+            name="fix_booking",
+            gate_tier=1,
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="fix_booking", args={"id": "{id}"}),
+                    init=InitCall(env_type="assistant", func_name="break_booking", args={"id": "{id}"}),
+                    check=AssertionSpec(func_name="assert_booking_ok", args={"id": "{id}"}),
+                ),
+            ],
+            known_info_fragment="booking wrong",
+            completion_fragment="booking correct",
+            resource_scope="booking:{id}",
+        )
+        groups = [
+            FaultLayerGroup(name="g1", layers=[tier0_layer]),
+            FaultLayerGroup(name="g2", layers=[tier1_layer]),
+        ]
+        flc = _make_fault_layer_config(groups=groups, min_faults=2)
+        entity = _make_fault_entity()
+        spec = _fault_layers_to_spec(flc, entity, [tier0_layer, tier1_layer])
+
+        self.assertEqual(len(spec.actions), 2)
+        self.assertEqual(spec.actions[0]["name"], "unlock_account")
+        self.assertEqual(spec.actions[1]["name"], "fix_booking")
+
+    def test_tier_ordering_init_actions(self):
+        """Tier-0 init calls run before tier-1 init calls."""
+        tier0_layer = FaultLayer(
+            name="tier0",
+            gate_tier=0,
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="fix_0", args={"id": "{id}"}),
+                    init=InitCall(env_type="assistant", func_name="break_first", args={"id": "{id}"}),
+                    check=AssertionSpec(func_name="assert_0", args={"id": "{id}"}),
+                ),
+            ],
+            known_info_fragment="first problem",
+            completion_fragment="first fixed",
+            resource_scope="t0:{id}",
+        )
+        tier1_layer = FaultLayer(
+            name="tier1",
+            gate_tier=1,
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="fix_1", args={"id": "{id}"}),
+                    init=InitCall(env_type="assistant", func_name="break_second", args={"id": "{id}"}),
+                    check=AssertionSpec(func_name="assert_1", args={"id": "{id}"}),
+                ),
+            ],
+            known_info_fragment="second problem",
+            completion_fragment="second fixed",
+            resource_scope="t1:{id}",
+        )
+        groups = [
+            FaultLayerGroup(name="g1", layers=[tier0_layer]),
+            FaultLayerGroup(name="g2", layers=[tier1_layer]),
+        ]
+        flc = _make_fault_layer_config(groups=groups, min_faults=2)
+        entity = _make_fault_entity()
+        spec = _fault_layers_to_spec(flc, entity, [tier0_layer, tier1_layer])
+
+        # Init ordering: base + tier0 init + tier1 init
+        init_func_names = [a.func_name for a in spec.init_actions]
+        # base comes first, then tier0, then tier1
+        break_first_idx = init_func_names.index("break_first")
+        break_second_idx = init_func_names.index("break_second")
+        self.assertLess(break_first_idx, break_second_idx)
+
+
+# ---------------------------------------------------------------------------
+# TestStepTypeDiagnostic
+# ---------------------------------------------------------------------------
+
+
+class TestStepTypeDiagnostic(unittest.TestCase):
+    """Tests for step_type='diagnostic' atoms."""
+
+    def test_diagnostic_atoms_in_golden_path(self):
+        """Diagnostic atoms are included in the action list."""
+        layer = FaultLayer(
+            name="diag",
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="check_status", args={"id": "{id}"}),
+                    step_type="diagnostic",
+                    phase=0,
+                ),
+                FaultAtom(
+                    fix=ActionSpec(tool_name="fix_issue", args={"id": "{id}"}),
+                    init=InitCall(env_type="assistant", func_name="break_it", args={"id": "{id}"}),
+                    check=AssertionSpec(func_name="assert_fixed", args={"id": "{id}"}),
+                    step_type="fix",
+                    phase=1,
+                ),
+            ],
+            known_info_fragment="something seems off",
+            completion_fragment="everything is working",
+            resource_scope="diag:{id}",
+        )
+        flc = _make_fault_layer_config(
+            groups=[FaultLayerGroup(name="g1", layers=[layer])],
+            min_faults=1,
+        )
+        entity = _make_fault_entity()
+        spec = _fault_layers_to_spec(flc, entity, [layer])
+
+        self.assertEqual(len(spec.actions), 2)
+        self.assertEqual(spec.actions[0]["name"], "check_status")
+        self.assertEqual(spec.actions[1]["name"], "fix_issue")
+
+    def test_diagnostic_no_check_no_warning(self):
+        """Diagnostic atoms with no check don't trigger the init-without-check warning."""
+        import warnings
+        layer = FaultLayer(
+            name="diag_no_warn",
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="check_status", args={"id": "{id}"}),
+                    step_type="diagnostic",
+                    # No init, no check — this should NOT warn
+                ),
+            ],
+            known_info_fragment="diagnostic",
+            completion_fragment="diagnosed",
+            resource_scope="dnw:{id}",
+        )
+        groups = [FaultLayerGroup(name="g1", layers=[layer])]
+        flc = _make_fault_layer_config(groups=groups, min_faults=1)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            _generate_fault_layer_specs(flc, None)
+            # Filter for the specific "init but no check" warning
+            init_no_check_warnings = [
+                x for x in w
+                if "init but no check" in str(x.message).lower()
+            ]
+            self.assertEqual(len(init_no_check_warnings), 0)
+
+    def test_invalid_step_type_raises(self):
+        """Invalid step_type value raises ValueError."""
+        layer = FaultLayer(
+            name="bad_step_type",
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="do_thing", args={"id": "{id}"}),
+                    step_type="invalid_type",
+                ),
+            ],
+            known_info_fragment="bad type",
+            completion_fragment="fixed",
+            resource_scope="bad:{id}",
+        )
+        groups = [FaultLayerGroup(name="g1", layers=[layer])]
+        flc = _make_fault_layer_config(groups=groups, min_faults=1)
+
+        with self.assertRaises(ValueError) as ctx:
+            _generate_fault_layer_specs(flc, None)
+        self.assertIn("invalid step_type", str(ctx.exception))
+
+
+# ---------------------------------------------------------------------------
+# TestGateTierResourceScope
+# ---------------------------------------------------------------------------
+
+
+class TestGateTierResourceScope(unittest.TestCase):
+    """Tests that same-scope cross-group is allowed with different gate_tiers."""
+
+    def test_same_scope_different_tiers_allowed(self):
+        """Layers with same resource_scope but different gate_tiers don't conflict."""
+        layer_a = FaultLayer(
+            name="tier0_layer",
+            gate_tier=0,
+            init_calls=[InitCall(env_type="assistant", func_name="break_a", args={"id": "{id}"})],
+            actions=[ActionSpec(tool_name="fix_a", args={"id": "{id}"})],
+            assertions=[],
+            known_info_fragment="tier 0 problem",
+            resource_scope="shared:{id}",
+        )
+        layer_b = FaultLayer(
+            name="tier1_layer",
+            gate_tier=1,
+            init_calls=[InitCall(env_type="assistant", func_name="break_b", args={"id": "{id}"})],
+            actions=[ActionSpec(tool_name="fix_b", args={"id": "{id}"})],
+            assertions=[],
+            known_info_fragment="tier 1 problem",
+            resource_scope="shared:{id}",
+        )
+        groups = [
+            FaultLayerGroup(name="g1", layers=[layer_a]),
+            FaultLayerGroup(name="g2", layers=[layer_b]),
+        ]
+        flc = _make_fault_layer_config(groups=groups)
+        entities = [_make_fault_entity()]
+
+        # Should NOT raise — different tiers means sequential execution
+        _validate_resource_scopes(flc, entities)
+
+    def test_same_scope_same_tier_still_conflicts(self):
+        """Layers with same resource_scope and same gate_tier still conflict."""
+        layer_a = FaultLayer(
+            name="same_tier_a",
+            gate_tier=0,
+            init_calls=[InitCall(env_type="assistant", func_name="break_a", args={"id": "{id}"})],
+            actions=[ActionSpec(tool_name="fix_a", args={"id": "{id}"})],
+            assertions=[],
+            known_info_fragment="problem a",
+            resource_scope="shared:{id}",
+        )
+        layer_b = FaultLayer(
+            name="same_tier_b",
+            gate_tier=0,
+            init_calls=[InitCall(env_type="assistant", func_name="break_b", args={"id": "{id}"})],
+            actions=[ActionSpec(tool_name="fix_b", args={"id": "{id}"})],
+            assertions=[],
+            known_info_fragment="problem b",
+            resource_scope="shared:{id}",
+        )
+        groups = [
+            FaultLayerGroup(name="g1", layers=[layer_a]),
+            FaultLayerGroup(name="g2", layers=[layer_b]),
+        ]
+        flc = _make_fault_layer_config(groups=groups)
+        entities = [_make_fault_entity()]
+
+        with self.assertRaises(ValueError) as ctx:
+            _validate_resource_scopes(flc, entities)
+        self.assertIn("Resource conflict", str(ctx.exception))
+
+
+# ---------------------------------------------------------------------------
+# TestVerificationChecks (verify_authoring new checks)
+# ---------------------------------------------------------------------------
+
+
+class TestVerificationChecks(unittest.TestCase):
+    """Tests for new verify_authoring structural checks."""
+
+    def _make_recipe_book(self, flcs):
+        return RecipeBook(fault_layer_configs=flcs)
+
+    def test_gate_tier_consistency_error(self):
+        """gate_tier > 0 with no lower-tier layer in another group → ERROR."""
+        from tau2.generators.verify_authoring import _check_gate_tier_consistency
+
+        # Only one group, layer at tier 1 — no lower-tier layer in different group
+        layer = FaultLayer(
+            name="gated",
+            gate_tier=1,
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix", args={}))],
+            known_info_fragment="gated",
+            resource_scope="g:{id}",
+        )
+        flc = FaultLayerConfig(
+            name="test",
+            entity_query=lambda idx: [{"id": "E1"}],
+            groups=[FaultLayerGroup(name="g1", layers=[layer])],
+            base_init_calls=[],
+            base_known_info_template="{fault_descriptions}",
+            base_ticket_template="{fault_descriptions}",
+            reason_for_call="test",
+            purpose="test",
+            entity_id_field="id",
+            min_faults=1,
+        )
+        book = self._make_recipe_book([flc])
+        issues = _check_gate_tier_consistency(book)
+        errors = [i for i in issues if i.startswith("ERROR")]
+        self.assertTrue(len(errors) >= 1)
+
+    def test_gate_tier_consistency_pass(self):
+        """Proper gate_tier setup with tier 0 and tier 1 in different groups → no error."""
+        from tau2.generators.verify_authoring import _check_gate_tier_consistency
+
+        layer0 = FaultLayer(
+            name="tier0",
+            gate_tier=0,
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix0", args={}))],
+            known_info_fragment="t0",
+            resource_scope="t0:{id}",
+        )
+        layer1 = FaultLayer(
+            name="tier1",
+            gate_tier=1,
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix1", args={}))],
+            known_info_fragment="t1",
+            resource_scope="t1:{id}",
+        )
+        flc = FaultLayerConfig(
+            name="test",
+            entity_query=lambda idx: [{"id": "E1"}],
+            groups=[
+                FaultLayerGroup(name="g1", layers=[layer0]),
+                FaultLayerGroup(name="g2", layers=[layer1]),
+            ],
+            base_init_calls=[],
+            base_known_info_template="{fault_descriptions}",
+            base_ticket_template="{fault_descriptions}",
+            reason_for_call="test",
+            purpose="test",
+            entity_id_field="id",
+            min_faults=1,
+        )
+        book = self._make_recipe_book([flc])
+        issues = _check_gate_tier_consistency(book)
+        self.assertEqual(issues, [])
+
+    def test_phase_monotonicity_warning(self):
+        """Backward phases within a layer → WARNING."""
+        from tau2.generators.verify_authoring import _check_phase_monotonicity
+
+        layer = FaultLayer(
+            name="backward",
+            atoms=[
+                FaultAtom(fix=ActionSpec(tool_name="b", args={}), phase=2),
+                FaultAtom(fix=ActionSpec(tool_name="a", args={}), phase=1),
+            ],
+            known_info_fragment="backward",
+        )
+        flc = FaultLayerConfig(
+            name="test",
+            entity_query=lambda idx: [{"id": "E1"}],
+            groups=[FaultLayerGroup(name="g1", layers=[layer])],
+            base_init_calls=[],
+            base_known_info_template="{fault_descriptions}",
+            base_ticket_template="{fault_descriptions}",
+            reason_for_call="test",
+            purpose="test",
+            entity_id_field="id",
+            min_faults=1,
+        )
+        book = self._make_recipe_book([flc])
+        issues = _check_phase_monotonicity(book)
+        warnings = [i for i in issues if i.startswith("WARNING")]
+        self.assertTrue(len(warnings) >= 1)
+
+    def test_step_type_valid_error(self):
+        """Invalid step_type → ERROR."""
+        from tau2.generators.verify_authoring import _check_step_type_valid
+
+        layer = FaultLayer(
+            name="bad",
+            atoms=[
+                FaultAtom(fix=ActionSpec(tool_name="x", args={}), step_type="invalid"),
+            ],
+            known_info_fragment="bad",
+        )
+        flc = FaultLayerConfig(
+            name="test",
+            entity_query=lambda idx: [{"id": "E1"}],
+            groups=[FaultLayerGroup(name="g1", layers=[layer])],
+            base_init_calls=[],
+            base_known_info_template="{fault_descriptions}",
+            base_ticket_template="{fault_descriptions}",
+            reason_for_call="test",
+            purpose="test",
+            entity_id_field="id",
+            min_faults=1,
+        )
+        book = self._make_recipe_book([flc])
+        issues = _check_step_type_valid(book)
+        errors = [i for i in issues if i.startswith("ERROR")]
+        self.assertTrue(len(errors) >= 1)
+
+
+# ---------------------------------------------------------------------------
+# TestLegacyCompatibility
+# ---------------------------------------------------------------------------
+
+
+class TestLegacyCompatibility(unittest.TestCase):
+    """Verify that legacy (non-atom) layers still work correctly with the new ordering."""
+
+    def test_legacy_user_before_agent_preserved(self):
+        """Legacy interface: user actions still come before agent actions (requestor tiebreaker)."""
+        layer = FaultLayer(
+            name="legacy",
+            init_calls=[
+                InitCall(env_type="assistant", func_name="break_it", args={"id": "{id}"}),
+            ],
+            actions=[
+                ActionSpec(tool_name="agent_fix", args={"id": "{id}"}),
+            ],
+            user_actions=[
+                ActionSpec(tool_name="user_toggle", args={"id": "{id}"}),
+            ],
+            assertions=[
+                AssertionSpec(func_name="assert_fixed", args={"id": "{id}"}),
+            ],
+            known_info_fragment="legacy problem",
+            resource_scope="legacy:{id}",
+        )
+        flc = _make_fault_layer_config(
+            groups=[FaultLayerGroup(name="g1", layers=[layer])],
+            min_faults=1,
+        )
+        entity = _make_fault_entity()
+        spec = _fault_layers_to_spec(flc, entity, [layer])
+
+        # user before agent (requestor priority 0 < 1, same phase 0)
+        self.assertEqual(len(spec.actions), 2)
+        self.assertEqual(spec.actions[0]["name"], "user_toggle")
+        self.assertEqual(spec.actions[0]["requestor"], "user")
+        self.assertEqual(spec.actions[1]["name"], "agent_fix")
+        self.assertEqual(spec.actions[1]["requestor"], "assistant")
+
+
+# ---------------------------------------------------------------------------
+# TestNewVerificationChecks
+# ---------------------------------------------------------------------------
+
+
+class TestNewVerificationChecks(unittest.TestCase):
+    """Tests for checks 15-25 in verify_authoring."""
+
+    def _make_recipe_book(self, flcs):
+        return RecipeBook(fault_layer_configs=flcs)
+
+    def _make_flc(self, groups, **kwargs):
+        defaults = dict(
+            name="test",
+            entity_query=lambda idx: [{"id": "E1"}],
+            base_init_calls=[],
+            base_known_info_template="{fault_descriptions}",
+            base_ticket_template="{fault_descriptions}",
+            reason_for_call="test",
+            purpose="test",
+            entity_id_field="id",
+            min_faults=1,
+        )
+        defaults.update(kwargs)
+        return FaultLayerConfig(groups=groups, **defaults)
+
+    # --- Check 15: dedup collision ---
+
+    def test_dedup_collision_within_layer_different_phases(self):
+        """Same action at different phases in same layer → ERROR (dedup will collapse)."""
+        from tau2.generators.verify_authoring import _check_dedup_collision
+
+        layer = FaultLayer(
+            name="check_fix_check",
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="check_status", args={"id": "{id}"},
+                                  requestor="user"),
+                    step_type="diagnostic", phase=0,
+                ),
+                FaultAtom(
+                    fix=ActionSpec(tool_name="toggle_thing", args={"id": "{id}"},
+                                  requestor="user"),
+                    phase=1,
+                ),
+                FaultAtom(
+                    fix=ActionSpec(tool_name="check_status", args={"id": "{id}"},
+                                  requestor="user"),
+                    step_type="diagnostic", phase=2,
+                ),
+            ],
+            known_info_fragment="problem",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_dedup_collision(book)
+        errors = [i for i in issues if i.startswith("ERROR")]
+        self.assertEqual(len(errors), 1)
+        self.assertIn("check_status", errors[0])
+        self.assertIn("phases", errors[0])
+
+    def test_dedup_collision_same_phase_no_error(self):
+        """Same action at same phase → not a dedup collision (just duplicates)."""
+        from tau2.generators.verify_authoring import _check_dedup_collision
+
+        layer = FaultLayer(
+            name="same_phase",
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="do_thing", args={"id": "{id}"}),
+                    phase=0,
+                ),
+                FaultAtom(
+                    fix=ActionSpec(tool_name="do_thing", args={"id": "{id}"}),
+                    phase=0,
+                ),
+            ],
+            known_info_fragment="dup",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_dedup_collision(book)
+        errors = [i for i in issues if i.startswith("ERROR")]
+        self.assertEqual(len(errors), 0)
+
+    def test_dedup_collision_cross_tier_warning(self):
+        """Same action in layers at different tiers → WARNING."""
+        from tau2.generators.verify_authoring import _check_dedup_collision
+
+        layer0 = FaultLayer(
+            name="tier0_read",
+            gate_tier=0,
+            atoms=[FaultAtom(
+                fix=ActionSpec(tool_name="get_info", args={"id": "{id}"}),
+                step_type="diagnostic",
+            )],
+            known_info_fragment="t0",
+            resource_scope="x:{id}",
+        )
+        layer1 = FaultLayer(
+            name="tier1_read",
+            gate_tier=1,
+            atoms=[FaultAtom(
+                fix=ActionSpec(tool_name="get_info", args={"id": "{id}"}),
+                step_type="diagnostic",
+            )],
+            known_info_fragment="t1",
+            resource_scope="y:{id}",
+        )
+        flc = self._make_flc([
+            FaultLayerGroup(name="g1", layers=[layer0]),
+            FaultLayerGroup(name="g2", layers=[layer1]),
+        ])
+        book = self._make_recipe_book([flc])
+        issues = _check_dedup_collision(book)
+        warnings = [i for i in issues if i.startswith("WARNING")]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("get_info", warnings[0])
+
+    # --- Check 16: diagnostic with init ---
+
+    def test_diagnostic_with_init_error(self):
+        """Diagnostic atom with init calls → ERROR."""
+        from tau2.generators.verify_authoring import _check_diagnostic_has_no_init
+
+        layer = FaultLayer(
+            name="bad_diag",
+            atoms=[FaultAtom(
+                fix=ActionSpec(tool_name="read_thing", args={}),
+                init=InitCall(env_type="assistant", func_name="break_it", args={}),
+                step_type="diagnostic",
+            )],
+            known_info_fragment="bad",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_diagnostic_has_no_init(book)
+        errors = [i for i in issues if i.startswith("ERROR")]
+        self.assertEqual(len(errors), 1)
+
+    def test_diagnostic_without_init_ok(self):
+        """Diagnostic atom without init → no error."""
+        from tau2.generators.verify_authoring import _check_diagnostic_has_no_init
+
+        layer = FaultLayer(
+            name="good_diag",
+            atoms=[FaultAtom(
+                fix=ActionSpec(tool_name="read_thing", args={}),
+                step_type="diagnostic",
+            )],
+            known_info_fragment="good",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_diagnostic_has_no_init(book)
+        self.assertEqual(issues, [])
+
+    # --- Check 17: confirm with init ---
+
+    def test_confirm_with_init_warning(self):
+        """Confirm atom with init calls → WARNING."""
+        from tau2.generators.verify_authoring import _check_confirm_has_no_init
+
+        layer = FaultLayer(
+            name="bad_confirm",
+            atoms=[FaultAtom(
+                fix=ActionSpec(tool_name="ack", args={}, requestor="user"),
+                init=InitCall(env_type="user", func_name="break_user_state", args={}),
+                step_type="confirm",
+            )],
+            known_info_fragment="bad",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_confirm_has_no_init(book)
+        warnings = [i for i in issues if i.startswith("WARNING")]
+        self.assertEqual(len(warnings), 1)
+
+    # --- Check 18: legacy + atoms collision ---
+
+    def test_legacy_atoms_collision_warning(self):
+        """Layer with both atoms and legacy actions → WARNING."""
+        from tau2.generators.verify_authoring import _check_legacy_atoms_collision
+
+        layer = FaultLayer(
+            name="collision",
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix_it", args={}))],
+            actions=[ActionSpec(tool_name="old_fix", args={})],
+            known_info_fragment="collision",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_legacy_atoms_collision(book)
+        warnings = [i for i in issues if i.startswith("WARNING")]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("actions", warnings[0])
+
+    def test_atoms_only_no_collision(self):
+        """Layer with atoms but no legacy lists → no warning."""
+        from tau2.generators.verify_authoring import _check_legacy_atoms_collision
+
+        layer = FaultLayer(
+            name="clean",
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix_it", args={}))],
+            known_info_fragment="clean",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_legacy_atoms_collision(book)
+        self.assertEqual(issues, [])
+
+    # --- Check 19: all-diagnostic layer ---
+
+    def test_all_diagnostic_layer_warning(self):
+        """All atoms are diagnostic, no fix → WARNING."""
+        from tau2.generators.verify_authoring import _check_all_diagnostic_layer
+
+        layer = FaultLayer(
+            name="all_diag",
+            atoms=[
+                FaultAtom(fix=ActionSpec(tool_name="read_a", args={}), step_type="diagnostic"),
+                FaultAtom(fix=ActionSpec(tool_name="read_b", args={}), step_type="diagnostic"),
+            ],
+            known_info_fragment="all diag",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_all_diagnostic_layer(book)
+        warnings = [i for i in issues if i.startswith("WARNING")]
+        self.assertEqual(len(warnings), 1)
+
+    def test_mixed_layer_no_warning(self):
+        """Layer with diagnostic + fix → no warning."""
+        from tau2.generators.verify_authoring import _check_all_diagnostic_layer
+
+        layer = FaultLayer(
+            name="mixed",
+            atoms=[
+                FaultAtom(fix=ActionSpec(tool_name="read_a", args={}), step_type="diagnostic"),
+                FaultAtom(fix=ActionSpec(tool_name="fix_a", args={}), step_type="fix"),
+            ],
+            known_info_fragment="mixed",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_all_diagnostic_layer(book)
+        self.assertEqual(issues, [])
+
+    # --- Check 20: confirm without fix ---
+
+    def test_confirm_without_fix_warning(self):
+        """Layer has confirm atoms but no fix atoms → WARNING."""
+        from tau2.generators.verify_authoring import _check_confirm_without_fix
+
+        layer = FaultLayer(
+            name="confirm_only",
+            atoms=[
+                FaultAtom(fix=ActionSpec(tool_name="read_it", args={}), step_type="diagnostic"),
+                FaultAtom(fix=ActionSpec(tool_name="ack", args={}, requestor="user"),
+                          step_type="confirm"),
+            ],
+            known_info_fragment="confirm only",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_confirm_without_fix(book)
+        warnings = [i for i in issues if i.startswith("WARNING")]
+        self.assertEqual(len(warnings), 1)
+
+    def test_confirm_with_fix_no_warning(self):
+        """Layer has both confirm and fix atoms → no warning."""
+        from tau2.generators.verify_authoring import _check_confirm_without_fix
+
+        layer = FaultLayer(
+            name="proper",
+            atoms=[
+                FaultAtom(fix=ActionSpec(tool_name="fix_it", args={}), step_type="fix"),
+                FaultAtom(fix=ActionSpec(tool_name="ack", args={}, requestor="user"),
+                          step_type="confirm"),
+            ],
+            known_info_fragment="proper",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_confirm_without_fix(book)
+        self.assertEqual(issues, [])
+
+    # --- Check 21: unfixable with gate_tier ---
+
+    def test_unfixable_gate_tier_warning(self):
+        """Unfixable layer with gate_tier > 0 → WARNING."""
+        from tau2.generators.verify_authoring import _check_unfixable_gate_tier
+
+        layer = FaultLayer(
+            name="unfixable_gated",
+            unfixable=True,
+            gate_tier=1,
+            known_info_fragment="unfixable",
+            completion_fragment="your issue is resolved",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_unfixable_gate_tier(book)
+        warnings = [i for i in issues if i.startswith("WARNING")]
+        self.assertEqual(len(warnings), 1)
+
+    def test_unfixable_gate_tier_zero_ok(self):
+        """Unfixable layer with gate_tier=0 → no warning."""
+        from tau2.generators.verify_authoring import _check_unfixable_gate_tier
+
+        layer = FaultLayer(
+            name="unfixable_ok",
+            unfixable=True,
+            gate_tier=0,
+            known_info_fragment="unfixable",
+            completion_fragment="your issue is resolved",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_unfixable_gate_tier(book)
+        self.assertEqual(issues, [])
+
+    # --- Check 22: phase gaps ---
+
+    def test_phase_gap_warning(self):
+        """Phases 0, 2 with no 1 → WARNING."""
+        from tau2.generators.verify_authoring import _check_phase_gaps
+
+        layer = FaultLayer(
+            name="gap",
+            atoms=[
+                FaultAtom(fix=ActionSpec(tool_name="a", args={}), phase=0),
+                FaultAtom(fix=ActionSpec(tool_name="b", args={}), phase=2),
+            ],
+            known_info_fragment="gap",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_phase_gaps(book)
+        warnings = [i for i in issues if i.startswith("WARNING")]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("missing [1]", warnings[0])
+
+    def test_no_phase_gap(self):
+        """Consecutive phases 0, 1, 2 → no warning."""
+        from tau2.generators.verify_authoring import _check_phase_gaps
+
+        layer = FaultLayer(
+            name="consecutive",
+            atoms=[
+                FaultAtom(fix=ActionSpec(tool_name="a", args={}), phase=0),
+                FaultAtom(fix=ActionSpec(tool_name="b", args={}), phase=1),
+                FaultAtom(fix=ActionSpec(tool_name="c", args={}), phase=2),
+            ],
+            known_info_fragment="consecutive",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_phase_gaps(book)
+        self.assertEqual(issues, [])
+
+    # --- Check 23: duplicate (phase, requestor) ---
+
+    def test_duplicate_phase_requestor_warning(self):
+        """Two fix atoms at same (phase, requestor) → WARNING."""
+        from tau2.generators.verify_authoring import _check_duplicate_phase_requestor
+
+        layer = FaultLayer(
+            name="dup_phase",
+            atoms=[
+                FaultAtom(fix=ActionSpec(tool_name="fix_a", args={}), phase=0),
+                FaultAtom(fix=ActionSpec(tool_name="fix_b", args={}), phase=0),
+            ],
+            known_info_fragment="dup phase",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_duplicate_phase_requestor(book)
+        warnings = [i for i in issues if i.startswith("WARNING")]
+        self.assertEqual(len(warnings), 1)
+
+    def test_duplicate_phase_diagnostic_no_warning(self):
+        """Two diagnostic atoms at same phase → no warning (only fix atoms checked)."""
+        from tau2.generators.verify_authoring import _check_duplicate_phase_requestor
+
+        layer = FaultLayer(
+            name="diag_dup",
+            atoms=[
+                FaultAtom(fix=ActionSpec(tool_name="read_a", args={}),
+                          step_type="diagnostic", phase=0),
+                FaultAtom(fix=ActionSpec(tool_name="read_b", args={}),
+                          step_type="diagnostic", phase=0),
+            ],
+            known_info_fragment="diag dup",
+        )
+        flc = self._make_flc([FaultLayerGroup(name="g1", layers=[layer])])
+        book = self._make_recipe_book([flc])
+        issues = _check_duplicate_phase_requestor(book)
+        self.assertEqual(issues, [])
+
+    # --- Check 24: gate tier gaps ---
+
+    def test_gate_tier_gap_warning(self):
+        """Tiers 0 and 3 with no 1 or 2 → WARNING."""
+        from tau2.generators.verify_authoring import _check_gate_tier_gaps
+
+        layer0 = FaultLayer(
+            name="t0", gate_tier=0,
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix0", args={}))],
+            known_info_fragment="t0", resource_scope="a:{id}",
+        )
+        layer3 = FaultLayer(
+            name="t3", gate_tier=3,
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix3", args={}))],
+            known_info_fragment="t3", resource_scope="b:{id}",
+        )
+        flc = self._make_flc([
+            FaultLayerGroup(name="g1", layers=[layer0]),
+            FaultLayerGroup(name="g2", layers=[layer3]),
+        ])
+        book = self._make_recipe_book([flc])
+        issues = _check_gate_tier_gaps(book)
+        warnings = [i for i in issues if i.startswith("WARNING")]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("missing [1, 2]", warnings[0])
+
+    def test_gate_tier_no_gap(self):
+        """Consecutive tiers 0, 1 → no warning."""
+        from tau2.generators.verify_authoring import _check_gate_tier_gaps
+
+        layer0 = FaultLayer(
+            name="t0", gate_tier=0,
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix0", args={}))],
+            known_info_fragment="t0", resource_scope="a:{id}",
+        )
+        layer1 = FaultLayer(
+            name="t1", gate_tier=1,
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix1", args={}))],
+            known_info_fragment="t1", resource_scope="b:{id}",
+        )
+        flc = self._make_flc([
+            FaultLayerGroup(name="g1", layers=[layer0]),
+            FaultLayerGroup(name="g2", layers=[layer1]),
+        ])
+        book = self._make_recipe_book([flc])
+        issues = _check_gate_tier_gaps(book)
+        self.assertEqual(issues, [])
+
+    # --- Check 25: diagnostic-only at non-zero tier ---
+
+    def test_diagnostic_only_nonzero_tier_warning(self):
+        """Diagnostic-only layer at tier 1, no fix at tier >= 1 → WARNING."""
+        from tau2.generators.verify_authoring import _check_diagnostic_only_at_nonzero_tier
+
+        layer0 = FaultLayer(
+            name="t0_fix", gate_tier=0,
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix0", args={}))],
+            known_info_fragment="t0", resource_scope="a:{id}",
+        )
+        layer1 = FaultLayer(
+            name="t1_diag_only", gate_tier=1,
+            atoms=[
+                FaultAtom(fix=ActionSpec(tool_name="read_info", args={}),
+                          step_type="diagnostic"),
+            ],
+            known_info_fragment="t1", resource_scope="b:{id}",
+        )
+        flc = self._make_flc([
+            FaultLayerGroup(name="g1", layers=[layer0]),
+            FaultLayerGroup(name="g2", layers=[layer1]),
+        ])
+        book = self._make_recipe_book([flc])
+        issues = _check_diagnostic_only_at_nonzero_tier(book)
+        warnings = [i for i in issues if i.startswith("WARNING")]
+        self.assertEqual(len(warnings), 1)
+
+    def test_diagnostic_plus_fix_nonzero_tier_ok(self):
+        """Diagnostic + fix layer at tier 1 → no warning."""
+        from tau2.generators.verify_authoring import _check_diagnostic_only_at_nonzero_tier
+
+        layer0 = FaultLayer(
+            name="t0_fix", gate_tier=0,
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix0", args={}))],
+            known_info_fragment="t0", resource_scope="a:{id}",
+        )
+        layer1 = FaultLayer(
+            name="t1_diag_fix", gate_tier=1,
+            atoms=[
+                FaultAtom(fix=ActionSpec(tool_name="read_it", args={}),
+                          step_type="diagnostic", phase=0),
+                FaultAtom(fix=ActionSpec(tool_name="fix_it", args={}),
+                          step_type="fix", phase=1),
+            ],
+            known_info_fragment="t1", resource_scope="b:{id}",
+        )
+        flc = self._make_flc([
+            FaultLayerGroup(name="g1", layers=[layer0]),
+            FaultLayerGroup(name="g2", layers=[layer1]),
+        ])
+        book = self._make_recipe_book([flc])
+        issues = _check_diagnostic_only_at_nonzero_tier(book)
+        self.assertEqual(issues, [])
+
+    def test_diagnostic_at_tier1_with_fix_at_tier2_ok(self):
+        """Diagnostic at tier 1, fix at tier 2 → no warning (fix exists at higher tier)."""
+        from tau2.generators.verify_authoring import _check_diagnostic_only_at_nonzero_tier
+
+        layer0 = FaultLayer(
+            name="t0_fix", gate_tier=0,
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix0", args={}))],
+            known_info_fragment="t0", resource_scope="a:{id}",
+        )
+        layer1 = FaultLayer(
+            name="t1_diag", gate_tier=1,
+            atoms=[FaultAtom(
+                fix=ActionSpec(tool_name="read_it", args={}),
+                step_type="diagnostic",
+            )],
+            known_info_fragment="t1", resource_scope="b:{id}",
+        )
+        layer2 = FaultLayer(
+            name="t2_fix", gate_tier=2,
+            atoms=[FaultAtom(fix=ActionSpec(tool_name="fix_it", args={}))],
+            known_info_fragment="t2", resource_scope="c:{id}",
+        )
+        flc = self._make_flc([
+            FaultLayerGroup(name="g1", layers=[layer0]),
+            FaultLayerGroup(name="g2", layers=[layer1]),
+            FaultLayerGroup(name="g3", layers=[layer2]),
+        ])
+        book = self._make_recipe_book([flc])
+        issues = _check_diagnostic_only_at_nonzero_tier(book)
+        self.assertEqual(issues, [])
 
 
 if __name__ == "__main__":

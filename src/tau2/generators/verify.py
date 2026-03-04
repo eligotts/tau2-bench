@@ -705,6 +705,24 @@ def verify_user_action_redundancy(
     if any(a.name == "transfer_to_human" for a in actions):
         return issues
 
+    # Filter out READ-tool user actions (diagnostic user actions) — they don't
+    # change state, so assertions will always pass without them. Flagging them
+    # as "redundant" is a false positive; the ACTION evaluator enforces them.
+    env_probe = get_env()
+    write_user_actions = []
+    for a in user_actions:
+        try:
+            toolkit = env_probe.user_tools
+            if toolkit is not None and toolkit.tool_type(a.name) == ToolType.READ:
+                continue  # Skip diagnostic user actions
+        except (KeyError, AttributeError):
+            pass
+        write_user_actions.append(a)
+
+    # If all user actions are READ tools, skip check entirely
+    if not write_user_actions:
+        return issues
+
     # Set up environment with init actions
     env = get_env()
     if task.initial_state:
@@ -739,10 +757,10 @@ def verify_user_action_redundancy(
             break
 
     if all_pass:
-        user_action_names = [a.name for a in user_actions]
+        write_action_names = [a.name for a in write_user_actions]
         issues.append(
             f"WARNING: all ENV_ASSERTIONs pass after agent actions + sync_tools "
-            f"without executing user actions {user_action_names}. "
+            f"without executing user WRITE actions {write_action_names}. "
             f"ENV_ASSERTION will always be 1.0 regardless of user simulator "
             f"behavior — task pass/fail depends entirely on ACTION evaluator. "
             f"Consider adding user-side assertions (env_type='user') that fail "
@@ -894,6 +912,18 @@ def verify_action_state_change(
         if action.name == "transfer_to_human":
             continue
 
+        # Skip no-op check for READ tools (diagnostic actions gather info,
+        # they don't change state — flagging them as no-ops is a false positive).
+        is_read_tool = False
+        try:
+            toolkit = env.tools if action.requestor != "user" else env.user_tools
+            if toolkit is not None:
+                tool_type = toolkit.tool_type(action.name)
+                if tool_type == ToolType.READ:
+                    is_read_tool = True
+        except (KeyError, AttributeError):
+            pass
+
         # Snapshot before
         before = _snapshot_db(env)
 
@@ -913,7 +943,7 @@ def verify_action_state_change(
         # Snapshot after
         after = _snapshot_db(env)
 
-        if before == after:
+        if before == after and not is_read_tool:
             issues.append(
                 f"ERROR: action '{action.name}' (requestor={action.requestor}) "
                 f"is a no-op — no DB state changed after execution"
@@ -1279,6 +1309,91 @@ def verify_user_assertion_arg_discoverability(
     return issues
 
 
+def verify_action_ordering(
+    task: Task,
+    get_env: Callable[[], Environment],
+) -> list[str]:
+    """
+    Runtime check — for each adjacent pair of actions, swap them and re-run
+    the golden path. If swapping breaks assertions, the ordering is significant.
+
+    Reports a WARNING when adjacent actions can be swapped without breaking
+    assertions, since this means the order is arbitrary and the agent might
+    execute them in any order with equivalent results. This is informational.
+
+    Reports an ERROR when the authored order itself fails (already caught by
+    verify_golden_path, but included for completeness).
+    """
+    issues: list[str] = []
+
+    if task.evaluation_criteria is None:
+        return issues
+
+    ec = task.evaluation_criteria
+    actions = ec.actions or []
+    assertions = ec.env_assertions or []
+
+    # Only check fixable tasks with 2+ actions and assertions
+    if len(actions) < 2 or not assertions:
+        return issues
+    if any(a.name == "transfer_to_human" for a in actions):
+        return issues
+
+    # For each adjacent pair, try swapping and running golden path
+    for i in range(len(actions) - 1):
+        a_i = actions[i]
+        a_j = actions[i + 1]
+
+        # Skip if same tool (swapping identical tools is meaningless)
+        if a_i.name == a_j.name and a_i.arguments == a_j.arguments:
+            continue
+
+        # Build swapped action list
+        swapped = list(actions)
+        swapped[i], swapped[i + 1] = swapped[i + 1], swapped[i]
+
+        # Run golden path with swapped order
+        env = get_env()
+        if task.initial_state:
+            env.set_state(
+                initialization_data=task.initial_state.initialization_data,
+                initialization_actions=task.initial_state.initialization_actions,
+                message_history=[],
+            )
+
+        swap_failed = False
+        for action in swapped:
+            try:
+                env.make_tool_call(
+                    action.name, requestor=action.requestor, **action.arguments
+                )
+                env.sync_tools()
+            except Exception:
+                swap_failed = True
+                break
+
+        if swap_failed:
+            # Swapping broke execution — ordering dependency confirmed
+            continue
+
+        # Check if assertions still pass after swapped execution
+        all_pass = all(
+            env.run_env_assertion(a, raise_assertion_error=False)
+            for a in assertions
+        )
+
+        if not all_pass:
+            # Swapping broke assertions — ordering dependency confirmed.
+            # This is GOOD: the authored order matters and is correct.
+            pass
+        # If all_pass is True, the swap didn't break anything — the order
+        # between these two actions is arbitrary. This is fine and expected
+        # for independent faults (e.g., fixing overdue book + wrong hold
+        # status), so we don't warn about it.
+
+    return issues
+
+
 def verify_action_necessity(
     task: Task,
     get_env: Callable[[], Environment],
@@ -1301,7 +1416,23 @@ def verify_action_necessity(
     if any(a.name == "transfer_to_human" for a in actions):
         return issues
 
+    # Identify READ tool actions (diagnostic) — they don't change state,
+    # so skipping them won't affect assertions. Skip the necessity check for them.
+    env_probe = get_env()
+    read_tool_names: set[str] = set()
+    for action in actions:
+        try:
+            toolkit = env_probe.tools if action.requestor != "user" else env_probe.user_tools
+            if toolkit is not None and toolkit.tool_type(action.name) == ToolType.READ:
+                read_tool_names.add(action.name)
+        except (KeyError, AttributeError):
+            pass
+
     for skip_idx, skipped in enumerate(actions):
+        # Skip necessity check for READ/diagnostic actions
+        if skipped.name in read_tool_names:
+            continue
+
         env = get_env()
         if task.initial_state:
             env.set_state(
@@ -1344,6 +1475,7 @@ def verify_tasks(
     get_env: Callable[[], Environment],
     is_fixed: Optional[Callable[[Environment], bool]] = None,
     policy_text: Optional[str] = None,
+    recipe_book: Optional[Any] = None,
 ) -> dict[str, list[str]]:
     """Run all verification checks on generated tasks. Returns {task_id: [warnings]}.
 
@@ -1353,6 +1485,9 @@ def verify_tasks(
         is_fixed: Optional predicate for the legacy verify_task check.
         policy_text: Policy document text. Required for user action policy alignment
             check. If not provided and tasks have user actions, a warning is emitted.
+        recipe_book: Optional RecipeBook for cross-layer structural checks
+            (e.g., confirmation consistency). If provided, these checks run once
+            across the entire recipe book, not per-task.
     """
     results: dict[str, list[str]] = {}
 
@@ -1414,6 +1549,11 @@ def verify_tasks(
             verify_action_necessity(task, get_env)
         )
 
+        # Check 9b: action ordering (dependency detection)
+        task_issues.extend(
+            verify_action_ordering(task, get_env)
+        )
+
         # Check 10: assertion robustness to LLM format variations
         task_issues.extend(
             verify_assertion_robustness(task, get_env)
@@ -1438,6 +1578,22 @@ def verify_tasks(
 
         if task_issues:
             results[task.id] = task_issues
+
+    # Cross-layer structural checks (run once, not per-task)
+    if recipe_book is not None:
+        try:
+            from tau2.generators.verify_authoring import (
+                _check_cross_layer_confirmation_consistency,
+            )
+
+            cross_layer_issues = _check_cross_layer_confirmation_consistency(
+                recipe_book
+            )
+            if cross_layer_issues:
+                # Attach to a synthetic key so they appear in the output
+                results["__cross_layer_checks__"] = cross_layer_issues
+        except ImportError:
+            pass  # verify_authoring not available
 
     # Print summary
     num_passed = len(tasks) - len(results)

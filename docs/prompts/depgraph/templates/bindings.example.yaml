@@ -1,0 +1,13 @@
+version: 2
+bindings:
+  - binding_id: iccid
+    source_tool: get_sim_info
+    extraction_path: result.iccid
+    observability_all_of:
+      - op: eq
+        path: user.physical.phone_powered_on
+        value: true
+      - op: eq
+        path: agent.lines[active_line].exists
+        value: true
+    observability_any_of: []

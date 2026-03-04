@@ -90,18 +90,35 @@ class TechSupportTools(ToolKitBase):
         """
         Get all devices registered to a customer.
 
+        Returns surface-level device inventory. For detailed diagnostics
+        including firmware health, WiFi configuration, and issue detection,
+        use run_remote_diagnostic on a specific device.
+
         Args:
             customer_id: The unique customer identifier.
 
         Returns:
-            List of device details including device_id, type, model,
-            status, firmware info, WiFi settings, and cable status.
+            List of device summaries including device_id, type, model,
+            connectivity status, firmware version, and last restart time.
         """
         customer = self._find_customer(customer_id)
         if customer is None:
             raise ValueError(f"Customer '{customer_id}' not found.")
         devices = [d for d in self.db.devices if d.customer_id == customer_id]
-        return [d.model_dump() for d in devices]
+        return [
+            {
+                "device_id": d.device_id,
+                "device_type": d.device_type,
+                "model": d.model,
+                "status": "online" if (
+                    d.status not in ("unresponsive", "hardware_failure")
+                    and d.cable_status != "disconnected"
+                ) else "unreachable",
+                "firmware_version": d.firmware_version,
+                "last_restart": d.last_restart,
+            }
+            for d in devices
+        ]
 
     @is_tool(ToolType.READ)
     def get_service_plan(self, customer_id: str) -> Dict[str, Any]:
@@ -132,9 +149,9 @@ class TechSupportTools(ToolKitBase):
             device_id: The unique device identifier.
 
         Returns:
-            Diagnostic results including device status, firmware health,
-            WiFi configuration, cable status, channel congestion, and
-            any issues detected.
+            Diagnostic results including connectivity status and any
+            issues detected. Firmware and WiFi details are included
+            when the device is reachable.
         """
         device = self._find_device(device_id)
         if device is None:
@@ -144,47 +161,84 @@ class TechSupportTools(ToolKitBase):
         customer = self._find_customer(device.customer_id)
 
         issues = []
-        if device.status == "unresponsive":
-            issues.append("Device is unresponsive - may need physical restart")
-        if device.status == "hardware_failure":
-            issues.append("Hardware failure detected - device needs replacement")
-        if device.firmware_status == "outdated":
-            issues.append("Firmware is outdated - update available")
-        if device.firmware_status == "corrupted":
-            issues.append("Firmware is corrupted - factory reset recommended")
-        if device.cable_status == "disconnected":
-            issues.append("Network cable appears disconnected or loose")
-        if device.wifi_band == "2.4ghz":
-            issues.append("Device is on 2.4GHz band - 5GHz recommended for better performance")
-        if device.channel_congested:
-            issues.append("WiFi channel is congested - channel optimization needed")
-        if customer and customer.dns_config == "stale_cache":
-            issues.append("DNS cache appears stale - local DNS flush recommended")
-        if customer and customer.dns_config == "misconfigured":
-            issues.append("DNS server configuration is incorrect - server-side flush needed")
-        if customer and customer.network_profile == "corrupted":
-            issues.append("Server-side network profile is corrupted - profile reset needed")
 
-        # Check speed issues
+        # Account-level check
+        if customer and customer.account_status == "suspended":
+            issues.append(
+                "ACCOUNT SUSPENDED - account must be reactivated before "
+                "diagnostics or service changes can proceed"
+            )
+
+        # Determine reachability — the server can detect THAT the device
+        # is unreachable but NOT the specific physical cause
+        device_reachable = (
+            device.status != "unresponsive"
+            and device.status != "hardware_failure"
+            and device.cable_status != "disconnected"
+        )
+
+        # Base result: always includes server-side identity + network info
+        result: Dict[str, Any] = {
+            "device_id": device.device_id,
+            "device_type": device.device_type,
+            "model": device.model,
+        }
+
+        # Server-side network state (always available — stored server-side)
+        if customer:
+            result["dns_config"] = customer.dns_config
+            result["network_profile"] = customer.network_profile
+            if customer.dns_config == "stale_cache":
+                issues.append("DNS cache appears stale - local DNS flush recommended")
+            if customer.dns_config == "misconfigured":
+                issues.append("DNS server configuration is incorrect - server-side flush needed")
+            if customer.network_profile == "corrupted":
+                issues.append("Server-side network profile is corrupted - profile reset needed")
+
+        # Speed/throttling (server-side plan state)
         plan = self._find_plan_by_customer(device.customer_id)
         if plan and plan.speed_status == "throttled":
             issues.append(f"Connection speed is throttled below {plan.speed_tier} plan tier")
 
-        return {
-            "device_id": device.device_id,
-            "device_type": device.device_type,
-            "model": device.model,
-            "status": device.status,
-            "firmware_version": device.firmware_version,
-            "firmware_status": device.firmware_status,
-            "wifi_band": device.wifi_band,
-            "channel_congested": device.channel_congested,
-            "cable_status": device.cable_status,
-            "dns_config": customer.dns_config if customer else "unknown",
-            "network_profile": customer.network_profile if customer else "unknown",
-            "issues_detected": issues,
-            "issue_count": len(issues),
-        }
+        if device.status == "hardware_failure":
+            # Hardware failure: server detects specific error codes
+            result["connectivity_status"] = "unreachable"
+            result["hardware_fault_detected"] = True
+            result["physical_check_recommended"] = True
+            issues.append(
+                "Hardware fault detected - device needs replacement. "
+                "Transfer to Level 2 support."
+            )
+        elif not device_reachable:
+            # Unreachable but no hardware fault — could be cable, could be
+            # hung router, could be other physical issue. Server can't tell.
+            result["connectivity_status"] = "unreachable"
+            result["physical_check_recommended"] = True
+            result["firmware_status"] = "unable_to_verify"
+            issues.append(
+                "Device is unreachable — cannot determine cause remotely. "
+                "Physical inspection of connections and device status recommended."
+            )
+        else:
+            # Device is reachable — full diagnostics available
+            result["connectivity_status"] = "online"
+            result["firmware_version"] = device.firmware_version
+            result["firmware_status"] = device.firmware_status
+            result["wifi_band"] = device.wifi_band
+            result["channel_congested"] = device.channel_congested
+
+            if device.firmware_status == "outdated":
+                issues.append("Firmware is outdated - update available")
+            if device.firmware_status == "corrupted":
+                issues.append("Firmware is corrupted - factory reset recommended")
+            if device.wifi_band == "2.4ghz":
+                issues.append("Device is on 2.4GHz band - 5GHz recommended for better performance")
+            if device.channel_congested:
+                issues.append("WiFi channel is congested - channel optimization needed")
+
+        result["issues_detected"] = issues
+        result["issue_count"] = len(issues)
+        return result
 
     @is_tool(ToolType.READ)
     def check_area_outages(self, area_code: str) -> List[Dict[str, Any]]:
@@ -223,9 +277,40 @@ class TechSupportTools(ToolKitBase):
     # ---------------------------------------------------------------
 
     @is_tool(ToolType.WRITE)
+    def reactivate_account(self, customer_id: str) -> str:
+        """
+        Reactivate a suspended customer account so diagnostics and
+        service changes can proceed.
+
+        Args:
+            customer_id: The unique customer identifier.
+
+        Returns:
+            Confirmation that the account has been reactivated.
+        """
+        customer = self._find_customer(customer_id)
+        if customer is None:
+            raise ValueError(f"Customer '{customer_id}' not found.")
+        if customer.account_status == "active":
+            raise ValueError(
+                f"Customer '{customer_id}' account is already active."
+            )
+        if customer.account_status == "flagged":
+            raise ValueError(
+                f"Customer '{customer_id}' account is flagged for security review. "
+                "This must be handled by Level 2 support."
+            )
+        customer.account_status = "active"
+        return (
+            f"Account {customer_id} has been reactivated. "
+            "You may now proceed with diagnostics and service changes."
+        )
+
+    @is_tool(ToolType.WRITE)
     def push_firmware_update(self, device_id: str) -> str:
         """
         Push a firmware update to a customer device remotely.
+        The device must be online for the update to be delivered.
 
         Args:
             device_id: The unique device identifier.
@@ -236,6 +321,11 @@ class TechSupportTools(ToolKitBase):
         device = self._find_device(device_id)
         if device is None:
             raise ValueError(f"Device '{device_id}' not found.")
+        if device.status != "online":
+            raise ValueError(
+                f"Device '{device_id}' is {device.status}. "
+                "The device must be online to receive firmware updates."
+            )
         if device.firmware_status == "current":
             raise ValueError(f"Device '{device_id}' firmware is already current.")
         if device.firmware_status == "corrupted":
@@ -449,6 +539,12 @@ class TechSupportTools(ToolKitBase):
             raise ValueError(f"Customer {customer_id} not found.")
         customer.account_status = status
 
+    def set_billing_credit(self, customer_id: str, credit: float) -> None:
+        plan = self._find_plan_by_customer(customer_id)
+        if plan is None:
+            raise ValueError(f"No plan found for customer {customer_id}.")
+        plan.billing_credit = credit
+
     def set_outage_status(self, outage_id: str, status: str) -> None:
         for o in self.db.outages:
             if o.outage_id == outage_id:
@@ -533,3 +629,9 @@ class TechSupportTools(ToolKitBase):
         if plan is None:
             return False
         return abs(plan.billing_credit - expected) < 0.01
+
+    def assert_customer_account_status(self, customer_id: str, expected: str) -> bool:
+        customer = self._find_customer(customer_id)
+        if customer is None:
+            return False
+        return customer.account_status == expected

@@ -298,6 +298,7 @@ wrong_membership_tier = FaultLayer(
 membership_group = FaultLayerGroup(
     name="membership_issues",
     layers=[suspended_membership, wrong_membership_tier],
+    resolution_category="membership",
 )
 
 
@@ -310,7 +311,7 @@ cancelled_class_booking = FaultLayer(
         "{booking_schedule_date} at {booking_schedule_time} was cancelled by mistake. "
         "I still want to attend."
     ),
-    completion_fragment="your class booking for {class_name} shows as confirmed",
+    completion_fragment="your class booking for {booking_class_name} shows as confirmed",
         atoms=[
         FaultAtom(
             init=InitCall(
@@ -359,7 +360,7 @@ wrong_class_schedule = FaultLayer(
         "It should be on {booking_schedule_date} at {booking_schedule_time}, "
         "not on 2025-01-01 at 05:00."
     ),
-    completion_fragment="your class booking for {class_name} shows the correct schedule of {original_class_day} at {original_class_time}",
+    completion_fragment="your class booking for {booking_class_name} shows the correct schedule of {booking_schedule_date} at {booking_schedule_time}",
         atoms=[
         FaultAtom(
             init=[
@@ -414,6 +415,7 @@ wrong_class_schedule = FaultLayer(
 booking_group = FaultLayerGroup(
     name="class_booking_issues",
     layers=[cancelled_class_booking, wrong_class_schedule],
+    resolution_category="bookings",
 )
 
 
@@ -426,7 +428,7 @@ cancelled_training_session = FaultLayer(
         "{session_trainer_name} on {session_date} was cancelled by mistake. "
         "Please reinstate it."
     ),
-    completion_fragment="your personal training session with {trainer_name} shows as active",
+    completion_fragment="your personal training session with {session_trainer_name} shows as active",
         atoms=[
         FaultAtom(
             init=InitCall(
@@ -475,7 +477,7 @@ wrong_trainer = FaultLayer(
         "was assigned to the wrong trainer. It should be with "
         "{original_session_trainer}, not 'Unassigned Temp Staff'."
     ),
-    completion_fragment="your training session shows the correct trainer {original_trainer_name}",
+    completion_fragment="your training session shows the correct trainer {original_session_trainer}",
         atoms=[
         FaultAtom(
             init=InitCall(
@@ -525,6 +527,7 @@ wrong_trainer = FaultLayer(
 session_group = FaultLayerGroup(
     name="training_session_issues",
     layers=[cancelled_training_session, wrong_trainer],
+    resolution_category="bookings",
 )
 
 
@@ -623,6 +626,7 @@ unpaid_invoice = FaultLayer(
 billing_group = FaultLayerGroup(
     name="billing_issues",
     layers=[overcharged_invoice, unpaid_invoice],
+    resolution_category="billing",
 )
 
 
@@ -684,6 +688,7 @@ wrong_locker_location = FaultLayer(
 locker_group = FaultLayerGroup(
     name="locker_issues",
     layers=[wrong_locker_location],
+    resolution_category="account",
 )
 
 
@@ -749,6 +754,7 @@ wrong_emergency_contact = FaultLayer(
 emergency_contact_group = FaultLayerGroup(
     name="emergency_contact_issues",
     layers=[wrong_emergency_contact],
+    resolution_category="account",
 )
 
 
@@ -807,6 +813,7 @@ wrong_notification_preference = FaultLayer(
 notification_group = FaultLayerGroup(
     name="notification_issues",
     layers=[wrong_notification_preference],
+    resolution_category="account",
 )
 
 
@@ -819,6 +826,7 @@ medical_clearance_hold = FaultLayer(
         "My training session ({session_id}) is on medical hold but my doctor "
         "has cleared me. I need this hold removed so I can train."
     ),
+    completion_fragment="your training session {session_id} shows as active with the medical hold removed",
     atoms=[],
     init_calls=[
         InitCall(
@@ -846,6 +854,7 @@ contract_cancellation = FaultLayer(
         "I would like to cancel my gym membership contract entirely. "
         "Please help me with the cancellation process."
     ),
+    completion_fragment="your gym membership has been fully cancelled",
     atoms=[],
     init_calls=[
         InitCall(
@@ -922,6 +931,7 @@ FITNESS_GYM_TRANSFER_CONFIG = FaultLayerConfig(
         FaultLayerGroup(
             name="unfixable_issues",
             layers=[medical_clearance_hold, contract_cancellation],
+            resolution_category="membership",
         ),
     ],
     base_init_calls=[
@@ -956,6 +966,10 @@ FITNESS_GYM_TRANSFER_CONFIG = FaultLayerConfig(
 
 RECIPE_BOOK = RecipeBook(
     fault_layer_configs=[FITNESS_GYM_FAULT_CONFIG, FITNESS_GYM_TRANSFER_CONFIG],
+    resolution_instruction=(
+        "your gym membership, bookings, and account details are all correct "
+        "and any billing issues have been resolved"
+    ),
 )
 
 

@@ -1,0 +1,117 @@
+# Prompt 08: Runtime Environment + Sync Wiring (Refine Pass)
+
+## Instruction
+
+Refine the environment authored in Step 02.
+Do not allow `sync_tools()` semantics to drift from contract effects/gates.
+
+Inputs:
+
+- `src/tau2/domains/<domain>/data_model.py`
+- `src/tau2/domains/<domain>/user_data_model.py`
+- `src/tau2/domains/<domain>/tools.py`
+- `src/tau2/domains/<domain>/user_tools.py`
+- `src/tau2/domains/<domain>/utils.py`
+- `data/tau2/domains/<domain>/graph_contract.yaml`
+- `data/tau2/domains/<domain>/stop_gate_map.yaml`
+- `data/tau2/domains/<domain>/task_specs.runtime.yaml`
+
+Author in this order, one minimal file at a time.
+
+## Step 08.1: Policy File
+
+Create:
+
+- `data/tau2/domains/<domain>/policy.md`
+
+Requirements:
+
+1. Include user-guidance behavior aligned with task patterns.
+2. Mention that user should run tools only when instructed (if this is your design choice).
+3. Keep policy consistent with tool capabilities and constraints.
+
+Validation:
+
+```bash
+uv run python - <<'PY'
+from pathlib import Path
+p = Path("data/tau2/domains/<domain>/policy.md")
+print("exists", p.exists(), "chars", len(p.read_text()))
+PY
+```
+
+Pass condition:
+
+- Policy exists and is non-empty.
+
+## Step 08.2: Environment Implementation
+
+Create:
+
+- `src/tau2/domains/<domain>/environment.py`
+
+Requirements:
+
+1. Define `<Domain>Environment(Environment)` with `sync_tools()`.
+2. `sync_tools()` must mirror causal bridge logic from depgraph contracts.
+3. `sync_tools()` must project every stop-gate observable field needed by `check_resolution_status`.
+4. Implement `get_environment(...)` that loads DB/user DB + policy and returns environment.
+5. Implement `get_tasks(...)` and optional task split loader using current task file.
+6. Keep loader compatible with tau2 `Task` model.
+7. Keep `sync_tools()` idempotent: repeated calls without intervening tool actions should not create new deltas.
+
+Validation:
+
+```bash
+uv run python - <<'PY'
+import importlib
+mod = importlib.import_module("tau2.domains.<domain>.environment")
+env = mod.get_environment()
+print("domain", env.get_domain_name())
+print("assistant_tools", len(env.get_tools()) if env.tools else 0)
+print("user_tools", len(env.get_user_tools()) if env.user_tools else 0)
+env.sync_tools()
+print("sync ok")
+PY
+```
+
+Pass condition:
+
+- Environment constructs and `sync_tools()` runs with no exception.
+
+## Step 08.3: Direct Alignment Check (Pre-Registry)
+
+Run depgraph runtime alignment checks directly against `get_environment` (without registry).
+
+```bash
+uv run python - <<'PY'
+from tau2.generators.depgraph.loaders import load_graph_contract, load_task_specs
+from tau2.generators.depgraph.runtime_checks import (
+    check_contract_against_environment,
+    check_runtime_against_environment,
+    check_stop_gate_runtime,
+)
+from tau2.domains.<domain>.environment import get_environment
+
+contract = load_graph_contract("data/tau2/domains/<domain>/graph_contract.yaml")
+tasks = load_task_specs("data/tau2/domains/<domain>/task_specs.runtime.yaml")
+stop_gate_issues = check_stop_gate_runtime(tasks, "data/tau2/domains/<domain>/stop_gate_map.yaml")
+
+contract_issues = check_contract_against_environment(contract, get_environment)
+runtime_issues = check_runtime_against_environment(tasks, get_environment)
+
+print("contract_issues", len(contract_issues))
+for x in contract_issues:
+    print(" -", x)
+print("runtime_issues", len(runtime_issues))
+for x in runtime_issues:
+    print(" -", x)
+print("stop_gate_issues", len(stop_gate_issues))
+for x in stop_gate_issues:
+    print(" -", x)
+PY
+```
+
+Pass condition:
+
+- All issue lists are empty.

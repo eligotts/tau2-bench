@@ -1,0 +1,132 @@
+version: 2
+
+context_slots:
+  - slot_id: active_customer
+    entity_type: Customer
+  - slot_id: active_line
+    entity_type: Line
+
+projection_fields:
+  - agent.customers[active_customer].exists
+  - agent.lines[active_line].profile_state
+  - agent.lines[active_line].data_status
+  - user.physical.phone_powered_on
+  - user.physical.phone_restarted
+
+bindings:
+  - binding_id: iccid
+    source_tool: get_sim_info
+    extraction_path: result.iccid
+    observability_all_of:
+      - op: eq
+        path: user.physical.phone_powered_on
+        value: true
+      - op: eq
+        path: agent.customers[active_customer].exists
+        value: true
+    observability_any_of: []
+
+actions:
+  - action_id: power_on_phone
+    requestor: user
+    tool_name: power_on_phone
+    classification: causal
+    requires_world: []
+    requires_absent_world:
+      - op: eq
+        path: user.physical.phone_powered_on
+        value: true
+    requires_bindings: []
+    requires_absent_bindings: []
+    effects_world:
+      - path: user.physical.phone_powered_on
+        set: true
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  - action_id: acquire_iccid
+    requestor: user
+    tool_name: get_sim_info
+    classification: knowledge-only
+    requires_world:
+      - op: eq
+        path: user.physical.phone_powered_on
+        value: true
+    requires_absent_world: []
+    requires_bindings: []
+    requires_absent_bindings: [iccid]
+    effects_world: []
+    effects_bindings: [iccid]
+    tool_arg_bindings: {}
+
+  - action_id: restart_phone
+    requestor: user
+    tool_name: restart_phone
+    classification: causal
+    requires_world:
+      - op: eq
+        path: user.physical.phone_powered_on
+        value: true
+    requires_absent_world:
+      - op: eq
+        path: user.physical.phone_restarted
+        value: true
+    requires_bindings: []
+    requires_absent_bindings: []
+    effects_world:
+      - path: user.physical.phone_restarted
+        set: true
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  - action_id: reprovision_esim
+    requestor: assistant
+    tool_name: reprovision_esim
+    classification: causal
+    requires_world:
+      - op: eq
+        path: user.physical.phone_restarted
+        value: true
+      - op: eq
+        path: agent.lines[active_line].profile_state
+        value: pending
+    requires_absent_world: []
+    requires_bindings: [iccid]
+    requires_absent_bindings: []
+    effects_world:
+      - path: agent.lines[active_line].profile_state
+        set: ready
+    effects_bindings: []
+    tool_arg_bindings:
+      iccid: iccid
+
+  - action_id: run_data_test
+    requestor: user
+    tool_name: run_data_test
+    classification: causal
+    requires_world:
+      - op: eq
+        path: agent.lines[active_line].profile_state
+        value: ready
+    requires_absent_world: []
+    requires_bindings: []
+    requires_absent_bindings: []
+    effects_world:
+      - path: agent.lines[active_line].data_status
+        set: active
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  - action_id: check_resolution_status_gate
+    requestor: user
+    tool_name: check_resolution_status
+    classification: stutter-only
+    requires_world: []
+    requires_absent_world: []
+    requires_bindings: []
+    requires_absent_bindings: []
+    effects_world: []
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+assistant_stutter_allowlist: []

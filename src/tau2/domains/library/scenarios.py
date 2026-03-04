@@ -160,6 +160,7 @@ def _build_entities(db: LibraryDB) -> list[dict[str, Any]]:
             "book_title": book.title if book else None,
             "book_author": book.author if book else None,
             "book_location": book.location if book else None,
+            "original_book_location": book.location if book else None,
             # Checkout fields
             "checkout_id": ck.checkout_id if ck else None,
             "checkout_due_date": ck.due_date if ck else None,
@@ -169,6 +170,7 @@ def _build_entities(db: LibraryDB) -> list[dict[str, Any]]:
             "hold_book_title": hold_book.title if hold_book else None,
             "hold_status": hold.status if hold else None,
             "hold_pickup_branch": hold.pickup_branch if hold else None,
+            "original_hold_branch": hold.pickup_branch if hold else None,
             # Fine fields
             "fine_id": fine.fine_id if fine else None,
             "fine_amount": fine.amount if fine else None,
@@ -179,11 +181,13 @@ def _build_entities(db: LibraryDB) -> list[dict[str, Any]]:
             "event_name": event.event_name if event else None,
             "event_date": event.event_date if event else None,
             "event_location": event.location if event else None,
+            "original_event_location": event.location if event else None,
             "event_status": event.status if event else None,
             # Loan fields
             "loan_id": loan.loan_id if loan else None,
             "loan_book_title": loan.book_title if loan else None,
             "loan_source_library": loan.source_library if loan else None,
+            "original_loan_source": loan.source_library if loan else None,
             "loan_status": loan.status if loan else None,
             # Flags for predicate filtering
             "has_checkout": ck is not None,
@@ -313,6 +317,7 @@ lost_book_record = FaultLayer(
 checkout_group = FaultLayerGroup(
     name="checkout_issues",
     layers=[overdue_checkout, lost_book_record],
+    resolution_category="checkout",
 )
 
 
@@ -324,7 +329,7 @@ expired_hold = FaultLayer(
         "My hold {hold_id} for '{hold_book_title}' was expired by mistake. "
         "I still want to pick it up at {hold_pickup_branch}."
     ),
-    completion_fragment="your hold on {hold_title} shows as active and ready for pickup",
+    completion_fragment="your hold on {hold_book_title} shows as active and ready for pickup",
         atoms=[
         FaultAtom(
             init=InitCall(
@@ -369,7 +374,7 @@ wrong_pickup_branch = FaultLayer(
         "My hold {hold_id} for '{hold_book_title}' is set to pick up at the wrong "
         "branch. It should be at {hold_pickup_branch}, not Remote Storage."
     ),
-    completion_fragment="your hold for {hold_title} shows the correct pickup branch of {original_hold_branch}",
+    completion_fragment="your hold for {hold_book_title} shows the correct pickup branch of {original_hold_branch}",
         atoms=[
         FaultAtom(
             init=InitCall(
@@ -417,6 +422,7 @@ wrong_pickup_branch = FaultLayer(
 hold_group = FaultLayerGroup(
     name="hold_issues",
     layers=[expired_hold, wrong_pickup_branch],
+    resolution_category="hold",
 )
 
 
@@ -509,6 +515,7 @@ unpaid_fine = FaultLayer(
 fine_group = FaultLayerGroup(
     name="fine_issues",
     layers=[overcharged_fine, unpaid_fine],
+    resolution_category="fine",
 )
 
 
@@ -554,6 +561,7 @@ wrong_membership_type = FaultLayer(
 membership_group = FaultLayerGroup(
     name="membership_issues",
     layers=[wrong_membership_type],
+    resolution_category="account",
 )
 
 
@@ -614,6 +622,7 @@ wrong_book_location = FaultLayer(
 book_record_group = FaultLayerGroup(
     name="book_record_issues",
     layers=[wrong_book_location],
+    resolution_category="records",
 )
 
 
@@ -719,6 +728,7 @@ wrong_event_location = FaultLayer(
 event_group = FaultLayerGroup(
     name="event_issues",
     layers=[cancelled_event, wrong_event_location],
+    resolution_category="event",
 )
 
 
@@ -731,7 +741,7 @@ cancelled_loan = FaultLayer(
         "My inter-library loan request {loan_id} for '{loan_book_title}' from "
         "{loan_source_library} was cancelled by mistake. Please reinstate it."
     ),
-    completion_fragment="your inter-library loan for {loan_title} shows as active",
+    completion_fragment="your inter-library loan for {loan_book_title} shows as active",
         atoms=[
         FaultAtom(
             init=InitCall(
@@ -776,7 +786,7 @@ wrong_loan_source = FaultLayer(
         "My ILL request {loan_id} for '{loan_book_title}' is coming from the wrong "
         "library. It should be from {loan_source_library}, not 'Obsolete Branch Library'."
     ),
-    completion_fragment="your inter-library loan for {loan_title} shows the correct source library of {original_loan_source}",
+    completion_fragment="your inter-library loan for {loan_book_title} shows the correct source library of {original_loan_source}",
         atoms=[
         FaultAtom(
             init=InitCall(
@@ -824,6 +834,7 @@ wrong_loan_source = FaultLayer(
 loan_group = FaultLayerGroup(
     name="loan_issues",
     layers=[cancelled_loan, wrong_loan_source],
+    resolution_category="records",
 )
 
 
@@ -885,6 +896,7 @@ wrong_notification_preference = FaultLayer(
 notification_group = FaultLayerGroup(
     name="notification_issues",
     layers=[wrong_notification_preference],
+    resolution_category="account",
 )
 
 
@@ -940,6 +952,10 @@ LIBRARY_FAULT_CONFIG = FaultLayerConfig(
 
 RECIPE_BOOK = RecipeBook(
     fault_layer_configs=[LIBRARY_FAULT_CONFIG],
+    resolution_instruction=(
+        "your library account and records are correct and any checkout, "
+        "hold, fine, or event issues have been resolved"
+    ),
 )
 
 

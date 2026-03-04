@@ -173,11 +173,22 @@ class FaultAtom:
 
     ``init`` can be a single InitCall or a list when setting up one fault
     requires multiple DB mutations (e.g. set status + set amount + zero paid).
+
+    Ordering fields:
+      - ``phase``: execution order within a layer. Lower phases run first.
+        Within the same phase, requestor is a tiebreaker (user=0, agent=1).
+      - ``step_type``: declares the atom's role in the resolution sequence:
+        - ``"fix"`` — state-changing WRITE action (default)
+        - ``"diagnostic"`` — information-gathering READ action, part of the
+          golden path but doesn't change DB state
+        - ``"confirm"`` — user acknowledgment action
     """
 
     fix: ActionSpec                                              # required: the tool call
     check: Optional[AssertionSpec] = None                        # verify this step
     init: Optional[InitCall | list[InitCall]] = None             # break something
+    phase: int = 0                                               # execution order within layer
+    step_type: str = "fix"                                       # "fix" | "diagnostic" | "confirm"
 
     def get_init_list(self) -> list[InitCall]:
         """Return init as a flat list (0, 1, or N items)."""
@@ -233,6 +244,7 @@ class FaultLayer:
     user_actions: list[ActionSpec] = field(default_factory=list)
 
     unfixable: bool = False
+    gate_tier: int = 0  # execution order across composed layers; tier-0 before tier-1
     # NOTE: fragment is formatted via .format(**entity_fields). When targeting a
     # specific resource among multiples of the same type (e.g. second appointment),
     # ALWAYS use template variables to disambiguate:
@@ -300,6 +312,7 @@ class FaultLayerGroup:
 
     name: str
     layers: list[FaultLayer]
+    resolution_category: str = ""  # e.g. "connectivity", "billing"
 
 
 @dataclass
@@ -334,12 +347,23 @@ class FaultLayerConfig:
 
 @dataclass
 class RecipeBook:
-    """Collection of recipes for a domain."""
+    """Collection of recipes for a domain.
+
+    resolution_instruction: A single sentence describing the customer's
+        desired end-state (e.g. "your internet connection is working
+        properly and any billing issues have been addressed").  Used as
+        the stopping criterion in composed task_instructions instead of
+        AND-chaining per-layer completion_fragments.  Fragments become
+        context for the user sim (what to complain about), while
+        resolution_instruction is the outcome the user sim waits for.
+        If empty, falls back to AND-chaining fragments (backward compat).
+    """
 
     recipes: list[Recipe] = field(default_factory=list)
     composed_recipes: list[ComposedRecipe] = field(default_factory=list)
     fault_layer_configs: list[FaultLayerConfig] = field(default_factory=list)
     diversity_config: Optional[DiversityConfig] = None
+    resolution_instruction: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -590,14 +614,17 @@ def _compose_task_instructions(
     active_layers: list["FaultLayer"],
     flc: "FaultLayerConfig",
     entity_fields: dict,
+    resolution_instruction: str = "",
 ) -> Optional[str]:
     """Compose user_task_instructions from per-layer completion_fragments.
 
-    Assembles completion criteria from the active fault layers into a
-    complete task_instructions string.  The framework provides the frame
-    sentences (``Follow the agent's instructions...``, ``You will
-    consider your issues resolved when ...``).  Authors supply only the
-    variable half-sentences via ``FaultLayer.completion_fragment``.
+    When ``resolution_instruction`` is provided (from RecipeBook), it is
+    used as the stopping criterion instead of AND-chaining all fragments.
+    Fragments become context (what issues the user is experiencing),
+    while the resolution_instruction describes the desired outcome.
+
+    When ``resolution_instruction`` is empty, falls back to the legacy
+    behavior of AND-chaining fragments as the stopping criterion.
 
     Returns None if no layer provides a completion_fragment, so
     ``_spec_to_task`` falls back to ``UserTemplate.task_instructions``.
@@ -619,9 +646,17 @@ def _compose_task_instructions(
         " words is not sufficient.",
     ]
 
-    # Completion criteria (half-sentences, joined with " and ")
-    criteria = " and ".join(completion_fragments)
-    parts.append(f"You will consider your issues resolved when {criteria}.")
+    if resolution_instruction:
+        # New: resolution_instruction is the stopping criterion,
+        # fragments are context for what issues to expect
+        parts.append(
+            f"You will consider your issues resolved when"
+            f" {resolution_instruction}."
+        )
+    else:
+        # Legacy: AND-chain fragments as stopping criterion
+        criteria = " and ".join(completion_fragments)
+        parts.append(f"You will consider your issues resolved when {criteria}.")
 
     # Domain-level tool grounding block
     if flc.tool_grounding_block:
@@ -634,6 +669,7 @@ def _fault_layers_to_spec(
     flc: FaultLayerConfig,
     entity: Any,
     active_layers: list[FaultLayer],
+    resolution_instruction: str = "",
 ) -> GeneratedTaskSpec:
     """Convert a (FaultLayerConfig, entity, active_layers) into a GeneratedTaskSpec."""
     entity_fields = _entity_to_fields(entity)
@@ -642,8 +678,10 @@ def _fault_layers_to_spec(
     has_unfixable = any(layer.unfixable for layer in active_layers)
 
     # Init: base normalization + fault injection (always runs, even for unfixable)
+    # Sort active_layers by gate_tier for init ordering: tier-0 state set up first.
+    sorted_layers = sorted(active_layers, key=lambda l: l.gate_tier)
     init_actions = list(_resolve_init_calls(flc.base_init_calls, entity_fields))
-    for layer in active_layers:
+    for layer in sorted_layers:
         init_actions.extend(_resolve_init_calls(layer.get_init_calls(), entity_fields))
 
     if has_unfixable:
@@ -683,64 +721,64 @@ def _fault_layers_to_spec(
                 )
             )
         env_assertions = _dedup_assertions(env_assertions)
-        user_task_instructions: Optional[str] = None
+        # Compose user_task_instructions from completion_fragments on
+        # unfixable layers.  This gives the user sim a concrete stop
+        # condition (e.g. "the agent has transferred you to a specialist")
+        # instead of the generic fallback that causes infinite loops.
+        # Mirrors telecom's pattern: same instruction framework for both
+        # fixable and transfer tasks.
+        user_task_instructions: Optional[str] = _compose_task_instructions(
+            active_layers, flc, entity_fields, resolution_instruction
+        )
     else:
-        # Normal fixable combo: collect actions from all layers.
-        # Order: layer user actions → layer agent actions → base agent actions → base user actions
-        # This ensures user-side preconditions (e.g. make_payment) run before
-        # agent-side actions that depend on them (e.g. process_payment) in the
-        # golden path, while base user actions (e.g. reconnect_wifi) stay last.
-        all_layer_user_specs: list[ActionSpec] = []
-        all_layer_agent_specs: list[ActionSpec] = []
-        for layer in active_layers:
-            all_layer_user_specs.extend(layer.get_user_actions())
-            all_layer_agent_specs.extend(layer.get_agent_actions())
+        # Normal fixable combo: collect all atom actions with ordering metadata,
+        # then stable-sort by (gate_tier, phase, requestor_priority).
+        # This replaces the old 4-loop collection with a single unified sort.
+        entries: list[tuple[int, int, int, ActionSpec]] = []
+        for layer in sorted_layers:
+            if layer.atoms:
+                for atom in layer.atoms:
+                    requestor_priority = 0 if atom.fix.requestor == "user" else 1
+                    entries.append((layer.gate_tier, atom.phase, requestor_priority, atom.fix))
+            else:
+                # Legacy interface: user actions at phase 0, agent actions at phase 0
+                # with requestor as tiebreaker (preserves old user-before-agent order).
+                # Force requestor="user" on user_actions for backward compat.
+                for aspec in layer.get_user_actions():
+                    forced = ActionSpec(
+                        tool_name=aspec.tool_name,
+                        args=aspec.args,
+                        requestor="user",
+                        compare_args=aspec.compare_args,
+                    )
+                    entries.append((layer.gate_tier, 0, 0, forced))
+                for aspec in layer.get_agent_actions():
+                    entries.append((layer.gate_tier, 0, 1, aspec))
 
+        # Base actions at synthetic final tiers (after all layer actions)
+        max_tier = max((l.gate_tier for l in sorted_layers), default=0)
+        for aspec in flc.base_actions:
+            entries.append((max_tier + 1, 0, 1, aspec))
+        for aspec in flc.base_user_actions:
+            # Force requestor="user" for base_user_actions (backward compat)
+            forced = ActionSpec(
+                tool_name=aspec.tool_name,
+                args=aspec.args,
+                requestor="user",
+                compare_args=aspec.compare_args,
+            )
+            entries.append((max_tier + 2, 0, 0, forced))
+
+        # Stable sort — preserves layer order within same key
+        entries.sort(key=lambda x: (x[0], x[1], x[2]))
+
+        # Build action dicts from sorted entries
         actions = []
-        # 1. Layer user actions first (customer troubleshooting)
-        for aspec in all_layer_user_specs:
+        for _, _, _, aspec in entries:
             action: dict[str, Any] = {
                 "action_id": str(len(actions)),
                 "name": aspec.tool_name,
-                "requestor": "user",
-                "arguments": _resolve_args(aspec.args, entity_fields),
-            }
-            if aspec.compare_args is not None:
-                action["compare_args"] = aspec.compare_args
-            actions.append(action)
-
-        # 2. Layer agent actions (backend processing)
-        for aspec in all_layer_agent_specs:
-            action = {
-                "action_id": str(len(actions)),
-                "name": aspec.tool_name,
                 "requestor": aspec.requestor,
-                "arguments": _resolve_args(aspec.args, entity_fields),
-            }
-            if aspec.compare_args is not None:
-                action["compare_args"] = aspec.compare_args
-            actions.append(action)
-
-        # 3. Base agent actions
-        for aspec in flc.base_actions:
-            action = {
-                "action_id": str(len(actions)),
-                "name": aspec.tool_name,
-                "requestor": aspec.requestor,
-                "arguments": _resolve_args(aspec.args, entity_fields),
-            }
-            if aspec.compare_args is not None:
-                action["compare_args"] = aspec.compare_args
-            actions.append(action)
-
-        # 4. Base user actions last (e.g. reconnect_wifi after all fixes)
-        all_base_user_specs: list[ActionSpec] = list(flc.base_user_actions)
-
-        for aspec in all_base_user_specs:
-            action = {
-                "action_id": str(len(actions)),
-                "name": aspec.tool_name,
-                "requestor": "user",
                 "arguments": _resolve_args(aspec.args, entity_fields),
             }
             if aspec.compare_args is not None:
@@ -756,7 +794,7 @@ def _fault_layers_to_spec(
         # the full instructions automatically.
         # Otherwise falls back to UserTemplate.task_instructions via None.
         user_task_instructions = _compose_task_instructions(
-            active_layers, flc, entity_fields
+            active_layers, flc, entity_fields, resolution_instruction
         )
 
         # Assertions: layer assertions + base assertions
@@ -881,7 +919,9 @@ def _validate_resource_scopes(
                         stacklevel=3,
                     )
 
-    # Check for cross-group resource overlap
+    # Check for cross-group resource overlap.
+    # Layers at different gate_tiers execute sequentially, so overlapping
+    # scopes are safe — only same-tier layers can conflict.
     for i, group_i in enumerate(flc.groups):
         for j, group_j in enumerate(flc.groups):
             if j <= i:
@@ -891,6 +931,9 @@ def _validate_resource_scopes(
                     continue
                 for layer_j in group_j.layers:
                     if layer_j.resource_scope is None:
+                        continue
+                    # Different gate_tiers → sequential execution, no conflict
+                    if layer_i.gate_tier != layer_j.gate_tier:
                         continue
                     for entity in entities:
                         entity_fields = _entity_to_fields(entity) if not isinstance(entity, dict) else entity
@@ -909,13 +952,15 @@ def _validate_resource_scopes(
                                 f"and layer '{layer_j.name}' (group '{group_j.name}') "
                                 f"both modify {overlap}. "
                                 f"Move them to the same group to make them mutually exclusive, "
-                                f"or use separate resource instances (e.g. first_X vs second_X)."
+                                f"or use separate resource instances (e.g. first_X vs second_X), "
+                                f"or use different gate_tier values for sequential execution."
                             )
 
 
 def _generate_fault_layer_specs(
     flc: FaultLayerConfig,
     indexes: Any,
+    resolution_instruction: str = "",
 ) -> list[GeneratedTaskSpec]:
     """Generate specs from a FaultLayerConfig via cartesian product over groups."""
     entities = flc.entity_query(indexes)
@@ -963,10 +1008,21 @@ def _generate_fault_layer_specs(
                     f"are allowed for secondary checks."
                 )
 
-            # Warn if atom has init but no check
+            # Validate step_type values
             import warnings
+            _VALID_STEP_TYPES = {"fix", "diagnostic", "confirm"}
             for i, atom in enumerate(layer.atoms):
-                if atom.init is not None and atom.check is None:
+                if atom.step_type not in _VALID_STEP_TYPES:
+                    raise ValueError(
+                        f"Layer '{layer.name}' atom {i} "
+                        f"(fix={atom.fix.tool_name}): invalid step_type "
+                        f"'{atom.step_type}'. Must be one of {_VALID_STEP_TYPES}."
+                    )
+
+            # Warn if atom has init but no check (skip diagnostic atoms —
+            # they gather info, not verify state change)
+            for i, atom in enumerate(layer.atoms):
+                if atom.init is not None and atom.check is None and atom.step_type != "diagnostic":
                     warnings.warn(
                         f"Layer '{layer.name}' atom {i} "
                         f"(fix={atom.fix.tool_name}): has init but no check. "
@@ -1033,7 +1089,7 @@ def _generate_fault_layer_specs(
         all_combos = _proportional_sample(all_combos, flc.max_total_tasks)
 
     # Phase 3: Generate specs
-    return [_fault_layers_to_spec(flc, entity, active) for entity, active in all_combos]
+    return [_fault_layers_to_spec(flc, entity, active, resolution_instruction) for entity, active in all_combos]
 
 
 def _bin_sample(
@@ -1299,7 +1355,11 @@ def verify_completion_fragments(
          This is the contractual link between the user sim's stop condition and
          the task's actual success criteria.  Missing = the user sim has no
          task-specific stop condition.
-      2. completion_fragment must NOT contain frame sentences — the framework
+      2. Every unfixable layer MUST have a non-empty completion_fragment.
+         Without one, transfer tasks fall back to a generic "when the agent
+         confirms all problems have been addressed" instruction that causes
+         infinite loops — the user sim never accepts the transfer.
+      3. completion_fragment must NOT contain frame sentences — the framework
          adds "You will consider your issues resolved when ...".
 
     Returns:
@@ -1327,7 +1387,20 @@ def verify_completion_fragments(
                         f"observable resolution."
                     )
 
-            # Check 2: completion_fragment should not include frame sentences
+            # Check 2: unfixable layers must have completion_fragment
+            if layer.unfixable:
+                if not layer.completion_fragment:
+                    issues.append(
+                        f"ERROR: {label}: unfixable layer has no "
+                        f"completion_fragment. Without one, transfer tasks "
+                        f"fall back to a generic stop condition that causes "
+                        f"infinite loops. Set it to describe what 'fixed' "
+                        f"would look like (e.g. 'your router is back online') "
+                        f"— an impossible goal the agent cannot achieve, "
+                        f"forcing it to decide to transfer on its own."
+                    )
+
+            # Check 3: completion_fragment should not include frame sentences
             if layer.completion_fragment:
                 cf_lower = layer.completion_fragment.lower()
                 for phrase in frame_phrases:
@@ -1339,6 +1412,39 @@ def verify_completion_fragments(
                             f"excellent results'), not the frame — the "
                             f"framework adds 'You will consider your issues "
                             f"resolved when ...' automatically."
+                        )
+                        break
+
+            # Check 4: unfixable layers must NOT leak the transfer outcome.
+            # The fragment should describe an impossible goal (what "fixed"
+            # would look like), not the resolution method (transfer/escalate).
+            if layer.unfixable and layer.completion_fragment:
+                transfer_leak_phrases = [
+                    "transferred",
+                    "escalated",
+                    "specialist",
+                    "referred",
+                    "referral",
+                    "another team",
+                    "another department",
+                    "higher level",
+                    "supervisor",
+                    "manager",
+                    "transfer",
+                    "escalate",
+                ]
+                for phrase in transfer_leak_phrases:
+                    if phrase in cf_lower:
+                        issues.append(
+                            f"ERROR: {label}: unfixable layer's "
+                            f"completion_fragment contains '{phrase}', "
+                            f"which leaks the transfer outcome. The user "
+                            f"sim should NOT know the issue is unfixable. "
+                            f"Use an impossible-goal fragment instead — "
+                            f"describe what 'fixed' would look like "
+                            f"(e.g. 'your router is back online'). "
+                            f"The agent must figure out the issue is "
+                            f"unfixable and decide to transfer on its own."
                         )
                         break
 
@@ -1357,6 +1463,104 @@ def verify_completion_fragments(
             if not layer.unfixable and layer.completion_fragment
         )
         print(f"\nCompletion fragment verification: all layers OK")
+
+    return issues
+
+
+def verify_resolution_instruction(
+    recipe_book: RecipeBook,
+) -> list[str]:
+    """Validate the resolution_instruction and resolution_category fields.
+
+    Checks:
+      1. If resolution_instruction is set, it must be non-empty and not
+         contain tool names or frame phrases (the framework adds the frame).
+      2. If resolution_instruction is set, every FaultLayerGroup should have
+         a resolution_category for coverage verification.
+      3. resolution_instruction must cover all distinct resolution_categories
+         (heuristic: each category word should appear in the instruction).
+      4. resolution_category should not be empty when resolution_instruction
+         is set on the RecipeBook.
+
+    Returns:
+        List of issue strings (empty if all checks pass).
+    """
+    issues: list[str] = []
+
+    ri = recipe_book.resolution_instruction.strip()
+
+    if not ri:
+        # No resolution_instruction — skip all checks
+        return issues
+
+    # Check 1: no frame phrases in resolution_instruction
+    frame_phrases = [
+        "you will consider",
+        "follow the agent",
+        "when the agent asks you to perform",
+        "you must actually call the tool",
+        "issues resolved when",
+    ]
+    ri_lower = ri.lower()
+    for phrase in frame_phrases:
+        if phrase in ri_lower:
+            issues.append(
+                f"WARNING: resolution_instruction contains frame phrase "
+                f"'{phrase}'. Write only the outcome description "
+                f"(e.g. 'your internet connection is working normally'), "
+                f"not the frame — the framework adds 'You will consider "
+                f"your issues resolved when ...' automatically."
+            )
+            break
+
+    # Check 2: collect all resolution_categories and verify coverage
+    categories: set[str] = set()
+    groups_without_category: list[str] = []
+
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            if group.resolution_category:
+                categories.add(group.resolution_category)
+            else:
+                groups_without_category.append(group.name)
+
+    # Check 3: groups should have resolution_category when resolution_instruction is set
+    if groups_without_category:
+        issues.append(
+            f"WARNING: resolution_instruction is set but "
+            f"{len(groups_without_category)} group(s) have no "
+            f"resolution_category: {groups_without_category[:5]}"
+            f"{'...' if len(groups_without_category) > 5 else ''}. "
+            f"Add resolution_category to each FaultLayerGroup for "
+            f"coverage verification."
+        )
+
+    # Check 4: each category should be conceptually covered by the instruction
+    # Heuristic: at least one significant word from the category appears in
+    # the resolution_instruction
+    if categories:
+        uncovered: list[str] = []
+        for cat in sorted(categories):
+            cat_words = {w.lower() for w in cat.replace("_", " ").split() if len(w) > 2}
+            if not any(w in ri_lower for w in cat_words):
+                uncovered.append(cat)
+        if uncovered:
+            issues.append(
+                f"WARNING: resolution_instruction may not cover these "
+                f"resolution_categories: {uncovered}. The instruction "
+                f"should describe an outcome that encompasses all "
+                f"category types. Current instruction: '{ri[:80]}...'"
+            )
+
+    # Print summary
+    if issues:
+        errors = sum(1 for i in issues if i.startswith("ERROR"))
+        warnings = sum(1 for i in issues if i.startswith("WARNING"))
+        print(f"\nResolution instruction verification: {errors} errors, {warnings} warnings")
+        for issue in issues:
+            print(f"  - {issue}")
+    else:
+        print(f"\nResolution instruction verification: OK")
 
     return issues
 
@@ -1441,7 +1645,7 @@ def generate_recipe_tasks(
 
     # Phase 2.5: Fault layer configs
     for flc in recipe_book.fault_layer_configs:
-        flc_specs = _generate_fault_layer_specs(flc, indexes)
+        flc_specs = _generate_fault_layer_specs(flc, indexes, recipe_book.resolution_instruction)
         all_specs.extend(flc_specs)
 
     print(

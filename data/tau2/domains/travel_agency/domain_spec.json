@@ -1,0 +1,234 @@
+{
+  "domain_name": "travel_agency",
+  "description": "A travel agency where agents help clients manage trip bookings including flights, hotels, and car rentals.",
+  "archetype": "transaction_processor",
+  "archetype_notes": "Primary: Archetype C (Transaction Processor) — structured booking protocols, numeric computation (pricing, date arithmetic), and policy-based denial. Light Archetype A influence: account status gates trip access.",
+  "entities": [
+    {
+      "name": "Client",
+      "fields": [
+        {"name": "client_id", "type": "str", "description": "Unique client ID"},
+        {"name": "name", "type": "str", "description": "Full name"},
+        {"name": "phone", "type": "str", "description": "Phone number"},
+        {"name": "email", "type": "str", "description": "Email address"},
+        {"name": "membership_tier", "type": "str", "description": "Loyalty tier: standard, silver, gold, platinum"},
+        {"name": "account_status", "type": "str", "description": "Account status: active, suspended"}
+      ],
+      "is_primary": true
+    },
+    {
+      "name": "Trip",
+      "fields": [
+        {"name": "trip_id", "type": "str", "description": "Unique trip ID"},
+        {"name": "client_id", "type": "str", "description": "FK to Client"},
+        {"name": "destination", "type": "str", "description": "Trip destination city/country"},
+        {"name": "start_date", "type": "str", "description": "Trip start date YYYY-MM-DD"},
+        {"name": "end_date", "type": "str", "description": "Trip end date YYYY-MM-DD"},
+        {"name": "budget", "type": "float", "description": "Trip budget in USD"},
+        {"name": "status", "type": "str", "description": "Trip status: planned, confirmed, cancelled"},
+        {"name": "travel_insurance_status", "type": "str", "description": "Insurance: active, expired, none"}
+      ]
+    },
+    {
+      "name": "FlightBooking",
+      "fields": [
+        {"name": "booking_id", "type": "str", "description": "Unique booking ID"},
+        {"name": "trip_id", "type": "str", "description": "FK to Trip"},
+        {"name": "client_id", "type": "str", "description": "FK to Client"},
+        {"name": "airline", "type": "str", "description": "Airline name"},
+        {"name": "flight_number", "type": "str", "description": "Flight number"},
+        {"name": "departure_city", "type": "str", "description": "Departure city"},
+        {"name": "arrival_city", "type": "str", "description": "Arrival city"},
+        {"name": "departure_date", "type": "str", "description": "Departure date YYYY-MM-DD"},
+        {"name": "seat_class", "type": "str", "description": "Seat class: economy, premium_economy, business, first"},
+        {"name": "passenger_name", "type": "str", "description": "Passenger name on ticket"},
+        {"name": "price", "type": "float", "description": "Ticket price in USD"},
+        {"name": "status", "type": "str", "description": "Booking status: confirmed, cancelled"}
+      ]
+    },
+    {
+      "name": "HotelReservation",
+      "fields": [
+        {"name": "reservation_id", "type": "str", "description": "Unique reservation ID"},
+        {"name": "trip_id", "type": "str", "description": "FK to Trip"},
+        {"name": "client_id", "type": "str", "description": "FK to Client"},
+        {"name": "hotel_name", "type": "str", "description": "Hotel name"},
+        {"name": "check_in_date", "type": "str", "description": "Check-in date YYYY-MM-DD"},
+        {"name": "check_out_date", "type": "str", "description": "Check-out date YYYY-MM-DD"},
+        {"name": "room_type", "type": "str", "description": "Room type: standard, deluxe, suite"},
+        {"name": "guests", "type": "int", "description": "Number of guests"},
+        {"name": "price_per_night", "type": "float", "description": "Price per night in USD"},
+        {"name": "total_price", "type": "float", "description": "Total reservation price"},
+        {"name": "status", "type": "str", "description": "Reservation status: confirmed, cancelled"}
+      ]
+    },
+    {
+      "name": "CarRental",
+      "fields": [
+        {"name": "rental_id", "type": "str", "description": "Unique rental ID"},
+        {"name": "trip_id", "type": "str", "description": "FK to Trip"},
+        {"name": "client_id", "type": "str", "description": "FK to Client"},
+        {"name": "company", "type": "str", "description": "Rental company"},
+        {"name": "pickup_date", "type": "str", "description": "Pickup date YYYY-MM-DD"},
+        {"name": "return_date", "type": "str", "description": "Return date YYYY-MM-DD"},
+        {"name": "car_type", "type": "str", "description": "Car type: economy, compact, midsize, suv, luxury"},
+        {"name": "pickup_location", "type": "str", "description": "Pickup location"},
+        {"name": "daily_rate", "type": "float", "description": "Daily rental rate"},
+        {"name": "total_price", "type": "float", "description": "Total rental price"},
+        {"name": "status", "type": "str", "description": "Rental status: confirmed, cancelled"}
+      ]
+    }
+  ],
+  "tools": [
+    {"name": "get_client_by_name", "type": "READ", "description": "Look up client by name", "args": [{"name": "name", "type": "str"}]},
+    {"name": "get_client_by_id", "type": "READ", "description": "Look up client by ID", "args": [{"name": "client_id", "type": "str"}]},
+    {"name": "get_trips", "type": "READ", "description": "Get trips for a client (gated by account status)", "args": [{"name": "client_id", "type": "str"}]},
+    {"name": "get_flight_bookings", "type": "READ", "description": "Get flight bookings for a trip", "args": [{"name": "trip_id", "type": "str"}]},
+    {"name": "get_hotel_reservations", "type": "READ", "description": "Get hotel reservations for a trip", "args": [{"name": "trip_id", "type": "str"}]},
+    {"name": "get_car_rentals", "type": "READ", "description": "Get car rentals for a trip", "args": [{"name": "trip_id", "type": "str"}]},
+    {"name": "review_trip_costs", "type": "READ", "description": "Diagnostic: compute cost breakdown for a trip, flag discrepancies", "args": [{"name": "trip_id", "type": "str"}]},
+    {"name": "reactivate_account", "type": "WRITE", "description": "Reactivate a suspended client account", "args": [{"name": "client_id", "type": "str"}]},
+    {"name": "change_flight_date", "type": "WRITE", "description": "Change flight departure date", "args": [{"name": "booking_id", "type": "str"}, {"name": "new_date", "type": "str"}]},
+    {"name": "change_seat_class", "type": "WRITE", "description": "Change flight seat class", "args": [{"name": "booking_id", "type": "str"}, {"name": "seat_class", "type": "str"}]},
+    {"name": "update_passenger_name", "type": "WRITE", "description": "Fix passenger name on flight ticket", "args": [{"name": "booking_id", "type": "str"}, {"name": "passenger_name", "type": "str"}]},
+    {"name": "change_hotel_dates", "type": "WRITE", "description": "Change hotel check-in/check-out dates and recompute total", "args": [{"name": "reservation_id", "type": "str"}, {"name": "check_in_date", "type": "str"}, {"name": "check_out_date", "type": "str"}]},
+    {"name": "change_room_type", "type": "WRITE", "description": "Change hotel room type", "args": [{"name": "reservation_id", "type": "str"}, {"name": "room_type", "type": "str"}]},
+    {"name": "change_car_type", "type": "WRITE", "description": "Change car rental vehicle type", "args": [{"name": "rental_id", "type": "str"}, {"name": "car_type", "type": "str"}]},
+    {"name": "change_rental_dates", "type": "WRITE", "description": "Change car rental dates and recompute total", "args": [{"name": "rental_id", "type": "str"}, {"name": "pickup_date", "type": "str"}, {"name": "return_date", "type": "str"}]},
+    {"name": "adjust_hotel_price", "type": "WRITE", "description": "Adjust hotel total price (agent computes correct total)", "args": [{"name": "reservation_id", "type": "str"}, {"name": "correct_total", "type": "float"}]},
+    {"name": "apply_loyalty_discount", "type": "WRITE", "description": "Apply membership tier discount to trip (agent computes pct from tier)", "args": [{"name": "trip_id", "type": "str"}, {"name": "discount_pct", "type": "float"}]},
+    {"name": "renew_travel_insurance", "type": "WRITE", "description": "Renew expired travel insurance on a trip", "args": [{"name": "trip_id", "type": "str"}]},
+    {"name": "update_trip_destination", "type": "WRITE", "description": "Update the destination on a trip", "args": [{"name": "trip_id", "type": "str"}, {"name": "destination", "type": "str"}]},
+    {"name": "transfer_to_human", "type": "GENERIC", "description": "Transfer to human travel specialist", "args": [{"name": "summary", "type": "str"}]}
+  ],
+  "user_tools": [
+    {"name": "view_my_trips", "type": "READ", "description": "View my trip summaries", "args": []},
+    {"name": "view_my_bookings", "type": "READ", "description": "View all my booking details", "args": []},
+    {"name": "confirm_flight_change", "type": "WRITE", "description": "Confirm a flight modification", "args": [{"name": "booking_id", "type": "str"}]},
+    {"name": "confirm_hotel_change", "type": "WRITE", "description": "Confirm a hotel modification", "args": [{"name": "reservation_id", "type": "str"}]},
+    {"name": "confirm_rental_change", "type": "WRITE", "description": "Confirm a car rental modification", "args": [{"name": "rental_id", "type": "str"}]},
+    {"name": "confirm_insurance_renewal", "type": "WRITE", "description": "Confirm travel insurance renewal", "args": [{"name": "trip_id", "type": "str"}]},
+    {"name": "acknowledge_resolution", "type": "WRITE", "description": "Acknowledge an account or administrative resolution", "args": [{"name": "client_id", "type": "str"}]},
+    {"name": "authorize_trip_modification", "type": "WRITE", "description": "Authorize a modification to the trip itself", "args": [{"name": "trip_id", "type": "str"}]}
+  ],
+  "fault_groups": [
+    {
+      "group_name": "account_issues",
+      "faults": [
+        {"name": "suspended_account", "description": "Client account is suspended, blocking access to trip records", "init_action": "set account_status to suspended", "fix_tool": "reactivate_account", "entity_field_affected": "client.account_status", "unfixable": false, "user_fix_tools": ["acknowledge_resolution"]}
+      ]
+    },
+    {
+      "group_name": "flight_details",
+      "faults": [
+        {"name": "wrong_flight_date", "description": "Flight departure date is incorrect", "init_action": "set departure_date to wrong value", "fix_tool": "change_flight_date", "entity_field_affected": "flight_booking.departure_date", "unfixable": false, "user_fix_tools": ["confirm_flight_change"]},
+        {"name": "wrong_seat_class", "description": "Flight seat class is wrong", "init_action": "set seat_class to wrong value", "fix_tool": "change_seat_class", "entity_field_affected": "flight_booking.seat_class", "unfixable": false, "user_fix_tools": ["confirm_flight_change"]}
+      ]
+    },
+    {
+      "group_name": "passenger_info",
+      "faults": [
+        {"name": "wrong_passenger_name", "description": "Passenger name on ticket doesn't match client name", "init_action": "set passenger_name to wrong name", "fix_tool": "update_passenger_name", "entity_field_affected": "flight_booking.passenger_name", "unfixable": false, "user_fix_tools": ["confirm_flight_change"]}
+      ]
+    },
+    {
+      "group_name": "hotel_details",
+      "faults": [
+        {"name": "wrong_check_in_date", "description": "Hotel check-in date is wrong", "init_action": "set check_in_date to wrong date", "fix_tool": "change_hotel_dates", "entity_field_affected": "hotel_reservation.check_in_date", "unfixable": false, "user_fix_tools": ["confirm_hotel_change"]},
+        {"name": "wrong_room_type", "description": "Hotel room type is incorrect", "init_action": "set room_type to wrong type", "fix_tool": "change_room_type", "entity_field_affected": "hotel_reservation.room_type", "unfixable": false, "user_fix_tools": ["confirm_hotel_change"]}
+      ]
+    },
+    {
+      "group_name": "car_rental_details",
+      "faults": [
+        {"name": "wrong_car_type", "description": "Car rental vehicle type is wrong", "init_action": "set car_type to wrong type", "fix_tool": "change_car_type", "entity_field_affected": "car_rental.car_type", "unfixable": false, "user_fix_tools": ["confirm_rental_change"]},
+        {"name": "wrong_pickup_date", "description": "Car rental pickup date is wrong", "init_action": "set pickup_date to wrong date", "fix_tool": "change_rental_dates", "entity_field_affected": "car_rental.pickup_date", "unfixable": false, "user_fix_tools": ["confirm_rental_change"]}
+      ]
+    },
+    {
+      "group_name": "travel_insurance",
+      "faults": [
+        {"name": "expired_insurance", "description": "Travel insurance on trip has expired", "init_action": "set travel_insurance_status to expired", "fix_tool": "renew_travel_insurance", "entity_field_affected": "trip.travel_insurance_status", "unfixable": false, "user_fix_tools": ["confirm_insurance_renewal"]}
+      ]
+    },
+    {
+      "group_name": "trip_itinerary",
+      "faults": [
+        {"name": "wrong_destination", "description": "Trip destination is incorrect", "init_action": "set destination to wrong value", "fix_tool": "update_trip_destination", "entity_field_affected": "trip.destination", "unfixable": false, "user_fix_tools": ["authorize_trip_modification"]}
+      ]
+    },
+    {
+      "group_name": "pricing_issues",
+      "faults": [
+        {"name": "overcharged_hotel", "description": "Hotel total doesn't match per-night rate times nights", "init_action": "set total_price to wrong amount", "fix_tool": "adjust_hotel_price", "entity_field_affected": "hotel_reservation.total_price", "unfixable": false, "user_fix_tools": ["confirm_hotel_change"]},
+        {"name": "missing_loyalty_discount", "description": "Membership tier discount not applied to trip budget", "init_action": "set trip budget without tier discount", "fix_tool": "apply_loyalty_discount", "entity_field_affected": "trip.budget", "unfixable": false, "user_fix_tools": ["authorize_trip_modification"]}
+      ]
+    }
+  ],
+  "unfixable_faults": [
+    {"name": "visa_restriction", "description": "Destination requires visa that client cannot obtain in time", "user_fix_tools": []},
+    {"name": "fully_booked_destination", "description": "All flights and hotels at destination are fully booked for requested dates", "user_fix_tools": []}
+  ],
+  "policy_sections": [
+    "Identity Verification",
+    "Account Access Protocol",
+    "Trip Review Workflow",
+    "Flight Modification Protocol",
+    "Passenger Name Correction",
+    "Hotel Modification Protocol",
+    "Car Rental Modification Protocol",
+    "Travel Insurance",
+    "Trip Itinerary Changes",
+    "Pricing Review and Adjustment",
+    "Loyalty Discount Policy",
+    "Transfer to Human Specialist"
+  ],
+  "sync_rules": [
+    {"agent_field": "trips", "user_field": "my_trips", "description": "Project trip summaries to user"},
+    {"agent_field": "flight_bookings+hotel_reservations+car_rentals", "user_field": "my_bookings", "description": "Project all booking summaries to user"}
+  ],
+  "assertion_helpers": [
+    {"name": "assert_account_status", "description": "Check client account status", "env_type": "assistant"},
+    {"name": "assert_flight_date", "description": "Check flight departure date", "env_type": "assistant"},
+    {"name": "assert_seat_class", "description": "Check flight seat class", "env_type": "assistant"},
+    {"name": "assert_passenger_name", "description": "Check passenger name on flight", "env_type": "assistant"},
+    {"name": "assert_hotel_check_in", "description": "Check hotel check-in date", "env_type": "assistant"},
+    {"name": "assert_room_type", "description": "Check hotel room type", "env_type": "assistant"},
+    {"name": "assert_car_type", "description": "Check car rental type", "env_type": "assistant"},
+    {"name": "assert_rental_pickup_date", "description": "Check rental pickup date", "env_type": "assistant"},
+    {"name": "assert_insurance_status", "description": "Check travel insurance status", "env_type": "assistant"},
+    {"name": "assert_trip_destination", "description": "Check trip destination", "env_type": "assistant"},
+    {"name": "assert_hotel_total_price", "description": "Check hotel total price", "env_type": "assistant"},
+    {"name": "assert_trip_discount", "description": "Check loyalty discount applied", "env_type": "assistant"},
+    {"name": "assert_flight_change_confirmed", "description": "Check user confirmed flight change", "env_type": "user"},
+    {"name": "assert_hotel_change_confirmed", "description": "Check user confirmed hotel change", "env_type": "user"},
+    {"name": "assert_rental_change_confirmed", "description": "Check user confirmed rental change", "env_type": "user"},
+    {"name": "assert_insurance_renewal_confirmed", "description": "Check user confirmed insurance renewal", "env_type": "user"},
+    {"name": "assert_resolution_acknowledged", "description": "Check user acknowledged resolution", "env_type": "user"},
+    {"name": "assert_trip_modification_authorized", "description": "Check user authorized trip modification", "env_type": "user"}
+  ],
+  "setup_helpers": [
+    {"name": "set_account_status", "description": "Set client account status", "env_type": "assistant"},
+    {"name": "set_flight_date", "description": "Set flight departure date", "env_type": "assistant"},
+    {"name": "set_seat_class", "description": "Set flight seat class", "env_type": "assistant"},
+    {"name": "set_passenger_name", "description": "Set passenger name on flight", "env_type": "assistant"},
+    {"name": "set_hotel_check_in", "description": "Set hotel check-in date", "env_type": "assistant"},
+    {"name": "set_hotel_check_out", "description": "Set hotel check-out date", "env_type": "assistant"},
+    {"name": "set_room_type", "description": "Set hotel room type", "env_type": "assistant"},
+    {"name": "set_car_type", "description": "Set car rental type", "env_type": "assistant"},
+    {"name": "set_rental_pickup_date", "description": "Set rental pickup date", "env_type": "assistant"},
+    {"name": "set_insurance_status", "description": "Set travel insurance status", "env_type": "assistant"},
+    {"name": "set_trip_destination", "description": "Set trip destination", "env_type": "assistant"},
+    {"name": "set_hotel_total_price", "description": "Set hotel total price", "env_type": "assistant"},
+    {"name": "set_trip_discount_pct", "description": "Set loyalty discount percentage on trip", "env_type": "assistant"},
+    {"name": "set_client_info", "description": "Set user identity", "env_type": "user"}
+  ],
+  "difficulty_invariants": {
+    "DI-1": "review_trip_costs diagnostic READ tool computes cost breakdown. overcharged_hotel and missing_loyalty_discount both require the agent to interpret cost data and compute corrections.",
+    "DI-2": "adjust_hotel_price requires computing price_per_night * nights. apply_loyalty_discount requires computing discount from membership tier (silver=5%, gold=10%, platinum=15%). change_hotel_dates recomputes total.",
+    "DI-3": "Account status gates get_trips() — must fix suspended account before viewing any trip data.",
+    "DI-4": "All fixable layers have 2 atoms (agent fix + user confirm) = 100% with 2+ assertions, well above 50% threshold.",
+    "DI-5": "7 distinct user WRITE tools: acknowledge_resolution, confirm_flight_change, confirm_hotel_change, confirm_rental_change, confirm_insurance_renewal, authorize_trip_modification, confirm_billing_adjustment. Most-used at ~21%.",
+    "DI-6": "8 groups x 2 atoms/layer, median ~4 faults = ~8 actions. Above >=6 threshold."
+  }
+}

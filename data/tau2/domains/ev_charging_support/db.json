@@ -1,0 +1,28 @@
+{
+  "accounts": [
+    {
+      "account_id": "A1001",
+      "customer_name": "Jordan Lee",
+      "hold_status": "present"
+    }
+  ],
+  "stations": [
+    {
+      "station_id": "ST1001",
+      "site_id": "SITE-SEA-01",
+      "reachability_state": "reachable",
+      "connector_health": "healthy"
+    }
+  ],
+  "sessions": [
+    {
+      "session_id": "S1001",
+      "account_id": "A1001",
+      "station_id": "ST1001",
+      "profile_state": "not_ready",
+      "retry_state": "not_ready",
+      "charge_state": "inactive",
+      "last_fault_code": "BH-101"
+    }
+  ]
+}

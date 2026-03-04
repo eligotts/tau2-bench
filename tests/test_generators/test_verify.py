@@ -17,6 +17,7 @@ from tau2.generators.verify import (
     build_llm_verification_prompt,
     parse_llm_verification_response,
     verify_action_necessity,
+    verify_action_ordering,
     verify_action_state_change,
     verify_argument_reachability,
     verify_assertion_robustness,
@@ -1043,6 +1044,46 @@ class TestVerifyUserActionRedundancy(unittest.TestCase):
         issues = verify_user_action_redundancy(task, get_environment)
         self.assertEqual(issues, [])
 
+    def test_read_only_user_actions_skipped(self):
+        """User actions that are READ tools are excluded from redundancy check.
+
+        A diagnostic user action (e.g. view_my_checkouts) doesn't change state,
+        so assertions will always pass without it. This is expected behavior,
+        not a redundancy problem — the ACTION evaluator enforces the call.
+        """
+        init_actions = [
+            EnvFunctionCall(
+                env_type="user",
+                func_name="set_patron_info",
+                arguments={"name": "Maria Garcia", "patron_id": "PAT001"},
+            ),
+        ]
+        actions = [
+            {
+                "action_id": "0",
+                "name": "view_my_checkouts",  # READ user tool
+                "requestor": "user",
+                "arguments": {},
+                "compare_args": [],
+            },
+        ]
+        env_assertions = [
+            EnvAssertion(
+                env_type="assistant",
+                func_name="assert_checkout_due_date",
+                arguments={"checkout_id": "CK001", "expected_date": "2025-03-10"},
+            ),
+        ]
+        task = _make_task(
+            actions=actions,
+            env_assertions=env_assertions,
+            init_actions=init_actions,
+        )
+        # Should return no issues because the only user action is READ
+        # (filtered out before redundancy check)
+        issues = verify_user_action_redundancy(task, get_environment)
+        self.assertEqual(issues, [])
+
 
 # ---------------------------------------------------------------------------
 # LLM verification tests
@@ -1132,9 +1173,10 @@ class TestLLMVerification(unittest.TestCase):
 class TestVerifyActionStateChange(unittest.TestCase):
     """Tests for the verify_action_state_change no-op detection pass."""
 
-    def test_catches_noop_action(self):
-        """Action that doesn't change DB state is flagged as ERROR."""
-        # get_checkouts is a READ tool — calling it won't change state
+    def test_read_tool_skipped(self):
+        """READ tools are skipped — they're diagnostic, not expected to change state."""
+        # get_checkouts is a READ tool — calling it won't change state,
+        # but it should be silently skipped (not flagged as no-op)
         task = _make_task(
             actions=[
                 {"action_id": "0", "name": "get_checkouts",
@@ -1142,10 +1184,10 @@ class TestVerifyActionStateChange(unittest.TestCase):
             ],
         )
         issues = verify_action_state_change(task, get_environment)
-        # READ tool should be a no-op
-        self.assertTrue(
-            any("no-op" in i for i in issues),
-            f"Expected no-op detection, got: {issues}",
+        # READ tool should NOT be flagged as no-op
+        self.assertEqual(
+            [i for i in issues if "no-op" in i], [],
+            f"READ tool should not be flagged as no-op, got: {issues}",
         )
 
     def test_passes_real_state_change(self):
@@ -1848,6 +1890,396 @@ class TestAssertionArgSchemaValidation(unittest.TestCase):
             len(missing_issues) >= 1,
             f"Expected error about missing assertion arg, got: {issues}",
         )
+
+
+# ---------------------------------------------------------------------------
+# verify_action_ordering tests
+# ---------------------------------------------------------------------------
+
+
+class TestVerifyActionOrdering(unittest.TestCase):
+    """Tests for the verify_action_ordering dependency detection pass."""
+
+    def test_single_action_skipped(self):
+        """Single-action tasks are skipped."""
+        task = _make_task(
+            actions=[
+                {"action_id": "0", "name": "renew_checkout",
+                 "requestor": "assistant",
+                 "arguments": {"checkout_id": "CK001", "new_due_date": "2025-07-15"}},
+            ],
+            env_assertions=[
+                EnvAssertion(
+                    env_type="assistant",
+                    func_name="assert_checkout_due_date",
+                    arguments={"checkout_id": "CK001", "expected_date": "2025-07-15"},
+                ),
+            ],
+        )
+        issues = verify_action_ordering(task, get_environment)
+        self.assertEqual(issues, [])
+
+    def test_no_assertions_skipped(self):
+        """Tasks with no assertions are skipped."""
+        task = _make_task(
+            actions=[
+                {"action_id": "0", "name": "renew_checkout",
+                 "requestor": "assistant",
+                 "arguments": {"checkout_id": "CK001", "new_due_date": "2025-07-15"}},
+                {"action_id": "1", "name": "reinstate_hold",
+                 "requestor": "assistant",
+                 "arguments": {"hold_id": "HLD001"}},
+            ],
+        )
+        issues = verify_action_ordering(task, get_environment)
+        self.assertEqual(issues, [])
+
+    def test_transfer_tasks_skipped(self):
+        """Transfer tasks are skipped."""
+        task = _make_task(
+            actions=[
+                {"action_id": "0", "name": "renew_checkout",
+                 "requestor": "assistant",
+                 "arguments": {"checkout_id": "CK001", "new_due_date": "2025-07-15"}},
+                {"action_id": "1", "name": "transfer_to_human",
+                 "requestor": "assistant",
+                 "arguments": {"summary": "test"}},
+            ],
+            env_assertions=[
+                EnvAssertion(
+                    env_type="assistant",
+                    func_name="assert_checkout_due_date",
+                    arguments={"checkout_id": "CK001", "expected_date": "2025-07-15"},
+                ),
+            ],
+        )
+        issues = verify_action_ordering(task, get_environment)
+        self.assertEqual(issues, [])
+
+    def test_no_eval_criteria(self):
+        """Task with no evaluation_criteria produces no issues."""
+        task = _make_task()
+        task.evaluation_criteria = None
+        issues = verify_action_ordering(task, get_environment)
+        self.assertEqual(issues, [])
+
+    def test_independent_actions_no_issues(self):
+        """Two independent actions produce no issues (ordering doesn't matter)."""
+        init_actions = [
+            EnvFunctionCall(
+                env_type="user",
+                func_name="set_patron_info",
+                arguments={"name": "Maria Garcia", "patron_id": "PAT001"},
+            ),
+            EnvFunctionCall(
+                env_type="assistant",
+                func_name="set_checkout_due_date",
+                arguments={"checkout_id": "CK001", "due_date": "2025-01-01"},
+            ),
+            EnvFunctionCall(
+                env_type="assistant",
+                func_name="set_fine_status",
+                arguments={"fine_id": "FN001", "status": "overdue"},
+            ),
+        ]
+        actions = [
+            {"action_id": "0", "name": "renew_checkout",
+             "requestor": "assistant",
+             "arguments": {"checkout_id": "CK001", "new_due_date": "2025-07-15"}},
+            {"action_id": "1", "name": "waive_fine",
+             "requestor": "assistant",
+             "arguments": {"fine_id": "FN001"}},
+        ]
+        env_assertions = [
+            EnvAssertion(
+                env_type="assistant",
+                func_name="assert_checkout_due_date",
+                arguments={"checkout_id": "CK001", "expected_date": "2025-07-15"},
+            ),
+            EnvAssertion(
+                env_type="assistant",
+                func_name="assert_fine_status",
+                arguments={"fine_id": "FN001", "expected_status": "waived"},
+            ),
+        ]
+        task = _make_task(
+            actions=actions,
+            env_assertions=env_assertions,
+            init_actions=init_actions,
+        )
+        issues = verify_action_ordering(task, get_environment)
+        self.assertEqual(issues, [])
+
+
+# ---------------------------------------------------------------------------
+# verify_fault_atoms integration tests (using library environment)
+# ---------------------------------------------------------------------------
+
+
+class TestVerifyFaultAtomsIntegration(unittest.TestCase):
+    """Integration tests for verify_fault_atoms using the library domain."""
+
+    def test_valid_atom_passes(self):
+        """A valid init→fix→check atom produces no issues."""
+        from tau2.generators.recipe import (
+            ActionSpec,
+            AssertionSpec,
+            FaultAtom,
+            FaultLayer,
+            FaultLayerConfig,
+            FaultLayerGroup,
+            InitCall,
+            verify_fault_atoms,
+        )
+        from tau2.domains.library.environment import get_environment as get_lib_env
+
+        atom = FaultAtom(
+            init=InitCall(
+                env_type="assistant",
+                func_name="set_checkout_due_date",
+                args={"checkout_id": "{checkout_id}", "due_date": "2025-01-01"},
+            ),
+            fix=ActionSpec(
+                tool_name="renew_checkout",
+                args={"checkout_id": "{checkout_id}", "new_due_date": "2025-07-15"},
+            ),
+            check=AssertionSpec(
+                func_name="assert_checkout_due_date",
+                args={"checkout_id": "{checkout_id}", "expected_date": "2025-07-15"},
+                env_type="assistant",
+            ),
+        )
+
+        layer = FaultLayer(
+            name="overdue_checkout",
+            atoms=[atom],
+            known_info_fragment="my checkout is overdue",
+            completion_fragment="your checkout has been renewed",
+        )
+
+        flc = FaultLayerConfig(
+            name="library_test",
+            entity_query=lambda db: [{"checkout_id": "CK001", "id": "CK001"}],
+            groups=[FaultLayerGroup(name="g1", layers=[layer])],
+            base_init_calls=[
+                InitCall(
+                    env_type="user",
+                    func_name="set_patron_info",
+                    args={"name": "Maria Garcia", "patron_id": "PAT001"},
+                ),
+            ],
+            base_known_info_template="{fault_descriptions}",
+            base_ticket_template="{fault_descriptions}",
+            reason_for_call="test",
+            purpose="test",
+            entity_id_field="id",
+            min_faults=1,
+        )
+
+        issues = verify_fault_atoms(
+            flc,
+            get_lib_env,
+            lambda: {"checkout_id": "CK001", "id": "CK001"},
+        )
+        self.assertEqual(issues, [], f"Expected no issues, got: {issues}")
+
+    def test_broken_fix_detected(self):
+        """Atom where fix doesn't repair what check verifies is flagged."""
+        from tau2.generators.recipe import (
+            ActionSpec,
+            AssertionSpec,
+            FaultAtom,
+            FaultLayer,
+            FaultLayerConfig,
+            FaultLayerGroup,
+            InitCall,
+            verify_fault_atoms,
+        )
+        from tau2.domains.library.environment import get_environment as get_lib_env
+
+        # Init breaks fine status, but fix renews checkout (wrong fix!)
+        atom = FaultAtom(
+            init=InitCall(
+                env_type="assistant",
+                func_name="set_fine_status",
+                args={"fine_id": "{fine_id}", "status": "overdue"},
+            ),
+            fix=ActionSpec(
+                tool_name="renew_checkout",
+                args={"checkout_id": "CK001", "new_due_date": "2025-07-15"},
+            ),
+            check=AssertionSpec(
+                func_name="assert_fine_status",
+                args={"fine_id": "{fine_id}", "expected_status": "paid"},
+                env_type="assistant",
+            ),
+        )
+
+        layer = FaultLayer(
+            name="broken_fix",
+            atoms=[atom],
+            known_info_fragment="fine is overdue",
+            completion_fragment="your fine is paid",
+        )
+
+        flc = FaultLayerConfig(
+            name="library_test",
+            entity_query=lambda db: [{"fine_id": "FN001", "id": "FN001"}],
+            groups=[FaultLayerGroup(name="g1", layers=[layer])],
+            base_init_calls=[
+                InitCall(
+                    env_type="user",
+                    func_name="set_patron_info",
+                    args={"name": "Maria Garcia", "patron_id": "PAT001"},
+                ),
+            ],
+            base_known_info_template="{fault_descriptions}",
+            base_ticket_template="{fault_descriptions}",
+            reason_for_call="test",
+            purpose="test",
+            entity_id_field="id",
+            min_faults=1,
+        )
+
+        issues = verify_fault_atoms(
+            flc,
+            get_lib_env,
+            lambda: {"fine_id": "FN001", "id": "FN001"},
+        )
+        error_issues = [i for i in issues if "FAILS after fix" in i]
+        self.assertTrue(
+            len(error_issues) >= 1,
+            f"Expected 'FAILS after fix' error, got: {issues}",
+        )
+
+
+# ---------------------------------------------------------------------------
+# verify_completion_fragments — impossible-goal validation tests
+# ---------------------------------------------------------------------------
+
+
+class TestVerifyCompletionFragmentsImpossibleGoal(unittest.TestCase):
+    """Tests for the impossible-goal validation in verify_completion_fragments."""
+
+    def _make_flc(self, layers):
+        from tau2.generators.recipe import (
+            FaultLayerConfig,
+            FaultLayerGroup,
+            InitCall,
+        )
+        return FaultLayerConfig(
+            name="test_flc",
+            entity_query=lambda db: [{"id": "E001"}],
+            groups=[FaultLayerGroup(name="g1", layers=layers)],
+            base_init_calls=[],
+            base_known_info_template="{fault_descriptions}",
+            base_ticket_template="{fault_descriptions}",
+            reason_for_call="test",
+            purpose="test",
+            entity_id_field="id",
+            min_faults=1,
+        )
+
+    def test_transfer_leaking_fragment_rejected(self):
+        """Unfixable layer with 'transferred' in fragment produces ERROR."""
+        from tau2.generators.recipe import FaultLayer, verify_completion_fragments
+
+        layer = FaultLayer(
+            name="unfixable_fault",
+            unfixable=True,
+            atoms=[],
+            known_info_fragment="something is broken",
+            completion_fragment="the agent has transferred you to a specialist team",
+        )
+        flc = self._make_flc([layer])
+        issues = verify_completion_fragments(flc)
+        errors = [i for i in issues if "ERROR" in i and "leak" in i.lower()]
+        self.assertTrue(
+            len(errors) >= 1,
+            f"Expected transfer-leaking error, got: {issues}",
+        )
+
+    def test_escalated_fragment_rejected(self):
+        """Unfixable layer with 'escalated' in fragment produces ERROR."""
+        from tau2.generators.recipe import FaultLayer, verify_completion_fragments
+
+        layer = FaultLayer(
+            name="unfixable_fault",
+            unfixable=True,
+            atoms=[],
+            known_info_fragment="something is broken",
+            completion_fragment="your issue has been escalated to a higher level",
+        )
+        flc = self._make_flc([layer])
+        issues = verify_completion_fragments(flc)
+        errors = [i for i in issues if "ERROR" in i and "leak" in i.lower()]
+        self.assertTrue(
+            len(errors) >= 1,
+            f"Expected transfer-leaking error, got: {issues}",
+        )
+
+    def test_specialist_fragment_rejected(self):
+        """Unfixable layer with 'specialist' in fragment produces ERROR."""
+        from tau2.generators.recipe import FaultLayer, verify_completion_fragments
+
+        layer = FaultLayer(
+            name="unfixable_fault",
+            unfixable=True,
+            atoms=[],
+            known_info_fragment="something is broken",
+            completion_fragment="a specialist has been assigned to your case",
+        )
+        flc = self._make_flc([layer])
+        issues = verify_completion_fragments(flc)
+        errors = [i for i in issues if "ERROR" in i and "leak" in i.lower()]
+        self.assertTrue(
+            len(errors) >= 1,
+            f"Expected transfer-leaking error, got: {issues}",
+        )
+
+    def test_impossible_goal_fragment_passes(self):
+        """Unfixable layer with proper impossible-goal fragment passes."""
+        from tau2.generators.recipe import FaultLayer, verify_completion_fragments
+
+        layer = FaultLayer(
+            name="hardware_failure",
+            unfixable=True,
+            atoms=[],
+            known_info_fragment="my router has a hardware failure",
+            completion_fragment="your router is back online with all lights showing normal status",
+        )
+        flc = self._make_flc([layer])
+        issues = verify_completion_fragments(flc)
+        errors = [i for i in issues if "ERROR" in i]
+        self.assertEqual(errors, [])
+
+    def test_fixable_layer_not_checked_for_transfer_leak(self):
+        """Fixable layers are NOT checked for transfer-leak phrases."""
+        from tau2.generators.recipe import (
+            ActionSpec,
+            AssertionSpec,
+            FaultAtom,
+            FaultLayer,
+            InitCall,
+            verify_completion_fragments,
+        )
+
+        layer = FaultLayer(
+            name="fixable_fault",
+            atoms=[
+                FaultAtom(
+                    fix=ActionSpec(tool_name="fix_it", args={"id": "{id}"}),
+                    check=AssertionSpec(func_name="assert_fixed", args={"id": "{id}"}),
+                ),
+            ],
+            known_info_fragment="something is broken",
+            # "transferred" is weird for a fixable layer but should not error
+            completion_fragment="your case has been transferred to the resolution queue",
+        )
+        flc = self._make_flc([layer])
+        issues = verify_completion_fragments(flc)
+        leak_errors = [i for i in issues if "leak" in i.lower()]
+        self.assertEqual(leak_errors, [])
 
 
 if __name__ == "__main__":

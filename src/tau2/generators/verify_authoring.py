@@ -332,9 +332,21 @@ def _check_fix_tool_is_write(
     env: Environment,
     layer: FaultLayer,
 ) -> list[str]:
-    """Agent-side fix actions use WRITE or GENERIC tools, not READ."""
+    """Agent-side fix actions use WRITE or GENERIC tools, not READ.
+
+    Skips atoms with step_type="diagnostic" — they are intentionally READ.
+    """
     issues = []
+    # Collect diagnostic tool names from atoms
+    diagnostic_tools: set[str] = set()
+    for atom in layer.atoms:
+        if atom.step_type == "diagnostic":
+            diagnostic_tools.add(atom.fix.tool_name)
+
     for action in layer.get_agent_actions():
+        # Skip diagnostic actions — they're READ by design
+        if action.tool_name in diagnostic_tools:
+            continue
         toolkit = env.tools
         if hasattr(toolkit, action.tool_name):
             tool_method = toolkit.tools.get(action.tool_name)
@@ -575,7 +587,11 @@ def _check_user_tool_diversity(recipe_book: RecipeBook, env: Environment) -> lis
 
 
 def _check_action_density(recipe_book: RecipeBook) -> list[str]:
-    """DI-6: Median fault count * avg atoms/layer must be ≥6."""
+    """DI-6: Median fault count * avg atoms/layer must be ≥6.
+
+    Also checks for missing per-tier diagnostic atoms, which are the
+    primary lever for increasing action density in Archetypes A and B.
+    """
     issues = []
 
     for flc in recipe_book.fault_layer_configs:
@@ -587,16 +603,25 @@ def _check_action_density(recipe_book: RecipeBook) -> list[str]:
         if num_groups == 0:
             continue
 
-        # Count total atoms across all fixable layers
+        # Count total atoms and diagnostic atoms across all fixable layers
         total_atoms = 0
         total_fixable_layers = 0
+        total_diagnostic_atoms = 0
+        tiers_with_diagnostics: set[int] = set()
+        tiers_used: set[int] = set()
         for group in flc.groups:
             for layer in group.layers:
                 if not layer.unfixable:
                     total_fixable_layers += 1
-                    total_atoms += len(layer.atoms) if layer.atoms else (
+                    tiers_used.add(layer.gate_tier)
+                    layer_atoms = len(layer.atoms) if layer.atoms else (
                         len(layer.get_actions()) + len(layer.get_user_actions())
                     )
+                    total_atoms += layer_atoms
+                    for atom in layer.atoms:
+                        if atom.step_type == "diagnostic":
+                            total_diagnostic_atoms += 1
+                            tiers_with_diagnostics.add(layer.gate_tier)
 
         if total_fixable_layers == 0:
             continue
@@ -608,13 +633,608 @@ def _check_action_density(recipe_book: RecipeBook) -> list[str]:
         estimated_median_actions = median_faults * avg_atoms
 
         if estimated_median_actions < 6:
+            fix_hint = "Increase groups or atoms/layer."
+            if total_diagnostic_atoms == 0 and len(tiers_used) >= 2:
+                fix_hint = (
+                    "Add per-tier diagnostic atoms — each tier gets a "
+                    "signature READ tool as a phase-0 diagnostic atom on "
+                    "every layer at that tier. This is the primary lever "
+                    "for increasing action density."
+                )
             issues.append(
                 f"WARNING: [DI-6 action density] Config '{flc.name}': "
                 f"{num_groups} groups, ~{median_faults} median faults, "
                 f"{avg_atoms:.1f} avg atoms/layer → ~{estimated_median_actions:.0f} "
-                f"median actions. Minimum is 6. Increase groups or atoms/layer."
+                f"median actions. Minimum is 6. {fix_hint}"
             )
 
+        # Separate check: flag configs with 0 diagnostic atoms and 5+ groups
+        if total_diagnostic_atoms == 0 and num_groups >= 5:
+            issues.append(
+                f"WARNING: [DI-6 no diagnostics] Config '{flc.name}': "
+                f"{num_groups} groups but 0 diagnostic atoms. For domains "
+                f"with 5+ groups, add per-tier diagnostic atoms (one "
+                f"READ tool per tier as phase-0 on every layer at that "
+                f"tier) to achieve action density targets."
+            )
+
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 14a: gate_tier_consistency
+# ---------------------------------------------------------------------------
+
+
+def _check_gate_tier_consistency(recipe_book: RecipeBook) -> list[str]:
+    """If any layer has gate_tier > 0, verify at least one layer in a different
+    group has a lower tier. Otherwise the gate serves no purpose."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        # Collect (group_name, layer_name, gate_tier) tuples
+        layer_tiers: list[tuple[str, str, int]] = []
+        for group in flc.groups:
+            for layer in group.layers:
+                layer_tiers.append((group.name, layer.name, layer.gate_tier))
+
+        # Find layers with gate_tier > 0
+        gated_layers = [(gn, ln, gt) for gn, ln, gt in layer_tiers if gt > 0]
+        if not gated_layers:
+            continue
+
+        # Check that some lower-tier layer exists in a different group
+        for gated_group, gated_name, gated_tier in gated_layers:
+            has_lower_tier_in_other_group = any(
+                gt < gated_tier and gn != gated_group
+                for gn, _, gt in layer_tiers
+            )
+            if not has_lower_tier_in_other_group:
+                issues.append(
+                    f"ERROR: [{gated_name}] has gate_tier={gated_tier} but no "
+                    f"layer in a different group has a lower tier. The gate "
+                    f"serves no purpose — remove gate_tier or add a lower-tier "
+                    f"dependency in another group."
+                )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 14b: phase_monotonicity
+# ---------------------------------------------------------------------------
+
+
+def _check_phase_monotonicity(recipe_book: RecipeBook) -> list[str]:
+    """Within a layer's atoms list, phase values should be non-decreasing.
+    Backward phases are likely author error."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                if len(layer.atoms) < 2:
+                    continue
+                for i in range(1, len(layer.atoms)):
+                    if layer.atoms[i].phase < layer.atoms[i - 1].phase:
+                        issues.append(
+                            f"WARNING: [{layer.name}] atom {i} has phase "
+                            f"{layer.atoms[i].phase} < atom {i-1} phase "
+                            f"{layer.atoms[i-1].phase}. Phases within a layer "
+                            f"should be non-decreasing."
+                        )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 14c: step_type_valid
+# ---------------------------------------------------------------------------
+
+
+_VALID_STEP_TYPES = {"fix", "diagnostic", "confirm"}
+
+
+def _check_step_type_valid(recipe_book: RecipeBook) -> list[str]:
+    """step_type must be one of 'fix', 'diagnostic', 'confirm'."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                for i, atom in enumerate(layer.atoms):
+                    if atom.step_type not in _VALID_STEP_TYPES:
+                        issues.append(
+                            f"ERROR: [{layer.name}] atom {i} has invalid "
+                            f"step_type '{atom.step_type}'. Must be one of "
+                            f"{sorted(_VALID_STEP_TYPES)}."
+                        )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 14d: diagnostic_is_read
+# ---------------------------------------------------------------------------
+
+
+def _check_diagnostic_is_read(
+    env: Environment,
+    recipe_book: RecipeBook,
+) -> list[str]:
+    """If step_type='diagnostic', verify the action's tool is a READ tool.
+    Diagnostics shouldn't change state."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                for i, atom in enumerate(layer.atoms):
+                    if atom.step_type != "diagnostic":
+                        continue
+                    toolkit = _get_toolkit_for_requestor(env, atom.fix.requestor)
+                    if toolkit is None:
+                        continue
+                    if hasattr(toolkit, atom.fix.tool_name):
+                        tool_method = toolkit.tools.get(atom.fix.tool_name)
+                        if tool_method is not None:
+                            tt = getattr(tool_method, TOOL_TYPE_ATTR, None)
+                            if tt is not None and tt != ToolType.READ:
+                                issues.append(
+                                    f"WARNING: [{layer.name}] atom {i} has "
+                                    f"step_type='diagnostic' but tool "
+                                    f"'{atom.fix.tool_name}' is {tt.name}, "
+                                    f"not READ. Diagnostics should not "
+                                    f"change state."
+                                )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 15: dedup collision across phases/tiers
+# ---------------------------------------------------------------------------
+
+
+def _check_dedup_collision(recipe_book: RecipeBook) -> list[str]:
+    """Flag atoms at different phases or in layers at different gate_tiers that
+    produce identical (tool_name, requestor, args_template) tuples.
+
+    _dedup_actions collapses these to a single action, silently destroying
+    check-fix-check patterns (Archetype B) or cross-tier diagnostic repetitions.
+    The generated task will expect only ONE call, but the archetype requires TWO.
+    """
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                if len(layer.atoms) < 2:
+                    continue
+                # Track (tool_name, requestor, frozen_args) → list of (phase, atom_idx)
+                seen: dict[tuple, list[tuple[int, int]]] = {}
+                for i, atom in enumerate(layer.atoms):
+                    key = (
+                        atom.fix.tool_name,
+                        atom.fix.requestor,
+                        tuple(sorted(atom.fix.args.items())),
+                    )
+                    seen.setdefault(key, []).append((atom.phase, i))
+                for key, occurrences in seen.items():
+                    if len(occurrences) < 2:
+                        continue
+                    phases = [p for p, _ in occurrences]
+                    if len(set(phases)) > 1:
+                        # Different phases → dedup will collapse them
+                        tool_name = key[0]
+                        idxs = [idx for _, idx in occurrences]
+                        issues.append(
+                            f"ERROR: [{layer.name}] atoms {idxs} produce "
+                            f"identical action '{tool_name}' at different "
+                            f"phases {phases}. _dedup_actions will collapse "
+                            f"them to one action, destroying the "
+                            f"check-fix-check pattern. Use different args "
+                            f"or tool names for repeated calls."
+                        )
+
+        # Also check across layers at different gate_tiers within same config
+        # (cross-group composition can produce duplicate actions at different tiers)
+        all_tier_actions: dict[tuple, list[tuple[str, int]]] = {}
+        for group in flc.groups:
+            for layer in group.layers:
+                for atom in layer.atoms:
+                    key = (
+                        atom.fix.tool_name,
+                        atom.fix.requestor,
+                        tuple(sorted(atom.fix.args.items())),
+                    )
+                    all_tier_actions.setdefault(key, []).append(
+                        (layer.name, layer.gate_tier)
+                    )
+        for key, occurrences in all_tier_actions.items():
+            # Only flag cross-group (different layers) at different tiers
+            unique_layers = {name for name, _ in occurrences}
+            unique_tiers = {tier for _, tier in occurrences}
+            if len(unique_layers) >= 2 and len(unique_tiers) >= 2:
+                tool_name = key[0]
+                details = ", ".join(
+                    f"{name} (tier {tier})" for name, tier in occurrences
+                )
+                issues.append(
+                    f"WARNING: [{flc.name}] action '{tool_name}' appears "
+                    f"in layers at different gate_tiers: {details}. "
+                    f"If these layers compose together, _dedup_actions "
+                    f"will collapse them to one action. Use different "
+                    f"args or tool names if the call must happen at each tier."
+                )
+
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 16: diagnostic atom with init calls
+# ---------------------------------------------------------------------------
+
+
+def _check_diagnostic_has_no_init(recipe_book: RecipeBook) -> list[str]:
+    """Diagnostic atoms gather information — they should not have init calls
+    that modify state before reading."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                for i, atom in enumerate(layer.atoms):
+                    if atom.step_type == "diagnostic" and atom.init is not None:
+                        issues.append(
+                            f"ERROR: [{layer.name}] atom {i} has "
+                            f"step_type='diagnostic' but also has init calls. "
+                            f"Diagnostics should read state, not break it. "
+                            f"Either remove the init or change step_type to 'fix'."
+                        )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 17: confirm atom with init calls
+# ---------------------------------------------------------------------------
+
+
+def _check_confirm_has_no_init(recipe_book: RecipeBook) -> list[str]:
+    """Confirm atoms acknowledge resolution — they should not inject faults."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                for i, atom in enumerate(layer.atoms):
+                    if atom.step_type == "confirm" and atom.init is not None:
+                        issues.append(
+                            f"WARNING: [{layer.name}] atom {i} has "
+                            f"step_type='confirm' but also has init calls. "
+                            f"Confirmation atoms acknowledge resolution; "
+                            f"they should not inject new faults."
+                        )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 18: legacy + atoms collision
+# ---------------------------------------------------------------------------
+
+
+def _check_legacy_atoms_collision(recipe_book: RecipeBook) -> list[str]:
+    """Warn if a layer has both atoms AND legacy flat lists — the legacy lists
+    will be silently ignored."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                if not layer.atoms:
+                    continue
+                legacy_fields = []
+                if layer.actions:
+                    legacy_fields.append("actions")
+                if layer.user_actions:
+                    legacy_fields.append("user_actions")
+                if layer.init_calls:
+                    legacy_fields.append("init_calls")
+                # Note: assertions alongside atoms are intentionally supported
+                # (get_assertions merges atom checks + layer-level assertions).
+                # Only warn about init_calls, actions, and user_actions which
+                # ARE silently ignored when atoms are set.
+                if legacy_fields:
+                    issues.append(
+                        f"WARNING: [{layer.name}] has atoms AND legacy "
+                        f"flat lists ({', '.join(legacy_fields)}). The atoms "
+                        f"interface takes precedence — legacy lists will be "
+                        f"silently ignored. Remove the legacy lists or "
+                        f"migrate them into atoms."
+                    )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 19: all-diagnostic layer
+# ---------------------------------------------------------------------------
+
+
+def _check_all_diagnostic_layer(recipe_book: RecipeBook) -> list[str]:
+    """Warn if all atoms in a fixable layer are non-fix (diagnostic/confirm).
+    Such a layer contributes no state changes or assertions."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                if layer.unfixable or len(layer.atoms) == 0:
+                    continue
+                fix_count = sum(
+                    1 for atom in layer.atoms if atom.step_type == "fix"
+                )
+                if fix_count == 0:
+                    step_types = [a.step_type for a in layer.atoms]
+                    issues.append(
+                        f"WARNING: [{layer.name}] has {len(layer.atoms)} "
+                        f"atom(s) but none with step_type='fix' "
+                        f"(types: {step_types}). This layer contributes no "
+                        f"state-changing actions or meaningful assertions. "
+                        f"Add a fix atom or reconsider the layer design."
+                    )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 20: confirm without fix in same layer
+# ---------------------------------------------------------------------------
+
+
+def _check_confirm_without_fix(recipe_book: RecipeBook) -> list[str]:
+    """Warn if a layer has confirm atoms but no fix atoms — nothing to confirm."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                if layer.unfixable or len(layer.atoms) == 0:
+                    continue
+                has_confirm = any(
+                    a.step_type == "confirm" for a in layer.atoms
+                )
+                has_fix = any(a.step_type == "fix" for a in layer.atoms)
+                if has_confirm and not has_fix:
+                    issues.append(
+                        f"WARNING: [{layer.name}] has confirm atom(s) but "
+                        f"no fix atom(s). Confirmation acknowledges a "
+                        f"resolution, but there's nothing to resolve in "
+                        f"this layer."
+                    )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 21: unfixable with gate_tier > 0
+# ---------------------------------------------------------------------------
+
+
+def _check_unfixable_gate_tier(recipe_book: RecipeBook) -> list[str]:
+    """Warn if an unfixable layer has gate_tier > 0 — gate_tier is ignored
+    for unfixable combos (they collapse to transfer_to_human)."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                if layer.unfixable and layer.gate_tier > 0:
+                    issues.append(
+                        f"WARNING: [{layer.name}] is unfixable with "
+                        f"gate_tier={layer.gate_tier}. Unfixable combos "
+                        f"collapse to transfer_to_human — gate_tier is "
+                        f"ignored. Set gate_tier=0 or remove it."
+                    )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 22: phase gaps within a layer
+# ---------------------------------------------------------------------------
+
+
+def _check_phase_gaps(recipe_book: RecipeBook) -> list[str]:
+    """Warn if a layer's atom phases have gaps (e.g., {0, 2} missing 1),
+    which may indicate a missing atom."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                if len(layer.atoms) < 2:
+                    continue
+                phases = sorted(set(a.phase for a in layer.atoms))
+                if len(phases) < 2:
+                    continue
+                expected = list(range(phases[0], phases[-1] + 1))
+                missing = set(expected) - set(phases)
+                if missing:
+                    issues.append(
+                        f"WARNING: [{layer.name}] has phase gap(s): "
+                        f"phases used are {phases}, missing {sorted(missing)}. "
+                        f"This may indicate a missing atom."
+                    )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 23: duplicate (phase, requestor) in same layer
+# ---------------------------------------------------------------------------
+
+
+def _check_duplicate_phase_requestor(recipe_book: RecipeBook) -> list[str]:
+    """Warn if multiple fix atoms in the same layer share (phase, requestor).
+    Their relative order is determined only by list position, which is fragile."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                if len(layer.atoms) < 2:
+                    continue
+                # Only check fix atoms (diagnostics at same phase are less suspicious)
+                fix_atoms = [
+                    (i, a) for i, a in enumerate(layer.atoms)
+                    if a.step_type == "fix"
+                ]
+                seen: dict[tuple, list[int]] = {}
+                for i, atom in fix_atoms:
+                    key = (atom.phase, atom.fix.requestor)
+                    seen.setdefault(key, []).append(i)
+                for key, idxs in seen.items():
+                    if len(idxs) >= 2:
+                        phase, requestor = key
+                        issues.append(
+                            f"WARNING: [{layer.name}] fix atoms {idxs} "
+                            f"share (phase={phase}, requestor='{requestor}'). "
+                            f"Their ordering depends on list position only. "
+                            f"Assign different phases to make ordering explicit."
+                        )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 24: gate_tier gaps across layers in a config
+# ---------------------------------------------------------------------------
+
+
+def _check_gate_tier_gaps(recipe_book: RecipeBook) -> list[str]:
+    """Warn if gate_tier values across all layers in a FaultLayerConfig
+    have gaps (e.g., tiers 0 and 3 with no 1 or 2)."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        tiers = set()
+        for group in flc.groups:
+            for layer in group.layers:
+                tiers.add(layer.gate_tier)
+        if len(tiers) < 2:
+            continue
+        sorted_tiers = sorted(tiers)
+        expected = set(range(sorted_tiers[0], sorted_tiers[-1] + 1))
+        missing = expected - tiers
+        if missing:
+            issues.append(
+                f"WARNING: [{flc.name}] has gate_tier gap(s): tiers used "
+                f"are {sorted_tiers}, missing {sorted(missing)}. This may "
+                f"indicate missing layers at intermediate tiers."
+            )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 25: diagnostic-only layer at non-zero gate_tier
+# ---------------------------------------------------------------------------
+
+
+def _check_diagnostic_only_at_nonzero_tier(recipe_book: RecipeBook) -> list[str]:
+    """Warn if a layer at gate_tier > 0 has only diagnostic atoms and no fix
+    atom at the same or higher tier exists in other layers in the same group.
+    This means the gated diagnostic is a dead end — it reads info but nothing
+    acts on it."""
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        for group in flc.groups:
+            for layer in group.layers:
+                if layer.gate_tier == 0 or not layer.atoms:
+                    continue
+                has_fix = any(a.step_type == "fix" for a in layer.atoms)
+                if has_fix:
+                    continue
+                # All atoms are non-fix at tier > 0. Check if ANY layer
+                # in ANY group at >= this tier has fix atoms.
+                has_fix_at_or_above = False
+                for other_group in flc.groups:
+                    for other_layer in other_group.layers:
+                        if other_layer is layer:
+                            continue
+                        if other_layer.gate_tier >= layer.gate_tier:
+                            if any(a.step_type == "fix" for a in other_layer.atoms):
+                                has_fix_at_or_above = True
+                                break
+                    if has_fix_at_or_above:
+                        break
+                if not has_fix_at_or_above:
+                    issues.append(
+                        f"WARNING: [{layer.name}] at gate_tier="
+                        f"{layer.gate_tier} has only diagnostic/confirm "
+                        f"atoms and no other layer at tier >= "
+                        f"{layer.gate_tier} has fix atoms. This gated "
+                        f"diagnostic is a dead end — it reads info but "
+                        f"nothing acts on it."
+                    )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 26: minimum gate_tier depth
+# ---------------------------------------------------------------------------
+
+
+def _check_min_gate_tier_depth(recipe_book: RecipeBook) -> list[str]:
+    """Warn when max(gate_tier) < 2 for configs with 5+ groups.
+
+    Domains with many groups but only 1-2 tiers produce flat task structures
+    with low dependency chaining. For Archetypes A and B, 2-3 tiers of gated
+    dependency are needed to achieve action density targets (DI-6) and ordering
+    constraints (DI-3).
+    """
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        if flc.max_faults <= 1:
+            continue
+        num_groups = len(flc.groups)
+        if num_groups < 5:
+            continue
+        max_tier = 0
+        for group in flc.groups:
+            for layer in group.layers:
+                max_tier = max(max_tier, layer.gate_tier)
+        if max_tier < 2:
+            issues.append(
+                f"WARNING: [DI-3 tier depth] Config '{flc.name}': "
+                f"{num_groups} groups but max gate_tier is only {max_tier}. "
+                f"Domains with 5+ groups should use ≥3 tiers (0, 1, 2) to "
+                f"create dependency chains. Add gate_tier=2 layers for "
+                f"service/network-level faults and per-tier diagnostic atoms."
+            )
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Check 27: per-tier diagnostic consistency
+# ---------------------------------------------------------------------------
+
+
+def _check_per_tier_diagnostic_consistency(recipe_book: RecipeBook) -> list[str]:
+    """Warn when some fixable layers at a tier have diagnostic atoms but
+    others at the same tier don't.
+
+    Per-tier diagnostics should be applied uniformly — if any layer at tier N
+    has a phase-0 diagnostic atom, ALL fixable layers at tier N should have one.
+    Incomplete coverage means some task compositions get the diagnostic and
+    others don't, creating inconsistent action density.
+    """
+    issues = []
+    for flc in recipe_book.fault_layer_configs:
+        if flc.max_faults <= 1:
+            continue
+        # Map tier → (layers_with_diag, layers_without_diag)
+        tier_diag: dict[int, tuple[list[str], list[str]]] = {}
+        for group in flc.groups:
+            for layer in group.layers:
+                if layer.unfixable:
+                    continue
+                has_diag = any(
+                    a.step_type == "diagnostic" for a in layer.atoms
+                )
+                tier = layer.gate_tier
+                if tier not in tier_diag:
+                    tier_diag[tier] = ([], [])
+                if has_diag:
+                    tier_diag[tier][0].append(layer.name)
+                else:
+                    tier_diag[tier][1].append(layer.name)
+        for tier, (with_diag, without_diag) in sorted(tier_diag.items()):
+            if with_diag and without_diag:
+                issues.append(
+                    f"WARNING: [per-tier diagnostic] Tier {tier} has "
+                    f"inconsistent diagnostic coverage. Layers WITH "
+                    f"diagnostic atoms: {with_diag}. Layers WITHOUT: "
+                    f"{without_diag}. Add per-tier diagnostic atoms to "
+                    f"all fixable layers at this tier for consistent "
+                    f"action density."
+                )
     return issues
 
 
@@ -781,6 +1401,29 @@ def verify_authoring(
     # Check 14: cross-layer confirmation consistency
     issues.extend(_check_cross_layer_confirmation_consistency(recipe_book))
 
+    # Check 14a-d: archetype primitive checks
+    issues.extend(_check_gate_tier_consistency(recipe_book))
+    issues.extend(_check_phase_monotonicity(recipe_book))
+    issues.extend(_check_step_type_valid(recipe_book))
+    issues.extend(_check_diagnostic_is_read(env, recipe_book))
+
+    # Checks 15-25: extended archetype primitive checks
+    issues.extend(_check_dedup_collision(recipe_book))
+    issues.extend(_check_diagnostic_has_no_init(recipe_book))
+    issues.extend(_check_confirm_has_no_init(recipe_book))
+    issues.extend(_check_legacy_atoms_collision(recipe_book))
+    issues.extend(_check_all_diagnostic_layer(recipe_book))
+    issues.extend(_check_confirm_without_fix(recipe_book))
+    issues.extend(_check_unfixable_gate_tier(recipe_book))
+    issues.extend(_check_phase_gaps(recipe_book))
+    issues.extend(_check_duplicate_phase_requestor(recipe_book))
+    issues.extend(_check_gate_tier_gaps(recipe_book))
+    issues.extend(_check_diagnostic_only_at_nonzero_tier(recipe_book))
+
+    # Checks 26-27: tier depth and diagnostic consistency
+    issues.extend(_check_min_gate_tier_depth(recipe_book))
+    issues.extend(_check_per_tier_diagnostic_consistency(recipe_book))
+
     return issues
 
 
@@ -869,6 +1512,23 @@ def _build_recipe_summary(recipe_book: RecipeBook) -> str:
                 lines.append(f"      init_calls: {[ic.func_name for ic in init_calls]}")
                 lines.append(f"      actions: {[(a.tool_name, a.requestor) for a in actions]}")
                 lines.append(f"      assertions: {[a.func_name for a in assertions]}")
+                if layer.gate_tier != 0:
+                    lines.append(f"      gate_tier: {layer.gate_tier}")
+                if atoms:
+                    atom_details = []
+                    for ai, atom in enumerate(atoms):
+                        parts = [f"phase={atom.phase}"]
+                        if atom.step_type != "fix":
+                            parts.append(f"step_type='{atom.step_type}'")
+                        parts.append(f"tool='{atom.fix.tool_name}'")
+                        parts.append(f"requestor='{atom.fix.requestor}'")
+                        if atom.init:
+                            inits = atom.init if isinstance(atom.init, list) else [atom.init]
+                            parts.append(f"init=[{','.join(ic.func_name for ic in inits)}]")
+                        if atom.check:
+                            parts.append(f"check='{atom.check.func_name}'")
+                        atom_details.append(f"        atom[{ai}]: {', '.join(parts)}")
+                    lines.extend(atom_details)
                 if layer.predicate_field:
                     lines.append(f"      predicate_field: {layer.predicate_field}")
                 if layer.predicate_ne:
@@ -909,7 +1569,7 @@ Your job is to find bugs in these definitions BEFORE tasks are generated.
 
 {structural_issues}
 
-## Your 16 Checks
+## Your 19 Checks
 
 Perform each check independently. For each, output ERROR: or WARNING: lines.
 
@@ -1015,6 +1675,50 @@ Perform each check independently. For each, output ERROR: or WARNING: lines.
     corresponding agent action. Report WARNING if the agent tool appears in
     multiple policy sections with different confirmation instructions (even if
     one section matches), because the agent may follow the wrong section.
+
+17. **Gate Tier Semantic Justification**: For every layer with gate_tier > 0,
+    verify that the DOMAIN LOGIC justifies the gating. The tier-0 layer's
+    resolution should genuinely unlock visibility or access to the tier-1
+    layer's fault. Examples of valid gating: account is locked (tier 0) and
+    booking details are wrong (tier 1, invisible until account unlocked);
+    device is offline (tier 0) and app settings need sync (tier 1, impossible
+    while offline). Report WARNING if the gating seems artificial — if both
+    faults are independently observable and fixable, gate_tier adds false
+    complexity without domain justification. Also check: does the policy
+    describe ANY dependency between the gated layers? If not, the agent will
+    have no reason to resolve tier-0 before tier-1.
+
+18. **Diagnostic Atom Purpose Validation**: For every atom with
+    step_type='diagnostic', verify that the diagnostic serves a genuine
+    information-gathering purpose in the resolution workflow. A valid diagnostic
+    reads state that the agent (or user) needs to decide what to fix or to
+    verify a condition. Report WARNING if:
+    (a) The diagnostic reads information that is already fully provided in
+        known_info_fragment (the agent/user already knows it, no need to look
+        it up).
+    (b) The diagnostic output is never used by any subsequent atom — no
+        downstream fix or confirm atom depends on what the diagnostic reveals.
+    (c) The diagnostic is a trivial status check at the end of a sequence
+        (e.g., "check_status" after all fixes) that duplicates what the
+        assertion already verifies. If assertions already validate the
+        end state, a trailing diagnostic adds an action requirement without
+        adding reasoning complexity.
+
+19. **Phase Coherence with Domain Workflow**: For layers using phase > 0,
+    verify that the phase assignments reflect a real workflow dependency.
+    Phase-0 actions should genuinely need to complete before phase-1 actions
+    can succeed or make sense. Report WARNING if:
+    (a) Two atoms at different phases are actually independent — swapping their
+        execution order would produce identical results. Phase is being used
+        as cosmetic ordering rather than encoding a real dependency.
+    (b) A user atom at a later phase needs information that the agent has not
+        yet communicated. For example, if a user fix at phase 1 requires
+        knowing a value that the agent computes at phase 0, but the
+        user_task_instructions and known_info_fragment don't mention how the
+        user learns this value, the user simulator will fail.
+    (c) An agent atom at phase > 0 could equally well run at phase 0 — there
+        is no earlier action in the same layer whose side effects this atom
+        depends on.
 
 Respond in this exact format:
 ISSUES_FOUND: <yes|no>

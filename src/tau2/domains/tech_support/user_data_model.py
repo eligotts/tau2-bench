@@ -9,6 +9,7 @@ class TechSupportUserDB(DB):
     customer_name: Optional[str] = None
 
     # Projected state from agent DB (populated by sync_tools)
+    account_status: str = "active"  # active, suspended, flagged
     connection_status: str = "online"  # online, offline, unresponsive
     wifi_band: str = "5ghz"  # 2.4ghz, 5ghz, dual
     firmware_status: str = "current"  # current, outdated, corrupted, update_pending

@@ -20,12 +20,37 @@ class TechSupportUserTools(ToolKitBase):
     def check_my_connection(self) -> Dict[str, Any]:
         """
         Check your current connection status and device information.
+        Provides an overall status summary plus individual details.
 
         Returns:
-            Connection details including status, WiFi band, firmware,
-            cable status, speed tier, and DNS status.
+            Connection details including an overall_status summary,
+            plus individual fields for account, connection, WiFi,
+            firmware, cable, speed, and DNS status.
         """
+        issues = []
+        if self.db.account_status != "active":
+            issues.append(f"Account: {self.db.account_status}")
+        if self.db.connection_status != "online":
+            issues.append(f"Connection: {self.db.connection_status}")
+        if self.db.firmware_status not in ("current",):
+            issues.append(f"Firmware: {self.db.firmware_status}")
+        if self.db.cable_status != "connected":
+            issues.append(f"Cable: {self.db.cable_status}")
+        if self.db.wifi_band != "5ghz":
+            issues.append(f"WiFi band: {self.db.wifi_band} (should be 5GHz)")
+        if self.db.speed_status != "normal":
+            issues.append(f"Speed: {self.db.speed_status}")
+        if self.db.dns_status != "normal":
+            issues.append(f"DNS: {self.db.dns_status}")
+
+        if issues:
+            overall = "Issues detected: " + "; ".join(issues)
+        else:
+            overall = "All systems working normally"
+
         return {
+            "overall_status": overall,
+            "account_status": self.db.account_status,
             "connection_status": self.db.connection_status,
             "wifi_band": self.db.wifi_band,
             "firmware_status": self.db.firmware_status,
@@ -125,6 +150,9 @@ class TechSupportUserTools(ToolKitBase):
     # ---------------------------------------------------------------
     # Assertion helpers (not tools -- used by verification)
     # ---------------------------------------------------------------
+
+    def assert_account_status(self, expected: str) -> bool:
+        return self.db.account_status == expected
 
     def assert_connection_status(self, expected: str) -> bool:
         return self.db.connection_status == expected

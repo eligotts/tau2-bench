@@ -1,0 +1,11 @@
+{
+  "owner_id": null,
+  "owner_name": null,
+  "my_pets": [],
+  "my_appointments": [],
+  "my_treatments": [],
+  "my_invoices": [],
+  "resolution_acknowledged": {},
+  "treatment_confirmed": {},
+  "invoice_acknowledged": {}
+}

@@ -109,6 +109,7 @@ class TechSupportEnvironment(Environment):
             self.user_tools.db.speed_status = plan.speed_status
 
         self.user_tools.db.dns_status = customer.dns_config
+        self.user_tools.db.account_status = customer.account_status
 
 
 def get_environment(

@@ -1,0 +1,58 @@
+version: 1
+tasks:
+  - task_id: telecom_data_restore_minimal
+    start_world:
+      - path: agent.lines[active_line].profile_state
+        set: pending
+      - path: agent.lines[active_line].data_status
+        set: inactive
+      - path: user.physical.phone_powered_on
+        set: true
+      - path: user.physical.phone_restarted
+        set: false
+    start_bindings: []
+    goal_world:
+      - op: eq
+        path: agent.lines[active_line].data_status
+        value: active
+    goal_bindings: []
+    required_actions:
+      - acquire_iccid
+      - restart_phone
+      - reprovision_esim
+      - run_data_test
+    # Keep structural fields from sampler output unchanged.
+    # Optional trace-order metadata (not enforced by SAT preflight).
+    required_precedence:
+      - [acquire_iccid, reprovision_esim]
+      - [restart_phone, reprovision_esim]
+      - [reprovision_esim, run_data_test]
+    min_plan_length: 4
+    runtime:
+      domain: telecom
+      reason_for_call: Mobile data is not working after eSIM changes.
+      task_instructions: Follow the assistant's steps and use tools only when instructed. You will consider the issue resolved when mobile data status is active. Before deciding the issue is resolved, call check_resolution_status. Only emit ###STOP### when check_resolution_status returns resolved=true. If resolved=false, report unmet items and ask for the next step. Ground all status claims in tool outputs; do not guess or invent tool results.
+      known_info: The phone is on but data is unavailable.
+      ticket: Customer reports no mobile data connectivity.
+      initialization_actions:
+        - env_type: user
+          func_name: set_stop_gate
+          arguments:
+            criteria:
+              - check_field: data_status
+                op: eq
+                expected: active
+                unmet_reason: Mobile data is not active yet.
+                observed_from: check_resolution_status.observed.data_status
+        - env_type: assistant
+          func_name: set_profile_state
+          arguments:
+            value: pending
+      env_assertions:
+        - env_type: assistant
+          func_name: assert_data_active
+          arguments:
+            expected: true
+          assert_value: true
+      actions: []
+      reward_basis: [ENV_ASSERTION]
