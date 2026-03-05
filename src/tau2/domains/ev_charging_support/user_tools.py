@@ -18,6 +18,11 @@ class StationScreenResult(BaseModelNoExtra):
     message: str
 
 
+class AppStatusResult(BaseModelNoExtra):
+    error_class: str
+    message: str
+
+
 class ResolutionStatusResult(BaseModelNoExtra):
     resolved: bool
     unmet: list[str]
@@ -42,19 +47,32 @@ class EVChargingSupportUserTools(ToolKitBase):
             message=self.db.view.display_station_message or "No status available.",
         )
 
+    @is_tool(ToolType.READ)
+    def check_app_status(self) -> AppStatusResult:
+        """Open the charging app and read the diagnostic summary."""
+        error_class = self.db.view.display_error_class or "unknown"
+        return AppStatusResult(
+            error_class=error_class,
+            message=f"App reports issue category: {error_class}.",
+        )
+
     @is_tool(ToolType.WRITE)
     def power_cycle_station(self) -> str:
-        """Power cycle station hardware."""
+        """Power cycle station hardware after reseating the connector."""
         if self.db.view.display_reachability_state == "unreachable":
             return "Power cycle failed: station is unreachable."
+        if self.db.physical.connector_reseat_state != ConnectorReseatState.RESEATED:
+            return "Power cycle blocked: reseat the connector first so the reset picks up the new connection."
         self.db.physical.station_power_cycle_state = StationPowerCycleState.DONE
         return "Station has been power cycled."
 
     @is_tool(ToolType.WRITE)
     def reseat_connector(self) -> str:
-        """Reseat charging connector."""
+        """Reseat charging connector after inspecting the cable."""
         if self.db.view.display_reachability_state == "unreachable":
             return "Reseat failed: station is unreachable."
+        if self.db.physical.cable_inspection_state != CableInspectionState.CHECKED_OK:
+            return "Reseat blocked: inspect the cable path first to confirm it is undamaged."
         self.db.physical.connector_reseat_state = ConnectorReseatState.RESEATED
         return "Connector has been reseated."
 
@@ -185,3 +203,6 @@ class EVChargingSupportUserTools(ToolKitBase):
 
     def assert_test_charge_state(self, expected: str) -> bool:
         return self.db.physical.test_charge_state == TestChargeState(expected)
+
+    def assert_display_error_class(self, expected: str) -> bool:
+        return self.db.view.display_error_class == expected

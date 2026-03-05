@@ -104,10 +104,7 @@ tasks:
   min_plan_length: 12
   runtime:
     domain: ev_charging_support
-    reason_for_call: "I plugged in at the charging station and tried to start a session,\
-      \ but it failed right away. The station screen is showing some kind of error\
-      \ code and the app says there's an issue too. I really need to charge before\
-      \ my next appointment \u2014 can you help me sort this out?"
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -116,17 +113,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Jordan Lee. You are calm and cooperative, and you provide
       tool-grounded updates only.
-    known_info: You are Jordan Lee. You are at a public EV charging station and your
-      charging session failed to start. The station screen is displaying an error
-      code you haven't written down yet, and the charging app shows a diagnostic message
-      you haven't checked. Your car is plugged in but not charging.
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Jordan Lee reports a failed charging session at a public station.
-      The station is displaying a fault code and the app has a diagnostic category,
-      but neither has been confirmed yet. The customer needs both the station-side
-      and app-side information gathered, backend issues resolved, and physical troubleshooting
-      completed. They will consider the issue resolved when charging starts successfully
-      and no fault codes remain.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -219,40 +208,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: not_ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: fraud_lock_state
-          op: eq
-          expected: 'off'
-          unmet_reason: Fraud lock is still active.
-          observed_from: check_resolution_status.observed.fraud_lock_state
-        - check_field: hold_status
-          op: eq
-          expected: cleared
-          unmet_reason: Backend hold is not cleared yet.
-          observed_from: check_resolution_status.observed.hold_status
-        - check_field: payment_token_status
-          op: eq
-          expected: valid
-          unmet_reason: Payment token is not valid yet.
-          observed_from: check_resolution_status.observed.payment_token_status
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_fraud_lock_state
@@ -464,10 +419,7 @@ tasks:
   min_plan_length: 13
   runtime:
     domain: ev_charging_support
-    reason_for_call: "I plugged in at the charging station and tried to start a session,\
-      \ but it failed right away. The station screen is showing some kind of error\
-      \ code and the app says there's an issue too. I really need to charge before\
-      \ my next appointment \u2014 can you help me sort this out?"
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -476,17 +428,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Avery Chen. You are a practical EV driver under time pressure
       who follows clear troubleshooting instructions.
-    known_info: You are Avery Chen. You are at a public EV charging station and your
-      charging session failed to start. The station screen is displaying an error
-      code you haven't written down yet, and the charging app shows a diagnostic message
-      you haven't checked. Your car is plugged in but not charging.
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Avery Chen reports a failed charging session at a public station.
-      The station is displaying a fault code and the app has a diagnostic category,
-      but neither has been confirmed yet. The customer needs both the station-side
-      and app-side information gathered, backend issues resolved, and physical troubleshooting
-      completed. They will consider the issue resolved when charging starts successfully
-      and no fault codes remain.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -579,45 +523,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: not_ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: fraud_lock_state
-          op: eq
-          expected: 'off'
-          unmet_reason: Fraud lock is still active.
-          observed_from: check_resolution_status.observed.fraud_lock_state
-        - check_field: hold_status
-          op: eq
-          expected: cleared
-          unmet_reason: Backend hold is not cleared yet.
-          observed_from: check_resolution_status.observed.hold_status
-        - check_field: payment_token_status
-          op: eq
-          expected: valid
-          unmet_reason: Payment token is not valid yet.
-          observed_from: check_resolution_status.observed.payment_token_status
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: retry_state
-          op: eq
-          expected: ready
-          unmet_reason: Retry path is not ready yet.
-          observed_from: check_resolution_status.observed.retry_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_fraud_lock_state
@@ -846,10 +751,7 @@ tasks:
   min_plan_length: 14
   runtime:
     domain: ev_charging_support
-    reason_for_call: "I plugged in at the charging station and tried to start a session,\
-      \ but it failed right away. The station screen is showing some kind of error\
-      \ code and the app says there's an issue too. I really need to charge before\
-      \ my next appointment \u2014 can you help me sort this out?"
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -858,17 +760,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Jordan Lee. You are a practical EV driver under time pressure
       who follows clear troubleshooting instructions.
-    known_info: You are Jordan Lee. You are at a public EV charging station and your
-      charging session failed to start. The station screen is displaying an error
-      code you haven't written down yet, and the charging app shows a diagnostic message
-      you haven't checked. Your car is plugged in but not charging.
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Jordan Lee reports a failed charging session at a public station.
-      The station is displaying a fault code and the app has a diagnostic category,
-      but neither has been confirmed yet. The customer needs both the station-side
-      and app-side information gathered, backend issues resolved, and physical troubleshooting
-      completed. They will consider the issue resolved when charging starts successfully
-      and no fault codes remain.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -961,50 +855,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: not_ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: fraud_lock_state
-          op: eq
-          expected: 'off'
-          unmet_reason: Fraud lock is still active.
-          observed_from: check_resolution_status.observed.fraud_lock_state
-        - check_field: hold_status
-          op: eq
-          expected: cleared
-          unmet_reason: Backend hold is not cleared yet.
-          observed_from: check_resolution_status.observed.hold_status
-        - check_field: payment_token_status
-          op: eq
-          expected: valid
-          unmet_reason: Payment token is not valid yet.
-          observed_from: check_resolution_status.observed.payment_token_status
-        - check_field: charge_status
-          op: eq
-          expected: active
-          unmet_reason: Charging is not active yet.
-          observed_from: check_resolution_status.observed.charge_status
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: retry_state
-          op: eq
-          expected: ready
-          unmet_reason: Retry path is not ready yet.
-          observed_from: check_resolution_status.observed.retry_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_fraud_lock_state
@@ -1226,10 +1076,7 @@ tasks:
   min_plan_length: 11
   runtime:
     domain: ev_charging_support
-    reason_for_call: "My charging session won't start \u2014 the station seems to\
-      \ be having trouble connecting to something. The screen is showing an error\
-      \ and the app has some diagnostic info. I've been waiting here for a while and\
-      \ I need to get this working."
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -1238,18 +1085,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Jordan Lee. You are a practical EV driver who can execute
       technical steps when guided clearly.
-    known_info: You are Jordan Lee. You are at a public EV charging station. Your
-      session failed to start and the station appears to have a connection issue.
-      The station screen shows a fault code you haven't noted yet, and the charging
-      app displays a diagnostic category you haven't opened. Your vehicle is plugged
-      in but not receiving power.
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Jordan Lee reports a charging session that will not initiate
-      due to what appears to be a connection problem at the station. The fault code
-      on the station screen and the app's diagnostic category have not yet been confirmed.
-      Backend network issues need diagnosis and repair, along with physical station
-      checks. They will consider the issue resolved when charging starts successfully
-      and the station reports no faults.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -1342,35 +1180,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: not_ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: backend_link_state
-          op: eq
-          expected: up
-          unmet_reason: Backend link is still down.
-          observed_from: check_resolution_status.observed.backend_link_state
-        - check_field: cert_state
-          op: eq
-          expected: fresh
-          unmet_reason: Station certificate is still stale.
-          observed_from: check_resolution_status.observed.cert_state
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_backend_link_state
@@ -1565,10 +1374,7 @@ tasks:
   min_plan_length: 12
   runtime:
     domain: ev_charging_support
-    reason_for_call: "My charging session won't start \u2014 the station seems to\
-      \ be having trouble connecting to something. The screen is showing an error\
-      \ and the app has some diagnostic info. I've been waiting here for a while and\
-      \ I need to get this working."
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -1577,18 +1383,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Avery Chen. You are direct and pragmatic, and you execute
       assistant requests one step at a time.
-    known_info: You are Avery Chen. You are at a public EV charging station. Your
-      session failed to start and the station appears to have a connection issue.
-      The station screen shows a fault code you haven't noted yet, and the charging
-      app displays a diagnostic category you haven't opened. Your vehicle is plugged
-      in but not receiving power.
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Avery Chen reports a charging session that will not initiate
-      due to what appears to be a connection problem at the station. The fault code
-      on the station screen and the app's diagnostic category have not yet been confirmed.
-      Backend network issues need diagnosis and repair, along with physical station
-      checks. They will consider the issue resolved when charging starts successfully
-      and the station reports no faults.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -1681,40 +1478,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: not_ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: backend_link_state
-          op: eq
-          expected: up
-          unmet_reason: Backend link is still down.
-          observed_from: check_resolution_status.observed.backend_link_state
-        - check_field: cert_state
-          op: eq
-          expected: fresh
-          unmet_reason: Station certificate is still stale.
-          observed_from: check_resolution_status.observed.cert_state
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: retry_state
-          op: eq
-          expected: ready
-          unmet_reason: Retry path is not ready yet.
-          observed_from: check_resolution_status.observed.retry_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_backend_link_state
@@ -1926,10 +1689,7 @@ tasks:
   min_plan_length: 13
   runtime:
     domain: ev_charging_support
-    reason_for_call: "My charging session won't start \u2014 the station seems to\
-      \ be having trouble connecting to something. The screen is showing an error\
-      \ and the app has some diagnostic info. I've been waiting here for a while and\
-      \ I need to get this working."
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -1938,18 +1698,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Sam Rivera. You are a practical EV driver under time pressure
       who follows clear troubleshooting instructions.
-    known_info: You are Sam Rivera. You are at a public EV charging station. Your
-      session failed to start and the station appears to have a connection issue.
-      The station screen shows a fault code you haven't noted yet, and the charging
-      app displays a diagnostic category you haven't opened. Your vehicle is plugged
-      in but not receiving power.
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Sam Rivera reports a charging session that will not initiate
-      due to what appears to be a connection problem at the station. The fault code
-      on the station screen and the app's diagnostic category have not yet been confirmed.
-      Backend network issues need diagnosis and repair, along with physical station
-      checks. They will consider the issue resolved when charging starts successfully
-      and the station reports no faults.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -2042,45 +1793,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: not_ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: backend_link_state
-          op: eq
-          expected: up
-          unmet_reason: Backend link is still down.
-          observed_from: check_resolution_status.observed.backend_link_state
-        - check_field: cert_state
-          op: eq
-          expected: fresh
-          unmet_reason: Station certificate is still stale.
-          observed_from: check_resolution_status.observed.cert_state
-        - check_field: charge_status
-          op: eq
-          expected: active
-          unmet_reason: Charging is not active yet.
-          observed_from: check_resolution_status.observed.charge_status
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: retry_state
-          op: eq
-          expected: ready
-          unmet_reason: Retry path is not ready yet.
-          observed_from: check_resolution_status.observed.retry_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_backend_link_state
@@ -2315,10 +2027,7 @@ tasks:
   min_plan_length: 15
   runtime:
     domain: ev_charging_support
-    reason_for_call: "Nothing is working at this charging station. I tried to start\
-      \ a session and got an error immediately. The station screen has a code on it\
-      \ and the app shows something is wrong too. This is really frustrating \u2014\
-      \ I'm almost out of charge and I need help getting this fixed."
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -2327,18 +2036,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Avery Chen. You are a practical EV driver who can execute
       technical steps when guided clearly.
-    known_info: You are Avery Chen. You are at a public EV charging station and your
-      vehicle is nearly depleted. The charging session failed completely on the first
-      attempt. The station screen shows a fault code you have not read yet, and the
-      charging app reports a diagnostic category you have not checked. Multiple systems
-      may be affected.
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Avery Chen reports a complete charging failure at a public station
-      with potential issues across multiple subsystems. The station fault code and
-      app diagnostic category are not yet confirmed. This case may require account,
-      network, and firmware remediation in addition to physical station checks. They
-      will consider the issue resolved when charging initiates successfully and the
-      station clears all fault indicators.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -2431,55 +2131,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: not_ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: fraud_lock_state
-          op: eq
-          expected: 'off'
-          unmet_reason: Fraud lock is still active.
-          observed_from: check_resolution_status.observed.fraud_lock_state
-        - check_field: hold_status
-          op: eq
-          expected: cleared
-          unmet_reason: Backend hold is not cleared yet.
-          observed_from: check_resolution_status.observed.hold_status
-        - check_field: payment_token_status
-          op: eq
-          expected: valid
-          unmet_reason: Payment token is not valid yet.
-          observed_from: check_resolution_status.observed.payment_token_status
-        - check_field: backend_link_state
-          op: eq
-          expected: up
-          unmet_reason: Backend link is still down.
-          observed_from: check_resolution_status.observed.backend_link_state
-        - check_field: cert_state
-          op: eq
-          expected: fresh
-          unmet_reason: Station certificate is still stale.
-          observed_from: check_resolution_status.observed.cert_state
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
-        - check_field: firmware_state
-          op: eq
-          expected: current
-          unmet_reason: Station firmware is not current yet.
-          observed_from: check_resolution_status.observed.firmware_state
     env_assertions:
     - env_type: assistant
       func_name: assert_fraud_lock_state
@@ -2742,10 +2393,7 @@ tasks:
   min_plan_length: 16
   runtime:
     domain: ev_charging_support
-    reason_for_call: "Nothing is working at this charging station. I tried to start\
-      \ a session and got an error immediately. The station screen has a code on it\
-      \ and the app shows something is wrong too. This is really frustrating \u2014\
-      \ I'm almost out of charge and I need help getting this fixed."
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -2754,18 +2402,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Avery Chen. You are calm and cooperative, and you provide
       tool-grounded updates only.
-    known_info: You are Avery Chen. You are at a public EV charging station and your
-      vehicle is nearly depleted. The charging session failed completely on the first
-      attempt. The station screen shows a fault code you have not read yet, and the
-      charging app reports a diagnostic category you have not checked. Multiple systems
-      may be affected.
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Avery Chen reports a complete charging failure at a public station
-      with potential issues across multiple subsystems. The station fault code and
-      app diagnostic category are not yet confirmed. This case may require account,
-      network, and firmware remediation in addition to physical station checks. They
-      will consider the issue resolved when charging initiates successfully and the
-      station clears all fault indicators.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -2858,60 +2497,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: not_ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: fraud_lock_state
-          op: eq
-          expected: 'off'
-          unmet_reason: Fraud lock is still active.
-          observed_from: check_resolution_status.observed.fraud_lock_state
-        - check_field: hold_status
-          op: eq
-          expected: cleared
-          unmet_reason: Backend hold is not cleared yet.
-          observed_from: check_resolution_status.observed.hold_status
-        - check_field: payment_token_status
-          op: eq
-          expected: valid
-          unmet_reason: Payment token is not valid yet.
-          observed_from: check_resolution_status.observed.payment_token_status
-        - check_field: backend_link_state
-          op: eq
-          expected: up
-          unmet_reason: Backend link is still down.
-          observed_from: check_resolution_status.observed.backend_link_state
-        - check_field: cert_state
-          op: eq
-          expected: fresh
-          unmet_reason: Station certificate is still stale.
-          observed_from: check_resolution_status.observed.cert_state
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: retry_state
-          op: eq
-          expected: ready
-          unmet_reason: Retry path is not ready yet.
-          observed_from: check_resolution_status.observed.retry_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
-        - check_field: firmware_state
-          op: eq
-          expected: current
-          unmet_reason: Station firmware is not current yet.
-          observed_from: check_resolution_status.observed.firmware_state
     env_assertions:
     - env_type: assistant
       func_name: assert_fraud_lock_state
@@ -3191,10 +2776,7 @@ tasks:
   min_plan_length: 17
   runtime:
     domain: ev_charging_support
-    reason_for_call: "Nothing is working at this charging station. I tried to start\
-      \ a session and got an error immediately. The station screen has a code on it\
-      \ and the app shows something is wrong too. This is really frustrating \u2014\
-      \ I'm almost out of charge and I need help getting this fixed."
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -3203,18 +2785,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Avery Chen. You are direct and pragmatic, and you execute
       assistant requests one step at a time.
-    known_info: You are Avery Chen. You are at a public EV charging station and your
-      vehicle is nearly depleted. The charging session failed completely on the first
-      attempt. The station screen shows a fault code you have not read yet, and the
-      charging app reports a diagnostic category you have not checked. Multiple systems
-      may be affected.
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Avery Chen reports a complete charging failure at a public station
-      with potential issues across multiple subsystems. The station fault code and
-      app diagnostic category are not yet confirmed. This case may require account,
-      network, and firmware remediation in addition to physical station checks. They
-      will consider the issue resolved when charging initiates successfully and the
-      station clears all fault indicators.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -3307,65 +2880,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: not_ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: fraud_lock_state
-          op: eq
-          expected: 'off'
-          unmet_reason: Fraud lock is still active.
-          observed_from: check_resolution_status.observed.fraud_lock_state
-        - check_field: hold_status
-          op: eq
-          expected: cleared
-          unmet_reason: Backend hold is not cleared yet.
-          observed_from: check_resolution_status.observed.hold_status
-        - check_field: payment_token_status
-          op: eq
-          expected: valid
-          unmet_reason: Payment token is not valid yet.
-          observed_from: check_resolution_status.observed.payment_token_status
-        - check_field: backend_link_state
-          op: eq
-          expected: up
-          unmet_reason: Backend link is still down.
-          observed_from: check_resolution_status.observed.backend_link_state
-        - check_field: cert_state
-          op: eq
-          expected: fresh
-          unmet_reason: Station certificate is still stale.
-          observed_from: check_resolution_status.observed.cert_state
-        - check_field: charge_status
-          op: eq
-          expected: active
-          unmet_reason: Charging is not active yet.
-          observed_from: check_resolution_status.observed.charge_status
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: retry_state
-          op: eq
-          expected: ready
-          unmet_reason: Retry path is not ready yet.
-          observed_from: check_resolution_status.observed.retry_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
-        - check_field: firmware_state
-          op: eq
-          expected: current
-          unmet_reason: Station firmware is not current yet.
-          observed_from: check_resolution_status.observed.firmware_state
     env_assertions:
     - env_type: assistant
       func_name: assert_fraud_lock_state
@@ -3623,10 +3137,7 @@ tasks:
   min_plan_length: 11
   runtime:
     domain: ev_charging_support
-    reason_for_call: I'm at a charging station and my session won't start. I already
-      looked at the station screen and it says BH-101. The app has some diagnostic
-      info too but I haven't checked that yet. Can you help me figure out what's going
-      on?
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -3635,16 +3146,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Jordan Lee. You are a practical EV driver who can execute
       technical steps when guided clearly.
-    known_info: You are Jordan Lee. You are at a public EV charging station. Your
-      session failed to start. You read the station screen and it displays fault code
-      BH-101. You have not yet opened the charging app to check its diagnostic summary.
-      Your vehicle is plugged in but not charging.
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Jordan Lee reports a failed charging session. They have already
-      confirmed fault code BH-101 from the station screen, but the app diagnostic
-      category has not been checked yet. Backend account issues and physical troubleshooting
-      steps need to be completed. They will consider the issue resolved when charging
-      starts successfully and the station shows no remaining fault codes.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -3737,40 +3241,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: not_ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: fraud_lock_state
-          op: eq
-          expected: 'off'
-          unmet_reason: Fraud lock is still active.
-          observed_from: check_resolution_status.observed.fraud_lock_state
-        - check_field: hold_status
-          op: eq
-          expected: cleared
-          unmet_reason: Backend hold is not cleared yet.
-          observed_from: check_resolution_status.observed.hold_status
-        - check_field: payment_token_status
-          op: eq
-          expected: valid
-          unmet_reason: Payment token is not valid yet.
-          observed_from: check_resolution_status.observed.payment_token_status
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_fraud_lock_state
@@ -3984,10 +3454,7 @@ tasks:
   min_plan_length: 12
   runtime:
     domain: ev_charging_support
-    reason_for_call: I'm at a charging station and my session won't start. I already
-      looked at the station screen and it says BH-101. The app has some diagnostic
-      info too but I haven't checked that yet. Can you help me figure out what's going
-      on?
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -3996,16 +3463,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Sam Rivera. You are calm and cooperative, and you provide
       tool-grounded updates only.
-    known_info: You are Sam Rivera. You are at a public EV charging station. Your
-      session failed to start. You read the station screen and it displays fault code
-      BH-101. You have not yet opened the charging app to check its diagnostic summary.
-      Your vehicle is plugged in but not charging.
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Sam Rivera reports a failed charging session. They have already
-      confirmed fault code BH-101 from the station screen, but the app diagnostic
-      category has not been checked yet. Backend account issues and physical troubleshooting
-      steps need to be completed. They will consider the issue resolved when charging
-      starts successfully and the station shows no remaining fault codes.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -4098,45 +3558,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: not_ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: fraud_lock_state
-          op: eq
-          expected: 'off'
-          unmet_reason: Fraud lock is still active.
-          observed_from: check_resolution_status.observed.fraud_lock_state
-        - check_field: hold_status
-          op: eq
-          expected: cleared
-          unmet_reason: Backend hold is not cleared yet.
-          observed_from: check_resolution_status.observed.hold_status
-        - check_field: payment_token_status
-          op: eq
-          expected: valid
-          unmet_reason: Payment token is not valid yet.
-          observed_from: check_resolution_status.observed.payment_token_status
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: retry_state
-          op: eq
-          expected: ready
-          unmet_reason: Retry path is not ready yet.
-          observed_from: check_resolution_status.observed.retry_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_fraud_lock_state
@@ -4369,10 +3790,7 @@ tasks:
   min_plan_length: 13
   runtime:
     domain: ev_charging_support
-    reason_for_call: I'm at a charging station and my session won't start. I already
-      looked at the station screen and it says BH-101. The app has some diagnostic
-      info too but I haven't checked that yet. Can you help me figure out what's going
-      on?
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -4381,16 +3799,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Avery Chen. You are a practical EV driver who can execute
       technical steps when guided clearly.
-    known_info: You are Avery Chen. You are at a public EV charging station. Your
-      session failed to start. You read the station screen and it displays fault code
-      BH-101. You have not yet opened the charging app to check its diagnostic summary.
-      Your vehicle is plugged in but not charging.
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Avery Chen reports a failed charging session. They have already
-      confirmed fault code BH-101 from the station screen, but the app diagnostic
-      category has not been checked yet. Backend account issues and physical troubleshooting
-      steps need to be completed. They will consider the issue resolved when charging
-      starts successfully and the station shows no remaining fault codes.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -4483,50 +3894,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: not_ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: fraud_lock_state
-          op: eq
-          expected: 'off'
-          unmet_reason: Fraud lock is still active.
-          observed_from: check_resolution_status.observed.fraud_lock_state
-        - check_field: hold_status
-          op: eq
-          expected: cleared
-          unmet_reason: Backend hold is not cleared yet.
-          observed_from: check_resolution_status.observed.hold_status
-        - check_field: payment_token_status
-          op: eq
-          expected: valid
-          unmet_reason: Payment token is not valid yet.
-          observed_from: check_resolution_status.observed.payment_token_status
-        - check_field: charge_status
-          op: eq
-          expected: active
-          unmet_reason: Charging is not active yet.
-          observed_from: check_resolution_status.observed.charge_status
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: retry_state
-          op: eq
-          expected: ready
-          unmet_reason: Retry path is not ready yet.
-          observed_from: check_resolution_status.observed.retry_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_fraud_lock_state
@@ -4731,10 +4098,7 @@ tasks:
   min_plan_length: 5
   runtime:
     domain: ev_charging_support
-    reason_for_call: "I've been trying to get this charging station to work. I already\
-      \ checked the cable and it looks fine, got my car into ready mode, and refreshed\
-      \ the app, but the session still won't start. The screen has an error code and\
-      \ the app shows a diagnostic message \u2014 can you take a look?"
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -4743,19 +4107,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Avery Chen. You are methodical and detail-oriented, and
       you follow assistant instructions precisely.
-    known_info: 'You are Avery Chen. You are at a public EV charging station. Your
-      session will not start despite some troubleshooting you''ve already attempted:
-      you inspected the cable (looks fine), set your vehicle to ready mode, and refreshed
-      the charging app. The station screen still shows a fault code you haven''t written
-      down, and the app''s diagnostic category is visible but you haven''t reported
-      it to support yet.'
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Avery Chen reports an ongoing charging failure. They have already
-      completed some physical checks (cable inspection, vehicle readiness, app refresh)
-      but the session will not start. The station fault code and app diagnostic category
-      have not yet been confirmed to support. Backend network diagnosis and remaining
-      physical steps are needed. They will consider the issue resolved when charging
-      starts and the station reports no fault codes.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -4848,25 +4202,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: backend_link_state
-          op: eq
-          expected: up
-          unmet_reason: Backend link is still down.
-          observed_from: check_resolution_status.observed.backend_link_state
-        - check_field: cert_state
-          op: eq
-          expected: fresh
-          unmet_reason: Station certificate is still stale.
-          observed_from: check_resolution_status.observed.cert_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_backend_link_state
@@ -5004,10 +4339,7 @@ tasks:
   min_plan_length: 8
   runtime:
     domain: ev_charging_support
-    reason_for_call: "I've been trying to get this charging station to work. I already\
-      \ checked the cable and it looks fine, got my car into ready mode, and refreshed\
-      \ the app, but the session still won't start. The screen has an error code and\
-      \ the app shows a diagnostic message \u2014 can you take a look?"
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -5016,19 +4348,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Avery Chen. You are calm and cooperative, and you provide
       tool-grounded updates only.
-    known_info: 'You are Avery Chen. You are at a public EV charging station. Your
-      session will not start despite some troubleshooting you''ve already attempted:
-      you inspected the cable (looks fine), set your vehicle to ready mode, and refreshed
-      the charging app. The station screen still shows a fault code you haven''t written
-      down, and the app''s diagnostic category is visible but you haven''t reported
-      it to support yet.'
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Avery Chen reports an ongoing charging failure. They have already
-      completed some physical checks (cable inspection, vehicle readiness, app refresh)
-      but the session will not start. The station fault code and app diagnostic category
-      have not yet been confirmed to support. Backend network diagnosis and remaining
-      physical steps are needed. They will consider the issue resolved when charging
-      starts and the station reports no fault codes.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -5121,35 +4443,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: backend_link_state
-          op: eq
-          expected: up
-          unmet_reason: Backend link is still down.
-          observed_from: check_resolution_status.observed.backend_link_state
-        - check_field: cert_state
-          op: eq
-          expected: fresh
-          unmet_reason: Station certificate is still stale.
-          observed_from: check_resolution_status.observed.cert_state
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_backend_link_state
@@ -5320,10 +4613,7 @@ tasks:
   min_plan_length: 9
   runtime:
     domain: ev_charging_support
-    reason_for_call: "I've been trying to get this charging station to work. I already\
-      \ checked the cable and it looks fine, got my car into ready mode, and refreshed\
-      \ the app, but the session still won't start. The screen has an error code and\
-      \ the app shows a diagnostic message \u2014 can you take a look?"
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -5332,19 +4622,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Sam Rivera. You are direct and pragmatic, and you execute
       assistant requests one step at a time.
-    known_info: 'You are Sam Rivera. You are at a public EV charging station. Your
-      session will not start despite some troubleshooting you''ve already attempted:
-      you inspected the cable (looks fine), set your vehicle to ready mode, and refreshed
-      the charging app. The station screen still shows a fault code you haven''t written
-      down, and the app''s diagnostic category is visible but you haven''t reported
-      it to support yet.'
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Sam Rivera reports an ongoing charging failure. They have already
-      completed some physical checks (cable inspection, vehicle readiness, app refresh)
-      but the session will not start. The station fault code and app diagnostic category
-      have not yet been confirmed to support. Backend network diagnosis and remaining
-      physical steps are needed. They will consider the issue resolved when charging
-      starts and the station reports no fault codes.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -5437,40 +4717,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: backend_link_state
-          op: eq
-          expected: up
-          unmet_reason: Backend link is still down.
-          observed_from: check_resolution_status.observed.backend_link_state
-        - check_field: cert_state
-          op: eq
-          expected: fresh
-          unmet_reason: Station certificate is still stale.
-          observed_from: check_resolution_status.observed.cert_state
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: retry_state
-          op: eq
-          expected: ready
-          unmet_reason: Retry path is not ready yet.
-          observed_from: check_resolution_status.observed.retry_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_backend_link_state
@@ -5658,10 +4904,7 @@ tasks:
   min_plan_length: 10
   runtime:
     domain: ev_charging_support
-    reason_for_call: "I've been trying to get this charging station to work. I already\
-      \ checked the cable and it looks fine, got my car into ready mode, and refreshed\
-      \ the app, but the session still won't start. The screen has an error code and\
-      \ the app shows a diagnostic message \u2014 can you take a look?"
+    reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
       issue resolved when charging can start and the remaining observable recovery
@@ -5670,19 +4913,9 @@ tasks:
       resolved=false, report unmet items and ask the assistant for the next step.'
     persona: Your name is Avery Chen. You are calm and cooperative, and you provide
       tool-grounded updates only.
-    known_info: 'You are Avery Chen. You are at a public EV charging station. Your
-      session will not start despite some troubleshooting you''ve already attempted:
-      you inspected the cable (looks fine), set your vehicle to ready mode, and refreshed
-      the charging app. The station screen still shows a fault code you haven''t written
-      down, and the app''s diagnostic category is visible but you haven''t reported
-      it to support yet.'
+    known_info: __AUTHOR_ME__
     unknown_info: null
-    ticket: Customer Avery Chen reports an ongoing charging failure. They have already
-      completed some physical checks (cable inspection, vehicle readiness, app refresh)
-      but the session will not start. The station fault code and app diagnostic category
-      have not yet been confirmed to support. Backend network diagnosis and remaining
-      physical steps are needed. They will consider the issue resolved when charging
-      starts and the station reports no fault codes.
+    ticket: __AUTHOR_ME__
     purpose: null
     relevant_policies: null
     notes: null
@@ -5775,45 +5008,6 @@ tasks:
       func_name: set_vehicle_ready_state
       arguments:
         value: ready
-    - env_type: user
-      func_name: set_stop_gate
-      arguments:
-        criteria:
-        - check_field: backend_link_state
-          op: eq
-          expected: up
-          unmet_reason: Backend link is still down.
-          observed_from: check_resolution_status.observed.backend_link_state
-        - check_field: cert_state
-          op: eq
-          expected: fresh
-          unmet_reason: Station certificate is still stale.
-          observed_from: check_resolution_status.observed.cert_state
-        - check_field: charge_status
-          op: eq
-          expected: active
-          unmet_reason: Charging is not active yet.
-          observed_from: check_resolution_status.observed.charge_status
-        - check_field: fault_code
-          op: eq
-          expected: NONE
-          unmet_reason: Station still reports an unresolved fault code.
-          observed_from: check_resolution_status.observed.fault_code
-        - check_field: profile_state
-          op: eq
-          expected: ready
-          unmet_reason: Charging profile is not ready yet.
-          observed_from: check_resolution_status.observed.profile_state
-        - check_field: retry_state
-          op: eq
-          expected: ready
-          unmet_reason: Retry path is not ready yet.
-          observed_from: check_resolution_status.observed.retry_state
-        - check_field: diagnostics_state
-          op: eq
-          expected: ran
-          unmet_reason: Backend diagnostics have not run yet.
-          observed_from: check_resolution_status.observed.diagnostics_state
     env_assertions:
     - env_type: assistant
       func_name: assert_backend_link_state

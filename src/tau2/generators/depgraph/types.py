@@ -352,7 +352,6 @@ class SamplingRequestDoc(BaseModel):
     goal_world_path_prefixes: list[str] = Field(
         default_factory=lambda: ["agent.", "user."]
     )
-    goal_binding_prefixes: list[str] = Field(default_factory=list)
     seeds: list[SamplingSeedSpec] = Field(default_factory=list)
 
     @model_validator(mode="after")

@@ -1,62 +1,86 @@
-# Prompt 04: Runtime Enrichment + Preflight + Compile
+# Prompt 04: Runtime Scaffold Authoring + Preflight + Compile
 
 ## Instruction
 
-Start from sampled structural intents (`task_specs.sampled.yaml`), then enrich runtime payloads and compile.
+Do not hand-build `task_specs.runtime.yaml` from scratch.
+Use scaffold-first runtime authoring with a strict edit surface.
+
+Exact execution contract:
+
+1. run each command in order,
+2. check pass status/output,
+3. if any command fails: fix the reported issue before continuing,
+4. never skip validation steps.
 
 Inputs to review before authoring:
 
 - `data/tau2/domains/<domain>/task_specs.sampled.yaml`
+- `data/tau2/domains/<domain>/task_context_bindings.yaml`
 - `data/tau2/domains/<domain>/graph_contract.yaml`
+- `data/tau2/domains/<domain>/personas.yaml`
+- `data/tau2/domains/<domain>/runtime_defaults.yaml`
 - `data/tau2/domains/<domain>/stop_gate_map.yaml`
 - `data/tau2/domains/<domain>/domain_scope.md` (especially `Known risks`)
 - `src/tau2/domains/<domain>/{data_model.py,user_data_model.py,tools.py,user_tools.py,environment.py}`
 
-1. Create `data/tau2/domains/<domain>/task_specs.runtime.yaml` by adding `runtime` blocks per task.
-2. Each `runtime` block must include:
-   - user prompt fields (`domain`, `reason_for_call`, `task_instructions`, optional `known_info`, `unknown_info`, `persona`)
-   - `initialization_actions` (break/init)
-   - `env_assertions` (goal checks)
-   - `reward_basis`
-3. Inject strict stop-gate criteria from sampled goals by adding:
-   - one `user.set_stop_gate(criteria=[...])` initialization action per task
-   - strict checker-based stop text in `task_instructions`
-4. Keep structural provenance intact:
-   - do not modify sampled `required_actions`, `required_precedence`, `start_world`, `goal_world`, `goal_bindings`
-   - only author runtime semantic fields and concrete context binding.
+## Required Step Order
 
-User-sim completion rule (required in `task_instructions`):
+Gate policy (hard): do not proceed to step `N+1` until step `N` exits successfully.
 
-1. Include an explicit completion criterion sentence:
-   - `You will consider the issue resolved when <concrete observable condition>.`
-2. Include explicit stop behavior tied to that condition:
-   - `When that condition is met, reply with ###STOP###.`
-3. Require tool-grounded reporting:
-   - user should ground status answers in tool results and avoid guessing.
-4. When stop-gates are used, require:
-   - `Only emit ###STOP### when check_resolution_status returns resolved=true.`
-   - `If resolved=false, report unmet items and ask for the next step.`
+1. Generate deterministic runtime scaffold + narrative briefs:
 
-Recommended canonical stop block (copy/adapt):
+```bash
+uv run python -m tau2.generators.depgraph.run_context_bindings \
+  --domain <domain> \
+  --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
+  --task-specs-sampled data/tau2/domains/<domain>/task_specs.sampled.yaml \
+  --db-json data/tau2/domains/<domain>/db.json \
+  --out-context-bindings data/tau2/domains/<domain>/task_context_bindings.yaml
 
-- `Before deciding the issue is resolved, call check_resolution_status.`
-- `Only emit ###STOP### when check_resolution_status returns resolved=true.`
-- `If resolved=false, report unmet items and ask for the next step.`
+uv run python -m tau2.generators.depgraph.run_runtime_scaffold \
+  --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
+  --task-specs-sampled data/tau2/domains/<domain>/task_specs.sampled.yaml \
+  --personas data/tau2/domains/<domain>/personas.yaml \
+  --runtime-defaults data/tau2/domains/<domain>/runtime_defaults.yaml \
+  --context-bindings data/tau2/domains/<domain>/task_context_bindings.yaml \
+  --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
+  --out-runtime-scaffold data/tau2/domains/<domain>/task_specs.runtime.scaffold.yaml \
+  --out-narrative-briefs data/tau2/domains/<domain>/task_narrative_briefs.yaml
+```
 
-How to derive the completion criterion (required):
+2. Initialize runtime file from scaffold:
 
-1. Start from sampled `goal_world` (and `goal_bindings` if relevant).
-2. Choose one or more user-observable success conditions implied by those goals.
-3. Write the criterion sentence using those observable conditions, not vague wording.
-4. Add explicit STOP instruction:
-   - `When that condition is met, reply with ###STOP###.`
+```bash
+uv run python -m tau2.generators.depgraph.run_runtime_init \
+  --scaffold data/tau2/domains/<domain>/task_specs.runtime.scaffold.yaml \
+  --out-runtime data/tau2/domains/<domain>/task_specs.runtime.yaml
+```
 
-How to derive and inject stop-gates (required):
+3. Author runtime narratives:
+   - edit only these per-task fields in `task_specs.runtime.yaml`:
+     - `runtime.reason_for_call`
+     - `runtime.known_info`
+     - `runtime.ticket`
 
-1. Map each `goal_world` equality to a user-observable checker criterion using `stop_gate_map.yaml`.
-2. Build `criteria` entries with:
-   - `check_field`, `op`, `expected`, optional `unmet_reason`, optional `observed_from`.
-3. Inject stop-gates:
+4. Hard-gate authored surface:
+
+```bash
+uv run python -m tau2.generators.depgraph.run_runtime_surface_check \
+  --scaffold data/tau2/domains/<domain>/task_specs.runtime.scaffold.yaml \
+  --runtime data/tau2/domains/<domain>/task_specs.runtime.yaml
+```
+
+Note: run this before `run_stop_gate_inject`; stop-gate injection intentionally mutates `initialization_actions`.
+
+5. Validate authored narrative quality against briefs:
+
+```bash
+uv run python -m tau2.generators.depgraph.run_runtime_narrative_check \
+  --runtime data/tau2/domains/<domain>/task_specs.runtime.yaml \
+  --narrative-briefs data/tau2/domains/<domain>/task_narrative_briefs.yaml
+```
+
+6. Inject strict stop-gates:
 
 ```bash
 uv run python -m tau2.generators.depgraph.run_stop_gate_inject \
@@ -64,63 +88,7 @@ uv run python -m tau2.generators.depgraph.run_stop_gate_inject \
   --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml
 ```
 
-Rule:
-
-- if stop-gate injection fails, fix `stop_gate_map.yaml` (or sampled goals) instead of hand-editing criteria directly in runtime YAML.
-
-Target code path:
-
-- `/Users/eligottlieb/Documents/tau2-bench/src/tau2/generators/depgraph/`
-
-Required checks per task:
-
-1. `SAT_full` must be true.
-2. For each required action `d`: `SAT_without_d` must be false.
-3. Contradiction checks must pass (no conflicting start/goal world assignments).
-4. Runtime instruction checks must pass:
-   - non-empty `task_instructions`
-   - explicit completion criterion (`... resolved when ...`)
-   - explicit `###STOP###` instruction
-   - checker-based stop text when `set_stop_gate` is present
-
-Start-bindings visibility (required when `start_bindings` is non-empty):
-
-When a task has `start_bindings` (e.g. `start_bindings: [fault_code]`), the agent structurally
-starts with that knowledge already acquired. Both the agent and the user sim need the concrete
-value. To resolve the value:
-
-1. Look up the binding in `graph_contract.yaml` → `bindings[]` and find its `world_path`.
-2. Look up that `world_path` in the task's `start_world` to get the concrete value.
-3. Include that value naturally in both:
-   - `ticket` (agent-visible) — e.g. "The station screen shows fault code BH-101"
-   - `known_info` (user-sim-visible) — e.g. "You can see fault code BH-101 on the station screen"
-
-The agent needs the value to use in tool calls. The user sim needs it so it can discuss
-the issue naturally and confirm details when asked.
-
-Example: if `start_bindings: [fault_code]` and `start_world` sets
-`agent.sessions[active_session].last_fault_code: BH-101`, and the binding's
-`world_path` is `agent.sessions[active_session].last_fault_code`, then both the ticket
-and known_info must contain "BH-101" in natural context.
-
-The preflight runtime check `check_start_bindings_visibility` will fail if a start-binding
-value is missing from either the ticket or known_info.
-
-Consistency audit before compile (required):
-
-1. `start_world` -> `initialization_actions` mapping is complete and exact.
-2. `goal_world`/`goal_bindings` -> `env_assertions` coverage is complete and exact.
-3. `required_actions` remain unchanged from sampled specs.
-4. Action/tool translation is explicit when names differ:
-   - use `graph_contract.yaml` mapping (`action_id -> requestor/tool_name/tool_arg_bindings`).
-5. Ticket and instructions use concrete DB entities (context-slot binding resolved to IDs).
-6. Review `domain_scope.md` `Known risks` and include mitigations in runtime text/assertions where relevant.
-7. No narrative shortcuts that imply unavailable tools or hidden state.
-8. Exactly one `user.set_stop_gate` initialization action exists per runtime task.
-9. Task instructions explicitly forbid early STOP on partial progress.
-10. Start-binding values appear in the ticket (see "Start-bindings in the ticket" above).
-
-Validation command sequence (required):
+7. Run preflight:
 
 ```bash
 uv run python -m tau2.generators.depgraph.run_preflight \
@@ -131,9 +99,7 @@ uv run python -m tau2.generators.depgraph.run_preflight \
   --strict-tool-coverage
 ```
 
-Then:
-
-Compile command:
+8. Compile tasks:
 
 ```bash
 uv run python -m tau2.generators.depgraph.run_compile \
@@ -144,21 +110,228 @@ uv run python -m tau2.generators.depgraph.run_compile \
   --out data/tau2/domains/<domain>/tasks.depgraph.json
 ```
 
-Compilation output must satisfy:
+Canonical command sequence (copy/paste in order):
 
-- `Task.initial_state.initialization_actions` from start/break world state design
-- `Task.evaluation_criteria.env_assertions` from goal world/binding intent design
-- Optional action assertions only when explicitly required
-- Runtime alignment checks must pass against actual tau2 environment:
-  - contract action/binding-source tools exist
-  - runtime `initialization_actions` and `env_assertions` callables exist and arguments are valid
-  - `bindings[].extraction_path` passes sanity/schema checks where available
-  - binding-gated actions map required bindings to concrete tool params (`tool_arg_bindings`)
+```bash
+uv run python -m tau2.generators.depgraph.run_context_bindings \
+  --domain <domain> \
+  --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
+  --task-specs-sampled data/tau2/domains/<domain>/task_specs.sampled.yaml \
+  --db-json data/tau2/domains/<domain>/db.json \
+  --out-context-bindings data/tau2/domains/<domain>/task_context_bindings.yaml
 
-Report format:
+uv run python -m tau2.generators.depgraph.run_runtime_scaffold \
+  --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
+  --task-specs-sampled data/tau2/domains/<domain>/task_specs.sampled.yaml \
+  --personas data/tau2/domains/<domain>/personas.yaml \
+  --runtime-defaults data/tau2/domains/<domain>/runtime_defaults.yaml \
+  --context-bindings data/tau2/domains/<domain>/task_context_bindings.yaml \
+  --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
+  --out-runtime-scaffold data/tau2/domains/<domain>/task_specs.runtime.scaffold.yaml \
+  --out-narrative-briefs data/tau2/domains/<domain>/task_narrative_briefs.yaml
 
-- pass/fail per task
-- failing check type
-- minimal fix suggestion
-- risk-closure notes: for each `Known risk`, state whether mitigated or still open
-- provenance note: confirm sampled structural fields remained unchanged
+uv run python -m tau2.generators.depgraph.run_runtime_init \
+  --scaffold data/tau2/domains/<domain>/task_specs.runtime.scaffold.yaml \
+  --out-runtime data/tau2/domains/<domain>/task_specs.runtime.yaml
+
+# author only reason_for_call / known_info / ticket
+
+uv run python -m tau2.generators.depgraph.run_runtime_surface_check \
+  --scaffold data/tau2/domains/<domain>/task_specs.runtime.scaffold.yaml \
+  --runtime data/tau2/domains/<domain>/task_specs.runtime.yaml
+
+uv run python -m tau2.generators.depgraph.run_runtime_narrative_check \
+  --runtime data/tau2/domains/<domain>/task_specs.runtime.yaml \
+  --narrative-briefs data/tau2/domains/<domain>/task_narrative_briefs.yaml
+
+uv run python -m tau2.generators.depgraph.run_stop_gate_inject \
+  --task-specs data/tau2/domains/<domain>/task_specs.runtime.yaml \
+  --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml
+
+uv run python -m tau2.generators.depgraph.run_preflight \
+  --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
+  --task-specs data/tau2/domains/<domain>/task_specs.runtime.yaml \
+  --domain <domain> \
+  --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
+  --strict-tool-coverage
+
+uv run python -m tau2.generators.depgraph.run_compile \
+  --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
+  --task-specs data/tau2/domains/<domain>/task_specs.runtime.yaml \
+  --domain <domain> \
+  --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
+  --strict-tool-coverage \
+  --out data/tau2/domains/<domain>/tasks.depgraph.json
+```
+
+## Deterministic vs Authored Fields
+
+Deterministic (from scaffold; do not edit):
+
+- `runtime.domain`
+- `runtime.task_instructions` (shared template)
+- `runtime.persona` (entity name from context bindings + personality from persona pool)
+- `runtime.unknown_info` (null)
+- `runtime.initialization_actions` (from start state + context bindings + runtime defaults prefix)
+- `runtime.env_assertions` (from goal state)
+- `runtime.actions` (from required action chain)
+- `runtime.reward_basis`
+
+Per-task authored (only 3 fields):
+
+- `runtime.reason_for_call`
+- `runtime.known_info`
+- `runtime.ticket`
+
+Hard rules:
+
+1. Never edit sampled structural fields:
+   - `start_world`, `start_bindings`, `goal_world`, `goal_bindings`, `required_actions`, `required_precedence`.
+2. Never edit deterministic runtime fields listed above.
+3. Remove all `__AUTHOR_ME__` placeholders.
+4. Run both runtime author checks before stop-gate injection:
+   - `run_runtime_surface_check`
+   - `run_runtime_narrative_check`
+
+## Entity Slot IDs vs Bindings
+
+Understanding this distinction is critical for authoring natural text.
+
+**Entity slot IDs** (`active_account`, `active_station`, `active_session`) are **plumbing**.
+They select which entity instance a task operates on. The pipeline assigns concrete IDs
+(e.g. `A1001`, `ST1001`) via `run_context_bindings`, then wires them into `initialization_actions`
+via `set_user_context(...)`. At runtime, every tool resolves the active entity from context
+(e.g. `_active_account_id()`). No tool takes entity IDs as explicit parameters.
+
+Entity slot IDs must NEVER appear in authored text (`reason_for_call`, `known_info`, `ticket`).
+They are invisible to users and agents. Only the customer **name** from `entity_context` is
+user-facing.
+
+Entity type names (e.g. "station", "account") must also not appear in tool docstrings in a way
+that implies the agent needs to identify them. Tool docstrings become the `description` field
+in the OpenAI schema sent to the LLM — if a docstring says "for the active station", the agent
+will ask the user for a station ID. Use neutral phrasing like "for the current charging session"
+instead.
+
+**Bindings** (`fault_code`, etc.) are **discovered information**. They represent knowledge facts
+the user can observe or provide (e.g. an error code on a screen). Bindings are defined in
+`graph_contract.yaml` with a `source_tool` and `extraction_path`.
+
+Bindings split into two categories with opposite authoring rules:
+
+- **`start_bindings`**: The user knows the value at task start. The concrete value MUST appear
+  in `known_info` and `ticket`.
+- **`goal_bindings`**: The value must be **discovered mid-conversation** via a tool call
+  (e.g. the agent asks the user to read their screen, triggering `check_station_screen`).
+  The concrete value must NEVER appear in any authored field. The narrative brief emits a
+  `goal_binding_do_not_disclose` list for these values; the narrative check hard-fails if
+  any appear in authored text.
+
+Why this matters: if a goal-binding value (e.g. fault code `BH-101`) is pre-disclosed in
+`reason_for_call` or `known_info`, the agent already has the information and never triggers
+the discovery tool call, causing the required action to fail evaluation.
+
+Summary:
+
+| | Entity slot IDs | start_bindings | goal_bindings |
+|---|---|---|---|
+| Example | `A1001`, `ST1001` | plan name, promo code | `BH-101`, `CERT-409` |
+| Purpose | Select active entity | User-known facts | Mid-conversation discovery |
+| In authored text? | **Never** | **Required** in known_info + ticket | **Never** |
+| Tools need them? | No (context-scoped) | Yes (`tool_arg_bindings`) | Yes (discovered via tool call) |
+
+## How to Use `task_narrative_briefs.yaml`
+
+For each task brief:
+
+1. Use `entity_context.name` (name only) to identify the customer in `known_info` and `ticket`. Entity slot IDs (`account_id`, `station_id`, `session_id`) are plumbing — never include them.
+2. Use `start_state_summary` to write the user-experienced symptom for `reason_for_call`.
+3. Use `start_state_summary.bindings` to include start-binding values (e.g. error codes, plan names) in `known_info` when present. These are user-observable facts, not internal state.
+4. Check `goal_binding_do_not_disclose` — if any values are listed, those must NOT appear anywhere in `reason_for_call`, `known_info`, or `ticket`. These are goal-binding values that the user must discover mid-conversation via a tool call. Pre-disclosing them prevents the discovery action from firing.
+5. Use `goal_state_summary` + `completion_cues` to write ONE natural, observable success criterion in `ticket` — not a state-by-state checklist.
+6. Use `required_action_chain` only as internal author context; do not leak this sequence into user or agent text.
+
+Writing constraints and voice:
+
+1. `reason_for_call` — **first person, conversational**.
+   - Describe what the user is experiencing and what they want fixed.
+   - Include frustration or urgency when natural.
+   - Never mention internal paths, tool names, or solution steps.
+   - Good: `"My charging session won't start. The screen is showing some kind of error and I need to charge my car before a long drive."`
+   - Bad: `"Charging fault BH-101 is active. Backend link is down. Need fraud lock removed and billing hold cleared."` (leaks goal-binding value + internal state)
+
+2. `known_info` — **second person, factual context**.
+   - Start with `"You are [name]"` using only the name from `entity_context`.
+   - Add situational context the user would naturally know (where they are, what they observe, what they were doing).
+   - Include concrete start-binding values (error codes, plan names) when present — these are user-observable facts.
+   - Do NOT include entity slot IDs (account, station, session). Do NOT list internal state.
+   - Good: `"You are Jordan Lee. You are at a charging station and your session won't start. The station screen is showing an error."`
+   - Bad: `"Name: Jordan Lee. Account: A1001. Station: ST1001. Session: S1001. Fault code: BH-101."` (leaks entity IDs + goal-binding value)
+
+3. `ticket` — **third person, agent-facing case summary**.
+   - Start with the problem description, then customer name (no entity slot IDs).
+   - End with `"They will consider the issue resolved when..."` followed by a natural description of the end state.
+   - The ticket gives the agent direction — it does not need to be mechanically precise because `check_resolution_status` handles the actual resolution gate. But it should be specific enough that the agent knows what kind of task this is (e.g. "get charging started" vs "update account settings").
+   - Do NOT enumerate every state change as a checklist. The ticket should read like a support case note, not an answer sheet.
+   - Good: `"The user reports their EV charging session failed to start with an error displayed on the station screen. Customer name: Jordan Lee. They will consider the issue resolved when charging begins successfully."`
+   - Bad: `"Customer Jordan Lee (account A1001) at station ST1001, session S1001, reports charging failure with fault code BH-101. Resolve when: fraud lock is off, billing hold is cleared, payment token is valid, backend link is up, station certificate is fresh, fault code reads NONE, charging profile is ready, diagnostics have run, and firmware is current."` (leaks entity IDs + goal-binding value + state checklist)
+
+Persona rule:
+
+- `personas.yaml` must NOT contain customer names — only personality traits.
+- The scaffold automatically prepends the entity name from context bindings to the persona text.
+- This ensures persona identity always matches the assigned entity triple.
+
+Narrative self-review (required):
+
+1. confirm authored text does not include internal path syntax (for example `agent.*`, `user.*`),
+2. confirm authored text does not leak action ids or tool names,
+3. confirm authored text does not include entity slot IDs (account_id, station_id, session_id) — these are plumbing, never user-visible,
+4. confirm ticket ends with a single natural completion condition, not a state checklist,
+5. confirm the ticket's completion condition gives the agent clear direction about what kind of task this is — read `completion_cues` to understand what "resolved" means, then verify that the "They will consider the issue resolved when..." sentence describes a concrete, observable outcome (e.g. "charging begins successfully", "the error is cleared"). The exact field names from the cues do not need to appear verbatim. If the ticket says something fully generic like "when the issue is fixed" with no indication of what the task is about, rewrite it to be more specific.
+6. confirm start-binding values are present in both `known_info` and `ticket` when applicable — these are user-observable facts (error codes, plan names), not entity slot IDs,
+7. confirm goal-binding values (listed in `goal_binding_do_not_disclose`) do NOT appear anywhere in authored text — these must be discovered mid-conversation,
+8. confirm `known_info` and `ticket` use the customer name from `entity_context`, not a hardcoded or guessed name.
+
+## Start-Binding Visibility Rule
+
+When `start_bindings` is non-empty, the concrete binding value must appear in:
+
+1. `runtime.ticket` (agent-visible)
+2. `runtime.known_info` (user-visible)
+
+These are user-observable facts (error codes, plan names, etc.) — not entity slot IDs.
+
+`run_preflight` fails this with `check_start_bindings_visibility` if missing.
+
+## Goal-Binding Non-Disclosure Rule
+
+When `goal_bindings` is non-empty, the concrete binding values must NOT appear in any authored
+field (`reason_for_call`, `known_info`, `ticket`). These values must be discovered
+mid-conversation via a tool call (e.g. the agent asks the user to check their screen).
+
+The narrative brief emits `goal_binding_do_not_disclose: [...]` listing the concrete values.
+`run_runtime_narrative_check` hard-fails if any of these values appear in authored text.
+
+Why: if the user pre-discloses a goal-binding value, the agent already has the information
+and never triggers the discovery tool call, causing the required action to fail evaluation.
+
+## Stop and Completion Discipline
+
+`run_stop_gate_inject` enforces strict stop-gate criteria per task goals.
+
+Task instructions must keep strict stop behavior:
+
+1. call `check_resolution_status` before stopping,
+2. emit `###STOP###` only when `resolved=true`,
+3. if unresolved, report unmet criteria and continue.
+
+## Report Format (required)
+
+After running all commands, report:
+
+1. pass/fail per task,
+2. failing check type,
+3. minimal fix,
+4. risk-closure notes vs `domain_scope.md` known risks,
+5. provenance note that only allowed runtime fields were authored.

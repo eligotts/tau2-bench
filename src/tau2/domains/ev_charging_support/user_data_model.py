@@ -74,6 +74,7 @@ class ViewState(BaseModelNoExtra):
     display_backend_link_state: Optional[str] = None
     display_cert_state: Optional[str] = None
     display_diagnostics_state: Optional[str] = None
+    display_error_class: Optional[str] = None
 
 
 class StopCriterion(BaseModelNoExtra):

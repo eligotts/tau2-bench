@@ -29,6 +29,7 @@ Requirements:
 4. Use `ToolKitBase` and `@is_tool` for LLM-visible tools.
 5. For actions with `requires_bindings`, enforce binding usage at runtime via concrete tool params and guards.
 6. For binding-source read tools, use typed return models (Pydantic/dataclass-style) so extraction-path checks are meaningful.
+7. **Docstring rule**: Tool docstrings become the `description` field in the OpenAI function-calling schema sent to the agent LLM. They must NOT reference entity type names (e.g. "station", "account", "session") because the agent will interpret these as information it needs to gather from the user. All entity resolution is context-scoped (via `set_user_context`), so the agent never needs entity identifiers. Use neutral phrasing like "Run backend diagnostics for the current charging session" instead of "Run backend diagnostics for the active station context."
 
 Validation:
 

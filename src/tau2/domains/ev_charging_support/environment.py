@@ -7,6 +7,7 @@ from tau2.domains.ev_charging_support.data_model import (
     CertState,
     ChargeState,
     DiagnosticsState,
+    ErrorClass,
     EVAccount,
     EVChargeSession,
     EVChargingSupportDB,
@@ -135,6 +136,7 @@ class EVChargingSupportEnvironment(Environment):
         user.view.display_backend_link_state = network.backend_link_state.value
         user.view.display_cert_state = network.cert_state.value
         user.view.display_diagnostics_state = station.diagnostics_state.value
+        user.view.display_error_class = session.error_class.value
 
         if station.reachability_state == ReachabilityState.UNREACHABLE:
             user.view.display_fault_code = "STATION_UNREACHABLE"

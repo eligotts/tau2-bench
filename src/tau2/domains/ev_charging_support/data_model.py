@@ -60,6 +60,12 @@ class ChargeState(StrEnum):
     ACTIVE = "active"
 
 
+class ErrorClass(StrEnum):
+    BILLING = "billing"
+    CONNECTIVITY = "connectivity"
+    FULL_SYSTEM = "full_system"
+
+
 class EVAccount(BaseModelNoExtra):
     account_id: str
     customer_name: str
@@ -90,6 +96,7 @@ class EVChargeSession(BaseModelNoExtra):
     retry_state: RetryState = RetryState.READY
     charge_state: ChargeState = ChargeState.INACTIVE
     last_fault_code: str = "NONE"
+    error_class: ErrorClass = ErrorClass.BILLING
 
 
 class EVChargingSupportDB(DB):

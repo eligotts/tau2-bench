@@ -5,6 +5,7 @@ from tau2.domains.ev_charging_support.data_model import (
     CertState,
     ChargeState,
     DiagnosticsState,
+    ErrorClass,
     EVAccount,
     EVChargeSession,
     EVChargingSupportDB,
@@ -110,9 +111,10 @@ class EVChargingSupportTools(ToolKitBase):
         return None
 
     @is_tool(ToolType.WRITE)
-    def run_backend_diagnostics(self, fault_code: str) -> Dict[str, Any]:
-        """Run backend diagnostics for the active station context."""
+    def run_backend_diagnostics(self, fault_code: str, app_error_class: str) -> Dict[str, Any]:
+        """Run backend diagnostics using the fault code and app-reported error category."""
         station = self._get_station()
+        session = self._get_session()
 
         if station.reachability_state != ReachabilityState.REACHABLE:
             return {
@@ -123,6 +125,18 @@ class EVChargingSupportTools(ToolKitBase):
         error = self._fault_code_guard(fault_code)
         if error is not None:
             return {"status": "error", "message": error}
+
+        valid_classes = {e.value for e in ErrorClass}
+        if app_error_class not in valid_classes:
+            return {
+                "status": "error",
+                "message": f"Unknown error class '{app_error_class}'. Expected one of {sorted(valid_classes)}.",
+            }
+        if app_error_class != session.error_class.value:
+            return {
+                "status": "error",
+                "message": f"Error class mismatch: expected '{session.error_class.value}', got '{app_error_class}'.",
+            }
 
         if station.diagnostics_state == DiagnosticsState.RAN:
             return {"status": "noop", "message": "Diagnostics already ran."}
@@ -193,7 +207,7 @@ class EVChargingSupportTools(ToolKitBase):
 
     @is_tool(ToolType.WRITE)
     def restore_backend_link(self, fault_code: str) -> Dict[str, Any]:
-        """Restore backend connectivity for the active station."""
+        """Restore backend connectivity for the current charging session."""
         network = self._get_network_path()
 
         error = self._fault_code_guard(fault_code)
@@ -208,7 +222,7 @@ class EVChargingSupportTools(ToolKitBase):
 
     @is_tool(ToolType.WRITE)
     def rotate_station_certificate(self, fault_code: str) -> Dict[str, Any]:
-        """Rotate stale station certificate once backend link is up."""
+        """Rotate stale security certificate once backend link is up."""
         network = self._get_network_path()
 
         error = self._fault_code_guard(fault_code)
@@ -228,7 +242,7 @@ class EVChargingSupportTools(ToolKitBase):
 
     @is_tool(ToolType.WRITE)
     def update_station_firmware(self, fault_code: str) -> Dict[str, Any]:
-        """Update station firmware after network prerequisites are satisfied."""
+        """Update firmware after network prerequisites are satisfied."""
         station = self._get_station()
         network = self._get_network_path()
 
@@ -251,42 +265,17 @@ class EVChargingSupportTools(ToolKitBase):
         station.firmware_state = FirmwareState.CURRENT
         return {"status": "success", "message": "Firmware updated."}
 
-    @is_tool(ToolType.WRITE)
-    def reprovision_charging_profile(self, fault_code: str) -> Dict[str, Any]:
-        """Reprovision charging profile once backend and user-side gates are satisfied."""
-        account = self._get_account()
-        station = self._get_station()
-        network = self._get_network_path()
+    def _check_common_reprovision_prereqs(self, fault_code: str) -> Optional[Dict[str, Any]]:
+        """Shared precondition checks for all reprovision variants."""
         session = self._get_session()
+        station = self._get_station()
 
         error = self._fault_code_guard(fault_code)
         if error is not None:
             return {"status": "error", "message": error}
 
-        if account.hold_status != HoldStatus.CLEARED:
-            return {"status": "error", "message": "Hold must be cleared before reprovision."}
-        if account.payment_token_status != PaymentTokenStatus.VALID:
-            return {
-                "status": "error",
-                "message": "Payment token must be valid before reprovision.",
-            }
-        if account.fraud_lock_state != FraudLockState.OFF:
-            return {
-                "status": "error",
-                "message": "Fraud lock must be released before reprovision.",
-            }
-        if network.backend_link_state != BackendLinkState.UP:
-            return {"status": "error", "message": "Backend link must be up before reprovision."}
-        if network.cert_state != CertState.FRESH:
-            return {
-                "status": "error",
-                "message": "Certificate must be fresh before reprovision.",
-            }
-        if station.firmware_state != FirmwareState.CURRENT:
-            return {
-                "status": "error",
-                "message": "Firmware must be current before reprovision.",
-            }
+        if station.diagnostics_state != DiagnosticsState.RAN:
+            return {"status": "error", "message": "Diagnostics must be run before reprovision."}
         if session.profile_state != ProfileState.NOT_READY:
             return {"status": "noop", "message": "Profile already ready."}
         if self._user_db is None:
@@ -294,34 +283,94 @@ class EVChargingSupportTools(ToolKitBase):
 
         user_physical = self._user_db.physical
         if user_physical.station_power_cycle_state != StationPowerCycleState.DONE:
-            return {
-                "status": "error",
-                "message": "User has not completed station power cycle.",
-            }
+            return {"status": "error", "message": "User has not completed station power cycle."}
         if user_physical.connector_reseat_state != ConnectorReseatState.RESEATED:
-            return {
-                "status": "error",
-                "message": "User has not reseated connector.",
-            }
+            return {"status": "error", "message": "User has not reseated connector."}
         if user_physical.cable_inspection_state != CableInspectionState.CHECKED_OK:
-            return {
-                "status": "error",
-                "message": "User has not completed cable inspection.",
-            }
+            return {"status": "error", "message": "User has not completed cable inspection."}
         if user_physical.vehicle_ready_state != VehicleReadyState.READY:
-            return {
-                "status": "error",
-                "message": "Vehicle is not in ready mode.",
-            }
+            return {"status": "error", "message": "Vehicle is not in ready mode."}
         if user_physical.app_refresh_state != AppRefreshState.REFRESHED:
-            return {
-                "status": "error",
-                "message": "Charging app session has not been refreshed.",
-            }
+            return {"status": "error", "message": "Charging app session has not been refreshed."}
+        return None
 
+    def _do_reprovision(self) -> Dict[str, Any]:
+        session = self._get_session()
         session.profile_state = ProfileState.READY
         session.last_fault_code = "NONE"
         return {"status": "success", "message": "Charging profile reprovisioned."}
+
+    @is_tool(ToolType.WRITE)
+    def reprovision_billing(self, fault_code: str) -> Dict[str, Any]:
+        """Reprovision after billing-class recovery (account hold, payment, fraud lock)."""
+        account = self._get_account()
+        session = self._get_session()
+
+        if session.error_class != ErrorClass.BILLING:
+            return {"status": "error", "message": "This reprovision path is for billing errors only."}
+
+        prereq_error = self._check_common_reprovision_prereqs(fault_code)
+        if prereq_error is not None:
+            return prereq_error
+
+        if account.hold_status != HoldStatus.CLEARED:
+            return {"status": "error", "message": "Hold must be cleared before reprovision."}
+        if account.payment_token_status != PaymentTokenStatus.VALID:
+            return {"status": "error", "message": "Payment token must be valid before reprovision."}
+        if account.fraud_lock_state != FraudLockState.OFF:
+            return {"status": "error", "message": "Fraud lock must be released before reprovision."}
+
+        return self._do_reprovision()
+
+    @is_tool(ToolType.WRITE)
+    def reprovision_connectivity(self, fault_code: str) -> Dict[str, Any]:
+        """Reprovision after connectivity-class recovery (backend link, certificate)."""
+        network = self._get_network_path()
+        session = self._get_session()
+
+        if session.error_class != ErrorClass.CONNECTIVITY:
+            return {"status": "error", "message": "This reprovision path is for connectivity errors only."}
+
+        prereq_error = self._check_common_reprovision_prereqs(fault_code)
+        if prereq_error is not None:
+            return prereq_error
+
+        if network.backend_link_state != BackendLinkState.UP:
+            return {"status": "error", "message": "Backend link must be up before reprovision."}
+        if network.cert_state != CertState.FRESH:
+            return {"status": "error", "message": "Certificate must be fresh before reprovision."}
+
+        return self._do_reprovision()
+
+    @is_tool(ToolType.WRITE)
+    def reprovision_full_system(self, fault_code: str) -> Dict[str, Any]:
+        """Reprovision after full-system recovery (account, network, and firmware)."""
+        account = self._get_account()
+        station = self._get_station()
+        network = self._get_network_path()
+        session = self._get_session()
+
+        if session.error_class != ErrorClass.FULL_SYSTEM:
+            return {"status": "error", "message": "This reprovision path is for full-system errors only."}
+
+        prereq_error = self._check_common_reprovision_prereqs(fault_code)
+        if prereq_error is not None:
+            return prereq_error
+
+        if account.hold_status != HoldStatus.CLEARED:
+            return {"status": "error", "message": "Hold must be cleared before reprovision."}
+        if account.payment_token_status != PaymentTokenStatus.VALID:
+            return {"status": "error", "message": "Payment token must be valid before reprovision."}
+        if account.fraud_lock_state != FraudLockState.OFF:
+            return {"status": "error", "message": "Fraud lock must be released before reprovision."}
+        if network.backend_link_state != BackendLinkState.UP:
+            return {"status": "error", "message": "Backend link must be up before reprovision."}
+        if network.cert_state != CertState.FRESH:
+            return {"status": "error", "message": "Certificate must be fresh before reprovision."}
+        if station.firmware_state != FirmwareState.CURRENT:
+            return {"status": "error", "message": "Firmware must be current before reprovision."}
+
+        return self._do_reprovision()
 
     @is_tool(ToolType.WRITE)
     def reset_retry_path(self, fault_code: str) -> Dict[str, Any]:
@@ -380,6 +429,9 @@ class EVChargingSupportTools(ToolKitBase):
     def set_last_fault_code(self, value: str) -> None:
         self._get_session().last_fault_code = value
 
+    def set_error_class(self, value: str) -> None:
+        self._get_session().error_class = ErrorClass(value)
+
     # ------------------------------------------------------------------
     # Assertion helpers (runtime env assertions)
     # ------------------------------------------------------------------
@@ -419,3 +471,6 @@ class EVChargingSupportTools(ToolKitBase):
 
     def assert_last_fault_code(self, expected: str) -> bool:
         return self._get_session().last_fault_code == expected
+
+    def assert_error_class(self, expected: str) -> bool:
+        return self._get_session().error_class == ErrorClass(expected)

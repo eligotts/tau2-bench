@@ -2,7 +2,6 @@ version: 1
 max_tasks: 5
 goal_world_path_prefixes:
   - agent.
-goal_binding_prefixes: []
 seeds:
   - seed_id: telecom_seed_01
     start_world:

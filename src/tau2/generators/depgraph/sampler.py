@@ -74,18 +74,6 @@ def _goal_world_for_state(
     return goals
 
 
-def _goal_bindings_for_state(
-    *,
-    start_bindings: frozenset[str],
-    end_bindings: frozenset[str],
-    prefixes: list[str],
-) -> list[str]:
-    gained = sorted(set(end_bindings) - set(start_bindings))
-    if not prefixes:
-        return gained
-    return [binding_id for binding_id in gained if any(binding_id.startswith(p) for p in prefixes)]
-
-
 def _goal_signature(goal_world: list[WorldPredicateSpec], goal_bindings: list[str]) -> tuple:
     world_part = tuple(sorted((goal.path, repr(goal.value)) for goal in goal_world))
     return (world_part, tuple(sorted(goal_bindings)))
@@ -139,12 +127,8 @@ def sample_task_intents(
                     end_world=next_world,
                     prefixes=request.goal_world_path_prefixes,
                 )
-                goal_bindings = _goal_bindings_for_state(
-                    start_bindings=start_bindings,
-                    end_bindings=next_bindings,
-                    prefixes=request.goal_binding_prefixes,
-                )
-                if not goal_world and not goal_bindings:
+                goal_bindings = sorted(set(next_bindings) - set(start_bindings))
+                if not goal_world:
                     continue
                 required_actions = _ordered_unique(next_plan)
                 signature = (_goal_signature(goal_world, goal_bindings), tuple(required_actions))

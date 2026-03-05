@@ -37,7 +37,7 @@ Examples:
   - Used by sync bridges to update assistant state.
 - Projection-only user field: `user_view.connection_status_text`
   - Display label for user UX.
-  - Not used in `requires`, `produces`, `invalidates`, invariants, or sync guards.
+  - Not used in `requires`, `produces`, invariants, or sync guards.
 
 Rule:
 
@@ -54,7 +54,6 @@ Each action is represented by a contract, not just executable code:
 - `requires: set[Fact]`
 - `requires_absent: set[Fact]` (negative preconditions)
 - `produces: set[Fact]`
-- `invalidates: set[Fact]` (optional)
 - `apply(S, args) -> S'`
 - `stutter_on_fail: bool` (true in most cases)
 
@@ -207,7 +206,7 @@ Contradictions are checked in three layers.
 
 - Every goal fact has a producer.
 - No impossible dependency cycles.
-- Detect destructive interference where required facts are invalidated with no recovery producer.
+- Detect unreachable goal facts (no producer in the action set).
 
 ### 9.3 Dynamic SAT checks
 
@@ -309,11 +308,56 @@ Recommended concrete artifact flow:
 
 ## 14. Anti-Patterns to Avoid
 
-1. Basket tasks where all fixes are independent and parallelizable.
-2. Enforcing sequence only via action-order assertions.
-3. Modeling full user projection state in nodes (state explosion, little value).
-4. Treating no-op discovery calls as causal edges.
-5. Allowing shortcut tools that set deep goal state directly.
+### 14.1 Basket tasks (independent parallel fixes)
+
+All actions are independent — the agent doesn't reason about ordering, just executes a flat
+bag. Symptoms: every action has 0-1 preconditions, no action depends on another action's
+output, user actions have zero cross-dependencies.
+
+Fix: add cross-dependencies so actions form a DAG with genuine ordering constraints.
+Minimum: every set of 3+ same-requestor actions should have at least one internal
+dependency edge.
+
+### 14.2 Sequence-only enforcement
+
+Ordering is enforced only by action-order assertions, not by stateful preconditions. The
+agent can call tools in any order and they succeed — the "sequence" is a scoring artifact,
+not a reasoning requirement.
+
+Fix: every required ordering must be backed by `requires_world` or `requires_bindings`
+preconditions that cause the tool to fail if called out of order.
+
+### 14.3 Single-funnel graphs
+
+The entire contract defines one linear/converging topology. All tasks are prefixes or
+suffixes of the same chain. Tasks differ in length but not in structure — the agent uses
+identical reasoning for depth-5 and depth-15 variants.
+
+Fix: use value-dependent branching (`requires_world` with specific values) so different
+starting states activate different subgraphs. Use multiple bindings so different tasks
+require discovering different information.
+
+### 14.4 Single-binding uniformity
+
+One binding gates every assistant action identically. The agent learns "get X, pass X to
+everything" and repeats the pattern. No information-gathering decisions.
+
+Fix: define 2+ bindings from different source tools. Different actions should require
+different bindings. At least one action should require multiple bindings simultaneously.
+
+### 14.5 Late-only convergence
+
+The only multi-prerequisite action is the final gate. All upstream work proceeds in
+independent lanes with no mid-graph coordination.
+
+Fix: place at least one multi-prerequisite action in the middle of the graph, requiring
+outputs from 2+ upstream paths before the graph can continue.
+
+### 14.6 Other anti-patterns
+
+- Modeling full user projection state in nodes (state explosion, little value).
+- Treating no-op discovery calls as causal edges.
+- Allowing shortcut tools that set deep goal state directly.
 
 ## 15. Minimal Practical Example (Shape)
 

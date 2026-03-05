@@ -251,7 +251,30 @@ Long-horizon chain target:
 - `diagnostics_state` <- `user.view.display_diagnostics_state`
 - `test_charge_state` <- `user.physical.test_charge_state`
 
-## 13. Out of scope (pilot)
+## 13. Persona strategy (candidate)
+
+Persona archetypes for runtime assignment pool:
+
+- `practical_rushed`: high urgency, medium technical comfort, follows concise step-by-step guidance.
+- `practical_technical`: medium urgency, higher technical comfort, can execute technical steps if explicit.
+- `methodical_precise`: lower urgency, high compliance, reports exact tool-grounded observations.
+- `calm_cooperative`: low urgency, cooperative, asks for next step when unresolved.
+- `direct_pragmatic`: medium urgency, concise communicator, executes one requested step at a time.
+
+Behavioral axes:
+
+- technical comfort: low -> medium -> high
+- urgency: low -> high
+- verbosity: concise -> detailed
+- compliance: moderate -> high
+
+Difficulty fit:
+
+- easier tasks: `methodical_precise`, `calm_cooperative`
+- harder tasks: `practical_rushed`, `direct_pragmatic`
+- mixed tasks: `practical_technical`
+
+## 14. Out of scope (pilot)
 
 - Payment amount disputes/refunds and billing plan changes.
 - Reservation/queueing systems across multiple stations.

@@ -1,0 +1,228 @@
+version: 1
+domain: ev_charging_support
+strategy: task_id_hash_mod_candidates
+tasks:
+- task_id: ev_billing_recovery_d12_025
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: ev_billing_recovery_d13_026
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: ev_billing_recovery_d14_027
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: ev_connectivity_recovery_d11_068
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: ev_connectivity_recovery_d12_069
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: ev_connectivity_recovery_d13_070
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: ev_full_system_recovery_d15_148
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: ev_full_system_recovery_d16_149
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: ev_full_system_recovery_d17_150
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: ev_billing_partial_knowledge_d11_176
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: ev_billing_partial_knowledge_d12_177
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: ev_billing_partial_knowledge_d13_178
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: ev_connectivity_partial_physical_d5_183
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: ev_connectivity_partial_physical_d8_189
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: ev_connectivity_partial_physical_d9_190
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: ev_connectivity_partial_physical_d10_191
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
