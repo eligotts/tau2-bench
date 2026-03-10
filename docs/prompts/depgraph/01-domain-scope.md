@@ -24,14 +24,22 @@ Requirements:
 9. List assistant tools with rough behavior and whether they are read/write in practice.
 10. List user tools with rough behavior, including which are causal vs likely stutter/read-only.
 11. Describe sync/world logic at a high level (`user -> agent` bridges and `agent -> user projection` updates).
-12. Design dependency patterns that produce **structurally diverse** tasks (see Structural Diversity below).
-13. Capture likely shortcut risks and ambiguity risks.
-14. Identify candidate user-observable fields that can support strict stop-gating (`check_resolution_status`).
-15. Define persona strategy for later runtime sampling:
+12. If a user-visible value is derived through sync, identify its single canonical source field or the exact explicit prereqs that drive it.
+13. For each candidate binding, decide whether it is stable context or a volatile stage token:
+   - stable context can safely flow through multiple downstream tools
+   - volatile stage tokens should gate only immediate observation-driven transitions, with explicit reread points in policy
+   - express those reread points as decision rules, not as a full numbered recovery script
+14. Design dependency patterns that produce **structurally diverse** tasks (see Structural Diversity below).
+15. Capture likely shortcut risks and ambiguity risks.
+16. Identify candidate user-observable fields that can support strict stop-gating (`check_resolution_status`).
+17. Identify canonical terminal end states for each branch:
+   - distinguish true resolution states from useful intermediate milestones
+   - note which fields prove the issue is actually done from both agent-state and user-observable perspectives
+18. Define persona strategy for later runtime sampling:
    - 2-5 persona archetypes
    - behavioral axes (for example: technical comfort, urgency, verbosity, compliance)
    - note which archetypes are better for easy vs hard tasks
-16. Keep this file instance-agnostic:
+19. Keep this file instance-agnostic:
    - no concrete task IDs
    - no concrete required action sequences
    - no fixed goal baskets yet
@@ -76,11 +84,20 @@ Design for these properties:
    Design tools where some need binding A, some need binding B, and one critical tool
    needs both.
 
+6. **Volatile-stage discipline.** If a user-visible value changes as recovery progresses
+   (for example a screen fault code that advances after each repair), decide up front
+   which steps truly need the current observed value. The long middle of the repair chain
+   should usually run on stable world state established by diagnostics, not on repeated
+   reuse of a moving observation token.
+
 When sketching dependency patterns in this step, explicitly note:
 - How many distinct bindings the domain will have and their source tools
 - Which actions branch based on discovered values (value-gated actions)
 - What ordering constraints exist between user-side actions
 - Where early convergence points force cross-lane coordination
+- Which bindings are volatile and where the policy must instruct the agent to reacquire them
+- How the policy will expose tool affordances and hard constraints without hardcoding a single end-to-end solution path
+- Which branch-specific terminal profiles the sampler should use, and why shorter tasks should come from easier starts rather than partial endings
 
 Output sections:
 

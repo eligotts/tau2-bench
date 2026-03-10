@@ -8,6 +8,7 @@ Use this checklist in addition to step-specific prompts.
 2. Gating is encoded in runtime/tool semantics, not only in prompts.
 3. `knowledge-only` actions produce bindings; `stutter-only` actions produce no world/binding deltas.
 4. Projection-only fields are not used in causal contract predicates/effects.
+5. Volatile bindings are only mapped into immediate observation-driven tools or clearly mutually-exclusive stage-specific tools.
 
 ## 2. Structural Provenance
 
@@ -18,6 +19,7 @@ Use this checklist in addition to step-specific prompts.
    - `start_bindings`
    - `goal_world`
    - `goal_bindings`
+   - `terminal_profile_id`
    - `required_actions`
    - `required_precedence`
 4. Runtime authoring only edits:
@@ -36,6 +38,16 @@ Use this checklist in addition to step-specific prompts.
    - STOP only when `resolved=true`
    - continue/report unmet items when `resolved=false`
 4. `check_resolution_status` is stutter-only and deterministic.
+5. `policy.md` names every contract-visible tool, teaches volatile reread points and stop semantics, and tells the agent what to do on both `resolved=true` and `resolved=false`.
+6. `policy.md` is written as constraints, observables, and tool affordances, not as a hidden task-by-task solve script.
+
+## 3A. Terminality Discipline
+
+1. `sampling_request.yaml` declares explicit `terminal_profiles`.
+2. Every sampling seed declares `allowed_terminal_profiles`.
+3. Every sampled/runtime task has a non-empty `terminal_profile_id`.
+4. Shorter tasks come from easier `start_world` seeds, not from intermediate partial-repair end states.
+5. Milestone tasks are only allowed when they use an explicit milestone terminal profile plus a matching prompt/tool surface.
 
 ## 4. Runtime Mapping
 
@@ -43,6 +55,8 @@ Use this checklist in addition to step-specific prompts.
 2. Every runtime init/assert callable exists and has valid argument shape.
 3. Binding-source extraction paths are typed and schema-checkable where possible.
 4. `sync_tools()` mirrors contract causal bridges and projects stop-gate observable fields.
+5. `sync_tools()` behavior is fully declared in `sync_rules`; there is no extra hidden sync logic.
+6. Any goal/world path produced only through sync is represented in `projection_fields` and stop-gate mappings if user-observable.
 
 ## 5. Quality and Diversity
 
@@ -51,6 +65,8 @@ Use this checklist in addition to step-specific prompts.
 3. Long-horizon paths use `min_depth >= 4` unless domain constraints justify shorter chains.
 4. Persona pool exists (`personas.yaml`) with at least 2 distinct `persona_id` values.
 5. Runtime persona assignments come from the pool and are reasonably distributed across tasks.
+6. Sampling seed depth budgets are large enough for any required binding re-acquisition after invalidation.
+7. If repeated binding reacquisition is expected, correctness is driven by `ENV_ASSERTION`/stop-gate, not `ACTION` alone.
 
 ## 6. Fail-Closed Commands
 
@@ -106,6 +122,8 @@ uv run python -m tau2.generators.depgraph.run_preflight \
   --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
   --task-specs data/tau2/domains/<domain>/task_specs.runtime.yaml \
   --domain <domain> \
+  --sampling-request data/tau2/domains/<domain>/sampling_request.yaml \
+  --policy data/tau2/domains/<domain>/policy.md \
   --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
   --strict-tool-coverage
 
@@ -113,6 +131,22 @@ uv run python -m tau2.generators.depgraph.run_compile \
   --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
   --task-specs data/tau2/domains/<domain>/task_specs.runtime.yaml \
   --domain <domain> \
+  --sampling-request data/tau2/domains/<domain>/sampling_request.yaml \
   --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
   --out data/tau2/domains/<domain>/tasks.depgraph.json
+
+uv run python -m tau2.generators.depgraph.run_review_bundle \
+  --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
+  --task-specs data/tau2/domains/<domain>/task_specs.runtime.yaml \
+  --domain <domain> \
+  --policy data/tau2/domains/<domain>/policy.md \
+  --domain-scope data/tau2/domains/<domain>/domain_scope.md \
+  --runtime-defaults data/tau2/domains/<domain>/runtime_defaults.yaml \
+  --sampling-request data/tau2/domains/<domain>/sampling_request.yaml \
+  --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
+  --out data/tau2/domains/<domain>/review_bundle.md
 ```
+
+Then run `docs/prompts/depgraph/05-gap-review.md` in `Mode A: authoring audit`
+against `review_bundle.md` plus the cited source files. Fix or explicitly waive all
+high-severity findings before simulation or sign-off.

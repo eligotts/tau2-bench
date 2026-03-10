@@ -20,7 +20,12 @@ from tau2.data_model.tasks import (
 )
 from tau2.generators.depgraph.preflight import run_task_preflight
 from tau2.generators.depgraph.runtime_checks import check_task_runtime_fields
-from tau2.generators.depgraph.types import GraphContractSpec, TaskIntent, TaskSpecsDoc
+from tau2.generators.depgraph.types import (
+    GraphContractSpec,
+    TaskIntent,
+    TaskSpecsDoc,
+    TerminalProfileSpec,
+)
 
 
 @dataclass
@@ -118,13 +123,27 @@ def preflight_and_compile(
     contract: GraphContractSpec,
     task_doc: TaskSpecsDoc,
     *,
-    max_depth: int = 20,
+    max_depth: int | None = None,
     require_runtime: bool = True,
+    terminal_profiles: list[TerminalProfileSpec] | dict[str, TerminalProfileSpec] | None = None,
+    require_terminal_profile: bool = False,
 ) -> CompileResult:
     """Run preflight checks and compile passing tasks."""
     result = CompileResult()
+    effective_max_depth = max_depth
+    if effective_max_depth is None:
+        effective_max_depth = max(
+            20,
+            max((task.min_plan_length for task in task_doc.tasks), default=0),
+        )
     for task in task_doc.tasks:
-        report = run_task_preflight(contract, task, max_depth=max_depth)
+        report = run_task_preflight(
+            contract,
+            task,
+            max_depth=effective_max_depth,
+            terminal_profiles=terminal_profiles,
+            require_terminal_profile=require_terminal_profile,
+        )
         if not report.passed:
             result.skipped.append(task.task_id)
             preflight_reason = "; ".join(report.issues) if report.issues else (

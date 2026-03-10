@@ -6,12 +6,18 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
-from tau2.generators.depgraph.preflight import TaskPreflightReport, run_task_preflight
+from tau2.generators.depgraph.preflight import (
+    TaskPreflightReport,
+    run_task_preflight,
+    stable_goal_bindings,
+    terminal_profile_map,
+    world_matches_terminal_profile,
+)
 from tau2.generators.depgraph.semantics import (
     apply_action,
     index_binding_sources,
     is_action_enabled,
-    world_from_effects,
+    materialize_world,
     world_state_key,
 )
 from tau2.generators.depgraph.types import (
@@ -87,10 +93,18 @@ def sample_task_intents(
     sampled: list[SampledTask] = []
     seen_signatures: set[tuple[tuple, tuple[str, ...]]] = set()
     binding_sources_by_id = index_binding_sources(contract.bindings)
+    terminal_profiles_by_id = terminal_profile_map(request.terminal_profiles)
     task_counter = 0
 
     for seed in request.seeds:
-        start_world, seed_issues = world_from_effects(seed.start_world)
+        allowed_terminal_profiles = [
+            terminal_profiles_by_id[profile_id]
+            for profile_id in seed.allowed_terminal_profiles
+        ]
+        start_world, seed_issues = materialize_world(
+            seed.start_world,
+            sync_rules=contract.sync_rules,
+        )
         if seed_issues:
             continue
         start_bindings = frozenset(seed.start_bindings)
@@ -109,7 +123,13 @@ def sample_task_intents(
             for action in contract.actions:
                 if not is_action_enabled(action, node.world, node.bindings, binding_sources_by_id):
                     continue
-                next_world, next_bindings = apply_action(action, node.world, node.bindings)
+                next_world, next_bindings = apply_action(
+                    action,
+                    node.world,
+                    node.bindings,
+                    sync_rules=contract.sync_rules,
+                    binding_specs=contract.bindings,
+                )
                 if next_world == node.world and next_bindings == node.bindings:
                     continue
                 next_plan = node.plan + [action.action_id]
@@ -117,21 +137,40 @@ def sample_task_intents(
                 if state_key in visited:
                     continue
                 visited.add(state_key)
-                queue.append(_Node(world=next_world, bindings=next_bindings, plan=next_plan))
+
+                matched_terminal_profile = next(
+                    (
+                        profile
+                        for profile in allowed_terminal_profiles
+                        if world_matches_terminal_profile(next_world, profile)
+                    ),
+                    None,
+                )
+                if matched_terminal_profile is None:
+                    queue.append(
+                        _Node(world=next_world, bindings=next_bindings, plan=next_plan)
+                    )
 
                 depth = len(next_plan)
-                if depth < seed.min_depth:
+                if depth < seed.min_depth or matched_terminal_profile is None:
                     continue
                 goal_world = _goal_world_for_state(
                     start_world=start_world,
                     end_world=next_world,
                     prefixes=request.goal_world_path_prefixes,
                 )
-                goal_bindings = sorted(set(next_bindings) - set(start_bindings))
+                goal_bindings = stable_goal_bindings(
+                    contract,
+                    sorted(set(next_bindings) - set(start_bindings)),
+                )
                 if not goal_world:
                     continue
                 required_actions = _ordered_unique(next_plan)
-                signature = (_goal_signature(goal_world, goal_bindings), tuple(required_actions))
+                signature = (
+                    _goal_signature(goal_world, goal_bindings),
+                    tuple(required_actions),
+                    matched_terminal_profile.profile_id,
+                )
                 if signature in seen_signatures:
                     continue
                 seen_signatures.add(signature)
@@ -144,12 +183,19 @@ def sample_task_intents(
                     start_bindings=seed.start_bindings,
                     goal_world=goal_world,
                     goal_bindings=goal_bindings,
+                    terminal_profile_id=matched_terminal_profile.profile_id,
                     required_actions=required_actions,
                     required_precedence=_plan_precedence(next_plan),
                     min_plan_length=depth,
                     runtime=None,
                 )
-                report = run_task_preflight(contract, candidate, max_depth=seed.max_depth)
+                report = run_task_preflight(
+                    contract,
+                    candidate,
+                    max_depth=seed.max_depth,
+                    terminal_profiles=terminal_profiles_by_id,
+                    require_terminal_profile=True,
+                )
                 if report.passed:
                     sampled.append(SampledTask(task=candidate, report=report))
                     if len(sampled) >= request.max_tasks:

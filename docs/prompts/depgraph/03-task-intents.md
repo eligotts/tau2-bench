@@ -18,10 +18,14 @@ uv run python -m tau2.generators.depgraph.run_sampler \
 
 1. `max_tasks`
 2. `goal_world_path_prefixes`
-3. `seeds[]`:
+3. `terminal_profiles[]`:
+   - `profile_id`
+   - `requires_world`
+4. `seeds[]`:
    - `seed_id`
    - `start_world` (list of `{path, set}`)
    - optional `start_bindings`
+   - `allowed_terminal_profiles`
    - `min_depth`
    - `max_depth`
 
@@ -34,6 +38,7 @@ Requirements:
 5. Keep structure abstract:
    - no concrete customer/account IDs in sampled intents
    - bind concrete entities later in runtime enrichment.
+6. Every sampled task must end in an explicit terminal profile. Do not use intermediate repair states as ordinary task ends.
 
 ## Seed Design for Structural Diversity
 
@@ -81,6 +86,17 @@ identical reasoning.
 or different value-gated branches. Even if depths overlap, the tasks test different
 decision-making.
 
+## Terminal Profiles
+
+Terminal profiles define the states that count as legitimate task endings.
+
+- Put terminality in `terminal_profiles`, not in ad hoc depth cutoffs.
+- A seed may only emit tasks whose end state matches one of its `allowed_terminal_profiles`.
+- Shorter tasks should come from seeds that start closer to resolution, not from stopping in
+  the middle of an otherwise-fixable repair chain.
+- If the domain needs milestone tasks, model them explicitly as milestone profiles with a
+  matching prompt/tool surface. Do not reuse a full-resolution policy and then stop halfway.
+
 Acceptance checks:
 
 1. `task_specs.sampled.yaml` is generated.
@@ -91,3 +107,4 @@ Acceptance checks:
 6. **Structural diversity check**: count distinct `required_actions` sets (ignoring order)
    across all sampled tasks. At least 60% of tasks should have a unique action set, not
    just a prefix/suffix of another task's set.
+7. Every sampled task has a non-empty `terminal_profile_id`.

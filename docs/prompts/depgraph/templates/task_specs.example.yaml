@@ -16,6 +16,7 @@ tasks:
         path: agent.lines[active_line].data_status
         value: active
     goal_bindings: []
+    terminal_profile_id: fully_resolved
     required_actions:
       - acquire_iccid
       - restart_phone

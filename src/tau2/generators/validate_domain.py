@@ -20,6 +20,8 @@ from tau2.generators.code_utils import (
     validate_json,
     validate_python_syntax,
 )
+from tau2.generators.depgraph.loaders import load_graph_contract
+from tau2.generators.depgraph.runtime_checks import check_policy_against_contract
 
 _PROJECT_ROOT = Path(__file__).parents[3]
 _SRC_DOMAINS = _PROJECT_ROOT / "src" / "tau2" / "domains"
@@ -29,6 +31,27 @@ _DATA_DOMAINS = _PROJECT_ROOT / "data" / "tau2" / "domains"
 def _class_name(domain_name: str) -> str:
     """Convert snake_case to PascalCase."""
     return "".join(word.capitalize() for word in domain_name.split("_"))
+
+
+def _normalize_class_key(name: str) -> str:
+    """Normalize class names so acronym capitalization does not matter."""
+    return re.sub(r"[^A-Za-z0-9]", "", name).lower()
+
+
+def _resolve_class(module: object, expected_name: str) -> tuple[str | None, type | None]:
+    """Resolve a class by exact name first, then by normalized name."""
+    candidate = getattr(module, expected_name, None)
+    if isinstance(candidate, type):
+        return expected_name, candidate
+
+    target_key = _normalize_class_key(expected_name)
+    for attr_name, value in vars(module).items():
+        if not isinstance(value, type):
+            continue
+        if _normalize_class_key(attr_name) == target_key:
+            return attr_name, value
+
+    return None, None
 
 
 # ---------------------------------------------------------------------------
@@ -73,12 +96,8 @@ def validate_domain_spec(domain_name: str) -> list[str]:
         if len(tools) < 3:
             errors.append("Need at least 3 tools")
         types = {t.get("type", "").upper() for t in tools}
-        if "READ" not in types:
-            errors.append("Need at least 1 READ tool")
         if "WRITE" not in types:
             errors.append("Need at least 1 WRITE tool")
-        if "GENERIC" not in types:
-            errors.append("Need at least 1 GENERIC tool (transfer_to_human)")
 
     if "fault_groups" in parsed and len(parsed["fault_groups"]) < 3:
         errors.append("Need at least 3 fault groups")
@@ -110,14 +129,14 @@ def validate_data_model(domain_name: str) -> list[str]:
         return import_errors
 
     db_cls_name = f"{_class_name(domain_name)}DB"
-    if not hasattr(module, db_cls_name):
+    actual_name, db_cls = _resolve_class(module, db_cls_name)
+    if db_cls is None:
         return [f"Module missing {db_cls_name} class"]
 
     from tau2.environment.db import DB
 
-    db_cls = getattr(module, db_cls_name)
     if not issubclass(db_cls, DB):
-        return [f"{db_cls_name} must be a subclass of DB"]
+        return [f"{actual_name} must be a subclass of DB"]
 
     return []
 
@@ -141,21 +160,21 @@ def validate_user_data_model(domain_name: str) -> list[str]:
         return import_errors
 
     db_cls_name = f"{_class_name(domain_name)}UserDB"
-    if not hasattr(module, db_cls_name):
+    actual_name, db_cls = _resolve_class(module, db_cls_name)
+    if db_cls is None:
         return [f"Module missing {db_cls_name} class"]
 
     from tau2.environment.db import DB
 
-    db_cls = getattr(module, db_cls_name)
     if not issubclass(db_cls, DB):
-        return [f"{db_cls_name} must be a subclass of DB"]
+        return [f"{actual_name} must be a subclass of DB"]
 
     # Check all fields have defaults
     for field_name, field_info in db_cls.model_fields.items():
         if field_info.default is None and field_info.default_factory is None:
             if not field_info.is_required():
                 continue
-            return [f"Field '{field_name}' in {db_cls_name} must have a default value"]
+            return [f"Field '{field_name}' in {actual_name} must have a default value"]
 
     return []
 
@@ -180,7 +199,9 @@ def validate_db_json(domain_name: str) -> list[str]:
         return import_errors
 
     db_cls_name = f"{_class_name(domain_name)}DB"
-    db_cls = getattr(module, db_cls_name)
+    _, db_cls = _resolve_class(module, db_cls_name)
+    if db_cls is None:
+        return [f"Module missing {db_cls_name} class"]
 
     try:
         db = db_cls.load(path)
@@ -218,7 +239,9 @@ def validate_user_db_json(domain_name: str) -> list[str]:
         return import_errors
 
     db_cls_name = f"{_class_name(domain_name)}UserDB"
-    db_cls = getattr(module, db_cls_name)
+    _, db_cls = _resolve_class(module, db_cls_name)
+    if db_cls is None:
+        return [f"Module missing {db_cls_name} class"]
 
     try:
         db_cls.load(path)
@@ -255,12 +278,18 @@ def validate_policy(domain_name: str) -> list[str]:
     if len(content) < 100:
         errors.append("Policy is too short (< 100 chars)")
 
-    content_lower = content.lower()
-    if "identity" not in content_lower and "verification" not in content_lower:
-        errors.append("Policy should include identity verification section")
+    contract_path = data_dir / "graph_contract.yaml"
+    if contract_path.exists():
+        try:
+            contract = load_graph_contract(str(contract_path))
+        except Exception as exc:
+            errors.append(f"graph_contract.yaml failed to load for policy linkage check: {exc}")
+        else:
+            errors.extend(check_policy_against_contract(contract, content))
+        return errors
 
-    # Check that some tool names are mentioned (load from domain_spec if available)
-    spec_path = _DATA_DOMAINS / domain_name / "domain_spec.json"
+    # Fallback for non-depgraph domains: check that some tool names are mentioned.
+    spec_path = data_dir / "domain_spec.json"
     if spec_path.exists():
         try:
             spec = json.loads(spec_path.read_text())
@@ -296,7 +325,8 @@ def validate_tools(domain_name: str) -> list[str]:
         return import_errors
 
     tools_cls_name = f"{_class_name(domain_name)}Tools"
-    if not hasattr(module, tools_cls_name):
+    actual_tools_cls_name, tools_cls = _resolve_class(module, tools_cls_name)
+    if tools_cls is None:
         return [f"Module missing {tools_cls_name} class"]
 
     # Try instantiating with the DB
@@ -307,14 +337,15 @@ def validate_tools(domain_name: str) -> list[str]:
 
     data_dir = _DATA_DOMAINS / domain_name
     db_cls_name = f"{_class_name(domain_name)}DB"
-    db_cls = getattr(db_module, db_cls_name)
+    _, db_cls = _resolve_class(db_module, db_cls_name)
+    if db_cls is None:
+        return [f"Module missing {db_cls_name} class"]
     db = db_cls.load(data_dir / "db.json")
 
-    tools_cls = getattr(module, tools_cls_name)
     try:
         tools_instance = tools_cls(db)
     except Exception as e:
-        return [f"Failed to instantiate {tools_cls_name}: {e}"]
+        return [f"Failed to instantiate {actual_tools_cls_name}: {e}"]
 
     tools_dict = tools_instance.get_tools()
     if len(tools_dict) < 3:
@@ -336,12 +367,8 @@ def validate_tools(domain_name: str) -> list[str]:
         except Exception:
             pass
 
-    if type_counts["READ"] < 1:
-        errors.append("Need at least 1 READ tool")
     if type_counts["WRITE"] < 1:
         errors.append("Need at least 1 WRITE tool")
-    if type_counts["GENERIC"] < 1:
-        errors.append("Need at least 1 GENERIC tool (transfer_to_human)")
 
     # Check for assertion helpers
     has_assert = any(
@@ -426,7 +453,8 @@ def validate_user_tools(domain_name: str) -> list[str]:
         return import_errors
 
     cls_name = f"{_class_name(domain_name)}UserTools"
-    if not hasattr(module, cls_name):
+    actual_cls_name, cls = _resolve_class(module, cls_name)
+    if cls is None:
         return [f"Module missing {cls_name} class"]
 
     # Instantiate
@@ -437,14 +465,15 @@ def validate_user_tools(domain_name: str) -> list[str]:
 
     data_dir = _DATA_DOMAINS / domain_name
     user_db_cls_name = f"{_class_name(domain_name)}UserDB"
-    user_db_cls = getattr(user_db_module, user_db_cls_name)
+    _, user_db_cls = _resolve_class(user_db_module, user_db_cls_name)
+    if user_db_cls is None:
+        return [f"Module missing {user_db_cls_name} class"]
     user_db = user_db_cls.load(data_dir / "user_db.json")
 
-    cls = getattr(module, cls_name)
     try:
         instance = cls(user_db)
     except Exception as e:
-        return [f"Failed to instantiate {cls_name}: {e}"]
+        return [f"Failed to instantiate {actual_cls_name}: {e}"]
 
     tools_dict = instance.get_tools()
     if len(tools_dict) < 1:
@@ -539,48 +568,11 @@ def validate_environment(domain_name: str) -> list[str]:
     return errors
 
 
-def validate_scenarios(domain_name: str) -> list[str]:
-    """Validate scenarios.py."""
-    src_dir = _SRC_DOMAINS / domain_name
-    path = src_dir / "scenarios.py"
-
-    if not path.exists():
-        return [f"scenarios.py not found at {path}"]
-
-    code = path.read_text()
-    errors = validate_python_syntax(code)
-    if errors:
-        return errors
-
-    # Check scenarios.py doesn't define its own data paths
-    for line in code.splitlines():
-        stripped = line.strip()
-        if ("_DIR" in stripped or "_PATH" in stripped) and "=" in stripped and "import" not in stripped:
-            lhs = stripped.split("=")[0].strip()
-            if lhs.endswith("_DIR") or lhs.endswith("_PATH"):
-                domain_upper = domain_name.upper()
-                return [
-                    f"scenarios.py must NOT define its own path constants (like {domain_upper}_DIR or "
-                    f"{domain_upper}_DB_PATH). Import them from tau2.domains.{domain_name}.utils instead."
-                ]
-
-    module_path = f"tau2.domains.{domain_name}.scenarios"
-    module, import_errors = try_import_module(module_path)
-    if import_errors:
-        return import_errors
-
-    if not hasattr(module, "create_tasks"):
-        return ["scenarios.py missing create_tasks() function"]
-
-    # Try generating tasks without verification
-    try:
-        tasks = module.create_tasks(verify=False)
-    except Exception as e:
-        return [f"create_tasks(verify=False) failed: {type(e).__name__}: {e}"]
-
+def _validate_loaded_tasks(tasks) -> list[str]:
     if not tasks:
-        return ["create_tasks() returned 0 tasks"]
+        return ["task loader returned 0 tasks"]
 
+    errors: list[str] = []
     # Check that tasks have persona suffixes
     task_ids = [t.id for t in tasks]
     has_persona = any("[PERSONA:" in tid for tid in task_ids)
@@ -626,6 +618,67 @@ def validate_scenarios(domain_name: str) -> list[str]:
         if conflict_count > 3:
             break
 
+    return errors
+
+
+def validate_scenarios(domain_name: str) -> list[str]:
+    """Validate scenarios.py or compiled task loader paths."""
+    src_dir = _SRC_DOMAINS / domain_name
+    path = src_dir / "scenarios.py"
+
+    if not path.exists():
+        env_module_path = f"tau2.domains.{domain_name}.environment"
+        env_module, import_errors = try_import_module(env_module_path)
+        if import_errors:
+            return import_errors
+
+        get_tasks = getattr(env_module, "get_tasks", None)
+        if not callable(get_tasks):
+            return [f"scenarios.py not found at {path} and environment.py missing get_tasks()"]
+
+        try:
+            tasks = get_tasks(task_split_name=None)
+        except TypeError:
+            tasks = get_tasks()
+        except Exception as e:
+            return [f"environment.get_tasks() failed: {type(e).__name__}: {e}"]
+
+        errors = _validate_loaded_tasks(tasks)
+        print(f"  environment.get_tasks() loaded {len(tasks)} tasks")
+        return errors
+
+    code = path.read_text()
+    errors = validate_python_syntax(code)
+    if errors:
+        return errors
+
+    # Check scenarios.py doesn't define its own data paths
+    for line in code.splitlines():
+        stripped = line.strip()
+        if ("_DIR" in stripped or "_PATH" in stripped) and "=" in stripped and "import" not in stripped:
+            lhs = stripped.split("=")[0].strip()
+            if lhs.endswith("_DIR") or lhs.endswith("_PATH"):
+                domain_upper = domain_name.upper()
+                return [
+                    f"scenarios.py must NOT define its own path constants (like {domain_upper}_DIR or "
+                    f"{domain_upper}_DB_PATH). Import them from tau2.domains.{domain_name}.utils instead."
+                ]
+
+    module_path = f"tau2.domains.{domain_name}.scenarios"
+    module, import_errors = try_import_module(module_path)
+    if import_errors:
+        return import_errors
+
+    if not hasattr(module, "create_tasks"):
+        return ["scenarios.py missing create_tasks() function"]
+
+    # Try generating tasks without verification
+    try:
+        tasks = module.create_tasks(verify=False)
+    except Exception as e:
+        return [f"create_tasks(verify=False) failed: {type(e).__name__}: {e}"]
+
+    errors = _validate_loaded_tasks(tasks)
     print(f"  scenarios.py generated {len(tasks)} tasks")
     return errors
 

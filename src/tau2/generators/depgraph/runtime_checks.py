@@ -9,6 +9,7 @@ from typing import Any, Callable, get_args, get_origin
 from pydantic import BaseModel
 
 from tau2.environment.environment import Environment
+from tau2.generators.depgraph.semantics import materialize_world
 from tau2.generators.depgraph.types import GraphContractSpec, TaskIntent, TaskSpecsDoc
 
 _EXTRACTION_TOKEN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -121,6 +122,50 @@ def _check_call_args(func: Callable[..., Any], args: dict[str, Any]) -> list[str
     return issues
 
 
+def _binding_is_volatile(contract: GraphContractSpec, world_path: str | None) -> bool:
+    """A binding is volatile when normal action or sync effects can rewrite its world_path."""
+    if world_path is None:
+        return False
+    for action in contract.actions:
+        for effect in action.effects_world:
+            if effect.path == world_path:
+                return True
+    for rule in contract.sync_rules:
+        for effect in rule.effects_world:
+            if effect.path == world_path:
+                return True
+    return False
+
+
+def _volatile_binding_stage_key(action: Any, world_path: str) -> tuple[str, ...]:
+    """Return any explicit value-gating this action declares on a volatile binding path."""
+    values = {
+        repr(predicate.value)
+        for predicate in action.requires_world
+        if predicate.path == world_path and predicate.op == "eq"
+    }
+    return tuple(sorted(values))
+
+
+def _actions_are_mutually_exclusive(action_a: Any, action_b: Any) -> bool:
+    """Two actions are mutually exclusive when they require different eq values on the same path."""
+    eq_a: dict[str, set[str]] = {}
+    eq_b: dict[str, set[str]] = {}
+
+    for predicate in action_a.requires_world:
+        if predicate.op == "eq":
+            eq_a.setdefault(predicate.path, set()).add(repr(predicate.value))
+    for predicate in action_b.requires_world:
+        if predicate.op == "eq":
+            eq_b.setdefault(predicate.path, set()).add(repr(predicate.value))
+
+    shared_paths = set(eq_a) & set(eq_b)
+    for path in shared_paths:
+        if eq_a[path].isdisjoint(eq_b[path]):
+            return True
+    return False
+
+
 def _resolve_runtime_callable(
     environment: Environment,
     env_type: str,
@@ -149,6 +194,7 @@ def check_contract_against_environment(
     """Validate contract tool/binding references against a concrete tau2 environment."""
     issues: list[str] = []
     environment = environment_constructor()
+    projection_set = set(contract.projection_fields)
     assistant_tools = set(environment.tools.get_tools().keys()) if environment.tools else set()
     user_tools = (
         set(environment.user_tools.get_tools().keys()) if environment.user_tools else set()
@@ -242,6 +288,69 @@ def check_contract_against_environment(
                 f"user tool '{source.source_tool}'"
             )
 
+    for source in contract.bindings:
+        if not _binding_is_volatile(contract, source.world_path):
+            continue
+        consumers = [
+            action
+            for action in contract.actions
+            if action.classification != "knowledge-only"
+            and source.binding_id in action.tool_arg_bindings.values()
+        ]
+        if len(consumers) <= 1:
+            continue
+
+        generic_consumers: list[str] = []
+        stage_consumers: dict[tuple[str, ...], list[str]] = {}
+        for action in consumers:
+            stage_key = _volatile_binding_stage_key(action, source.world_path or "")
+            if not stage_key:
+                generic_consumers.append(action.action_id)
+                continue
+            stage_consumers.setdefault(stage_key, []).append(action.action_id)
+
+        if len(generic_consumers) > 1:
+            issues.append(
+                f"Volatile binding '{source.binding_id}' (world_path '{source.world_path}') "
+                f"is mapped into tool args by multiple generic actions "
+                f"{sorted(generic_consumers)}. Capture stable operational context in world "
+                f"state or make later consumers stage-specific via requires_world on "
+                f"'{source.world_path}'."
+            )
+        for stage_key, action_ids in sorted(stage_consumers.items()):
+            stage_actions = [
+                action
+                for action in consumers
+                if _volatile_binding_stage_key(action, source.world_path or "") == stage_key
+            ]
+            if len(action_ids) > 1 and not all(
+                _actions_are_mutually_exclusive(stage_actions[i], stage_actions[j])
+                for i in range(len(stage_actions))
+                for j in range(i + 1, len(stage_actions))
+            ):
+                issues.append(
+                    f"Volatile binding '{source.binding_id}' (world_path '{source.world_path}') "
+                    f"is reused by multiple actions {sorted(action_ids)} at the same staged "
+                    f"value(s) {list(stage_key)}. This is brittle: keep only one immediate "
+                    f"consumer per observed stage or replace the binding with stable world state."
+                )
+
+    for rule in contract.sync_rules:
+        for predicate in rule.requires_world:
+            if predicate.path not in projection_set:
+                issues.append(
+                    f"Sync rule '{rule.rule_id}' references unknown path '{predicate.path}'"
+                )
+        for effect in rule.effects_world:
+            if effect.path not in projection_set:
+                issues.append(
+                    f"Sync rule '{rule.rule_id}' writes to unknown path '{effect.path}'"
+                )
+            if effect.from_path is not None and effect.from_path not in projection_set:
+                issues.append(
+                    f"Sync rule '{rule.rule_id}' copies from unknown path '{effect.from_path}'"
+                )
+
     if strict_full_coverage:
         missing_assistant = sorted(assistant_tools - contracted_assistant_tools)
         if missing_assistant:
@@ -255,6 +364,43 @@ def check_contract_against_environment(
             issues.append(
                 "Unclassified user tools (missing in action contracts/binding sources): "
                 + ", ".join(missing_user)
+            )
+
+    return issues
+
+
+def check_policy_against_contract(
+    contract: GraphContractSpec,
+    policy_text: str,
+) -> list[str]:
+    """Validate that policy.md explicitly exposes the contract-visible tool surface."""
+    issues: list[str] = []
+    lowered = policy_text.lower()
+
+    required_tool_names = {binding.source_tool for binding in contract.bindings}
+    required_tool_names.update(action.tool_name for action in contract.actions)
+
+    for tool_name in sorted(required_tool_names):
+        if tool_name.lower() not in lowered:
+            issues.append(
+                f"policy.md does not mention tool '{tool_name}'. Policies may stay high-level, "
+                f"but they must name every contract-visible tool explicitly so the agent prompt "
+                f"matches the runtime surface."
+            )
+
+    has_resolution_checker = any(
+        action.tool_name == "check_resolution_status" for action in contract.actions
+    )
+    if has_resolution_checker:
+        if "resolved=true" not in lowered and "resolved = true" not in lowered:
+            issues.append(
+                "policy.md must explicitly tell the agent that STOP is allowed only when "
+                "'check_resolution_status' returns resolved=true."
+            )
+        if "resolved=false" not in lowered and "resolved = false" not in lowered:
+            issues.append(
+                "policy.md must explicitly tell the agent what to do when "
+                "'check_resolution_status' returns resolved=false."
             )
 
     return issues
@@ -374,9 +520,12 @@ def check_start_bindings_visibility(
         if task.runtime is None:
             continue
 
-        sw: dict[str, Any] = {}
-        for effect in task.start_world:
-            sw[effect.path] = effect.set
+        sw, sw_issues = materialize_world(task.start_world, sync_rules=contract.sync_rules)
+        if sw_issues:
+            issues.extend(
+                f"Task '{task.task_id}' has invalid start_world: {issue}" for issue in sw_issues
+            )
+            continue
 
         for binding_id in task.start_bindings:
             source = binding_map.get(binding_id)

@@ -73,6 +73,78 @@ rules:
     observed_from: check_resolution_status.observed.retry_state
 
   - goal_path: agent.sessions[active_session].last_fault_code
+    goal_value: STATION_UNREACHABLE
+    check_field: fault_code
+    check_op: eq
+    expected: STATION_UNREACHABLE
+    unmet_reason: Station still shows a station-unreachable fault.
+    observed_from: check_resolution_status.observed.fault_code
+
+  - goal_path: agent.sessions[active_session].last_fault_code
+    goal_value: NET-410
+    check_field: fault_code
+    check_op: eq
+    expected: NET-410
+    unmet_reason: Station still shows a backend-link fault.
+    observed_from: check_resolution_status.observed.fault_code
+
+  - goal_path: agent.sessions[active_session].last_fault_code
+    goal_value: CERT-409
+    check_field: fault_code
+    check_op: eq
+    expected: CERT-409
+    unmet_reason: Station still shows a certificate fault.
+    observed_from: check_resolution_status.observed.fault_code
+
+  - goal_path: agent.sessions[active_session].last_fault_code
+    goal_value: BH-101
+    check_field: fault_code
+    check_op: eq
+    expected: BH-101
+    unmet_reason: Station still shows the billing-hold fault code.
+    observed_from: check_resolution_status.observed.fault_code
+
+  - goal_path: agent.sessions[active_session].last_fault_code
+    goal_value: PAY-201
+    check_field: fault_code
+    check_op: eq
+    expected: PAY-201
+    unmet_reason: Station still shows the payment-token fault code.
+    observed_from: check_resolution_status.observed.fault_code
+
+  - goal_path: agent.sessions[active_session].last_fault_code
+    goal_value: FRD-301
+    check_field: fault_code
+    check_op: eq
+    expected: FRD-301
+    unmet_reason: Station still shows the fraud-lock fault code.
+    observed_from: check_resolution_status.observed.fault_code
+
+  - goal_path: agent.sessions[active_session].last_fault_code
+    goal_value: FW-410
+    check_field: fault_code
+    check_op: eq
+    expected: FW-410
+    unmet_reason: Station still shows the firmware fault code.
+    observed_from: check_resolution_status.observed.fault_code
+
+  - goal_path: agent.sessions[active_session].last_fault_code
+    goal_value: PROFILE-201
+    check_field: fault_code
+    check_op: eq
+    expected: PROFILE-201
+    unmet_reason: Station still shows the profile fault code.
+    observed_from: check_resolution_status.observed.fault_code
+
+  - goal_path: agent.sessions[active_session].last_fault_code
+    goal_value: RETRY-301
+    check_field: fault_code
+    check_op: eq
+    expected: RETRY-301
+    unmet_reason: Station still shows the retry-path fault code.
+    observed_from: check_resolution_status.observed.fault_code
+
+  - goal_path: agent.sessions[active_session].last_fault_code
     goal_value: NONE
     check_field: fault_code
     check_op: eq

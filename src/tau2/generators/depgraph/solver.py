@@ -10,13 +10,14 @@ from tau2.generators.depgraph.semantics import (
     apply_action,
     index_binding_sources,
     is_action_enabled,
+    materialize_world,
     predicate_holds,
-    world_from_effects,
     world_state_key,
 )
 from tau2.generators.depgraph.types import (
     ActionContract,
     BindingSourceSpec,
+    SyncRuleSpec,
     WorldEffectSpec,
     WorldPredicateSpec,
 )
@@ -30,6 +31,8 @@ class SearchResult:
     plan: list[str]
     explored_states: int
     pruned_states: int = 0
+    end_world: dict[str, Any] | None = None
+    end_bindings: frozenset[str] | None = None
     issues: list[str] | None = None
 
 
@@ -48,15 +51,20 @@ def find_plan(
     goal_bindings: list[str],
     *,
     binding_sources: Optional[list[BindingSourceSpec]] = None,
+    sync_rules: Optional[list[SyncRuleSpec]] = None,
     forbidden_actions: Optional[set[str]] = None,
     max_depth: int = 20,
 ) -> SearchResult:
     """Find a plan using BFS over (world, bindings) states."""
     forbidden_actions = forbidden_actions or set()
     binding_sources = binding_sources or []
+    sync_rules = sync_rules or []
     binding_sources_by_id = index_binding_sources(binding_sources)
 
-    start_world, start_world_issues = world_from_effects(start_world_effects)
+    start_world, start_world_issues = materialize_world(
+        start_world_effects,
+        sync_rules=sync_rules,
+    )
     if start_world_issues:
         return SearchResult(
             sat=False,
@@ -81,7 +89,13 @@ def find_plan(
         plan=[],
     )
     if goal_satisfied(start_node.world, start_node.bindings):
-        return SearchResult(sat=True, plan=[], explored_states=1)
+        return SearchResult(
+            sat=True,
+            plan=[],
+            explored_states=1,
+            end_world=start_node.world,
+            end_bindings=start_node.bindings,
+        )
 
     queue: deque[_Node] = deque([start_node])
     visited: set[tuple[tuple[tuple[str, Any], ...], frozenset[str]]] = {
@@ -105,7 +119,13 @@ def find_plan(
             if not is_action_enabled(action, node.world, node.bindings, binding_sources_by_id):
                 continue
 
-            next_world, next_bindings = apply_action(action, node.world, node.bindings)
+            next_world, next_bindings = apply_action(
+                action,
+                node.world,
+                node.bindings,
+                sync_rules=sync_rules,
+                binding_specs=binding_sources,
+            )
 
             # Exclude stutter transitions from causal search.
             if next_world == node.world and next_bindings == node.bindings:
@@ -123,6 +143,8 @@ def find_plan(
                     plan=next_plan,
                     explored_states=explored,
                     pruned_states=pruned,
+                    end_world=next_world,
+                    end_bindings=next_bindings,
                 )
 
             queue.append(

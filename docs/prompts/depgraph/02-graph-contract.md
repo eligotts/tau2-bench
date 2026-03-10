@@ -18,8 +18,8 @@ Requirements:
 1. Every callable action has classification: `causal`, `knowledge-only`, or `stutter-only`.
 2. Define context slots (for example `active_customer`, `active_line`) and project only task-relevant world paths into `projection_fields`.
 3. Every action defines:
-   - `requires_world`, `requires_absent_world`
-   - `requires_bindings`, `requires_absent_bindings`
+   - `requires_world` using explicit predicate ops (`eq`, `neq`, `gt`, `lt`, `gte`, `lte`)
+   - `requires_bindings` using `{binding_id, acquired}` predicates
    - `effects_world`, `effects_bindings`
    - `tool_arg_bindings` when bindings gate runtime tool calls
 4. Model user-supplied knowledge as normal tool-backed actions:
@@ -28,7 +28,7 @@ Requirements:
    - `tool_name=<real user read tool>`
    - `effects_bindings` includes produced binding ids.
 5. Include `bindings` entries for every produced/required binding id.
-6. Bindings are monotonic (once acquired, never revoked).
+6. Bindings are invalidated automatically when their `world_path` changes value; do not assume monotonic binding knowledge.
 7. Include only causal user fields in world predicates/effects (`user.*` projected causal paths).
 8. Exclude projection-only user fields from causal contracts.
 9. Ensure each binding `extraction_path` is syntactically valid and schema-consistent where typed return schemas exist.
@@ -36,15 +36,22 @@ Requirements:
    - `requestor=assistant` -> callable in `tools.py`
    - `requestor=user` -> callable in `user_tools.py`
 11. Ensure binding-gated actions expose concrete tool parameters matching `tool_arg_bindings` keys.
-12. Implement `sync_tools()` now to mirror contract-side causal bridges/effects.
-13. If using strict checker-based STOP:
+12. If a binding has `world_path` and that path is rewritten by actions or `sync_rules`, treat it as volatile:
+   - only the immediate observation-driven tool, or clearly mutually-exclusive stage-specific tools, may map it through `tool_arg_bindings`
+   - the longer repair chain should run from stable world predicates established by prior actions
+13. Define `sync_rules` in the contract for every runtime sync behavior:
+   - unconditional projections via `{path, from_path}`
+   - conditional bridges/derived updates via `requires_world` + `{path, set}`
+   - no hidden sync behavior outside the declared rules
+14. Implement `sync_tools()` now to mirror the declared `sync_rules` exactly, both for the initial start world and after every tool call.
+15. If using strict checker-based STOP:
    - include a user `stutter-only` action for `check_resolution_status`
    - implement matching user tool callable now
    - keep checker tool non-causal (no world/binding effects).
-14. Runtime guard behavior must mirror contract preconditions:
+16. Runtime guard behavior must mirror contract preconditions:
    - unmet preconditions return explicit error/no-op message
    - no hidden state mutation on guard failure (`stutter_on_fail` semantics).
-15. Keep naming explicit:
+17. Keep naming explicit:
    - `action_id` is stable semantic unit
    - `tool_name` is executable callable
    - avoid implicit aliasing; if aliasing is unavoidable, document it in contract comments.
@@ -103,12 +110,12 @@ coordination is deferred to the end. Early convergence forces ongoing coordinati
 
 ## Companion Artifacts
 
-16. Author concrete persona pool in `personas.yaml` for runtime-stage assignment:
+18. Author concrete persona pool in `personas.yaml` for runtime-stage assignment:
    - include 2-5 personas with stable `persona_id`
    - each persona has concise `display_name` + `profile_text`
    - optional style tags (for example `low_tech`, `high_urgency`, `detail_oriented`)
    - keep personas domain-relevant but avoid leaking solution steps or backend internals
-17. Author `runtime_defaults.yaml` for deterministic scaffold generation:
+19. Author `runtime_defaults.yaml` for deterministic scaffold generation:
    - include `domain`
    - include one shared `task_instructions` template (do not vary per task)
    - include default `reward_basis`

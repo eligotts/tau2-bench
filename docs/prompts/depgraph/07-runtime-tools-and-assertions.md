@@ -29,7 +29,11 @@ Requirements:
 4. Use `ToolKitBase` and `@is_tool` for LLM-visible tools.
 5. For actions with `requires_bindings`, enforce binding usage at runtime via concrete tool params and guards.
 6. For binding-source read tools, use typed return models (Pydantic/dataclass-style) so extraction-path checks are meaningful.
-7. **Docstring rule**: Tool docstrings become the `description` field in the OpenAI function-calling schema sent to the agent LLM. They must NOT reference entity type names (e.g. "station", "account", "session") because the agent will interpret these as information it needs to gather from the user. All entity resolution is context-scoped (via `set_user_context`), so the agent never needs entity identifiers. Use neutral phrasing like "Run backend diagnostics for the current charging session" instead of "Run backend diagnostics for the active station context."
+7. If a binding is tied to a volatile `world_path`, keep its runtime guard narrow:
+   - immediate observation-driven steps may validate the current bound value
+   - the longer repair chain should run from stable world state established by earlier tools
+   - do not require the agent to keep replaying a moving screen code through every repair call
+8. **Docstring rule**: Tool docstrings become the `description` field in the OpenAI function-calling schema sent to the agent LLM. They must NOT reference entity type names (e.g. "station", "account", "session") because the agent will interpret these as information it needs to gather from the user. All entity resolution is context-scoped (via `set_user_context`), so the agent never needs entity identifiers. Use neutral phrasing like "Run backend diagnostics for the current charging session" instead of "Run backend diagnostics for the active station context."
 
 Validation:
 
@@ -129,6 +133,31 @@ after = env.user_tools.db.model_dump()
 print("stutter_ok", before == after)
 PY
 ```
+
+## Action Checks vs Env Assertions — Argument Comparison Pitfall
+
+Action checks (`compare_args`) verify that a tool was called during the conversation.
+Env assertions verify the final DB state after the conversation ends.
+
+**Rule: always use `compare_args: []` for action expectations.** This checks only that the
+tool was called by name, without comparing argument values.
+
+Why: binding values (like `fault_code`) are resolved from the *initial* world state, but
+the environment's state machine may shift argument values during execution. For example,
+sync-rule recomputation can change the canonical `last_fault_code` after a repair step,
+invalidating the earlier binding and requiring the agent to reacquire it before a later
+tool call. The agent correctly uses the updated code, the env assertion passes (correct
+final state), but the action check fails because it compared against the stale initial value.
+
+Env assertions are the correct mechanism for verifying that the right outcome was achieved.
+Action checks should only confirm the tool was invoked, not police its arguments.
+
+The scaffold generator (`runtime_scaffold.py`) enforces this by always emitting
+`compare_args: []`.
+
+If the domain can require repeated binding reacquisition, `ACTION` should usually be treated as
+coverage only, not as the primary reward basis. Use `ENV_ASSERTION` and stop-gate checks for
+actual task correctness.
 
 ## Step 07.4: Contract/Tool Linkage Gate
 

@@ -17,6 +17,13 @@ from tau2.generators.depgraph.preflight import (
     TaskPreflightReport,
     run_task_preflight,
 )
+from tau2.generators.depgraph.review_bundle import (
+    ReviewSourcePaths,
+    build_review_bundle_markdown,
+    infer_review_source_paths,
+    infer_task_family,
+    select_representative_tasks,
+)
 from tau2.generators.depgraph.runtime_scaffold import (
     generate_runtime_scaffold,
     load_persona_pool,
@@ -38,6 +45,7 @@ from tau2.generators.depgraph.solver import SearchResult, find_plan
 from tau2.generators.depgraph.types import (
     ActionContract,
     ActionExpectationSpec,
+    BindingPredicateSpec,
     EnvAssertionSpec,
     EnvFunctionCallSpec,
     FactSourceSpec,
@@ -46,13 +54,17 @@ from tau2.generators.depgraph.types import (
     RuntimeTaskSpec,
     SamplingRequestDoc,
     SamplingSeedSpec,
+    SyncEffectSpec,
+    SyncRuleSpec,
     TaskIntent,
     TaskSpecsDoc,
+    TerminalProfileSpec,
 )
 
 __all__ = [
     "ActionContract",
     "ActionExpectationSpec",
+    "BindingPredicateSpec",
     "CompileResult",
     "TaskContextBindingSpec",
     "TaskContextBindingsDoc",
@@ -62,13 +74,18 @@ __all__ = [
     "GraphContractSpec",
     "InvariantSpec",
     "RuntimeTaskSpec",
+    "ReviewSourcePaths",
     "SampledTask",
     "SamplingRequestDoc",
     "SamplingSeedSpec",
+    "SyncEffectSpec",
+    "SyncRuleSpec",
     "SearchResult",
     "TaskIntent",
     "TaskPreflightReport",
     "TaskSpecsDoc",
+    "TerminalProfileSpec",
+    "build_review_bundle_markdown",
     "check_contract_against_environment",
     "check_runtime_narratives",
     "check_runtime_author_surface",
@@ -79,6 +96,8 @@ __all__ = [
     "find_plan",
     "generate_ev_context_bindings",
     "generate_runtime_scaffold",
+    "infer_review_source_paths",
+    "infer_task_family",
     "load_graph_contract",
     "load_narrative_briefs",
     "load_persona_pool",
@@ -88,5 +107,6 @@ __all__ = [
     "load_task_specs",
     "preflight_and_compile",
     "run_task_preflight",
+    "select_representative_tasks",
     "sample_task_intents",
 ]

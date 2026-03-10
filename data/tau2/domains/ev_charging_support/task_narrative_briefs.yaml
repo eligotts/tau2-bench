@@ -2,9 +2,9 @@ version: 1
 domain: ev_charging_support
 source:
   task_specs_sampled_version: 1
-  task_count: 16
+  task_count: 12
 tasks:
-- task_id: ev_billing_recovery_d12_025
+- task_id: billing_full_d13_000
   author_surface:
     editable_fields:
     - runtime.reason_for_call
@@ -13,11 +13,11 @@ tasks:
     required_non_empty: true
     placeholder: __AUTHOR_ME__
   entity_context:
-    user_id: U1001
-    name: Jordan Lee
-    account_id: A1001
-    station_id: ST1001
-    session_id: S1001
+    user_id: U3001
+    name: Sam Rivera
+    account_id: A3001
+    station_id: ST3001
+    session_id: S3001
   start_state_summary:
     world:
     - agent.accounts[active_account].fraud_lock_state = 'on'
@@ -40,291 +40,19 @@ tasks:
     - user.physical.station_power_cycle_state = 'not_done'
     - user.physical.test_charge_state = 'not_run'
     - user.physical.vehicle_ready_state = 'not_ready'
-    bindings: []
-  goal_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state == 'off'
-    - agent.accounts[active_account].hold_status == 'cleared'
-    - agent.accounts[active_account].payment_token_status == 'valid'
-    - agent.sessions[active_session].last_fault_code == 'NONE'
-    - agent.sessions[active_session].profile_state == 'ready'
-    - agent.stations[active_station].diagnostics_state == 'ran'
-    bindings:
-    - app_error_class
-    - fault_code
-  goal_binding_do_not_disclose:
-  - billing
-  - BH-101
-  required_action_chain:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
-  - assistant_reprovision_billing
-  required_precedence:
-  - before: acquire_fault_code_from_user
-    after: acquire_error_class_from_user
-  - before: acquire_error_class_from_user
-    after: user_inspect_cable_path
-  - before: user_inspect_cable_path
-    after: user_reseat_connector
-  - before: user_reseat_connector
-    after: user_power_cycle_station
-  - before: user_power_cycle_station
-    after: user_set_vehicle_ready_mode
-  - before: user_set_vehicle_ready_mode
-    after: user_refresh_charging_app_session
-  - before: user_refresh_charging_app_session
-    after: assistant_run_backend_diagnostics
-  - before: assistant_run_backend_diagnostics
-    after: assistant_clear_backend_hold
-  - before: assistant_clear_backend_hold
-    after: assistant_refresh_payment_token
-  - before: assistant_refresh_payment_token
-    after: assistant_release_fraud_lock
-  - before: assistant_release_fraud_lock
-    after: assistant_reprovision_billing
-  completion_cues:
-  - goal: agent.accounts[active_account].fraud_lock_state == 'off'
-    check_field: fraud_lock_state
-    expected: 'off'
-    unmet_reason: Fraud lock is still active.
-    observed_from: check_resolution_status.observed.fraud_lock_state
-  - goal: agent.accounts[active_account].hold_status == 'cleared'
-    check_field: hold_status
-    expected: cleared
-    unmet_reason: Backend hold is not cleared yet.
-    observed_from: check_resolution_status.observed.hold_status
-  - goal: agent.accounts[active_account].payment_token_status == 'valid'
-    check_field: payment_token_status
-    expected: valid
-    unmet_reason: Payment token is not valid yet.
-    observed_from: check_resolution_status.observed.payment_token_status
-  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
-    check_field: fault_code
-    expected: NONE
-    unmet_reason: Station still reports an unresolved fault code.
-    observed_from: check_resolution_status.observed.fault_code
-  - goal: agent.sessions[active_session].profile_state == 'ready'
-    check_field: profile_state
-    expected: ready
-    unmet_reason: Charging profile is not ready yet.
-    observed_from: check_resolution_status.observed.profile_state
-  - goal: agent.stations[active_station].diagnostics_state == 'ran'
-    check_field: diagnostics_state
-    expected: ran
-    unmet_reason: Backend diagnostics have not run yet.
-    observed_from: check_resolution_status.observed.diagnostics_state
-  authoring_guidance:
-    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
-      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
-      \ from context by tools. They must NEVER appear in authored text. Only the customer\
-      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
-      \ ARE user-observable and should be included."
-    reason_for_call: First person, conversational. Describe what the user is experiencing
-      and what they want fixed. Include frustration or urgency cues. Never mention
-      internal paths, tool names, or solution steps.
-    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
-      \ entity_context. Add situational context the user would naturally know (location,\
-      \ what they observe, what they were doing). Include concrete start-binding values\
-      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
-      \ plumbing."
-    ticket: "Third person, agent-facing case summary. Start with the problem, then\
-      \ customer name. End with 'They will consider the issue resolved when...' describing\
-      \ a concrete observable outcome. Read completion_cues to understand what resolved\
-      \ means, but write it as natural language \u2014 the ticket gives the agent\
-      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
-      \ what kind of task this is."
-- task_id: ev_billing_recovery_d13_026
-  author_surface:
-    editable_fields:
-    - runtime.reason_for_call
-    - runtime.known_info
-    - runtime.ticket
-    required_non_empty: true
-    placeholder: __AUTHOR_ME__
-  entity_context:
-    user_id: U2001
-    name: Avery Chen
-    account_id: A2001
-    station_id: ST2001
-    session_id: S2001
-  start_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state = 'on'
-    - agent.accounts[active_account].hold_status = 'present'
-    - agent.accounts[active_account].payment_token_status = 'invalid'
-    - agent.network_paths[active_station].backend_link_state = 'up'
-    - agent.network_paths[active_station].cert_state = 'fresh'
-    - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'billing'
-    - agent.sessions[active_session].last_fault_code = 'BH-101'
-    - agent.sessions[active_session].profile_state = 'not_ready'
-    - agent.sessions[active_session].retry_state = 'not_ready'
-    - agent.stations[active_station].diagnostics_state = 'idle'
-    - agent.stations[active_station].firmware_state = 'current'
-    - agent.stations[active_station].reachability_state = 'reachable'
-    - user.physical.app_refresh_state = 'stale'
-    - user.physical.cable_inspection_state = 'not_checked'
-    - user.physical.connector_reseat_state = 'not_reseated'
-    - user.physical.screen_accessible = True
-    - user.physical.station_power_cycle_state = 'not_done'
-    - user.physical.test_charge_state = 'not_run'
-    - user.physical.vehicle_ready_state = 'not_ready'
-    bindings: []
-  goal_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state == 'off'
-    - agent.accounts[active_account].hold_status == 'cleared'
-    - agent.accounts[active_account].payment_token_status == 'valid'
-    - agent.sessions[active_session].last_fault_code == 'NONE'
-    - agent.sessions[active_session].profile_state == 'ready'
-    - agent.sessions[active_session].retry_state == 'ready'
-    - agent.stations[active_station].diagnostics_state == 'ran'
-    bindings:
-    - app_error_class
-    - fault_code
-  goal_binding_do_not_disclose:
-  - billing
-  - BH-101
-  required_action_chain:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
-  - assistant_reprovision_billing
-  - assistant_reset_retry_path
-  required_precedence:
-  - before: acquire_fault_code_from_user
-    after: acquire_error_class_from_user
-  - before: acquire_error_class_from_user
-    after: user_inspect_cable_path
-  - before: user_inspect_cable_path
-    after: user_reseat_connector
-  - before: user_reseat_connector
-    after: user_power_cycle_station
-  - before: user_power_cycle_station
-    after: user_set_vehicle_ready_mode
-  - before: user_set_vehicle_ready_mode
-    after: user_refresh_charging_app_session
-  - before: user_refresh_charging_app_session
-    after: assistant_run_backend_diagnostics
-  - before: assistant_run_backend_diagnostics
-    after: assistant_clear_backend_hold
-  - before: assistant_clear_backend_hold
-    after: assistant_refresh_payment_token
-  - before: assistant_refresh_payment_token
-    after: assistant_release_fraud_lock
-  - before: assistant_release_fraud_lock
-    after: assistant_reprovision_billing
-  - before: assistant_reprovision_billing
-    after: assistant_reset_retry_path
-  completion_cues:
-  - goal: agent.accounts[active_account].fraud_lock_state == 'off'
-    check_field: fraud_lock_state
-    expected: 'off'
-    unmet_reason: Fraud lock is still active.
-    observed_from: check_resolution_status.observed.fraud_lock_state
-  - goal: agent.accounts[active_account].hold_status == 'cleared'
-    check_field: hold_status
-    expected: cleared
-    unmet_reason: Backend hold is not cleared yet.
-    observed_from: check_resolution_status.observed.hold_status
-  - goal: agent.accounts[active_account].payment_token_status == 'valid'
-    check_field: payment_token_status
-    expected: valid
-    unmet_reason: Payment token is not valid yet.
-    observed_from: check_resolution_status.observed.payment_token_status
-  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
-    check_field: fault_code
-    expected: NONE
-    unmet_reason: Station still reports an unresolved fault code.
-    observed_from: check_resolution_status.observed.fault_code
-  - goal: agent.sessions[active_session].profile_state == 'ready'
-    check_field: profile_state
-    expected: ready
-    unmet_reason: Charging profile is not ready yet.
-    observed_from: check_resolution_status.observed.profile_state
-  - goal: agent.sessions[active_session].retry_state == 'ready'
-    check_field: retry_state
-    expected: ready
-    unmet_reason: Retry path is not ready yet.
-    observed_from: check_resolution_status.observed.retry_state
-  - goal: agent.stations[active_station].diagnostics_state == 'ran'
-    check_field: diagnostics_state
-    expected: ran
-    unmet_reason: Backend diagnostics have not run yet.
-    observed_from: check_resolution_status.observed.diagnostics_state
-  authoring_guidance:
-    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
-      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
-      \ from context by tools. They must NEVER appear in authored text. Only the customer\
-      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
-      \ ARE user-observable and should be included."
-    reason_for_call: First person, conversational. Describe what the user is experiencing
-      and what they want fixed. Include frustration or urgency cues. Never mention
-      internal paths, tool names, or solution steps.
-    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
-      \ entity_context. Add situational context the user would naturally know (location,\
-      \ what they observe, what they were doing). Include concrete start-binding values\
-      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
-      \ plumbing."
-    ticket: "Third person, agent-facing case summary. Start with the problem, then\
-      \ customer name. End with 'They will consider the issue resolved when...' describing\
-      \ a concrete observable outcome. Read completion_cues to understand what resolved\
-      \ means, but write it as natural language \u2014 the ticket gives the agent\
-      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
-      \ what kind of task this is."
-- task_id: ev_billing_recovery_d14_027
-  author_surface:
-    editable_fields:
-    - runtime.reason_for_call
-    - runtime.known_info
-    - runtime.ticket
-    required_non_empty: true
-    placeholder: __AUTHOR_ME__
-  entity_context:
-    user_id: U1001
-    name: Jordan Lee
-    account_id: A1001
-    station_id: ST1001
-    session_id: S1001
-  start_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state = 'on'
-    - agent.accounts[active_account].hold_status = 'present'
-    - agent.accounts[active_account].payment_token_status = 'invalid'
-    - agent.network_paths[active_station].backend_link_state = 'up'
-    - agent.network_paths[active_station].cert_state = 'fresh'
-    - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'billing'
-    - agent.sessions[active_session].last_fault_code = 'BH-101'
-    - agent.sessions[active_session].profile_state = 'not_ready'
-    - agent.sessions[active_session].retry_state = 'not_ready'
-    - agent.stations[active_station].diagnostics_state = 'idle'
-    - agent.stations[active_station].firmware_state = 'current'
-    - agent.stations[active_station].reachability_state = 'reachable'
-    - user.physical.app_refresh_state = 'stale'
-    - user.physical.cable_inspection_state = 'not_checked'
-    - user.physical.connector_reseat_state = 'not_reseated'
-    - user.physical.screen_accessible = True
-    - user.physical.station_power_cycle_state = 'not_done'
-    - user.physical.test_charge_state = 'not_run'
-    - user.physical.vehicle_ready_state = 'not_ready'
+    - user.view.display_backend_link_state = 'up'
+    - user.view.display_cert_state = 'fresh'
+    - user.view.display_charge_status = 'inactive'
+    - user.view.display_diagnostics_state = 'idle'
+    - user.view.display_error_class = 'billing'
+    - user.view.display_fault_code = 'BH-101'
+    - user.view.display_firmware_state = 'current'
+    - user.view.display_fraud_lock_state = 'on'
+    - user.view.display_hold_status = 'present'
+    - user.view.display_payment_token_status = 'invalid'
+    - user.view.display_profile_state = 'not_ready'
+    - user.view.display_reachability_state = 'reachable'
+    - user.view.display_retry_state = 'not_ready'
     bindings: []
   goal_state_summary:
     world:
@@ -338,16 +66,11 @@ tasks:
     - agent.stations[active_station].diagnostics_state == 'ran'
     bindings:
     - app_error_class
-    - fault_code
   goal_binding_do_not_disclose:
   - billing
-  - BH-101
   required_action_chain:
-  - acquire_fault_code_from_user
+  - acquire_screen_fault_code_from_user
   - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
   - user_set_vehicle_ready_mode
   - user_refresh_charging_app_session
   - assistant_run_backend_diagnostics
@@ -356,17 +79,11 @@ tasks:
   - assistant_release_fraud_lock
   - assistant_reprovision_billing
   - assistant_reset_retry_path
-  - user_run_test_charge
+  - user_run_test_charge_billing
   required_precedence:
-  - before: acquire_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
     after: acquire_error_class_from_user
   - before: acquire_error_class_from_user
-    after: user_inspect_cable_path
-  - before: user_inspect_cable_path
-    after: user_reseat_connector
-  - before: user_reseat_connector
-    after: user_power_cycle_station
-  - before: user_power_cycle_station
     after: user_set_vehicle_ready_mode
   - before: user_set_vehicle_ready_mode
     after: user_refresh_charging_app_session
@@ -379,11 +96,15 @@ tasks:
   - before: assistant_refresh_payment_token
     after: assistant_release_fraud_lock
   - before: assistant_release_fraud_lock
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
     after: assistant_reprovision_billing
   - before: assistant_reprovision_billing
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
     after: assistant_reset_retry_path
   - before: assistant_reset_retry_path
-    after: user_run_test_charge
+    after: user_run_test_charge_billing
   completion_cues:
   - goal: agent.accounts[active_account].fraud_lock_state == 'off'
     check_field: fraud_lock_state
@@ -445,7 +166,7 @@ tasks:
       \ means, but write it as natural language \u2014 the ticket gives the agent\
       \ direction, not a mechanical checklist. Be specific enough that the agent knows\
       \ what kind of task this is."
-- task_id: ev_connectivity_recovery_d11_068
+- task_id: billing_hold_only_d11_004
   author_surface:
     editable_fields:
     - runtime.reason_for_call
@@ -454,21 +175,21 @@ tasks:
     required_non_empty: true
     placeholder: __AUTHOR_ME__
   entity_context:
-    user_id: U1001
-    name: Jordan Lee
-    account_id: A1001
-    station_id: ST1001
-    session_id: S1001
+    user_id: U3001
+    name: Sam Rivera
+    account_id: A3001
+    station_id: ST3001
+    session_id: S3001
   start_state_summary:
     world:
     - agent.accounts[active_account].fraud_lock_state = 'off'
-    - agent.accounts[active_account].hold_status = 'cleared'
+    - agent.accounts[active_account].hold_status = 'present'
     - agent.accounts[active_account].payment_token_status = 'valid'
-    - agent.network_paths[active_station].backend_link_state = 'down'
-    - agent.network_paths[active_station].cert_state = 'stale'
+    - agent.network_paths[active_station].backend_link_state = 'up'
+    - agent.network_paths[active_station].cert_state = 'fresh'
     - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'connectivity'
-    - agent.sessions[active_session].last_fault_code = 'CERT-409'
+    - agent.sessions[active_session].error_class = 'billing'
+    - agent.sessions[active_session].last_fault_code = 'BH-101'
     - agent.sessions[active_session].profile_state = 'not_ready'
     - agent.sessions[active_session].retry_state = 'not_ready'
     - agent.stations[active_station].diagnostics_state = 'idle'
@@ -481,197 +202,74 @@ tasks:
     - user.physical.station_power_cycle_state = 'not_done'
     - user.physical.test_charge_state = 'not_run'
     - user.physical.vehicle_ready_state = 'not_ready'
+    - user.view.display_backend_link_state = 'up'
+    - user.view.display_cert_state = 'fresh'
+    - user.view.display_charge_status = 'inactive'
+    - user.view.display_diagnostics_state = 'idle'
+    - user.view.display_error_class = 'billing'
+    - user.view.display_fault_code = 'BH-101'
+    - user.view.display_firmware_state = 'current'
+    - user.view.display_fraud_lock_state = 'off'
+    - user.view.display_hold_status = 'present'
+    - user.view.display_payment_token_status = 'valid'
+    - user.view.display_profile_state = 'not_ready'
+    - user.view.display_reachability_state = 'reachable'
+    - user.view.display_retry_state = 'not_ready'
     bindings: []
   goal_state_summary:
     world:
-    - agent.network_paths[active_station].backend_link_state == 'up'
-    - agent.network_paths[active_station].cert_state == 'fresh'
-    - agent.sessions[active_session].last_fault_code == 'NONE'
-    - agent.sessions[active_session].profile_state == 'ready'
-    - agent.stations[active_station].diagnostics_state == 'ran'
-    bindings:
-    - app_error_class
-    - fault_code
-  goal_binding_do_not_disclose:
-  - connectivity
-  - CERT-409
-  required_action_chain:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_reprovision_connectivity
-  required_precedence:
-  - before: acquire_fault_code_from_user
-    after: acquire_error_class_from_user
-  - before: acquire_error_class_from_user
-    after: user_inspect_cable_path
-  - before: user_inspect_cable_path
-    after: user_reseat_connector
-  - before: user_reseat_connector
-    after: user_power_cycle_station
-  - before: user_power_cycle_station
-    after: user_set_vehicle_ready_mode
-  - before: user_set_vehicle_ready_mode
-    after: user_refresh_charging_app_session
-  - before: user_refresh_charging_app_session
-    after: assistant_run_backend_diagnostics
-  - before: assistant_run_backend_diagnostics
-    after: assistant_restore_backend_link
-  - before: assistant_restore_backend_link
-    after: assistant_rotate_station_certificate
-  - before: assistant_rotate_station_certificate
-    after: assistant_reprovision_connectivity
-  completion_cues:
-  - goal: agent.network_paths[active_station].backend_link_state == 'up'
-    check_field: backend_link_state
-    expected: up
-    unmet_reason: Backend link is still down.
-    observed_from: check_resolution_status.observed.backend_link_state
-  - goal: agent.network_paths[active_station].cert_state == 'fresh'
-    check_field: cert_state
-    expected: fresh
-    unmet_reason: Station certificate is still stale.
-    observed_from: check_resolution_status.observed.cert_state
-  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
-    check_field: fault_code
-    expected: NONE
-    unmet_reason: Station still reports an unresolved fault code.
-    observed_from: check_resolution_status.observed.fault_code
-  - goal: agent.sessions[active_session].profile_state == 'ready'
-    check_field: profile_state
-    expected: ready
-    unmet_reason: Charging profile is not ready yet.
-    observed_from: check_resolution_status.observed.profile_state
-  - goal: agent.stations[active_station].diagnostics_state == 'ran'
-    check_field: diagnostics_state
-    expected: ran
-    unmet_reason: Backend diagnostics have not run yet.
-    observed_from: check_resolution_status.observed.diagnostics_state
-  authoring_guidance:
-    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
-      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
-      \ from context by tools. They must NEVER appear in authored text. Only the customer\
-      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
-      \ ARE user-observable and should be included."
-    reason_for_call: First person, conversational. Describe what the user is experiencing
-      and what they want fixed. Include frustration or urgency cues. Never mention
-      internal paths, tool names, or solution steps.
-    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
-      \ entity_context. Add situational context the user would naturally know (location,\
-      \ what they observe, what they were doing). Include concrete start-binding values\
-      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
-      \ plumbing."
-    ticket: "Third person, agent-facing case summary. Start with the problem, then\
-      \ customer name. End with 'They will consider the issue resolved when...' describing\
-      \ a concrete observable outcome. Read completion_cues to understand what resolved\
-      \ means, but write it as natural language \u2014 the ticket gives the agent\
-      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
-      \ what kind of task this is."
-- task_id: ev_connectivity_recovery_d12_069
-  author_surface:
-    editable_fields:
-    - runtime.reason_for_call
-    - runtime.known_info
-    - runtime.ticket
-    required_non_empty: true
-    placeholder: __AUTHOR_ME__
-  entity_context:
-    user_id: U2001
-    name: Avery Chen
-    account_id: A2001
-    station_id: ST2001
-    session_id: S2001
-  start_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state = 'off'
-    - agent.accounts[active_account].hold_status = 'cleared'
-    - agent.accounts[active_account].payment_token_status = 'valid'
-    - agent.network_paths[active_station].backend_link_state = 'down'
-    - agent.network_paths[active_station].cert_state = 'stale'
-    - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'connectivity'
-    - agent.sessions[active_session].last_fault_code = 'CERT-409'
-    - agent.sessions[active_session].profile_state = 'not_ready'
-    - agent.sessions[active_session].retry_state = 'not_ready'
-    - agent.stations[active_station].diagnostics_state = 'idle'
-    - agent.stations[active_station].firmware_state = 'current'
-    - agent.stations[active_station].reachability_state = 'reachable'
-    - user.physical.app_refresh_state = 'stale'
-    - user.physical.cable_inspection_state = 'not_checked'
-    - user.physical.connector_reseat_state = 'not_reseated'
-    - user.physical.screen_accessible = True
-    - user.physical.station_power_cycle_state = 'not_done'
-    - user.physical.test_charge_state = 'not_run'
-    - user.physical.vehicle_ready_state = 'not_ready'
-    bindings: []
-  goal_state_summary:
-    world:
-    - agent.network_paths[active_station].backend_link_state == 'up'
-    - agent.network_paths[active_station].cert_state == 'fresh'
+    - agent.accounts[active_account].hold_status == 'cleared'
+    - agent.sessions[active_session].charge_state == 'active'
     - agent.sessions[active_session].last_fault_code == 'NONE'
     - agent.sessions[active_session].profile_state == 'ready'
     - agent.sessions[active_session].retry_state == 'ready'
     - agent.stations[active_station].diagnostics_state == 'ran'
     bindings:
     - app_error_class
-    - fault_code
   goal_binding_do_not_disclose:
-  - connectivity
-  - CERT-409
+  - billing
   required_action_chain:
-  - acquire_fault_code_from_user
+  - acquire_screen_fault_code_from_user
   - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
   - user_set_vehicle_ready_mode
   - user_refresh_charging_app_session
   - assistant_run_backend_diagnostics
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_reprovision_connectivity
+  - assistant_clear_backend_hold
+  - assistant_reprovision_billing
   - assistant_reset_retry_path
+  - user_run_test_charge_billing
   required_precedence:
-  - before: acquire_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
     after: acquire_error_class_from_user
   - before: acquire_error_class_from_user
-    after: user_inspect_cable_path
-  - before: user_inspect_cable_path
-    after: user_reseat_connector
-  - before: user_reseat_connector
-    after: user_power_cycle_station
-  - before: user_power_cycle_station
     after: user_set_vehicle_ready_mode
   - before: user_set_vehicle_ready_mode
     after: user_refresh_charging_app_session
   - before: user_refresh_charging_app_session
     after: assistant_run_backend_diagnostics
   - before: assistant_run_backend_diagnostics
-    after: assistant_restore_backend_link
-  - before: assistant_restore_backend_link
-    after: assistant_rotate_station_certificate
-  - before: assistant_rotate_station_certificate
-    after: assistant_reprovision_connectivity
-  - before: assistant_reprovision_connectivity
+    after: assistant_clear_backend_hold
+  - before: assistant_clear_backend_hold
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reprovision_billing
+  - before: assistant_reprovision_billing
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
     after: assistant_reset_retry_path
+  - before: assistant_reset_retry_path
+    after: user_run_test_charge_billing
   completion_cues:
-  - goal: agent.network_paths[active_station].backend_link_state == 'up'
-    check_field: backend_link_state
-    expected: up
-    unmet_reason: Backend link is still down.
-    observed_from: check_resolution_status.observed.backend_link_state
-  - goal: agent.network_paths[active_station].cert_state == 'fresh'
-    check_field: cert_state
-    expected: fresh
-    unmet_reason: Station certificate is still stale.
-    observed_from: check_resolution_status.observed.cert_state
+  - goal: agent.accounts[active_account].hold_status == 'cleared'
+    check_field: hold_status
+    expected: cleared
+    unmet_reason: Backend hold is not cleared yet.
+    observed_from: check_resolution_status.observed.hold_status
+  - goal: agent.sessions[active_session].charge_state == 'active'
+    check_field: charge_status
+    expected: active
+    unmet_reason: Charging is not active yet.
+    observed_from: check_resolution_status.observed.charge_status
   - goal: agent.sessions[active_session].last_fault_code == 'NONE'
     check_field: fault_code
     expected: NONE
@@ -712,7 +310,729 @@ tasks:
       \ means, but write it as natural language \u2014 the ticket gives the agent\
       \ direction, not a mechanical checklist. Be specific enough that the agent knows\
       \ what kind of task this is."
-- task_id: ev_connectivity_recovery_d13_070
+- task_id: billing_payment_only_d11_007
+  author_surface:
+    editable_fields:
+    - runtime.reason_for_call
+    - runtime.known_info
+    - runtime.ticket
+    required_non_empty: true
+    placeholder: __AUTHOR_ME__
+  entity_context:
+    user_id: U3001
+    name: Sam Rivera
+    account_id: A3001
+    station_id: ST3001
+    session_id: S3001
+  start_state_summary:
+    world:
+    - agent.accounts[active_account].fraud_lock_state = 'off'
+    - agent.accounts[active_account].hold_status = 'cleared'
+    - agent.accounts[active_account].payment_token_status = 'invalid'
+    - agent.network_paths[active_station].backend_link_state = 'up'
+    - agent.network_paths[active_station].cert_state = 'fresh'
+    - agent.sessions[active_session].charge_state = 'inactive'
+    - agent.sessions[active_session].error_class = 'billing'
+    - agent.sessions[active_session].last_fault_code = 'PAY-201'
+    - agent.sessions[active_session].profile_state = 'not_ready'
+    - agent.sessions[active_session].retry_state = 'not_ready'
+    - agent.stations[active_station].diagnostics_state = 'idle'
+    - agent.stations[active_station].firmware_state = 'current'
+    - agent.stations[active_station].reachability_state = 'reachable'
+    - user.physical.app_refresh_state = 'stale'
+    - user.physical.cable_inspection_state = 'not_checked'
+    - user.physical.connector_reseat_state = 'not_reseated'
+    - user.physical.screen_accessible = True
+    - user.physical.station_power_cycle_state = 'not_done'
+    - user.physical.test_charge_state = 'not_run'
+    - user.physical.vehicle_ready_state = 'not_ready'
+    - user.view.display_backend_link_state = 'up'
+    - user.view.display_cert_state = 'fresh'
+    - user.view.display_charge_status = 'inactive'
+    - user.view.display_diagnostics_state = 'idle'
+    - user.view.display_error_class = 'billing'
+    - user.view.display_fault_code = 'PAY-201'
+    - user.view.display_firmware_state = 'current'
+    - user.view.display_fraud_lock_state = 'off'
+    - user.view.display_hold_status = 'cleared'
+    - user.view.display_payment_token_status = 'invalid'
+    - user.view.display_profile_state = 'not_ready'
+    - user.view.display_reachability_state = 'reachable'
+    - user.view.display_retry_state = 'not_ready'
+    bindings: []
+  goal_state_summary:
+    world:
+    - agent.accounts[active_account].payment_token_status == 'valid'
+    - agent.sessions[active_session].charge_state == 'active'
+    - agent.sessions[active_session].last_fault_code == 'NONE'
+    - agent.sessions[active_session].profile_state == 'ready'
+    - agent.sessions[active_session].retry_state == 'ready'
+    - agent.stations[active_station].diagnostics_state == 'ran'
+    bindings:
+    - app_error_class
+  goal_binding_do_not_disclose:
+  - billing
+  required_action_chain:
+  - acquire_screen_fault_code_from_user
+  - acquire_error_class_from_user
+  - user_set_vehicle_ready_mode
+  - user_refresh_charging_app_session
+  - assistant_run_backend_diagnostics
+  - assistant_refresh_payment_token
+  - assistant_reprovision_billing
+  - assistant_reset_retry_path
+  - user_run_test_charge_billing
+  required_precedence:
+  - before: acquire_screen_fault_code_from_user
+    after: acquire_error_class_from_user
+  - before: acquire_error_class_from_user
+    after: user_set_vehicle_ready_mode
+  - before: user_set_vehicle_ready_mode
+    after: user_refresh_charging_app_session
+  - before: user_refresh_charging_app_session
+    after: assistant_run_backend_diagnostics
+  - before: assistant_run_backend_diagnostics
+    after: assistant_refresh_payment_token
+  - before: assistant_refresh_payment_token
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reprovision_billing
+  - before: assistant_reprovision_billing
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reset_retry_path
+  - before: assistant_reset_retry_path
+    after: user_run_test_charge_billing
+  completion_cues:
+  - goal: agent.accounts[active_account].payment_token_status == 'valid'
+    check_field: payment_token_status
+    expected: valid
+    unmet_reason: Payment token is not valid yet.
+    observed_from: check_resolution_status.observed.payment_token_status
+  - goal: agent.sessions[active_session].charge_state == 'active'
+    check_field: charge_status
+    expected: active
+    unmet_reason: Charging is not active yet.
+    observed_from: check_resolution_status.observed.charge_status
+  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
+    check_field: fault_code
+    expected: NONE
+    unmet_reason: Station still reports an unresolved fault code.
+    observed_from: check_resolution_status.observed.fault_code
+  - goal: agent.sessions[active_session].profile_state == 'ready'
+    check_field: profile_state
+    expected: ready
+    unmet_reason: Charging profile is not ready yet.
+    observed_from: check_resolution_status.observed.profile_state
+  - goal: agent.sessions[active_session].retry_state == 'ready'
+    check_field: retry_state
+    expected: ready
+    unmet_reason: Retry path is not ready yet.
+    observed_from: check_resolution_status.observed.retry_state
+  - goal: agent.stations[active_station].diagnostics_state == 'ran'
+    check_field: diagnostics_state
+    expected: ran
+    unmet_reason: Backend diagnostics have not run yet.
+    observed_from: check_resolution_status.observed.diagnostics_state
+  authoring_guidance:
+    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
+      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
+      \ from context by tools. They must NEVER appear in authored text. Only the customer\
+      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
+      \ ARE user-observable and should be included."
+    reason_for_call: First person, conversational. Describe what the user is experiencing
+      and what they want fixed. Include frustration or urgency cues. Never mention
+      internal paths, tool names, or solution steps.
+    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
+      \ entity_context. Add situational context the user would naturally know (location,\
+      \ what they observe, what they were doing). Include concrete start-binding values\
+      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
+      \ plumbing."
+    ticket: "Third person, agent-facing case summary. Start with the problem, then\
+      \ customer name. End with 'They will consider the issue resolved when...' describing\
+      \ a concrete observable outcome. Read completion_cues to understand what resolved\
+      \ means, but write it as natural language \u2014 the ticket gives the agent\
+      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
+      \ what kind of task this is."
+- task_id: billing_fraud_only_d11_010
+  author_surface:
+    editable_fields:
+    - runtime.reason_for_call
+    - runtime.known_info
+    - runtime.ticket
+    required_non_empty: true
+    placeholder: __AUTHOR_ME__
+  entity_context:
+    user_id: U1001
+    name: Jordan Lee
+    account_id: A1001
+    station_id: ST1001
+    session_id: S1001
+  start_state_summary:
+    world:
+    - agent.accounts[active_account].fraud_lock_state = 'on'
+    - agent.accounts[active_account].hold_status = 'cleared'
+    - agent.accounts[active_account].payment_token_status = 'valid'
+    - agent.network_paths[active_station].backend_link_state = 'up'
+    - agent.network_paths[active_station].cert_state = 'fresh'
+    - agent.sessions[active_session].charge_state = 'inactive'
+    - agent.sessions[active_session].error_class = 'billing'
+    - agent.sessions[active_session].last_fault_code = 'FRD-301'
+    - agent.sessions[active_session].profile_state = 'not_ready'
+    - agent.sessions[active_session].retry_state = 'not_ready'
+    - agent.stations[active_station].diagnostics_state = 'idle'
+    - agent.stations[active_station].firmware_state = 'current'
+    - agent.stations[active_station].reachability_state = 'reachable'
+    - user.physical.app_refresh_state = 'stale'
+    - user.physical.cable_inspection_state = 'not_checked'
+    - user.physical.connector_reseat_state = 'not_reseated'
+    - user.physical.screen_accessible = True
+    - user.physical.station_power_cycle_state = 'not_done'
+    - user.physical.test_charge_state = 'not_run'
+    - user.physical.vehicle_ready_state = 'not_ready'
+    - user.view.display_backend_link_state = 'up'
+    - user.view.display_cert_state = 'fresh'
+    - user.view.display_charge_status = 'inactive'
+    - user.view.display_diagnostics_state = 'idle'
+    - user.view.display_error_class = 'billing'
+    - user.view.display_fault_code = 'FRD-301'
+    - user.view.display_firmware_state = 'current'
+    - user.view.display_fraud_lock_state = 'on'
+    - user.view.display_hold_status = 'cleared'
+    - user.view.display_payment_token_status = 'valid'
+    - user.view.display_profile_state = 'not_ready'
+    - user.view.display_reachability_state = 'reachable'
+    - user.view.display_retry_state = 'not_ready'
+    bindings: []
+  goal_state_summary:
+    world:
+    - agent.accounts[active_account].fraud_lock_state == 'off'
+    - agent.sessions[active_session].charge_state == 'active'
+    - agent.sessions[active_session].last_fault_code == 'NONE'
+    - agent.sessions[active_session].profile_state == 'ready'
+    - agent.sessions[active_session].retry_state == 'ready'
+    - agent.stations[active_station].diagnostics_state == 'ran'
+    bindings:
+    - app_error_class
+  goal_binding_do_not_disclose:
+  - billing
+  required_action_chain:
+  - acquire_screen_fault_code_from_user
+  - acquire_error_class_from_user
+  - user_set_vehicle_ready_mode
+  - user_refresh_charging_app_session
+  - assistant_run_backend_diagnostics
+  - assistant_release_fraud_lock
+  - assistant_reprovision_billing
+  - assistant_reset_retry_path
+  - user_run_test_charge_billing
+  required_precedence:
+  - before: acquire_screen_fault_code_from_user
+    after: acquire_error_class_from_user
+  - before: acquire_error_class_from_user
+    after: user_set_vehicle_ready_mode
+  - before: user_set_vehicle_ready_mode
+    after: user_refresh_charging_app_session
+  - before: user_refresh_charging_app_session
+    after: assistant_run_backend_diagnostics
+  - before: assistant_run_backend_diagnostics
+    after: assistant_release_fraud_lock
+  - before: assistant_release_fraud_lock
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reprovision_billing
+  - before: assistant_reprovision_billing
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reset_retry_path
+  - before: assistant_reset_retry_path
+    after: user_run_test_charge_billing
+  completion_cues:
+  - goal: agent.accounts[active_account].fraud_lock_state == 'off'
+    check_field: fraud_lock_state
+    expected: 'off'
+    unmet_reason: Fraud lock is still active.
+    observed_from: check_resolution_status.observed.fraud_lock_state
+  - goal: agent.sessions[active_session].charge_state == 'active'
+    check_field: charge_status
+    expected: active
+    unmet_reason: Charging is not active yet.
+    observed_from: check_resolution_status.observed.charge_status
+  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
+    check_field: fault_code
+    expected: NONE
+    unmet_reason: Station still reports an unresolved fault code.
+    observed_from: check_resolution_status.observed.fault_code
+  - goal: agent.sessions[active_session].profile_state == 'ready'
+    check_field: profile_state
+    expected: ready
+    unmet_reason: Charging profile is not ready yet.
+    observed_from: check_resolution_status.observed.profile_state
+  - goal: agent.sessions[active_session].retry_state == 'ready'
+    check_field: retry_state
+    expected: ready
+    unmet_reason: Retry path is not ready yet.
+    observed_from: check_resolution_status.observed.retry_state
+  - goal: agent.stations[active_station].diagnostics_state == 'ran'
+    check_field: diagnostics_state
+    expected: ran
+    unmet_reason: Backend diagnostics have not run yet.
+    observed_from: check_resolution_status.observed.diagnostics_state
+  authoring_guidance:
+    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
+      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
+      \ from context by tools. They must NEVER appear in authored text. Only the customer\
+      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
+      \ ARE user-observable and should be included."
+    reason_for_call: First person, conversational. Describe what the user is experiencing
+      and what they want fixed. Include frustration or urgency cues. Never mention
+      internal paths, tool names, or solution steps.
+    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
+      \ entity_context. Add situational context the user would naturally know (location,\
+      \ what they observe, what they were doing). Include concrete start-binding values\
+      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
+      \ plumbing."
+    ticket: "Third person, agent-facing case summary. Start with the problem, then\
+      \ customer name. End with 'They will consider the issue resolved when...' describing\
+      \ a concrete observable outcome. Read completion_cues to understand what resolved\
+      \ means, but write it as natural language \u2014 the ticket gives the agent\
+      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
+      \ what kind of task this is."
+- task_id: billing_hold_and_fraud_d12_013
+  author_surface:
+    editable_fields:
+    - runtime.reason_for_call
+    - runtime.known_info
+    - runtime.ticket
+    required_non_empty: true
+    placeholder: __AUTHOR_ME__
+  entity_context:
+    user_id: U2001
+    name: Avery Chen
+    account_id: A2001
+    station_id: ST2001
+    session_id: S2001
+  start_state_summary:
+    world:
+    - agent.accounts[active_account].fraud_lock_state = 'on'
+    - agent.accounts[active_account].hold_status = 'present'
+    - agent.accounts[active_account].payment_token_status = 'valid'
+    - agent.network_paths[active_station].backend_link_state = 'up'
+    - agent.network_paths[active_station].cert_state = 'fresh'
+    - agent.sessions[active_session].charge_state = 'inactive'
+    - agent.sessions[active_session].error_class = 'billing'
+    - agent.sessions[active_session].last_fault_code = 'BH-101'
+    - agent.sessions[active_session].profile_state = 'not_ready'
+    - agent.sessions[active_session].retry_state = 'not_ready'
+    - agent.stations[active_station].diagnostics_state = 'idle'
+    - agent.stations[active_station].firmware_state = 'current'
+    - agent.stations[active_station].reachability_state = 'reachable'
+    - user.physical.app_refresh_state = 'stale'
+    - user.physical.cable_inspection_state = 'not_checked'
+    - user.physical.connector_reseat_state = 'not_reseated'
+    - user.physical.screen_accessible = True
+    - user.physical.station_power_cycle_state = 'not_done'
+    - user.physical.test_charge_state = 'not_run'
+    - user.physical.vehicle_ready_state = 'not_ready'
+    - user.view.display_backend_link_state = 'up'
+    - user.view.display_cert_state = 'fresh'
+    - user.view.display_charge_status = 'inactive'
+    - user.view.display_diagnostics_state = 'idle'
+    - user.view.display_error_class = 'billing'
+    - user.view.display_fault_code = 'BH-101'
+    - user.view.display_firmware_state = 'current'
+    - user.view.display_fraud_lock_state = 'on'
+    - user.view.display_hold_status = 'present'
+    - user.view.display_payment_token_status = 'valid'
+    - user.view.display_profile_state = 'not_ready'
+    - user.view.display_reachability_state = 'reachable'
+    - user.view.display_retry_state = 'not_ready'
+    bindings: []
+  goal_state_summary:
+    world:
+    - agent.accounts[active_account].fraud_lock_state == 'off'
+    - agent.accounts[active_account].hold_status == 'cleared'
+    - agent.sessions[active_session].charge_state == 'active'
+    - agent.sessions[active_session].last_fault_code == 'NONE'
+    - agent.sessions[active_session].profile_state == 'ready'
+    - agent.sessions[active_session].retry_state == 'ready'
+    - agent.stations[active_station].diagnostics_state == 'ran'
+    bindings:
+    - app_error_class
+  goal_binding_do_not_disclose:
+  - billing
+  required_action_chain:
+  - acquire_screen_fault_code_from_user
+  - acquire_error_class_from_user
+  - user_set_vehicle_ready_mode
+  - user_refresh_charging_app_session
+  - assistant_run_backend_diagnostics
+  - assistant_clear_backend_hold
+  - assistant_release_fraud_lock
+  - assistant_reprovision_billing
+  - assistant_reset_retry_path
+  - user_run_test_charge_billing
+  required_precedence:
+  - before: acquire_screen_fault_code_from_user
+    after: acquire_error_class_from_user
+  - before: acquire_error_class_from_user
+    after: user_set_vehicle_ready_mode
+  - before: user_set_vehicle_ready_mode
+    after: user_refresh_charging_app_session
+  - before: user_refresh_charging_app_session
+    after: assistant_run_backend_diagnostics
+  - before: assistant_run_backend_diagnostics
+    after: assistant_clear_backend_hold
+  - before: assistant_clear_backend_hold
+    after: assistant_release_fraud_lock
+  - before: assistant_release_fraud_lock
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reprovision_billing
+  - before: assistant_reprovision_billing
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reset_retry_path
+  - before: assistant_reset_retry_path
+    after: user_run_test_charge_billing
+  completion_cues:
+  - goal: agent.accounts[active_account].fraud_lock_state == 'off'
+    check_field: fraud_lock_state
+    expected: 'off'
+    unmet_reason: Fraud lock is still active.
+    observed_from: check_resolution_status.observed.fraud_lock_state
+  - goal: agent.accounts[active_account].hold_status == 'cleared'
+    check_field: hold_status
+    expected: cleared
+    unmet_reason: Backend hold is not cleared yet.
+    observed_from: check_resolution_status.observed.hold_status
+  - goal: agent.sessions[active_session].charge_state == 'active'
+    check_field: charge_status
+    expected: active
+    unmet_reason: Charging is not active yet.
+    observed_from: check_resolution_status.observed.charge_status
+  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
+    check_field: fault_code
+    expected: NONE
+    unmet_reason: Station still reports an unresolved fault code.
+    observed_from: check_resolution_status.observed.fault_code
+  - goal: agent.sessions[active_session].profile_state == 'ready'
+    check_field: profile_state
+    expected: ready
+    unmet_reason: Charging profile is not ready yet.
+    observed_from: check_resolution_status.observed.profile_state
+  - goal: agent.sessions[active_session].retry_state == 'ready'
+    check_field: retry_state
+    expected: ready
+    unmet_reason: Retry path is not ready yet.
+    observed_from: check_resolution_status.observed.retry_state
+  - goal: agent.stations[active_station].diagnostics_state == 'ran'
+    check_field: diagnostics_state
+    expected: ran
+    unmet_reason: Backend diagnostics have not run yet.
+    observed_from: check_resolution_status.observed.diagnostics_state
+  authoring_guidance:
+    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
+      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
+      \ from context by tools. They must NEVER appear in authored text. Only the customer\
+      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
+      \ ARE user-observable and should be included."
+    reason_for_call: First person, conversational. Describe what the user is experiencing
+      and what they want fixed. Include frustration or urgency cues. Never mention
+      internal paths, tool names, or solution steps.
+    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
+      \ entity_context. Add situational context the user would naturally know (location,\
+      \ what they observe, what they were doing). Include concrete start-binding values\
+      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
+      \ plumbing."
+    ticket: "Third person, agent-facing case summary. Start with the problem, then\
+      \ customer name. End with 'They will consider the issue resolved when...' describing\
+      \ a concrete observable outcome. Read completion_cues to understand what resolved\
+      \ means, but write it as natural language \u2014 the ticket gives the agent\
+      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
+      \ what kind of task this is."
+- task_id: billing_ready_to_reprovision_d7_016
+  author_surface:
+    editable_fields:
+    - runtime.reason_for_call
+    - runtime.known_info
+    - runtime.ticket
+    required_non_empty: true
+    placeholder: __AUTHOR_ME__
+  entity_context:
+    user_id: U3001
+    name: Sam Rivera
+    account_id: A3001
+    station_id: ST3001
+    session_id: S3001
+  start_state_summary:
+    world:
+    - agent.accounts[active_account].fraud_lock_state = 'off'
+    - agent.accounts[active_account].hold_status = 'cleared'
+    - agent.accounts[active_account].payment_token_status = 'valid'
+    - agent.network_paths[active_station].backend_link_state = 'up'
+    - agent.network_paths[active_station].cert_state = 'fresh'
+    - agent.sessions[active_session].charge_state = 'inactive'
+    - agent.sessions[active_session].error_class = 'billing'
+    - agent.sessions[active_session].last_fault_code = 'PROFILE-201'
+    - agent.sessions[active_session].profile_state = 'not_ready'
+    - agent.sessions[active_session].retry_state = 'not_ready'
+    - agent.stations[active_station].diagnostics_state = 'idle'
+    - agent.stations[active_station].firmware_state = 'current'
+    - agent.stations[active_station].reachability_state = 'reachable'
+    - user.physical.app_refresh_state = 'refreshed'
+    - user.physical.cable_inspection_state = 'not_checked'
+    - user.physical.connector_reseat_state = 'not_reseated'
+    - user.physical.screen_accessible = True
+    - user.physical.station_power_cycle_state = 'not_done'
+    - user.physical.test_charge_state = 'not_run'
+    - user.physical.vehicle_ready_state = 'ready'
+    - user.view.display_backend_link_state = 'up'
+    - user.view.display_cert_state = 'fresh'
+    - user.view.display_charge_status = 'inactive'
+    - user.view.display_diagnostics_state = 'idle'
+    - user.view.display_error_class = 'billing'
+    - user.view.display_fault_code = 'PROFILE-201'
+    - user.view.display_firmware_state = 'current'
+    - user.view.display_fraud_lock_state = 'off'
+    - user.view.display_hold_status = 'cleared'
+    - user.view.display_payment_token_status = 'valid'
+    - user.view.display_profile_state = 'not_ready'
+    - user.view.display_reachability_state = 'reachable'
+    - user.view.display_retry_state = 'not_ready'
+    bindings: []
+  goal_state_summary:
+    world:
+    - agent.sessions[active_session].charge_state == 'active'
+    - agent.sessions[active_session].last_fault_code == 'NONE'
+    - agent.sessions[active_session].profile_state == 'ready'
+    - agent.sessions[active_session].retry_state == 'ready'
+    - agent.stations[active_station].diagnostics_state == 'ran'
+    bindings:
+    - app_error_class
+  goal_binding_do_not_disclose:
+  - billing
+  required_action_chain:
+  - acquire_screen_fault_code_from_user
+  - acquire_error_class_from_user
+  - assistant_run_backend_diagnostics
+  - assistant_reprovision_billing
+  - assistant_reset_retry_path
+  - user_run_test_charge_billing
+  required_precedence:
+  - before: acquire_screen_fault_code_from_user
+    after: acquire_error_class_from_user
+  - before: acquire_error_class_from_user
+    after: assistant_run_backend_diagnostics
+  - before: assistant_run_backend_diagnostics
+    after: assistant_reprovision_billing
+  - before: assistant_reprovision_billing
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reset_retry_path
+  - before: assistant_reset_retry_path
+    after: user_run_test_charge_billing
+  completion_cues:
+  - goal: agent.sessions[active_session].charge_state == 'active'
+    check_field: charge_status
+    expected: active
+    unmet_reason: Charging is not active yet.
+    observed_from: check_resolution_status.observed.charge_status
+  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
+    check_field: fault_code
+    expected: NONE
+    unmet_reason: Station still reports an unresolved fault code.
+    observed_from: check_resolution_status.observed.fault_code
+  - goal: agent.sessions[active_session].profile_state == 'ready'
+    check_field: profile_state
+    expected: ready
+    unmet_reason: Charging profile is not ready yet.
+    observed_from: check_resolution_status.observed.profile_state
+  - goal: agent.sessions[active_session].retry_state == 'ready'
+    check_field: retry_state
+    expected: ready
+    unmet_reason: Retry path is not ready yet.
+    observed_from: check_resolution_status.observed.retry_state
+  - goal: agent.stations[active_station].diagnostics_state == 'ran'
+    check_field: diagnostics_state
+    expected: ran
+    unmet_reason: Backend diagnostics have not run yet.
+    observed_from: check_resolution_status.observed.diagnostics_state
+  authoring_guidance:
+    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
+      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
+      \ from context by tools. They must NEVER appear in authored text. Only the customer\
+      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
+      \ ARE user-observable and should be included."
+    reason_for_call: First person, conversational. Describe what the user is experiencing
+      and what they want fixed. Include frustration or urgency cues. Never mention
+      internal paths, tool names, or solution steps.
+    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
+      \ entity_context. Add situational context the user would naturally know (location,\
+      \ what they observe, what they were doing). Include concrete start-binding values\
+      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
+      \ plumbing."
+    ticket: "Third person, agent-facing case summary. Start with the problem, then\
+      \ customer name. End with 'They will consider the issue resolved when...' describing\
+      \ a concrete observable outcome. Read completion_cues to understand what resolved\
+      \ means, but write it as natural language \u2014 the ticket gives the agent\
+      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
+      \ what kind of task this is."
+- task_id: billing_partial_knowledge_d11_020
+  author_surface:
+    editable_fields:
+    - runtime.reason_for_call
+    - runtime.known_info
+    - runtime.ticket
+    required_non_empty: true
+    placeholder: __AUTHOR_ME__
+  entity_context:
+    user_id: U2001
+    name: Avery Chen
+    account_id: A2001
+    station_id: ST2001
+    session_id: S2001
+  start_state_summary:
+    world:
+    - agent.accounts[active_account].fraud_lock_state = 'off'
+    - agent.accounts[active_account].hold_status = 'present'
+    - agent.accounts[active_account].payment_token_status = 'invalid'
+    - agent.network_paths[active_station].backend_link_state = 'up'
+    - agent.network_paths[active_station].cert_state = 'fresh'
+    - agent.sessions[active_session].charge_state = 'inactive'
+    - agent.sessions[active_session].error_class = 'billing'
+    - agent.sessions[active_session].last_fault_code = 'BH-101'
+    - agent.sessions[active_session].profile_state = 'not_ready'
+    - agent.sessions[active_session].retry_state = 'not_ready'
+    - agent.stations[active_station].diagnostics_state = 'idle'
+    - agent.stations[active_station].firmware_state = 'current'
+    - agent.stations[active_station].reachability_state = 'reachable'
+    - user.physical.app_refresh_state = 'stale'
+    - user.physical.cable_inspection_state = 'not_checked'
+    - user.physical.connector_reseat_state = 'not_reseated'
+    - user.physical.screen_accessible = True
+    - user.physical.station_power_cycle_state = 'not_done'
+    - user.physical.test_charge_state = 'not_run'
+    - user.physical.vehicle_ready_state = 'not_ready'
+    - user.view.display_backend_link_state = 'up'
+    - user.view.display_cert_state = 'fresh'
+    - user.view.display_charge_status = 'inactive'
+    - user.view.display_diagnostics_state = 'idle'
+    - user.view.display_error_class = 'billing'
+    - user.view.display_fault_code = 'BH-101'
+    - user.view.display_firmware_state = 'current'
+    - user.view.display_fraud_lock_state = 'off'
+    - user.view.display_hold_status = 'present'
+    - user.view.display_payment_token_status = 'invalid'
+    - user.view.display_profile_state = 'not_ready'
+    - user.view.display_reachability_state = 'reachable'
+    - user.view.display_retry_state = 'not_ready'
+    bindings:
+    - binding_id: screen_fault_code
+      world_path: agent.sessions[active_session].last_fault_code
+      value: BH-101
+  goal_state_summary:
+    world:
+    - agent.accounts[active_account].hold_status == 'cleared'
+    - agent.accounts[active_account].payment_token_status == 'valid'
+    - agent.sessions[active_session].charge_state == 'active'
+    - agent.sessions[active_session].last_fault_code == 'NONE'
+    - agent.sessions[active_session].profile_state == 'ready'
+    - agent.sessions[active_session].retry_state == 'ready'
+    - agent.stations[active_station].diagnostics_state == 'ran'
+    bindings:
+    - app_error_class
+  goal_binding_do_not_disclose:
+  - billing
+  required_action_chain:
+  - acquire_error_class_from_user
+  - user_set_vehicle_ready_mode
+  - user_refresh_charging_app_session
+  - assistant_run_backend_diagnostics
+  - assistant_clear_backend_hold
+  - assistant_refresh_payment_token
+  - acquire_screen_fault_code_from_user
+  - assistant_reprovision_billing
+  - assistant_reset_retry_path
+  - user_run_test_charge_billing
+  required_precedence:
+  - before: acquire_error_class_from_user
+    after: user_set_vehicle_ready_mode
+  - before: user_set_vehicle_ready_mode
+    after: user_refresh_charging_app_session
+  - before: user_refresh_charging_app_session
+    after: assistant_run_backend_diagnostics
+  - before: assistant_run_backend_diagnostics
+    after: assistant_clear_backend_hold
+  - before: assistant_clear_backend_hold
+    after: assistant_refresh_payment_token
+  - before: assistant_refresh_payment_token
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reprovision_billing
+  - before: assistant_reprovision_billing
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reset_retry_path
+  - before: assistant_reset_retry_path
+    after: user_run_test_charge_billing
+  completion_cues:
+  - goal: agent.accounts[active_account].hold_status == 'cleared'
+    check_field: hold_status
+    expected: cleared
+    unmet_reason: Backend hold is not cleared yet.
+    observed_from: check_resolution_status.observed.hold_status
+  - goal: agent.accounts[active_account].payment_token_status == 'valid'
+    check_field: payment_token_status
+    expected: valid
+    unmet_reason: Payment token is not valid yet.
+    observed_from: check_resolution_status.observed.payment_token_status
+  - goal: agent.sessions[active_session].charge_state == 'active'
+    check_field: charge_status
+    expected: active
+    unmet_reason: Charging is not active yet.
+    observed_from: check_resolution_status.observed.charge_status
+  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
+    check_field: fault_code
+    expected: NONE
+    unmet_reason: Station still reports an unresolved fault code.
+    observed_from: check_resolution_status.observed.fault_code
+  - goal: agent.sessions[active_session].profile_state == 'ready'
+    check_field: profile_state
+    expected: ready
+    unmet_reason: Charging profile is not ready yet.
+    observed_from: check_resolution_status.observed.profile_state
+  - goal: agent.sessions[active_session].retry_state == 'ready'
+    check_field: retry_state
+    expected: ready
+    unmet_reason: Retry path is not ready yet.
+    observed_from: check_resolution_status.observed.retry_state
+  - goal: agent.stations[active_station].diagnostics_state == 'ran'
+    check_field: diagnostics_state
+    expected: ran
+    unmet_reason: Backend diagnostics have not run yet.
+    observed_from: check_resolution_status.observed.diagnostics_state
+  authoring_guidance:
+    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
+      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
+      \ from context by tools. They must NEVER appear in authored text. Only the customer\
+      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
+      \ ARE user-observable and should be included."
+    reason_for_call: First person, conversational. Describe what the user is experiencing
+      and what they want fixed. Include frustration or urgency cues. Never mention
+      internal paths, tool names, or solution steps.
+    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
+      \ entity_context. Add situational context the user would naturally know (location,\
+      \ what they observe, what they were doing). Include concrete start-binding values\
+      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
+      \ plumbing."
+    ticket: "Third person, agent-facing case summary. Start with the problem, then\
+      \ customer name. End with 'They will consider the issue resolved when...' describing\
+      \ a concrete observable outcome. Read completion_cues to understand what resolved\
+      \ means, but write it as natural language \u2014 the ticket gives the agent\
+      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
+      \ what kind of task this is."
+- task_id: connectivity_full_d15_024
   author_surface:
     editable_fields:
     - runtime.reason_for_call
@@ -735,7 +1055,7 @@ tasks:
     - agent.network_paths[active_station].cert_state = 'stale'
     - agent.sessions[active_session].charge_state = 'inactive'
     - agent.sessions[active_session].error_class = 'connectivity'
-    - agent.sessions[active_session].last_fault_code = 'CERT-409'
+    - agent.sessions[active_session].last_fault_code = 'NET-410'
     - agent.sessions[active_session].profile_state = 'not_ready'
     - agent.sessions[active_session].retry_state = 'not_ready'
     - agent.stations[active_station].diagnostics_state = 'idle'
@@ -748,6 +1068,19 @@ tasks:
     - user.physical.station_power_cycle_state = 'not_done'
     - user.physical.test_charge_state = 'not_run'
     - user.physical.vehicle_ready_state = 'not_ready'
+    - user.view.display_backend_link_state = 'down'
+    - user.view.display_cert_state = 'stale'
+    - user.view.display_charge_status = 'inactive'
+    - user.view.display_diagnostics_state = 'idle'
+    - user.view.display_error_class = 'connectivity'
+    - user.view.display_fault_code = 'NET-410'
+    - user.view.display_firmware_state = 'current'
+    - user.view.display_fraud_lock_state = 'off'
+    - user.view.display_hold_status = 'cleared'
+    - user.view.display_payment_token_status = 'valid'
+    - user.view.display_profile_state = 'not_ready'
+    - user.view.display_reachability_state = 'reachable'
+    - user.view.display_retry_state = 'not_ready'
     bindings: []
   goal_state_summary:
     world:
@@ -760,12 +1093,10 @@ tasks:
     - agent.stations[active_station].diagnostics_state == 'ran'
     bindings:
     - app_error_class
-    - fault_code
   goal_binding_do_not_disclose:
   - connectivity
-  - CERT-409
   required_action_chain:
-  - acquire_fault_code_from_user
+  - acquire_screen_fault_code_from_user
   - acquire_error_class_from_user
   - user_inspect_cable_path
   - user_reseat_connector
@@ -777,9 +1108,9 @@ tasks:
   - assistant_rotate_station_certificate
   - assistant_reprovision_connectivity
   - assistant_reset_retry_path
-  - user_run_test_charge
+  - user_run_test_charge_hardware
   required_precedence:
-  - before: acquire_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
     after: acquire_error_class_from_user
   - before: acquire_error_class_from_user
     after: user_inspect_cable_path
@@ -798,11 +1129,15 @@ tasks:
   - before: assistant_restore_backend_link
     after: assistant_rotate_station_certificate
   - before: assistant_rotate_station_certificate
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
     after: assistant_reprovision_connectivity
   - before: assistant_reprovision_connectivity
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
     after: assistant_reset_retry_path
   - before: assistant_reset_retry_path
-    after: user_run_test_charge
+    after: user_run_test_charge_hardware
   completion_cues:
   - goal: agent.network_paths[active_station].backend_link_state == 'up'
     check_field: backend_link_state
@@ -859,7 +1194,7 @@ tasks:
       \ means, but write it as natural language \u2014 the ticket gives the agent\
       \ direction, not a mechanical checklist. Be specific enough that the agent knows\
       \ what kind of task this is."
-- task_id: ev_full_system_recovery_d15_148
+- task_id: connectivity_link_only_d14_025
   author_surface:
     editable_fields:
     - runtime.reason_for_call
@@ -868,25 +1203,25 @@ tasks:
     required_non_empty: true
     placeholder: __AUTHOR_ME__
   entity_context:
-    user_id: U2001
-    name: Avery Chen
-    account_id: A2001
-    station_id: ST2001
-    session_id: S2001
+    user_id: U3001
+    name: Sam Rivera
+    account_id: A3001
+    station_id: ST3001
+    session_id: S3001
   start_state_summary:
     world:
-    - agent.accounts[active_account].fraud_lock_state = 'on'
-    - agent.accounts[active_account].hold_status = 'present'
-    - agent.accounts[active_account].payment_token_status = 'invalid'
+    - agent.accounts[active_account].fraud_lock_state = 'off'
+    - agent.accounts[active_account].hold_status = 'cleared'
+    - agent.accounts[active_account].payment_token_status = 'valid'
     - agent.network_paths[active_station].backend_link_state = 'down'
-    - agent.network_paths[active_station].cert_state = 'stale'
+    - agent.network_paths[active_station].cert_state = 'fresh'
     - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'full_system'
-    - agent.sessions[active_session].last_fault_code = 'FW-410'
+    - agent.sessions[active_session].error_class = 'connectivity'
+    - agent.sessions[active_session].last_fault_code = 'NET-410'
     - agent.sessions[active_session].profile_state = 'not_ready'
     - agent.sessions[active_session].retry_state = 'not_ready'
     - agent.stations[active_station].diagnostics_state = 'idle'
-    - agent.stations[active_station].firmware_state = 'outdated'
+    - agent.stations[active_station].firmware_state = 'current'
     - agent.stations[active_station].reachability_state = 'reachable'
     - user.physical.app_refresh_state = 'stale'
     - user.physical.cable_inspection_state = 'not_checked'
@@ -895,26 +1230,34 @@ tasks:
     - user.physical.station_power_cycle_state = 'not_done'
     - user.physical.test_charge_state = 'not_run'
     - user.physical.vehicle_ready_state = 'not_ready'
+    - user.view.display_backend_link_state = 'down'
+    - user.view.display_cert_state = 'fresh'
+    - user.view.display_charge_status = 'inactive'
+    - user.view.display_diagnostics_state = 'idle'
+    - user.view.display_error_class = 'connectivity'
+    - user.view.display_fault_code = 'NET-410'
+    - user.view.display_firmware_state = 'current'
+    - user.view.display_fraud_lock_state = 'off'
+    - user.view.display_hold_status = 'cleared'
+    - user.view.display_payment_token_status = 'valid'
+    - user.view.display_profile_state = 'not_ready'
+    - user.view.display_reachability_state = 'reachable'
+    - user.view.display_retry_state = 'not_ready'
     bindings: []
   goal_state_summary:
     world:
-    - agent.accounts[active_account].fraud_lock_state == 'off'
-    - agent.accounts[active_account].hold_status == 'cleared'
-    - agent.accounts[active_account].payment_token_status == 'valid'
     - agent.network_paths[active_station].backend_link_state == 'up'
-    - agent.network_paths[active_station].cert_state == 'fresh'
+    - agent.sessions[active_session].charge_state == 'active'
     - agent.sessions[active_session].last_fault_code == 'NONE'
     - agent.sessions[active_session].profile_state == 'ready'
+    - agent.sessions[active_session].retry_state == 'ready'
     - agent.stations[active_station].diagnostics_state == 'ran'
-    - agent.stations[active_station].firmware_state == 'current'
     bindings:
     - app_error_class
-    - fault_code
   goal_binding_do_not_disclose:
-  - full_system
-  - FW-410
+  - connectivity
   required_action_chain:
-  - acquire_fault_code_from_user
+  - acquire_screen_fault_code_from_user
   - acquire_error_class_from_user
   - user_inspect_cable_path
   - user_reseat_connector
@@ -922,15 +1265,12 @@ tasks:
   - user_set_vehicle_ready_mode
   - user_refresh_charging_app_session
   - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
   - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_update_station_firmware
-  - assistant_reprovision_full_system
+  - assistant_reprovision_connectivity
+  - assistant_reset_retry_path
+  - user_run_test_charge_hardware
   required_precedence:
-  - before: acquire_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
     after: acquire_error_class_from_user
   - before: acquire_error_class_from_user
     after: user_inspect_cable_path
@@ -945,45 +1285,28 @@ tasks:
   - before: user_refresh_charging_app_session
     after: assistant_run_backend_diagnostics
   - before: assistant_run_backend_diagnostics
-    after: assistant_clear_backend_hold
-  - before: assistant_clear_backend_hold
-    after: assistant_refresh_payment_token
-  - before: assistant_refresh_payment_token
-    after: assistant_release_fraud_lock
-  - before: assistant_release_fraud_lock
     after: assistant_restore_backend_link
   - before: assistant_restore_backend_link
-    after: assistant_rotate_station_certificate
-  - before: assistant_rotate_station_certificate
-    after: assistant_update_station_firmware
-  - before: assistant_update_station_firmware
-    after: assistant_reprovision_full_system
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reprovision_connectivity
+  - before: assistant_reprovision_connectivity
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reset_retry_path
+  - before: assistant_reset_retry_path
+    after: user_run_test_charge_hardware
   completion_cues:
-  - goal: agent.accounts[active_account].fraud_lock_state == 'off'
-    check_field: fraud_lock_state
-    expected: 'off'
-    unmet_reason: Fraud lock is still active.
-    observed_from: check_resolution_status.observed.fraud_lock_state
-  - goal: agent.accounts[active_account].hold_status == 'cleared'
-    check_field: hold_status
-    expected: cleared
-    unmet_reason: Backend hold is not cleared yet.
-    observed_from: check_resolution_status.observed.hold_status
-  - goal: agent.accounts[active_account].payment_token_status == 'valid'
-    check_field: payment_token_status
-    expected: valid
-    unmet_reason: Payment token is not valid yet.
-    observed_from: check_resolution_status.observed.payment_token_status
   - goal: agent.network_paths[active_station].backend_link_state == 'up'
     check_field: backend_link_state
     expected: up
     unmet_reason: Backend link is still down.
     observed_from: check_resolution_status.observed.backend_link_state
-  - goal: agent.network_paths[active_station].cert_state == 'fresh'
-    check_field: cert_state
-    expected: fresh
-    unmet_reason: Station certificate is still stale.
-    observed_from: check_resolution_status.observed.cert_state
+  - goal: agent.sessions[active_session].charge_state == 'active'
+    check_field: charge_status
+    expected: active
+    unmet_reason: Charging is not active yet.
+    observed_from: check_resolution_status.observed.charge_status
   - goal: agent.sessions[active_session].last_fault_code == 'NONE'
     check_field: fault_code
     expected: NONE
@@ -994,16 +1317,16 @@ tasks:
     expected: ready
     unmet_reason: Charging profile is not ready yet.
     observed_from: check_resolution_status.observed.profile_state
+  - goal: agent.sessions[active_session].retry_state == 'ready'
+    check_field: retry_state
+    expected: ready
+    unmet_reason: Retry path is not ready yet.
+    observed_from: check_resolution_status.observed.retry_state
   - goal: agent.stations[active_station].diagnostics_state == 'ran'
     check_field: diagnostics_state
     expected: ran
     unmet_reason: Backend diagnostics have not run yet.
     observed_from: check_resolution_status.observed.diagnostics_state
-  - goal: agent.stations[active_station].firmware_state == 'current'
-    check_field: firmware_state
-    expected: current
-    unmet_reason: Station firmware is not current yet.
-    observed_from: check_resolution_status.observed.firmware_state
   authoring_guidance:
     entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
       \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
@@ -1024,7 +1347,160 @@ tasks:
       \ means, but write it as natural language \u2014 the ticket gives the agent\
       \ direction, not a mechanical checklist. Be specific enough that the agent knows\
       \ what kind of task this is."
-- task_id: ev_full_system_recovery_d16_149
+- task_id: connectivity_cert_only_d14_026
+  author_surface:
+    editable_fields:
+    - runtime.reason_for_call
+    - runtime.known_info
+    - runtime.ticket
+    required_non_empty: true
+    placeholder: __AUTHOR_ME__
+  entity_context:
+    user_id: U1001
+    name: Jordan Lee
+    account_id: A1001
+    station_id: ST1001
+    session_id: S1001
+  start_state_summary:
+    world:
+    - agent.accounts[active_account].fraud_lock_state = 'off'
+    - agent.accounts[active_account].hold_status = 'cleared'
+    - agent.accounts[active_account].payment_token_status = 'valid'
+    - agent.network_paths[active_station].backend_link_state = 'up'
+    - agent.network_paths[active_station].cert_state = 'stale'
+    - agent.sessions[active_session].charge_state = 'inactive'
+    - agent.sessions[active_session].error_class = 'connectivity'
+    - agent.sessions[active_session].last_fault_code = 'CERT-409'
+    - agent.sessions[active_session].profile_state = 'not_ready'
+    - agent.sessions[active_session].retry_state = 'not_ready'
+    - agent.stations[active_station].diagnostics_state = 'idle'
+    - agent.stations[active_station].firmware_state = 'current'
+    - agent.stations[active_station].reachability_state = 'reachable'
+    - user.physical.app_refresh_state = 'stale'
+    - user.physical.cable_inspection_state = 'not_checked'
+    - user.physical.connector_reseat_state = 'not_reseated'
+    - user.physical.screen_accessible = True
+    - user.physical.station_power_cycle_state = 'not_done'
+    - user.physical.test_charge_state = 'not_run'
+    - user.physical.vehicle_ready_state = 'not_ready'
+    - user.view.display_backend_link_state = 'up'
+    - user.view.display_cert_state = 'stale'
+    - user.view.display_charge_status = 'inactive'
+    - user.view.display_diagnostics_state = 'idle'
+    - user.view.display_error_class = 'connectivity'
+    - user.view.display_fault_code = 'CERT-409'
+    - user.view.display_firmware_state = 'current'
+    - user.view.display_fraud_lock_state = 'off'
+    - user.view.display_hold_status = 'cleared'
+    - user.view.display_payment_token_status = 'valid'
+    - user.view.display_profile_state = 'not_ready'
+    - user.view.display_reachability_state = 'reachable'
+    - user.view.display_retry_state = 'not_ready'
+    bindings: []
+  goal_state_summary:
+    world:
+    - agent.network_paths[active_station].cert_state == 'fresh'
+    - agent.sessions[active_session].charge_state == 'active'
+    - agent.sessions[active_session].last_fault_code == 'NONE'
+    - agent.sessions[active_session].profile_state == 'ready'
+    - agent.sessions[active_session].retry_state == 'ready'
+    - agent.stations[active_station].diagnostics_state == 'ran'
+    bindings:
+    - app_error_class
+  goal_binding_do_not_disclose:
+  - connectivity
+  required_action_chain:
+  - acquire_screen_fault_code_from_user
+  - acquire_error_class_from_user
+  - user_inspect_cable_path
+  - user_reseat_connector
+  - user_power_cycle_station
+  - user_set_vehicle_ready_mode
+  - user_refresh_charging_app_session
+  - assistant_run_backend_diagnostics
+  - assistant_rotate_station_certificate
+  - assistant_reprovision_connectivity
+  - assistant_reset_retry_path
+  - user_run_test_charge_hardware
+  required_precedence:
+  - before: acquire_screen_fault_code_from_user
+    after: acquire_error_class_from_user
+  - before: acquire_error_class_from_user
+    after: user_inspect_cable_path
+  - before: user_inspect_cable_path
+    after: user_reseat_connector
+  - before: user_reseat_connector
+    after: user_power_cycle_station
+  - before: user_power_cycle_station
+    after: user_set_vehicle_ready_mode
+  - before: user_set_vehicle_ready_mode
+    after: user_refresh_charging_app_session
+  - before: user_refresh_charging_app_session
+    after: assistant_run_backend_diagnostics
+  - before: assistant_run_backend_diagnostics
+    after: assistant_rotate_station_certificate
+  - before: assistant_rotate_station_certificate
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reprovision_connectivity
+  - before: assistant_reprovision_connectivity
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reset_retry_path
+  - before: assistant_reset_retry_path
+    after: user_run_test_charge_hardware
+  completion_cues:
+  - goal: agent.network_paths[active_station].cert_state == 'fresh'
+    check_field: cert_state
+    expected: fresh
+    unmet_reason: Station certificate is still stale.
+    observed_from: check_resolution_status.observed.cert_state
+  - goal: agent.sessions[active_session].charge_state == 'active'
+    check_field: charge_status
+    expected: active
+    unmet_reason: Charging is not active yet.
+    observed_from: check_resolution_status.observed.charge_status
+  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
+    check_field: fault_code
+    expected: NONE
+    unmet_reason: Station still reports an unresolved fault code.
+    observed_from: check_resolution_status.observed.fault_code
+  - goal: agent.sessions[active_session].profile_state == 'ready'
+    check_field: profile_state
+    expected: ready
+    unmet_reason: Charging profile is not ready yet.
+    observed_from: check_resolution_status.observed.profile_state
+  - goal: agent.sessions[active_session].retry_state == 'ready'
+    check_field: retry_state
+    expected: ready
+    unmet_reason: Retry path is not ready yet.
+    observed_from: check_resolution_status.observed.retry_state
+  - goal: agent.stations[active_station].diagnostics_state == 'ran'
+    check_field: diagnostics_state
+    expected: ran
+    unmet_reason: Backend diagnostics have not run yet.
+    observed_from: check_resolution_status.observed.diagnostics_state
+  authoring_guidance:
+    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
+      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
+      \ from context by tools. They must NEVER appear in authored text. Only the customer\
+      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
+      \ ARE user-observable and should be included."
+    reason_for_call: First person, conversational. Describe what the user is experiencing
+      and what they want fixed. Include frustration or urgency cues. Never mention
+      internal paths, tool names, or solution steps.
+    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
+      \ entity_context. Add situational context the user would naturally know (location,\
+      \ what they observe, what they were doing). Include concrete start-binding values\
+      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
+      \ plumbing."
+    ticket: "Third person, agent-facing case summary. Start with the problem, then\
+      \ customer name. End with 'They will consider the issue resolved when...' describing\
+      \ a concrete observable outcome. Read completion_cues to understand what resolved\
+      \ means, but write it as natural language \u2014 the ticket gives the agent\
+      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
+      \ what kind of task this is."
+- task_id: connectivity_physical_partial_d11_027
   author_surface:
     editable_fields:
     - runtime.reason_for_call
@@ -1040,6 +1516,156 @@ tasks:
     session_id: S2001
   start_state_summary:
     world:
+    - agent.accounts[active_account].fraud_lock_state = 'off'
+    - agent.accounts[active_account].hold_status = 'cleared'
+    - agent.accounts[active_account].payment_token_status = 'valid'
+    - agent.network_paths[active_station].backend_link_state = 'down'
+    - agent.network_paths[active_station].cert_state = 'stale'
+    - agent.sessions[active_session].charge_state = 'inactive'
+    - agent.sessions[active_session].error_class = 'connectivity'
+    - agent.sessions[active_session].last_fault_code = 'NET-410'
+    - agent.sessions[active_session].profile_state = 'not_ready'
+    - agent.sessions[active_session].retry_state = 'not_ready'
+    - agent.stations[active_station].diagnostics_state = 'idle'
+    - agent.stations[active_station].firmware_state = 'current'
+    - agent.stations[active_station].reachability_state = 'reachable'
+    - user.physical.app_refresh_state = 'refreshed'
+    - user.physical.cable_inspection_state = 'checked_ok'
+    - user.physical.connector_reseat_state = 'reseated'
+    - user.physical.screen_accessible = True
+    - user.physical.station_power_cycle_state = 'not_done'
+    - user.physical.test_charge_state = 'not_run'
+    - user.physical.vehicle_ready_state = 'ready'
+    - user.view.display_backend_link_state = 'down'
+    - user.view.display_cert_state = 'stale'
+    - user.view.display_charge_status = 'inactive'
+    - user.view.display_diagnostics_state = 'idle'
+    - user.view.display_error_class = 'connectivity'
+    - user.view.display_fault_code = 'NET-410'
+    - user.view.display_firmware_state = 'current'
+    - user.view.display_fraud_lock_state = 'off'
+    - user.view.display_hold_status = 'cleared'
+    - user.view.display_payment_token_status = 'valid'
+    - user.view.display_profile_state = 'not_ready'
+    - user.view.display_reachability_state = 'reachable'
+    - user.view.display_retry_state = 'not_ready'
+    bindings: []
+  goal_state_summary:
+    world:
+    - agent.network_paths[active_station].backend_link_state == 'up'
+    - agent.network_paths[active_station].cert_state == 'fresh'
+    - agent.sessions[active_session].charge_state == 'active'
+    - agent.sessions[active_session].last_fault_code == 'NONE'
+    - agent.sessions[active_session].profile_state == 'ready'
+    - agent.sessions[active_session].retry_state == 'ready'
+    - agent.stations[active_station].diagnostics_state == 'ran'
+    bindings:
+    - app_error_class
+  goal_binding_do_not_disclose:
+  - connectivity
+  required_action_chain:
+  - acquire_screen_fault_code_from_user
+  - acquire_error_class_from_user
+  - user_power_cycle_station
+  - assistant_run_backend_diagnostics
+  - assistant_restore_backend_link
+  - assistant_rotate_station_certificate
+  - assistant_reprovision_connectivity
+  - assistant_reset_retry_path
+  - user_run_test_charge_hardware
+  required_precedence:
+  - before: acquire_screen_fault_code_from_user
+    after: acquire_error_class_from_user
+  - before: acquire_error_class_from_user
+    after: user_power_cycle_station
+  - before: user_power_cycle_station
+    after: assistant_run_backend_diagnostics
+  - before: assistant_run_backend_diagnostics
+    after: assistant_restore_backend_link
+  - before: assistant_restore_backend_link
+    after: assistant_rotate_station_certificate
+  - before: assistant_rotate_station_certificate
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reprovision_connectivity
+  - before: assistant_reprovision_connectivity
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
+    after: assistant_reset_retry_path
+  - before: assistant_reset_retry_path
+    after: user_run_test_charge_hardware
+  completion_cues:
+  - goal: agent.network_paths[active_station].backend_link_state == 'up'
+    check_field: backend_link_state
+    expected: up
+    unmet_reason: Backend link is still down.
+    observed_from: check_resolution_status.observed.backend_link_state
+  - goal: agent.network_paths[active_station].cert_state == 'fresh'
+    check_field: cert_state
+    expected: fresh
+    unmet_reason: Station certificate is still stale.
+    observed_from: check_resolution_status.observed.cert_state
+  - goal: agent.sessions[active_session].charge_state == 'active'
+    check_field: charge_status
+    expected: active
+    unmet_reason: Charging is not active yet.
+    observed_from: check_resolution_status.observed.charge_status
+  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
+    check_field: fault_code
+    expected: NONE
+    unmet_reason: Station still reports an unresolved fault code.
+    observed_from: check_resolution_status.observed.fault_code
+  - goal: agent.sessions[active_session].profile_state == 'ready'
+    check_field: profile_state
+    expected: ready
+    unmet_reason: Charging profile is not ready yet.
+    observed_from: check_resolution_status.observed.profile_state
+  - goal: agent.sessions[active_session].retry_state == 'ready'
+    check_field: retry_state
+    expected: ready
+    unmet_reason: Retry path is not ready yet.
+    observed_from: check_resolution_status.observed.retry_state
+  - goal: agent.stations[active_station].diagnostics_state == 'ran'
+    check_field: diagnostics_state
+    expected: ran
+    unmet_reason: Backend diagnostics have not run yet.
+    observed_from: check_resolution_status.observed.diagnostics_state
+  authoring_guidance:
+    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
+      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
+      \ from context by tools. They must NEVER appear in authored text. Only the customer\
+      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
+      \ ARE user-observable and should be included."
+    reason_for_call: First person, conversational. Describe what the user is experiencing
+      and what they want fixed. Include frustration or urgency cues. Never mention
+      internal paths, tool names, or solution steps.
+    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
+      \ entity_context. Add situational context the user would naturally know (location,\
+      \ what they observe, what they were doing). Include concrete start-binding values\
+      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
+      \ plumbing."
+    ticket: "Third person, agent-facing case summary. Start with the problem, then\
+      \ customer name. End with 'They will consider the issue resolved when...' describing\
+      \ a concrete observable outcome. Read completion_cues to understand what resolved\
+      \ means, but write it as natural language \u2014 the ticket gives the agent\
+      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
+      \ what kind of task this is."
+- task_id: full_system_d19_028
+  author_surface:
+    editable_fields:
+    - runtime.reason_for_call
+    - runtime.known_info
+    - runtime.ticket
+    required_non_empty: true
+    placeholder: __AUTHOR_ME__
+  entity_context:
+    user_id: U3001
+    name: Sam Rivera
+    account_id: A3001
+    station_id: ST3001
+    session_id: S3001
+  start_state_summary:
+    world:
     - agent.accounts[active_account].fraud_lock_state = 'on'
     - agent.accounts[active_account].hold_status = 'present'
     - agent.accounts[active_account].payment_token_status = 'invalid'
@@ -1047,7 +1673,7 @@ tasks:
     - agent.network_paths[active_station].cert_state = 'stale'
     - agent.sessions[active_session].charge_state = 'inactive'
     - agent.sessions[active_session].error_class = 'full_system'
-    - agent.sessions[active_session].last_fault_code = 'FW-410'
+    - agent.sessions[active_session].last_fault_code = 'NET-410'
     - agent.sessions[active_session].profile_state = 'not_ready'
     - agent.sessions[active_session].retry_state = 'not_ready'
     - agent.stations[active_station].diagnostics_state = 'idle'
@@ -1060,6 +1686,19 @@ tasks:
     - user.physical.station_power_cycle_state = 'not_done'
     - user.physical.test_charge_state = 'not_run'
     - user.physical.vehicle_ready_state = 'not_ready'
+    - user.view.display_backend_link_state = 'down'
+    - user.view.display_cert_state = 'stale'
+    - user.view.display_charge_status = 'inactive'
+    - user.view.display_diagnostics_state = 'idle'
+    - user.view.display_error_class = 'full_system'
+    - user.view.display_fault_code = 'NET-410'
+    - user.view.display_firmware_state = 'outdated'
+    - user.view.display_fraud_lock_state = 'on'
+    - user.view.display_hold_status = 'present'
+    - user.view.display_payment_token_status = 'invalid'
+    - user.view.display_profile_state = 'not_ready'
+    - user.view.display_reachability_state = 'reachable'
+    - user.view.display_retry_state = 'not_ready'
     bindings: []
   goal_state_summary:
     world:
@@ -1068,6 +1707,7 @@ tasks:
     - agent.accounts[active_account].payment_token_status == 'valid'
     - agent.network_paths[active_station].backend_link_state == 'up'
     - agent.network_paths[active_station].cert_state == 'fresh'
+    - agent.sessions[active_session].charge_state == 'active'
     - agent.sessions[active_session].last_fault_code == 'NONE'
     - agent.sessions[active_session].profile_state == 'ready'
     - agent.sessions[active_session].retry_state == 'ready'
@@ -1075,12 +1715,10 @@ tasks:
     - agent.stations[active_station].firmware_state == 'current'
     bindings:
     - app_error_class
-    - fault_code
   goal_binding_do_not_disclose:
   - full_system
-  - FW-410
   required_action_chain:
-  - acquire_fault_code_from_user
+  - acquire_screen_fault_code_from_user
   - acquire_error_class_from_user
   - user_inspect_cable_path
   - user_reseat_connector
@@ -1096,8 +1734,9 @@ tasks:
   - assistant_update_station_firmware
   - assistant_reprovision_full_system
   - assistant_reset_retry_path
+  - user_run_test_charge_hardware
   required_precedence:
-  - before: acquire_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
     after: acquire_error_class_from_user
   - before: acquire_error_class_from_user
     after: user_inspect_cable_path
@@ -1124,187 +1763,15 @@ tasks:
   - before: assistant_rotate_station_certificate
     after: assistant_update_station_firmware
   - before: assistant_update_station_firmware
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
     after: assistant_reprovision_full_system
   - before: assistant_reprovision_full_system
-    after: assistant_reset_retry_path
-  completion_cues:
-  - goal: agent.accounts[active_account].fraud_lock_state == 'off'
-    check_field: fraud_lock_state
-    expected: 'off'
-    unmet_reason: Fraud lock is still active.
-    observed_from: check_resolution_status.observed.fraud_lock_state
-  - goal: agent.accounts[active_account].hold_status == 'cleared'
-    check_field: hold_status
-    expected: cleared
-    unmet_reason: Backend hold is not cleared yet.
-    observed_from: check_resolution_status.observed.hold_status
-  - goal: agent.accounts[active_account].payment_token_status == 'valid'
-    check_field: payment_token_status
-    expected: valid
-    unmet_reason: Payment token is not valid yet.
-    observed_from: check_resolution_status.observed.payment_token_status
-  - goal: agent.network_paths[active_station].backend_link_state == 'up'
-    check_field: backend_link_state
-    expected: up
-    unmet_reason: Backend link is still down.
-    observed_from: check_resolution_status.observed.backend_link_state
-  - goal: agent.network_paths[active_station].cert_state == 'fresh'
-    check_field: cert_state
-    expected: fresh
-    unmet_reason: Station certificate is still stale.
-    observed_from: check_resolution_status.observed.cert_state
-  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
-    check_field: fault_code
-    expected: NONE
-    unmet_reason: Station still reports an unresolved fault code.
-    observed_from: check_resolution_status.observed.fault_code
-  - goal: agent.sessions[active_session].profile_state == 'ready'
-    check_field: profile_state
-    expected: ready
-    unmet_reason: Charging profile is not ready yet.
-    observed_from: check_resolution_status.observed.profile_state
-  - goal: agent.sessions[active_session].retry_state == 'ready'
-    check_field: retry_state
-    expected: ready
-    unmet_reason: Retry path is not ready yet.
-    observed_from: check_resolution_status.observed.retry_state
-  - goal: agent.stations[active_station].diagnostics_state == 'ran'
-    check_field: diagnostics_state
-    expected: ran
-    unmet_reason: Backend diagnostics have not run yet.
-    observed_from: check_resolution_status.observed.diagnostics_state
-  - goal: agent.stations[active_station].firmware_state == 'current'
-    check_field: firmware_state
-    expected: current
-    unmet_reason: Station firmware is not current yet.
-    observed_from: check_resolution_status.observed.firmware_state
-  authoring_guidance:
-    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
-      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
-      \ from context by tools. They must NEVER appear in authored text. Only the customer\
-      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
-      \ ARE user-observable and should be included."
-    reason_for_call: First person, conversational. Describe what the user is experiencing
-      and what they want fixed. Include frustration or urgency cues. Never mention
-      internal paths, tool names, or solution steps.
-    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
-      \ entity_context. Add situational context the user would naturally know (location,\
-      \ what they observe, what they were doing). Include concrete start-binding values\
-      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
-      \ plumbing."
-    ticket: "Third person, agent-facing case summary. Start with the problem, then\
-      \ customer name. End with 'They will consider the issue resolved when...' describing\
-      \ a concrete observable outcome. Read completion_cues to understand what resolved\
-      \ means, but write it as natural language \u2014 the ticket gives the agent\
-      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
-      \ what kind of task this is."
-- task_id: ev_full_system_recovery_d17_150
-  author_surface:
-    editable_fields:
-    - runtime.reason_for_call
-    - runtime.known_info
-    - runtime.ticket
-    required_non_empty: true
-    placeholder: __AUTHOR_ME__
-  entity_context:
-    user_id: U2001
-    name: Avery Chen
-    account_id: A2001
-    station_id: ST2001
-    session_id: S2001
-  start_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state = 'on'
-    - agent.accounts[active_account].hold_status = 'present'
-    - agent.accounts[active_account].payment_token_status = 'invalid'
-    - agent.network_paths[active_station].backend_link_state = 'down'
-    - agent.network_paths[active_station].cert_state = 'stale'
-    - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'full_system'
-    - agent.sessions[active_session].last_fault_code = 'FW-410'
-    - agent.sessions[active_session].profile_state = 'not_ready'
-    - agent.sessions[active_session].retry_state = 'not_ready'
-    - agent.stations[active_station].diagnostics_state = 'idle'
-    - agent.stations[active_station].firmware_state = 'outdated'
-    - agent.stations[active_station].reachability_state = 'reachable'
-    - user.physical.app_refresh_state = 'stale'
-    - user.physical.cable_inspection_state = 'not_checked'
-    - user.physical.connector_reseat_state = 'not_reseated'
-    - user.physical.screen_accessible = True
-    - user.physical.station_power_cycle_state = 'not_done'
-    - user.physical.test_charge_state = 'not_run'
-    - user.physical.vehicle_ready_state = 'not_ready'
-    bindings: []
-  goal_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state == 'off'
-    - agent.accounts[active_account].hold_status == 'cleared'
-    - agent.accounts[active_account].payment_token_status == 'valid'
-    - agent.network_paths[active_station].backend_link_state == 'up'
-    - agent.network_paths[active_station].cert_state == 'fresh'
-    - agent.sessions[active_session].charge_state == 'active'
-    - agent.sessions[active_session].last_fault_code == 'NONE'
-    - agent.sessions[active_session].profile_state == 'ready'
-    - agent.sessions[active_session].retry_state == 'ready'
-    - agent.stations[active_station].diagnostics_state == 'ran'
-    - agent.stations[active_station].firmware_state == 'current'
-    bindings:
-    - app_error_class
-    - fault_code
-  goal_binding_do_not_disclose:
-  - full_system
-  - FW-410
-  required_action_chain:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_update_station_firmware
-  - assistant_reprovision_full_system
-  - assistant_reset_retry_path
-  - user_run_test_charge
-  required_precedence:
-  - before: acquire_fault_code_from_user
-    after: acquire_error_class_from_user
-  - before: acquire_error_class_from_user
-    after: user_inspect_cable_path
-  - before: user_inspect_cable_path
-    after: user_reseat_connector
-  - before: user_reseat_connector
-    after: user_power_cycle_station
-  - before: user_power_cycle_station
-    after: user_set_vehicle_ready_mode
-  - before: user_set_vehicle_ready_mode
-    after: user_refresh_charging_app_session
-  - before: user_refresh_charging_app_session
-    after: assistant_run_backend_diagnostics
-  - before: assistant_run_backend_diagnostics
-    after: assistant_clear_backend_hold
-  - before: assistant_clear_backend_hold
-    after: assistant_refresh_payment_token
-  - before: assistant_refresh_payment_token
-    after: assistant_release_fraud_lock
-  - before: assistant_release_fraud_lock
-    after: assistant_restore_backend_link
-  - before: assistant_restore_backend_link
-    after: assistant_rotate_station_certificate
-  - before: assistant_rotate_station_certificate
-    after: assistant_update_station_firmware
-  - before: assistant_update_station_firmware
-    after: assistant_reprovision_full_system
-  - before: assistant_reprovision_full_system
+    after: acquire_screen_fault_code_from_user
+  - before: acquire_screen_fault_code_from_user
     after: assistant_reset_retry_path
   - before: assistant_reset_retry_path
-    after: user_run_test_charge
+    after: user_run_test_charge_hardware
   completion_cues:
   - goal: agent.accounts[active_account].fraud_lock_state == 'off'
     check_field: fraud_lock_state
@@ -1361,927 +1828,6 @@ tasks:
     expected: current
     unmet_reason: Station firmware is not current yet.
     observed_from: check_resolution_status.observed.firmware_state
-  authoring_guidance:
-    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
-      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
-      \ from context by tools. They must NEVER appear in authored text. Only the customer\
-      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
-      \ ARE user-observable and should be included."
-    reason_for_call: First person, conversational. Describe what the user is experiencing
-      and what they want fixed. Include frustration or urgency cues. Never mention
-      internal paths, tool names, or solution steps.
-    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
-      \ entity_context. Add situational context the user would naturally know (location,\
-      \ what they observe, what they were doing). Include concrete start-binding values\
-      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
-      \ plumbing."
-    ticket: "Third person, agent-facing case summary. Start with the problem, then\
-      \ customer name. End with 'They will consider the issue resolved when...' describing\
-      \ a concrete observable outcome. Read completion_cues to understand what resolved\
-      \ means, but write it as natural language \u2014 the ticket gives the agent\
-      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
-      \ what kind of task this is."
-- task_id: ev_billing_partial_knowledge_d11_176
-  author_surface:
-    editable_fields:
-    - runtime.reason_for_call
-    - runtime.known_info
-    - runtime.ticket
-    required_non_empty: true
-    placeholder: __AUTHOR_ME__
-  entity_context:
-    user_id: U1001
-    name: Jordan Lee
-    account_id: A1001
-    station_id: ST1001
-    session_id: S1001
-  start_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state = 'on'
-    - agent.accounts[active_account].hold_status = 'present'
-    - agent.accounts[active_account].payment_token_status = 'invalid'
-    - agent.network_paths[active_station].backend_link_state = 'up'
-    - agent.network_paths[active_station].cert_state = 'fresh'
-    - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'billing'
-    - agent.sessions[active_session].last_fault_code = 'BH-101'
-    - agent.sessions[active_session].profile_state = 'not_ready'
-    - agent.sessions[active_session].retry_state = 'not_ready'
-    - agent.stations[active_station].diagnostics_state = 'idle'
-    - agent.stations[active_station].firmware_state = 'current'
-    - agent.stations[active_station].reachability_state = 'reachable'
-    - user.physical.app_refresh_state = 'stale'
-    - user.physical.cable_inspection_state = 'not_checked'
-    - user.physical.connector_reseat_state = 'not_reseated'
-    - user.physical.screen_accessible = True
-    - user.physical.station_power_cycle_state = 'not_done'
-    - user.physical.test_charge_state = 'not_run'
-    - user.physical.vehicle_ready_state = 'not_ready'
-    bindings:
-    - binding_id: fault_code
-      world_path: agent.sessions[active_session].last_fault_code
-      value: BH-101
-  goal_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state == 'off'
-    - agent.accounts[active_account].hold_status == 'cleared'
-    - agent.accounts[active_account].payment_token_status == 'valid'
-    - agent.sessions[active_session].last_fault_code == 'NONE'
-    - agent.sessions[active_session].profile_state == 'ready'
-    - agent.stations[active_station].diagnostics_state == 'ran'
-    bindings:
-    - app_error_class
-  goal_binding_do_not_disclose:
-  - billing
-  required_action_chain:
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
-  - assistant_reprovision_billing
-  required_precedence:
-  - before: acquire_error_class_from_user
-    after: user_inspect_cable_path
-  - before: user_inspect_cable_path
-    after: user_reseat_connector
-  - before: user_reseat_connector
-    after: user_power_cycle_station
-  - before: user_power_cycle_station
-    after: user_set_vehicle_ready_mode
-  - before: user_set_vehicle_ready_mode
-    after: user_refresh_charging_app_session
-  - before: user_refresh_charging_app_session
-    after: assistant_run_backend_diagnostics
-  - before: assistant_run_backend_diagnostics
-    after: assistant_clear_backend_hold
-  - before: assistant_clear_backend_hold
-    after: assistant_refresh_payment_token
-  - before: assistant_refresh_payment_token
-    after: assistant_release_fraud_lock
-  - before: assistant_release_fraud_lock
-    after: assistant_reprovision_billing
-  completion_cues:
-  - goal: agent.accounts[active_account].fraud_lock_state == 'off'
-    check_field: fraud_lock_state
-    expected: 'off'
-    unmet_reason: Fraud lock is still active.
-    observed_from: check_resolution_status.observed.fraud_lock_state
-  - goal: agent.accounts[active_account].hold_status == 'cleared'
-    check_field: hold_status
-    expected: cleared
-    unmet_reason: Backend hold is not cleared yet.
-    observed_from: check_resolution_status.observed.hold_status
-  - goal: agent.accounts[active_account].payment_token_status == 'valid'
-    check_field: payment_token_status
-    expected: valid
-    unmet_reason: Payment token is not valid yet.
-    observed_from: check_resolution_status.observed.payment_token_status
-  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
-    check_field: fault_code
-    expected: NONE
-    unmet_reason: Station still reports an unresolved fault code.
-    observed_from: check_resolution_status.observed.fault_code
-  - goal: agent.sessions[active_session].profile_state == 'ready'
-    check_field: profile_state
-    expected: ready
-    unmet_reason: Charging profile is not ready yet.
-    observed_from: check_resolution_status.observed.profile_state
-  - goal: agent.stations[active_station].diagnostics_state == 'ran'
-    check_field: diagnostics_state
-    expected: ran
-    unmet_reason: Backend diagnostics have not run yet.
-    observed_from: check_resolution_status.observed.diagnostics_state
-  authoring_guidance:
-    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
-      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
-      \ from context by tools. They must NEVER appear in authored text. Only the customer\
-      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
-      \ ARE user-observable and should be included."
-    reason_for_call: First person, conversational. Describe what the user is experiencing
-      and what they want fixed. Include frustration or urgency cues. Never mention
-      internal paths, tool names, or solution steps.
-    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
-      \ entity_context. Add situational context the user would naturally know (location,\
-      \ what they observe, what they were doing). Include concrete start-binding values\
-      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
-      \ plumbing."
-    ticket: "Third person, agent-facing case summary. Start with the problem, then\
-      \ customer name. End with 'They will consider the issue resolved when...' describing\
-      \ a concrete observable outcome. Read completion_cues to understand what resolved\
-      \ means, but write it as natural language \u2014 the ticket gives the agent\
-      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
-      \ what kind of task this is."
-- task_id: ev_billing_partial_knowledge_d12_177
-  author_surface:
-    editable_fields:
-    - runtime.reason_for_call
-    - runtime.known_info
-    - runtime.ticket
-    required_non_empty: true
-    placeholder: __AUTHOR_ME__
-  entity_context:
-    user_id: U3001
-    name: Sam Rivera
-    account_id: A3001
-    station_id: ST3001
-    session_id: S3001
-  start_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state = 'on'
-    - agent.accounts[active_account].hold_status = 'present'
-    - agent.accounts[active_account].payment_token_status = 'invalid'
-    - agent.network_paths[active_station].backend_link_state = 'up'
-    - agent.network_paths[active_station].cert_state = 'fresh'
-    - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'billing'
-    - agent.sessions[active_session].last_fault_code = 'BH-101'
-    - agent.sessions[active_session].profile_state = 'not_ready'
-    - agent.sessions[active_session].retry_state = 'not_ready'
-    - agent.stations[active_station].diagnostics_state = 'idle'
-    - agent.stations[active_station].firmware_state = 'current'
-    - agent.stations[active_station].reachability_state = 'reachable'
-    - user.physical.app_refresh_state = 'stale'
-    - user.physical.cable_inspection_state = 'not_checked'
-    - user.physical.connector_reseat_state = 'not_reseated'
-    - user.physical.screen_accessible = True
-    - user.physical.station_power_cycle_state = 'not_done'
-    - user.physical.test_charge_state = 'not_run'
-    - user.physical.vehicle_ready_state = 'not_ready'
-    bindings:
-    - binding_id: fault_code
-      world_path: agent.sessions[active_session].last_fault_code
-      value: BH-101
-  goal_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state == 'off'
-    - agent.accounts[active_account].hold_status == 'cleared'
-    - agent.accounts[active_account].payment_token_status == 'valid'
-    - agent.sessions[active_session].last_fault_code == 'NONE'
-    - agent.sessions[active_session].profile_state == 'ready'
-    - agent.sessions[active_session].retry_state == 'ready'
-    - agent.stations[active_station].diagnostics_state == 'ran'
-    bindings:
-    - app_error_class
-  goal_binding_do_not_disclose:
-  - billing
-  required_action_chain:
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
-  - assistant_reprovision_billing
-  - assistant_reset_retry_path
-  required_precedence:
-  - before: acquire_error_class_from_user
-    after: user_inspect_cable_path
-  - before: user_inspect_cable_path
-    after: user_reseat_connector
-  - before: user_reseat_connector
-    after: user_power_cycle_station
-  - before: user_power_cycle_station
-    after: user_set_vehicle_ready_mode
-  - before: user_set_vehicle_ready_mode
-    after: user_refresh_charging_app_session
-  - before: user_refresh_charging_app_session
-    after: assistant_run_backend_diagnostics
-  - before: assistant_run_backend_diagnostics
-    after: assistant_clear_backend_hold
-  - before: assistant_clear_backend_hold
-    after: assistant_refresh_payment_token
-  - before: assistant_refresh_payment_token
-    after: assistant_release_fraud_lock
-  - before: assistant_release_fraud_lock
-    after: assistant_reprovision_billing
-  - before: assistant_reprovision_billing
-    after: assistant_reset_retry_path
-  completion_cues:
-  - goal: agent.accounts[active_account].fraud_lock_state == 'off'
-    check_field: fraud_lock_state
-    expected: 'off'
-    unmet_reason: Fraud lock is still active.
-    observed_from: check_resolution_status.observed.fraud_lock_state
-  - goal: agent.accounts[active_account].hold_status == 'cleared'
-    check_field: hold_status
-    expected: cleared
-    unmet_reason: Backend hold is not cleared yet.
-    observed_from: check_resolution_status.observed.hold_status
-  - goal: agent.accounts[active_account].payment_token_status == 'valid'
-    check_field: payment_token_status
-    expected: valid
-    unmet_reason: Payment token is not valid yet.
-    observed_from: check_resolution_status.observed.payment_token_status
-  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
-    check_field: fault_code
-    expected: NONE
-    unmet_reason: Station still reports an unresolved fault code.
-    observed_from: check_resolution_status.observed.fault_code
-  - goal: agent.sessions[active_session].profile_state == 'ready'
-    check_field: profile_state
-    expected: ready
-    unmet_reason: Charging profile is not ready yet.
-    observed_from: check_resolution_status.observed.profile_state
-  - goal: agent.sessions[active_session].retry_state == 'ready'
-    check_field: retry_state
-    expected: ready
-    unmet_reason: Retry path is not ready yet.
-    observed_from: check_resolution_status.observed.retry_state
-  - goal: agent.stations[active_station].diagnostics_state == 'ran'
-    check_field: diagnostics_state
-    expected: ran
-    unmet_reason: Backend diagnostics have not run yet.
-    observed_from: check_resolution_status.observed.diagnostics_state
-  authoring_guidance:
-    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
-      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
-      \ from context by tools. They must NEVER appear in authored text. Only the customer\
-      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
-      \ ARE user-observable and should be included."
-    reason_for_call: First person, conversational. Describe what the user is experiencing
-      and what they want fixed. Include frustration or urgency cues. Never mention
-      internal paths, tool names, or solution steps.
-    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
-      \ entity_context. Add situational context the user would naturally know (location,\
-      \ what they observe, what they were doing). Include concrete start-binding values\
-      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
-      \ plumbing."
-    ticket: "Third person, agent-facing case summary. Start with the problem, then\
-      \ customer name. End with 'They will consider the issue resolved when...' describing\
-      \ a concrete observable outcome. Read completion_cues to understand what resolved\
-      \ means, but write it as natural language \u2014 the ticket gives the agent\
-      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
-      \ what kind of task this is."
-- task_id: ev_billing_partial_knowledge_d13_178
-  author_surface:
-    editable_fields:
-    - runtime.reason_for_call
-    - runtime.known_info
-    - runtime.ticket
-    required_non_empty: true
-    placeholder: __AUTHOR_ME__
-  entity_context:
-    user_id: U2001
-    name: Avery Chen
-    account_id: A2001
-    station_id: ST2001
-    session_id: S2001
-  start_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state = 'on'
-    - agent.accounts[active_account].hold_status = 'present'
-    - agent.accounts[active_account].payment_token_status = 'invalid'
-    - agent.network_paths[active_station].backend_link_state = 'up'
-    - agent.network_paths[active_station].cert_state = 'fresh'
-    - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'billing'
-    - agent.sessions[active_session].last_fault_code = 'BH-101'
-    - agent.sessions[active_session].profile_state = 'not_ready'
-    - agent.sessions[active_session].retry_state = 'not_ready'
-    - agent.stations[active_station].diagnostics_state = 'idle'
-    - agent.stations[active_station].firmware_state = 'current'
-    - agent.stations[active_station].reachability_state = 'reachable'
-    - user.physical.app_refresh_state = 'stale'
-    - user.physical.cable_inspection_state = 'not_checked'
-    - user.physical.connector_reseat_state = 'not_reseated'
-    - user.physical.screen_accessible = True
-    - user.physical.station_power_cycle_state = 'not_done'
-    - user.physical.test_charge_state = 'not_run'
-    - user.physical.vehicle_ready_state = 'not_ready'
-    bindings:
-    - binding_id: fault_code
-      world_path: agent.sessions[active_session].last_fault_code
-      value: BH-101
-  goal_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state == 'off'
-    - agent.accounts[active_account].hold_status == 'cleared'
-    - agent.accounts[active_account].payment_token_status == 'valid'
-    - agent.sessions[active_session].charge_state == 'active'
-    - agent.sessions[active_session].last_fault_code == 'NONE'
-    - agent.sessions[active_session].profile_state == 'ready'
-    - agent.sessions[active_session].retry_state == 'ready'
-    - agent.stations[active_station].diagnostics_state == 'ran'
-    bindings:
-    - app_error_class
-  goal_binding_do_not_disclose:
-  - billing
-  required_action_chain:
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
-  - assistant_reprovision_billing
-  - assistant_reset_retry_path
-  - user_run_test_charge
-  required_precedence:
-  - before: acquire_error_class_from_user
-    after: user_inspect_cable_path
-  - before: user_inspect_cable_path
-    after: user_reseat_connector
-  - before: user_reseat_connector
-    after: user_power_cycle_station
-  - before: user_power_cycle_station
-    after: user_set_vehicle_ready_mode
-  - before: user_set_vehicle_ready_mode
-    after: user_refresh_charging_app_session
-  - before: user_refresh_charging_app_session
-    after: assistant_run_backend_diagnostics
-  - before: assistant_run_backend_diagnostics
-    after: assistant_clear_backend_hold
-  - before: assistant_clear_backend_hold
-    after: assistant_refresh_payment_token
-  - before: assistant_refresh_payment_token
-    after: assistant_release_fraud_lock
-  - before: assistant_release_fraud_lock
-    after: assistant_reprovision_billing
-  - before: assistant_reprovision_billing
-    after: assistant_reset_retry_path
-  - before: assistant_reset_retry_path
-    after: user_run_test_charge
-  completion_cues:
-  - goal: agent.accounts[active_account].fraud_lock_state == 'off'
-    check_field: fraud_lock_state
-    expected: 'off'
-    unmet_reason: Fraud lock is still active.
-    observed_from: check_resolution_status.observed.fraud_lock_state
-  - goal: agent.accounts[active_account].hold_status == 'cleared'
-    check_field: hold_status
-    expected: cleared
-    unmet_reason: Backend hold is not cleared yet.
-    observed_from: check_resolution_status.observed.hold_status
-  - goal: agent.accounts[active_account].payment_token_status == 'valid'
-    check_field: payment_token_status
-    expected: valid
-    unmet_reason: Payment token is not valid yet.
-    observed_from: check_resolution_status.observed.payment_token_status
-  - goal: agent.sessions[active_session].charge_state == 'active'
-    check_field: charge_status
-    expected: active
-    unmet_reason: Charging is not active yet.
-    observed_from: check_resolution_status.observed.charge_status
-  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
-    check_field: fault_code
-    expected: NONE
-    unmet_reason: Station still reports an unresolved fault code.
-    observed_from: check_resolution_status.observed.fault_code
-  - goal: agent.sessions[active_session].profile_state == 'ready'
-    check_field: profile_state
-    expected: ready
-    unmet_reason: Charging profile is not ready yet.
-    observed_from: check_resolution_status.observed.profile_state
-  - goal: agent.sessions[active_session].retry_state == 'ready'
-    check_field: retry_state
-    expected: ready
-    unmet_reason: Retry path is not ready yet.
-    observed_from: check_resolution_status.observed.retry_state
-  - goal: agent.stations[active_station].diagnostics_state == 'ran'
-    check_field: diagnostics_state
-    expected: ran
-    unmet_reason: Backend diagnostics have not run yet.
-    observed_from: check_resolution_status.observed.diagnostics_state
-  authoring_guidance:
-    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
-      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
-      \ from context by tools. They must NEVER appear in authored text. Only the customer\
-      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
-      \ ARE user-observable and should be included."
-    reason_for_call: First person, conversational. Describe what the user is experiencing
-      and what they want fixed. Include frustration or urgency cues. Never mention
-      internal paths, tool names, or solution steps.
-    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
-      \ entity_context. Add situational context the user would naturally know (location,\
-      \ what they observe, what they were doing). Include concrete start-binding values\
-      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
-      \ plumbing."
-    ticket: "Third person, agent-facing case summary. Start with the problem, then\
-      \ customer name. End with 'They will consider the issue resolved when...' describing\
-      \ a concrete observable outcome. Read completion_cues to understand what resolved\
-      \ means, but write it as natural language \u2014 the ticket gives the agent\
-      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
-      \ what kind of task this is."
-- task_id: ev_connectivity_partial_physical_d5_183
-  author_surface:
-    editable_fields:
-    - runtime.reason_for_call
-    - runtime.known_info
-    - runtime.ticket
-    required_non_empty: true
-    placeholder: __AUTHOR_ME__
-  entity_context:
-    user_id: U2001
-    name: Avery Chen
-    account_id: A2001
-    station_id: ST2001
-    session_id: S2001
-  start_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state = 'off'
-    - agent.accounts[active_account].hold_status = 'cleared'
-    - agent.accounts[active_account].payment_token_status = 'valid'
-    - agent.network_paths[active_station].backend_link_state = 'down'
-    - agent.network_paths[active_station].cert_state = 'stale'
-    - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'connectivity'
-    - agent.sessions[active_session].last_fault_code = 'CERT-409'
-    - agent.sessions[active_session].profile_state = 'not_ready'
-    - agent.sessions[active_session].retry_state = 'not_ready'
-    - agent.stations[active_station].diagnostics_state = 'idle'
-    - agent.stations[active_station].firmware_state = 'current'
-    - agent.stations[active_station].reachability_state = 'reachable'
-    - user.physical.app_refresh_state = 'refreshed'
-    - user.physical.cable_inspection_state = 'checked_ok'
-    - user.physical.connector_reseat_state = 'not_reseated'
-    - user.physical.screen_accessible = True
-    - user.physical.station_power_cycle_state = 'not_done'
-    - user.physical.test_charge_state = 'not_run'
-    - user.physical.vehicle_ready_state = 'ready'
-    bindings: []
-  goal_state_summary:
-    world:
-    - agent.network_paths[active_station].backend_link_state == 'up'
-    - agent.network_paths[active_station].cert_state == 'fresh'
-    - agent.stations[active_station].diagnostics_state == 'ran'
-    bindings:
-    - app_error_class
-    - fault_code
-  goal_binding_do_not_disclose:
-  - connectivity
-  - CERT-409
-  required_action_chain:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - assistant_run_backend_diagnostics
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  required_precedence:
-  - before: acquire_fault_code_from_user
-    after: acquire_error_class_from_user
-  - before: acquire_error_class_from_user
-    after: assistant_run_backend_diagnostics
-  - before: assistant_run_backend_diagnostics
-    after: assistant_restore_backend_link
-  - before: assistant_restore_backend_link
-    after: assistant_rotate_station_certificate
-  completion_cues:
-  - goal: agent.network_paths[active_station].backend_link_state == 'up'
-    check_field: backend_link_state
-    expected: up
-    unmet_reason: Backend link is still down.
-    observed_from: check_resolution_status.observed.backend_link_state
-  - goal: agent.network_paths[active_station].cert_state == 'fresh'
-    check_field: cert_state
-    expected: fresh
-    unmet_reason: Station certificate is still stale.
-    observed_from: check_resolution_status.observed.cert_state
-  - goal: agent.stations[active_station].diagnostics_state == 'ran'
-    check_field: diagnostics_state
-    expected: ran
-    unmet_reason: Backend diagnostics have not run yet.
-    observed_from: check_resolution_status.observed.diagnostics_state
-  authoring_guidance:
-    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
-      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
-      \ from context by tools. They must NEVER appear in authored text. Only the customer\
-      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
-      \ ARE user-observable and should be included."
-    reason_for_call: First person, conversational. Describe what the user is experiencing
-      and what they want fixed. Include frustration or urgency cues. Never mention
-      internal paths, tool names, or solution steps.
-    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
-      \ entity_context. Add situational context the user would naturally know (location,\
-      \ what they observe, what they were doing). Include concrete start-binding values\
-      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
-      \ plumbing."
-    ticket: "Third person, agent-facing case summary. Start with the problem, then\
-      \ customer name. End with 'They will consider the issue resolved when...' describing\
-      \ a concrete observable outcome. Read completion_cues to understand what resolved\
-      \ means, but write it as natural language \u2014 the ticket gives the agent\
-      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
-      \ what kind of task this is."
-- task_id: ev_connectivity_partial_physical_d8_189
-  author_surface:
-    editable_fields:
-    - runtime.reason_for_call
-    - runtime.known_info
-    - runtime.ticket
-    required_non_empty: true
-    placeholder: __AUTHOR_ME__
-  entity_context:
-    user_id: U2001
-    name: Avery Chen
-    account_id: A2001
-    station_id: ST2001
-    session_id: S2001
-  start_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state = 'off'
-    - agent.accounts[active_account].hold_status = 'cleared'
-    - agent.accounts[active_account].payment_token_status = 'valid'
-    - agent.network_paths[active_station].backend_link_state = 'down'
-    - agent.network_paths[active_station].cert_state = 'stale'
-    - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'connectivity'
-    - agent.sessions[active_session].last_fault_code = 'CERT-409'
-    - agent.sessions[active_session].profile_state = 'not_ready'
-    - agent.sessions[active_session].retry_state = 'not_ready'
-    - agent.stations[active_station].diagnostics_state = 'idle'
-    - agent.stations[active_station].firmware_state = 'current'
-    - agent.stations[active_station].reachability_state = 'reachable'
-    - user.physical.app_refresh_state = 'refreshed'
-    - user.physical.cable_inspection_state = 'checked_ok'
-    - user.physical.connector_reseat_state = 'not_reseated'
-    - user.physical.screen_accessible = True
-    - user.physical.station_power_cycle_state = 'not_done'
-    - user.physical.test_charge_state = 'not_run'
-    - user.physical.vehicle_ready_state = 'ready'
-    bindings: []
-  goal_state_summary:
-    world:
-    - agent.network_paths[active_station].backend_link_state == 'up'
-    - agent.network_paths[active_station].cert_state == 'fresh'
-    - agent.sessions[active_session].last_fault_code == 'NONE'
-    - agent.sessions[active_session].profile_state == 'ready'
-    - agent.stations[active_station].diagnostics_state == 'ran'
-    bindings:
-    - app_error_class
-    - fault_code
-  goal_binding_do_not_disclose:
-  - connectivity
-  - CERT-409
-  required_action_chain:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_reseat_connector
-  - user_power_cycle_station
-  - assistant_run_backend_diagnostics
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_reprovision_connectivity
-  required_precedence:
-  - before: acquire_fault_code_from_user
-    after: acquire_error_class_from_user
-  - before: acquire_error_class_from_user
-    after: user_reseat_connector
-  - before: user_reseat_connector
-    after: user_power_cycle_station
-  - before: user_power_cycle_station
-    after: assistant_run_backend_diagnostics
-  - before: assistant_run_backend_diagnostics
-    after: assistant_restore_backend_link
-  - before: assistant_restore_backend_link
-    after: assistant_rotate_station_certificate
-  - before: assistant_rotate_station_certificate
-    after: assistant_reprovision_connectivity
-  completion_cues:
-  - goal: agent.network_paths[active_station].backend_link_state == 'up'
-    check_field: backend_link_state
-    expected: up
-    unmet_reason: Backend link is still down.
-    observed_from: check_resolution_status.observed.backend_link_state
-  - goal: agent.network_paths[active_station].cert_state == 'fresh'
-    check_field: cert_state
-    expected: fresh
-    unmet_reason: Station certificate is still stale.
-    observed_from: check_resolution_status.observed.cert_state
-  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
-    check_field: fault_code
-    expected: NONE
-    unmet_reason: Station still reports an unresolved fault code.
-    observed_from: check_resolution_status.observed.fault_code
-  - goal: agent.sessions[active_session].profile_state == 'ready'
-    check_field: profile_state
-    expected: ready
-    unmet_reason: Charging profile is not ready yet.
-    observed_from: check_resolution_status.observed.profile_state
-  - goal: agent.stations[active_station].diagnostics_state == 'ran'
-    check_field: diagnostics_state
-    expected: ran
-    unmet_reason: Backend diagnostics have not run yet.
-    observed_from: check_resolution_status.observed.diagnostics_state
-  authoring_guidance:
-    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
-      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
-      \ from context by tools. They must NEVER appear in authored text. Only the customer\
-      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
-      \ ARE user-observable and should be included."
-    reason_for_call: First person, conversational. Describe what the user is experiencing
-      and what they want fixed. Include frustration or urgency cues. Never mention
-      internal paths, tool names, or solution steps.
-    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
-      \ entity_context. Add situational context the user would naturally know (location,\
-      \ what they observe, what they were doing). Include concrete start-binding values\
-      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
-      \ plumbing."
-    ticket: "Third person, agent-facing case summary. Start with the problem, then\
-      \ customer name. End with 'They will consider the issue resolved when...' describing\
-      \ a concrete observable outcome. Read completion_cues to understand what resolved\
-      \ means, but write it as natural language \u2014 the ticket gives the agent\
-      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
-      \ what kind of task this is."
-- task_id: ev_connectivity_partial_physical_d9_190
-  author_surface:
-    editable_fields:
-    - runtime.reason_for_call
-    - runtime.known_info
-    - runtime.ticket
-    required_non_empty: true
-    placeholder: __AUTHOR_ME__
-  entity_context:
-    user_id: U3001
-    name: Sam Rivera
-    account_id: A3001
-    station_id: ST3001
-    session_id: S3001
-  start_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state = 'off'
-    - agent.accounts[active_account].hold_status = 'cleared'
-    - agent.accounts[active_account].payment_token_status = 'valid'
-    - agent.network_paths[active_station].backend_link_state = 'down'
-    - agent.network_paths[active_station].cert_state = 'stale'
-    - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'connectivity'
-    - agent.sessions[active_session].last_fault_code = 'CERT-409'
-    - agent.sessions[active_session].profile_state = 'not_ready'
-    - agent.sessions[active_session].retry_state = 'not_ready'
-    - agent.stations[active_station].diagnostics_state = 'idle'
-    - agent.stations[active_station].firmware_state = 'current'
-    - agent.stations[active_station].reachability_state = 'reachable'
-    - user.physical.app_refresh_state = 'refreshed'
-    - user.physical.cable_inspection_state = 'checked_ok'
-    - user.physical.connector_reseat_state = 'not_reseated'
-    - user.physical.screen_accessible = True
-    - user.physical.station_power_cycle_state = 'not_done'
-    - user.physical.test_charge_state = 'not_run'
-    - user.physical.vehicle_ready_state = 'ready'
-    bindings: []
-  goal_state_summary:
-    world:
-    - agent.network_paths[active_station].backend_link_state == 'up'
-    - agent.network_paths[active_station].cert_state == 'fresh'
-    - agent.sessions[active_session].last_fault_code == 'NONE'
-    - agent.sessions[active_session].profile_state == 'ready'
-    - agent.sessions[active_session].retry_state == 'ready'
-    - agent.stations[active_station].diagnostics_state == 'ran'
-    bindings:
-    - app_error_class
-    - fault_code
-  goal_binding_do_not_disclose:
-  - connectivity
-  - CERT-409
-  required_action_chain:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_reseat_connector
-  - user_power_cycle_station
-  - assistant_run_backend_diagnostics
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_reprovision_connectivity
-  - assistant_reset_retry_path
-  required_precedence:
-  - before: acquire_fault_code_from_user
-    after: acquire_error_class_from_user
-  - before: acquire_error_class_from_user
-    after: user_reseat_connector
-  - before: user_reseat_connector
-    after: user_power_cycle_station
-  - before: user_power_cycle_station
-    after: assistant_run_backend_diagnostics
-  - before: assistant_run_backend_diagnostics
-    after: assistant_restore_backend_link
-  - before: assistant_restore_backend_link
-    after: assistant_rotate_station_certificate
-  - before: assistant_rotate_station_certificate
-    after: assistant_reprovision_connectivity
-  - before: assistant_reprovision_connectivity
-    after: assistant_reset_retry_path
-  completion_cues:
-  - goal: agent.network_paths[active_station].backend_link_state == 'up'
-    check_field: backend_link_state
-    expected: up
-    unmet_reason: Backend link is still down.
-    observed_from: check_resolution_status.observed.backend_link_state
-  - goal: agent.network_paths[active_station].cert_state == 'fresh'
-    check_field: cert_state
-    expected: fresh
-    unmet_reason: Station certificate is still stale.
-    observed_from: check_resolution_status.observed.cert_state
-  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
-    check_field: fault_code
-    expected: NONE
-    unmet_reason: Station still reports an unresolved fault code.
-    observed_from: check_resolution_status.observed.fault_code
-  - goal: agent.sessions[active_session].profile_state == 'ready'
-    check_field: profile_state
-    expected: ready
-    unmet_reason: Charging profile is not ready yet.
-    observed_from: check_resolution_status.observed.profile_state
-  - goal: agent.sessions[active_session].retry_state == 'ready'
-    check_field: retry_state
-    expected: ready
-    unmet_reason: Retry path is not ready yet.
-    observed_from: check_resolution_status.observed.retry_state
-  - goal: agent.stations[active_station].diagnostics_state == 'ran'
-    check_field: diagnostics_state
-    expected: ran
-    unmet_reason: Backend diagnostics have not run yet.
-    observed_from: check_resolution_status.observed.diagnostics_state
-  authoring_guidance:
-    entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
-      \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\
-      \ from context by tools. They must NEVER appear in authored text. Only the customer\
-      \ name is user-facing. Bindings (error codes, plan names) in start_state_summary.bindings\
-      \ ARE user-observable and should be included."
-    reason_for_call: First person, conversational. Describe what the user is experiencing
-      and what they want fixed. Include frustration or urgency cues. Never mention
-      internal paths, tool names, or solution steps.
-    known_info: "Second person. Start with 'You are [name]' using ONLY the name from\
-      \ entity_context. Add situational context the user would naturally know (location,\
-      \ what they observe, what they were doing). Include concrete start-binding values\
-      \ (e.g. error codes) when present \u2014 these are user-observable facts, not\
-      \ plumbing."
-    ticket: "Third person, agent-facing case summary. Start with the problem, then\
-      \ customer name. End with 'They will consider the issue resolved when...' describing\
-      \ a concrete observable outcome. Read completion_cues to understand what resolved\
-      \ means, but write it as natural language \u2014 the ticket gives the agent\
-      \ direction, not a mechanical checklist. Be specific enough that the agent knows\
-      \ what kind of task this is."
-- task_id: ev_connectivity_partial_physical_d10_191
-  author_surface:
-    editable_fields:
-    - runtime.reason_for_call
-    - runtime.known_info
-    - runtime.ticket
-    required_non_empty: true
-    placeholder: __AUTHOR_ME__
-  entity_context:
-    user_id: U2001
-    name: Avery Chen
-    account_id: A2001
-    station_id: ST2001
-    session_id: S2001
-  start_state_summary:
-    world:
-    - agent.accounts[active_account].fraud_lock_state = 'off'
-    - agent.accounts[active_account].hold_status = 'cleared'
-    - agent.accounts[active_account].payment_token_status = 'valid'
-    - agent.network_paths[active_station].backend_link_state = 'down'
-    - agent.network_paths[active_station].cert_state = 'stale'
-    - agent.sessions[active_session].charge_state = 'inactive'
-    - agent.sessions[active_session].error_class = 'connectivity'
-    - agent.sessions[active_session].last_fault_code = 'CERT-409'
-    - agent.sessions[active_session].profile_state = 'not_ready'
-    - agent.sessions[active_session].retry_state = 'not_ready'
-    - agent.stations[active_station].diagnostics_state = 'idle'
-    - agent.stations[active_station].firmware_state = 'current'
-    - agent.stations[active_station].reachability_state = 'reachable'
-    - user.physical.app_refresh_state = 'refreshed'
-    - user.physical.cable_inspection_state = 'checked_ok'
-    - user.physical.connector_reseat_state = 'not_reseated'
-    - user.physical.screen_accessible = True
-    - user.physical.station_power_cycle_state = 'not_done'
-    - user.physical.test_charge_state = 'not_run'
-    - user.physical.vehicle_ready_state = 'ready'
-    bindings: []
-  goal_state_summary:
-    world:
-    - agent.network_paths[active_station].backend_link_state == 'up'
-    - agent.network_paths[active_station].cert_state == 'fresh'
-    - agent.sessions[active_session].charge_state == 'active'
-    - agent.sessions[active_session].last_fault_code == 'NONE'
-    - agent.sessions[active_session].profile_state == 'ready'
-    - agent.sessions[active_session].retry_state == 'ready'
-    - agent.stations[active_station].diagnostics_state == 'ran'
-    bindings:
-    - app_error_class
-    - fault_code
-  goal_binding_do_not_disclose:
-  - connectivity
-  - CERT-409
-  required_action_chain:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_reseat_connector
-  - user_power_cycle_station
-  - assistant_run_backend_diagnostics
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_reprovision_connectivity
-  - assistant_reset_retry_path
-  - user_run_test_charge
-  required_precedence:
-  - before: acquire_fault_code_from_user
-    after: acquire_error_class_from_user
-  - before: acquire_error_class_from_user
-    after: user_reseat_connector
-  - before: user_reseat_connector
-    after: user_power_cycle_station
-  - before: user_power_cycle_station
-    after: assistant_run_backend_diagnostics
-  - before: assistant_run_backend_diagnostics
-    after: assistant_restore_backend_link
-  - before: assistant_restore_backend_link
-    after: assistant_rotate_station_certificate
-  - before: assistant_rotate_station_certificate
-    after: assistant_reprovision_connectivity
-  - before: assistant_reprovision_connectivity
-    after: assistant_reset_retry_path
-  - before: assistant_reset_retry_path
-    after: user_run_test_charge
-  completion_cues:
-  - goal: agent.network_paths[active_station].backend_link_state == 'up'
-    check_field: backend_link_state
-    expected: up
-    unmet_reason: Backend link is still down.
-    observed_from: check_resolution_status.observed.backend_link_state
-  - goal: agent.network_paths[active_station].cert_state == 'fresh'
-    check_field: cert_state
-    expected: fresh
-    unmet_reason: Station certificate is still stale.
-    observed_from: check_resolution_status.observed.cert_state
-  - goal: agent.sessions[active_session].charge_state == 'active'
-    check_field: charge_status
-    expected: active
-    unmet_reason: Charging is not active yet.
-    observed_from: check_resolution_status.observed.charge_status
-  - goal: agent.sessions[active_session].last_fault_code == 'NONE'
-    check_field: fault_code
-    expected: NONE
-    unmet_reason: Station still reports an unresolved fault code.
-    observed_from: check_resolution_status.observed.fault_code
-  - goal: agent.sessions[active_session].profile_state == 'ready'
-    check_field: profile_state
-    expected: ready
-    unmet_reason: Charging profile is not ready yet.
-    observed_from: check_resolution_status.observed.profile_state
-  - goal: agent.sessions[active_session].retry_state == 'ready'
-    check_field: retry_state
-    expected: ready
-    unmet_reason: Retry path is not ready yet.
-    observed_from: check_resolution_status.observed.retry_state
-  - goal: agent.stations[active_station].diagnostics_state == 'ran'
-    check_field: diagnostics_state
-    expected: ran
-    unmet_reason: Backend diagnostics have not run yet.
-    observed_from: check_resolution_status.observed.diagnostics_state
   authoring_guidance:
     entity_ids_are_plumbing: "Entity slot IDs in entity_context (account_id, station_id,\
       \ session_id) are invisible plumbing \u2014 set by initialization_actions, resolved\

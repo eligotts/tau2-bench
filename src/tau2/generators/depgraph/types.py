@@ -34,7 +34,7 @@ class ContextSlotSpec(BaseModel):
 class WorldPredicateSpec(BaseModel):
     """Predicate over projected world state."""
 
-    op: Literal["eq"] = "eq"
+    op: Literal["eq", "neq", "gt", "lt", "gte", "lte"] = "eq"
     path: str
     value: Any
 
@@ -42,6 +42,13 @@ class WorldPredicateSpec(BaseModel):
     def validate_predicate(self) -> "WorldPredicateSpec":
         if not self.path.strip():
             raise ValueError("world predicate path cannot be empty")
+        if self.op in {"gt", "lt", "gte", "lte"} and not isinstance(
+            self.value, (int, float)
+        ):
+            raise ValueError(
+                f"Comparison operator '{self.op}' requires numeric value, "
+                f"got {type(self.value).__name__}"
+            )
         return self
 
 
@@ -55,6 +62,28 @@ class WorldEffectSpec(BaseModel):
     def validate_effect(self) -> "WorldEffectSpec":
         if not self.path.strip():
             raise ValueError("world effect path cannot be empty")
+        return self
+
+
+class SyncEffectSpec(BaseModel):
+    """Sync output: either copy from another path or set a literal."""
+
+    path: str
+    set: Optional[Any] = None
+    from_path: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_sync_effect(self) -> "SyncEffectSpec":
+        if not self.path.strip():
+            raise ValueError("sync effect path cannot be empty")
+        has_set = "set" in self.model_fields_set
+        has_from_path = self.from_path is not None
+        if not has_set and not has_from_path:
+            raise ValueError("sync effect must have either 'set' or 'from_path'")
+        if has_set and has_from_path:
+            raise ValueError("sync effect cannot have both 'set' and 'from_path'")
+        if self.from_path is not None and not self.from_path.strip():
+            raise ValueError("sync effect from_path cannot be blank when provided")
         return self
 
 
@@ -81,6 +110,35 @@ class BindingSourceSpec(BaseModel):
         return self
 
 
+class BindingPredicateSpec(BaseModel):
+    """Predicate over binding acquisition state."""
+
+    binding_id: str
+    acquired: bool = True
+
+    @model_validator(mode="after")
+    def validate_binding_predicate(self) -> "BindingPredicateSpec":
+        if not self.binding_id.strip():
+            raise ValueError("binding predicate binding_id cannot be empty")
+        return self
+
+
+class SyncRuleSpec(BaseModel):
+    """Reactive rule that fires after init and after every action."""
+
+    rule_id: str
+    requires_world: list[WorldPredicateSpec] = Field(default_factory=list)
+    effects_world: list[SyncEffectSpec] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_sync_rule(self) -> "SyncRuleSpec":
+        if not self.rule_id.strip():
+            raise ValueError("sync rule rule_id cannot be empty")
+        if not self.effects_world:
+            raise ValueError(f"Sync rule '{self.rule_id}' must have at least one effect")
+        return self
+
+
 class ActionContract(BaseModel):
     """One transition/action contract in depgraph v2."""
 
@@ -89,9 +147,7 @@ class ActionContract(BaseModel):
     tool_name: str
     classification: ToolClassification
     requires_world: list[WorldPredicateSpec] = Field(default_factory=list)
-    requires_absent_world: list[WorldPredicateSpec] = Field(default_factory=list)
-    requires_bindings: list[str] = Field(default_factory=list)
-    requires_absent_bindings: list[str] = Field(default_factory=list)
+    requires_bindings: list[BindingPredicateSpec] = Field(default_factory=list)
     effects_world: list[WorldEffectSpec] = Field(default_factory=list)
     effects_bindings: list[str] = Field(default_factory=list)
     tool_arg_bindings: dict[str, str] = Field(default_factory=dict)
@@ -105,23 +161,13 @@ class ActionContract(BaseModel):
             raise ValueError(f"Action '{self.action_id}' has empty tool_name")
 
         _check_unique(
-            self.requires_bindings,
+            [predicate.binding_id for predicate in self.requires_bindings],
             label=f"action '{self.action_id}' requires_bindings",
-        )
-        _check_unique(
-            self.requires_absent_bindings,
-            label=f"action '{self.action_id}' requires_absent_bindings",
         )
         _check_unique(
             self.effects_bindings,
             label=f"action '{self.action_id}' effects_bindings",
         )
-
-        if set(self.requires_bindings) & set(self.requires_absent_bindings):
-            raise ValueError(
-                f"Action '{self.action_id}' has bindings present in both "
-                "requires_bindings and requires_absent_bindings"
-            )
 
         if self.classification == "stutter-only":
             if self.effects_world or self.effects_bindings:
@@ -129,6 +175,9 @@ class ActionContract(BaseModel):
                     f"stutter-only action '{self.action_id}' cannot define world/binding effects"
                 )
 
+        required_present_bindings = {
+            predicate.binding_id for predicate in self.requires_bindings if predicate.acquired
+        }
         for param_name, binding_id in self.tool_arg_bindings.items():
             if not param_name.strip():
                 raise ValueError(
@@ -139,7 +188,7 @@ class ActionContract(BaseModel):
                     f"Action '{self.action_id}' has empty binding id in tool_arg_bindings"
                 )
             if (
-                binding_id not in self.requires_bindings
+                binding_id not in required_present_bindings
                 and self.classification != "knowledge-only"
             ):
                 raise ValueError(
@@ -217,6 +266,24 @@ class RuntimeTaskSpec(BaseModel):
     reward_basis: list[RewardBasis] = Field(default_factory=lambda: ["ENV_ASSERTION"])
 
 
+class TerminalProfileSpec(BaseModel):
+    """Named terminal world profile used to constrain valid task end states."""
+
+    profile_id: str
+    description: Optional[str] = None
+    requires_world: list[WorldPredicateSpec] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_profile(self) -> "TerminalProfileSpec":
+        if not self.profile_id.strip():
+            raise ValueError("terminal profile_id cannot be empty")
+        if not self.requires_world:
+            raise ValueError(
+                f"terminal profile '{self.profile_id}' must declare at least one requires_world predicate"
+            )
+        return self
+
+
 class GraphContractSpec(BaseModel):
     """Top-level depgraph v2 contract document."""
 
@@ -225,6 +292,7 @@ class GraphContractSpec(BaseModel):
     projection_fields: list[str] = Field(default_factory=list)
     bindings: list[BindingSourceSpec] = Field(default_factory=list)
     actions: list[ActionContract] = Field(default_factory=list)
+    sync_rules: list[SyncRuleSpec] = Field(default_factory=list)
 
     # Deprecated v1 fields kept only to avoid runtime import/attribute errors while
     # other modules are migrated. New authoring should not populate these.
@@ -245,6 +313,7 @@ class GraphContractSpec(BaseModel):
 
         projection_paths = [p for p in self.projection_fields if p.strip()]
         _check_unique(projection_paths, label="projection_fields")
+        projection_set = set(projection_paths)
 
         binding_ids = [b.binding_id for b in self.bindings]
         _check_unique(binding_ids, label="bindings.binding_id")
@@ -264,8 +333,7 @@ class GraphContractSpec(BaseModel):
                     f"{action.action_id}"
                 )
             unknown_refs = (
-                set(action.requires_bindings)
-                | set(action.requires_absent_bindings)
+                {predicate.binding_id for predicate in action.requires_bindings}
                 | set(action.effects_bindings)
                 | set(action.tool_arg_bindings.values())
             ) - binding_id_set
@@ -274,6 +342,27 @@ class GraphContractSpec(BaseModel):
                     f"Action '{action.action_id}' references unknown binding ids: "
                     f"{sorted(unknown_refs)}"
                 )
+
+        sync_rule_ids = [rule.rule_id for rule in self.sync_rules]
+        _check_unique(sync_rule_ids, label="sync_rules.rule_id")
+        for rule in self.sync_rules:
+            for predicate in rule.requires_world:
+                if predicate.path not in projection_set:
+                    raise ValueError(
+                        f"Sync rule '{rule.rule_id}' requires_world references "
+                        f"unknown projection path '{predicate.path}'"
+                    )
+            for effect in rule.effects_world:
+                if effect.path not in projection_set:
+                    raise ValueError(
+                        f"Sync rule '{rule.rule_id}' effect writes to "
+                        f"unknown projection path '{effect.path}'"
+                    )
+                if effect.from_path is not None and effect.from_path not in projection_set:
+                    raise ValueError(
+                        f"Sync rule '{rule.rule_id}' effect copies from "
+                        f"unknown projection path '{effect.from_path}'"
+                    )
 
         return self
 
@@ -286,6 +375,7 @@ class TaskIntent(BaseModel):
     start_bindings: list[str] = Field(default_factory=list)
     goal_world: list[WorldPredicateSpec] = Field(default_factory=list)
     goal_bindings: list[str] = Field(default_factory=list)
+    terminal_profile_id: Optional[str] = None
     required_actions: list[str] = Field(default_factory=list)
     # Optional trace metadata; not enforced as a history-order constraint in SAT checks.
     required_precedence: list[tuple[str, str]] = Field(default_factory=list)
@@ -310,6 +400,8 @@ class TaskIntent(BaseModel):
         )
         if self.min_plan_length < 0:
             raise ValueError("min_plan_length must be >= 0")
+        if self.terminal_profile_id is not None and not self.terminal_profile_id.strip():
+            raise ValueError("terminal_profile_id cannot be blank when provided")
         return self
 
 
@@ -326,6 +418,7 @@ class SamplingSeedSpec(BaseModel):
     seed_id: str
     start_world: list[WorldEffectSpec] = Field(default_factory=list)
     start_bindings: list[str] = Field(default_factory=list)
+    allowed_terminal_profiles: list[str] = Field(default_factory=list)
     min_depth: int = 3
     max_depth: int = 8
 
@@ -341,6 +434,10 @@ class SamplingSeedSpec(BaseModel):
             self.start_bindings,
             label=f"seed '{self.seed_id}' start_bindings",
         )
+        _check_unique(
+            self.allowed_terminal_profiles,
+            label=f"seed '{self.seed_id}' allowed_terminal_profiles",
+        )
         return self
 
 
@@ -352,14 +449,34 @@ class SamplingRequestDoc(BaseModel):
     goal_world_path_prefixes: list[str] = Field(
         default_factory=lambda: ["agent.", "user."]
     )
+    terminal_profiles: list[TerminalProfileSpec] = Field(default_factory=list)
     seeds: list[SamplingSeedSpec] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_sampling_request(self) -> "SamplingRequestDoc":
         if self.max_tasks <= 0:
             raise ValueError("max_tasks must be > 0")
+        if not self.terminal_profiles:
+            raise ValueError("sampling_request must declare at least one terminal profile")
+        _check_unique(
+            [profile.profile_id for profile in self.terminal_profiles],
+            label="sampling_request.terminal_profiles.profile_id",
+        )
         _check_unique(
             [seed.seed_id for seed in self.seeds],
             label="sampling_request.seeds.seed_id",
         )
+        known_profiles = {profile.profile_id for profile in self.terminal_profiles}
+        for seed in self.seeds:
+            if not seed.allowed_terminal_profiles:
+                raise ValueError(
+                    f"seed '{seed.seed_id}' must declare allowed_terminal_profiles"
+                )
+            unknown_profiles = sorted(
+                set(seed.allowed_terminal_profiles) - known_profiles
+            )
+            if unknown_profiles:
+                raise ValueError(
+                    f"seed '{seed.seed_id}' references unknown terminal profiles: {unknown_profiles}"
+                )
         return self

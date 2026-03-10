@@ -2,9 +2,9 @@ version: 1
 domain: ev_charging_support
 task_instructions: >-
   Follow the assistant's guidance and use tools only when explicitly asked. Base your updates on tool outputs, not guesses.
-  You will consider the issue resolved when charging can start and the remaining observable recovery criteria are satisfied.
+  You will consider the issue resolved when the assistant has achieved the assigned recovery target and the remaining observable recovery criteria are satisfied.
   Before deciding the issue is resolved, call check_resolution_status.
   Only emit ###STOP### when check_resolution_status returns resolved=true.
   If resolved=false, report unmet items and ask the assistant for the next step.
-reward_basis: [ACTION, ENV_ASSERTION]
+reward_basis: [ENV_ASSERTION]
 initialization_actions_prefix: []

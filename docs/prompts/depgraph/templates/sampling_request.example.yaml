@@ -2,8 +2,15 @@ version: 1
 max_tasks: 5
 goal_world_path_prefixes:
   - agent.
+terminal_profiles:
+  - profile_id: fully_resolved
+    requires_world:
+      - path: agent.lines[active_line].data_status
+        op: eq
+        value: active
 seeds:
   - seed_id: telecom_seed_01
+    allowed_terminal_profiles: [fully_resolved]
     start_world:
       - path: agent.lines[active_line].profile_state
         set: pending

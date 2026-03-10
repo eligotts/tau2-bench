@@ -41,10 +41,12 @@ Use this split to avoid ambiguity and accidental over-automation:
    - `task_narrative_briefs.yaml` via `run_runtime_scaffold`
    - `task_specs.runtime.yaml` bootstrap via `run_runtime_init`
    - stop-gate runtime injection updates via `run_stop_gate_inject`
+   - `review_bundle.md` via `run_review_bundle`
    - `tasks.depgraph.json` via `run_compile`
 3. **Hard rule**
    - Do not manually edit generated structure (`required_actions`, `required_precedence`, sampled start/goal intent) except via upstream source files and reruns.
    - Semantic enrichment happens in runtime fields only.
+   - Terminal end states must be declared in `sampling_request.yaml` via `terminal_profiles`; do not create shorter tasks by stopping in intermediate repair states.
 
 ## Order of use (trial run)
 
@@ -53,7 +55,7 @@ Use this split to avoid ambiguity and accidental over-automation:
 3. `02-graph-contract.md` (co-author contract + tools + user_tools + environment sync + persona pool)
 4. `03-task-intents.md`
 5. `04-preflight-and-compile.md` (scaffold-first runtime authoring + surface gate + fail-closed checks)
-6. `05-gap-review.md`
+6. `05-gap-review.md` (rubric audit before simulation; trace gap review after pilot run)
 7. `06-runtime-models-and-seeds.md` (refine schema/seeds only if needed)
 8. `07-runtime-tools-and-assertions.md` (refine/extend runtime callables only if needed)
 9. `08-runtime-environment-and-sync.md` (refine sync/policy only if needed)
@@ -82,6 +84,7 @@ For each pilot domain, the minimal authored files are:
 - generated: `data/tau2/domains/<domain>/task_context_bindings.yaml`
 - generated: `data/tau2/domains/<domain>/task_specs.runtime.scaffold.yaml`
 - generated: `data/tau2/domains/<domain>/task_narrative_briefs.yaml`
+- generated: `data/tau2/domains/<domain>/review_bundle.md`
 - authored/enriched: `data/tau2/domains/<domain>/task_specs.runtime.yaml`
 - `src/tau2/domains/<domain>/data_model.py`
 - `src/tau2/domains/<domain>/user_data_model.py`
@@ -105,3 +108,5 @@ Use the templates in `templates/` for schema shape:
 
 - `CHECKLIST.md` is the global consistency checklist to run after each major step.
 - Hard gate rule: every command step must pass before the next step starts.
+- Before simulation or sign-off, generate `review_bundle.md` and run `05-gap-review.md`
+  in authoring-audit mode against that bundle plus the source files it cites.

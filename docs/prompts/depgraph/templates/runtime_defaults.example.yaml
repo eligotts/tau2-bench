@@ -7,7 +7,9 @@ task_instructions: >-
   Before deciding the issue is resolved, call check_resolution_status.
   Only emit ###STOP### when check_resolution_status returns resolved=true.
   If resolved=false, report unmet items and ask for the next step.
-reward_basis: [ACTION, ENV_ASSERTION]
+reward_basis: [ENV_ASSERTION]
+# In domains with volatile bindings that may need reacquisition, prefer ENV_ASSERTION
+# as the correctness signal. ACTION can still be kept as optional coverage telemetry.
 # Keep context binding dynamic. Per-task set_user_context is injected from
 # task_context_bindings.yaml via run_context_bindings + run_runtime_scaffold.
 initialization_actions_prefix: []

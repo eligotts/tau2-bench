@@ -1,6 +1,6 @@
 version: 1
 tasks:
-- task_id: ev_billing_recovery_d12_025
+- task_id: billing_full_d13_000
   start_world:
   - path: agent.accounts[active_account].hold_status
     set: present
@@ -24,643 +24,6 @@ tasks:
     set: not_ready
   - path: agent.sessions[active_session].charge_state
     set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: BH-101
-  - path: agent.sessions[active_session].error_class
-    set: billing
-  - path: user.physical.screen_accessible
-    set: true
-  - path: user.physical.station_power_cycle_state
-    set: not_done
-  - path: user.physical.connector_reseat_state
-    set: not_reseated
-  - path: user.physical.cable_inspection_state
-    set: not_checked
-  - path: user.physical.vehicle_ready_state
-    set: not_ready
-  - path: user.physical.app_refresh_state
-    set: stale
-  - path: user.physical.test_charge_state
-    set: not_run
-  start_bindings: []
-  goal_world:
-  - op: eq
-    path: agent.accounts[active_account].fraud_lock_state
-    value: 'off'
-  - op: eq
-    path: agent.accounts[active_account].hold_status
-    value: cleared
-  - op: eq
-    path: agent.accounts[active_account].payment_token_status
-    value: valid
-  - op: eq
-    path: agent.sessions[active_session].last_fault_code
-    value: NONE
-  - op: eq
-    path: agent.sessions[active_session].profile_state
-    value: ready
-  - op: eq
-    path: agent.stations[active_station].diagnostics_state
-    value: ran
-  goal_bindings:
-  - app_error_class
-  - fault_code
-  required_actions:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
-  - assistant_reprovision_billing
-  required_precedence:
-  - - acquire_fault_code_from_user
-    - acquire_error_class_from_user
-  - - acquire_error_class_from_user
-    - user_inspect_cable_path
-  - - user_inspect_cable_path
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
-    - user_set_vehicle_ready_mode
-  - - user_set_vehicle_ready_mode
-    - user_refresh_charging_app_session
-  - - user_refresh_charging_app_session
-    - assistant_run_backend_diagnostics
-  - - assistant_run_backend_diagnostics
-    - assistant_clear_backend_hold
-  - - assistant_clear_backend_hold
-    - assistant_refresh_payment_token
-  - - assistant_refresh_payment_token
-    - assistant_release_fraud_lock
-  - - assistant_release_fraud_lock
-    - assistant_reprovision_billing
-  min_plan_length: 12
-  runtime:
-    domain: ev_charging_support
-    reason_for_call: __AUTHOR_ME__
-    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
-      asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Jordan Lee. You are calm and cooperative, and you provide
-      tool-grounded updates only.
-    known_info: __AUTHOR_ME__
-    unknown_info: null
-    ticket: __AUTHOR_ME__
-    purpose: null
-    relevant_policies: null
-    notes: null
-    initialization_actions:
-    - env_type: user
-      func_name: set_user_context
-      arguments:
-        user_id: U1001
-        name: Jordan Lee
-        account_id: A1001
-        station_id: ST1001
-        session_id: S1001
-    - env_type: assistant
-      func_name: set_fraud_lock_state
-      arguments:
-        value: 'on'
-    - env_type: assistant
-      func_name: set_hold_status
-      arguments:
-        value: present
-    - env_type: assistant
-      func_name: set_payment_token_status
-      arguments:
-        value: invalid
-    - env_type: assistant
-      func_name: set_backend_link_state
-      arguments:
-        value: up
-    - env_type: assistant
-      func_name: set_cert_state
-      arguments:
-        value: fresh
-    - env_type: assistant
-      func_name: set_charge_state
-      arguments:
-        value: inactive
-    - env_type: assistant
-      func_name: set_error_class
-      arguments:
-        value: billing
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: BH-101
-    - env_type: assistant
-      func_name: set_profile_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_retry_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_diagnostics_state
-      arguments:
-        value: idle
-    - env_type: assistant
-      func_name: set_firmware_state
-      arguments:
-        value: current
-    - env_type: assistant
-      func_name: set_reachability_state
-      arguments:
-        value: reachable
-    - env_type: user
-      func_name: set_app_refresh_state
-      arguments:
-        value: stale
-    - env_type: user
-      func_name: set_cable_inspection_state
-      arguments:
-        value: not_checked
-    - env_type: user
-      func_name: set_connector_reseat_state
-      arguments:
-        value: not_reseated
-    - env_type: user
-      func_name: set_screen_accessible
-      arguments:
-        value: true
-    - env_type: user
-      func_name: set_station_power_cycle_state
-      arguments:
-        value: not_done
-    - env_type: user
-      func_name: set_test_charge_state
-      arguments:
-        value: not_run
-    - env_type: user
-      func_name: set_vehicle_ready_state
-      arguments:
-        value: not_ready
-    env_assertions:
-    - env_type: assistant
-      func_name: assert_fraud_lock_state
-      arguments:
-        expected: 'off'
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_hold_status
-      arguments:
-        expected: cleared
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_payment_token_status
-      arguments:
-        expected: valid
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_last_fault_code
-      arguments:
-        expected: NONE
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_profile_state
-      arguments:
-        expected: ready
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_diagnostics_state
-      arguments:
-        expected: ran
-      assert_value: true
-      message: null
-    actions:
-    - action_id: acquire_fault_code_from_user
-      requestor: user
-      name: check_station_screen
-      arguments: {}
-      compare_args: []
-    - action_id: acquire_error_class_from_user
-      requestor: user
-      name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_inspect_cable_path
-      requestor: user
-      name: inspect_cable_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
-      arguments: {}
-      compare_args: []
-    - action_id: user_set_vehicle_ready_mode
-      requestor: user
-      name: set_vehicle_ready_mode
-      arguments: {}
-      compare_args: []
-    - action_id: user_refresh_charging_app_session
-      requestor: user
-      name: refresh_charging_app_session
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_run_backend_diagnostics
-      requestor: assistant
-      name: run_backend_diagnostics
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_clear_backend_hold
-      requestor: assistant
-      name: clear_billing_hold
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_refresh_payment_token
-      requestor: assistant
-      name: refresh_payment_token
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_release_fraud_lock
-      requestor: assistant
-      name: release_fraud_lock
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_reprovision_billing
-      requestor: assistant
-      name: reprovision_billing
-      arguments: {}
-      compare_args: []
-    reward_basis:
-    - ACTION
-    - ENV_ASSERTION
-- task_id: ev_billing_recovery_d13_026
-  start_world:
-  - path: agent.accounts[active_account].hold_status
-    set: present
-  - path: agent.accounts[active_account].payment_token_status
-    set: invalid
-  - path: agent.accounts[active_account].fraud_lock_state
-    set: 'on'
-  - path: agent.stations[active_station].reachability_state
-    set: reachable
-  - path: agent.stations[active_station].firmware_state
-    set: current
-  - path: agent.stations[active_station].diagnostics_state
-    set: idle
-  - path: agent.network_paths[active_station].backend_link_state
-    set: up
-  - path: agent.network_paths[active_station].cert_state
-    set: fresh
-  - path: agent.sessions[active_session].profile_state
-    set: not_ready
-  - path: agent.sessions[active_session].retry_state
-    set: not_ready
-  - path: agent.sessions[active_session].charge_state
-    set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: BH-101
-  - path: agent.sessions[active_session].error_class
-    set: billing
-  - path: user.physical.screen_accessible
-    set: true
-  - path: user.physical.station_power_cycle_state
-    set: not_done
-  - path: user.physical.connector_reseat_state
-    set: not_reseated
-  - path: user.physical.cable_inspection_state
-    set: not_checked
-  - path: user.physical.vehicle_ready_state
-    set: not_ready
-  - path: user.physical.app_refresh_state
-    set: stale
-  - path: user.physical.test_charge_state
-    set: not_run
-  start_bindings: []
-  goal_world:
-  - op: eq
-    path: agent.accounts[active_account].fraud_lock_state
-    value: 'off'
-  - op: eq
-    path: agent.accounts[active_account].hold_status
-    value: cleared
-  - op: eq
-    path: agent.accounts[active_account].payment_token_status
-    value: valid
-  - op: eq
-    path: agent.sessions[active_session].last_fault_code
-    value: NONE
-  - op: eq
-    path: agent.sessions[active_session].profile_state
-    value: ready
-  - op: eq
-    path: agent.sessions[active_session].retry_state
-    value: ready
-  - op: eq
-    path: agent.stations[active_station].diagnostics_state
-    value: ran
-  goal_bindings:
-  - app_error_class
-  - fault_code
-  required_actions:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
-  - assistant_reprovision_billing
-  - assistant_reset_retry_path
-  required_precedence:
-  - - acquire_fault_code_from_user
-    - acquire_error_class_from_user
-  - - acquire_error_class_from_user
-    - user_inspect_cable_path
-  - - user_inspect_cable_path
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
-    - user_set_vehicle_ready_mode
-  - - user_set_vehicle_ready_mode
-    - user_refresh_charging_app_session
-  - - user_refresh_charging_app_session
-    - assistant_run_backend_diagnostics
-  - - assistant_run_backend_diagnostics
-    - assistant_clear_backend_hold
-  - - assistant_clear_backend_hold
-    - assistant_refresh_payment_token
-  - - assistant_refresh_payment_token
-    - assistant_release_fraud_lock
-  - - assistant_release_fraud_lock
-    - assistant_reprovision_billing
-  - - assistant_reprovision_billing
-    - assistant_reset_retry_path
-  min_plan_length: 13
-  runtime:
-    domain: ev_charging_support
-    reason_for_call: __AUTHOR_ME__
-    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
-      asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Avery Chen. You are a practical EV driver under time pressure
-      who follows clear troubleshooting instructions.
-    known_info: __AUTHOR_ME__
-    unknown_info: null
-    ticket: __AUTHOR_ME__
-    purpose: null
-    relevant_policies: null
-    notes: null
-    initialization_actions:
-    - env_type: user
-      func_name: set_user_context
-      arguments:
-        user_id: U2001
-        name: Avery Chen
-        account_id: A2001
-        station_id: ST2001
-        session_id: S2001
-    - env_type: assistant
-      func_name: set_fraud_lock_state
-      arguments:
-        value: 'on'
-    - env_type: assistant
-      func_name: set_hold_status
-      arguments:
-        value: present
-    - env_type: assistant
-      func_name: set_payment_token_status
-      arguments:
-        value: invalid
-    - env_type: assistant
-      func_name: set_backend_link_state
-      arguments:
-        value: up
-    - env_type: assistant
-      func_name: set_cert_state
-      arguments:
-        value: fresh
-    - env_type: assistant
-      func_name: set_charge_state
-      arguments:
-        value: inactive
-    - env_type: assistant
-      func_name: set_error_class
-      arguments:
-        value: billing
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: BH-101
-    - env_type: assistant
-      func_name: set_profile_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_retry_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_diagnostics_state
-      arguments:
-        value: idle
-    - env_type: assistant
-      func_name: set_firmware_state
-      arguments:
-        value: current
-    - env_type: assistant
-      func_name: set_reachability_state
-      arguments:
-        value: reachable
-    - env_type: user
-      func_name: set_app_refresh_state
-      arguments:
-        value: stale
-    - env_type: user
-      func_name: set_cable_inspection_state
-      arguments:
-        value: not_checked
-    - env_type: user
-      func_name: set_connector_reseat_state
-      arguments:
-        value: not_reseated
-    - env_type: user
-      func_name: set_screen_accessible
-      arguments:
-        value: true
-    - env_type: user
-      func_name: set_station_power_cycle_state
-      arguments:
-        value: not_done
-    - env_type: user
-      func_name: set_test_charge_state
-      arguments:
-        value: not_run
-    - env_type: user
-      func_name: set_vehicle_ready_state
-      arguments:
-        value: not_ready
-    env_assertions:
-    - env_type: assistant
-      func_name: assert_fraud_lock_state
-      arguments:
-        expected: 'off'
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_hold_status
-      arguments:
-        expected: cleared
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_payment_token_status
-      arguments:
-        expected: valid
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_last_fault_code
-      arguments:
-        expected: NONE
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_profile_state
-      arguments:
-        expected: ready
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_retry_state
-      arguments:
-        expected: ready
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_diagnostics_state
-      arguments:
-        expected: ran
-      assert_value: true
-      message: null
-    actions:
-    - action_id: acquire_fault_code_from_user
-      requestor: user
-      name: check_station_screen
-      arguments: {}
-      compare_args: []
-    - action_id: acquire_error_class_from_user
-      requestor: user
-      name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_inspect_cable_path
-      requestor: user
-      name: inspect_cable_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
-      arguments: {}
-      compare_args: []
-    - action_id: user_set_vehicle_ready_mode
-      requestor: user
-      name: set_vehicle_ready_mode
-      arguments: {}
-      compare_args: []
-    - action_id: user_refresh_charging_app_session
-      requestor: user
-      name: refresh_charging_app_session
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_run_backend_diagnostics
-      requestor: assistant
-      name: run_backend_diagnostics
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_clear_backend_hold
-      requestor: assistant
-      name: clear_billing_hold
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_refresh_payment_token
-      requestor: assistant
-      name: refresh_payment_token
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_release_fraud_lock
-      requestor: assistant
-      name: release_fraud_lock
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_reprovision_billing
-      requestor: assistant
-      name: reprovision_billing
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_reset_retry_path
-      requestor: assistant
-      name: reset_retry_path
-      arguments: {}
-      compare_args: []
-    reward_basis:
-    - ACTION
-    - ENV_ASSERTION
-- task_id: ev_billing_recovery_d14_027
-  start_world:
-  - path: agent.accounts[active_account].hold_status
-    set: present
-  - path: agent.accounts[active_account].payment_token_status
-    set: invalid
-  - path: agent.accounts[active_account].fraud_lock_state
-    set: 'on'
-  - path: agent.stations[active_station].reachability_state
-    set: reachable
-  - path: agent.stations[active_station].firmware_state
-    set: current
-  - path: agent.stations[active_station].diagnostics_state
-    set: idle
-  - path: agent.network_paths[active_station].backend_link_state
-    set: up
-  - path: agent.network_paths[active_station].cert_state
-    set: fresh
-  - path: agent.sessions[active_session].profile_state
-    set: not_ready
-  - path: agent.sessions[active_session].retry_state
-    set: not_ready
-  - path: agent.sessions[active_session].charge_state
-    set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: BH-101
   - path: agent.sessions[active_session].error_class
     set: billing
   - path: user.physical.screen_accessible
@@ -705,13 +68,10 @@ tasks:
     value: ran
   goal_bindings:
   - app_error_class
-  - fault_code
+  terminal_profile_id: billing_resolved
   required_actions:
-  - acquire_fault_code_from_user
+  - acquire_screen_fault_code_from_user
   - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
   - user_set_vehicle_ready_mode
   - user_refresh_charging_app_session
   - assistant_run_backend_diagnostics
@@ -720,17 +80,11 @@ tasks:
   - assistant_release_fraud_lock
   - assistant_reprovision_billing
   - assistant_reset_retry_path
-  - user_run_test_charge
+  - user_run_test_charge_billing
   required_precedence:
-  - - acquire_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - acquire_error_class_from_user
   - - acquire_error_class_from_user
-    - user_inspect_cable_path
-  - - user_inspect_cable_path
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
     - user_set_vehicle_ready_mode
   - - user_set_vehicle_ready_mode
     - user_refresh_charging_app_session
@@ -743,22 +97,27 @@ tasks:
   - - assistant_refresh_payment_token
     - assistant_release_fraud_lock
   - - assistant_release_fraud_lock
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - assistant_reprovision_billing
   - - assistant_reprovision_billing
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - assistant_reset_retry_path
   - - assistant_reset_retry_path
-    - user_run_test_charge
-  min_plan_length: 14
+    - user_run_test_charge_billing
+  min_plan_length: 13
   runtime:
     domain: ev_charging_support
     reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Jordan Lee. You are a practical EV driver under time pressure
+      issue resolved when the assistant has achieved the assigned recovery target
+      and the remaining observable recovery criteria are satisfied. Before deciding
+      the issue is resolved, call check_resolution_status. Only emit ###STOP### when
+      check_resolution_status returns resolved=true. If resolved=false, report unmet
+      items and ask the assistant for the next step.'
+    persona: Your name is Sam Rivera. You are a practical EV driver under time pressure
       who follows clear troubleshooting instructions.
     known_info: __AUTHOR_ME__
     unknown_info: null
@@ -770,11 +129,11 @@ tasks:
     - env_type: user
       func_name: set_user_context
       arguments:
-        user_id: U1001
-        name: Jordan Lee
-        account_id: A1001
-        station_id: ST1001
-        session_id: S1001
+        user_id: U3001
+        name: Sam Rivera
+        account_id: A3001
+        station_id: ST3001
+        session_id: S3001
     - env_type: assistant
       func_name: set_fraud_lock_state
       arguments:
@@ -803,10 +162,6 @@ tasks:
       func_name: set_error_class
       arguments:
         value: billing
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: BH-101
     - env_type: assistant
       func_name: set_profile_state
       arguments:
@@ -905,7 +260,7 @@ tasks:
       assert_value: true
       message: null
     actions:
-    - action_id: acquire_fault_code_from_user
+    - action_id: acquire_screen_fault_code_from_user
       requestor: user
       name: check_station_screen
       arguments: {}
@@ -913,21 +268,6 @@ tasks:
     - action_id: acquire_error_class_from_user
       requestor: user
       name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_inspect_cable_path
-      requestor: user
-      name: inspect_cable_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
       arguments: {}
       compare_args: []
     - action_id: user_set_vehicle_ready_mode
@@ -970,18 +310,17 @@ tasks:
       name: reset_retry_path
       arguments: {}
       compare_args: []
-    - action_id: user_run_test_charge
+    - action_id: user_run_test_charge_billing
       requestor: user
       name: run_test_charge
       arguments: {}
       compare_args: []
     reward_basis:
-    - ACTION
     - ENV_ASSERTION
-- task_id: ev_connectivity_recovery_d11_068
+- task_id: billing_hold_only_d11_004
   start_world:
   - path: agent.accounts[active_account].hold_status
-    set: cleared
+    set: present
   - path: agent.accounts[active_account].payment_token_status
     set: valid
   - path: agent.accounts[active_account].fraud_lock_state
@@ -993,19 +332,17 @@ tasks:
   - path: agent.stations[active_station].diagnostics_state
     set: idle
   - path: agent.network_paths[active_station].backend_link_state
-    set: down
+    set: up
   - path: agent.network_paths[active_station].cert_state
-    set: stale
+    set: fresh
   - path: agent.sessions[active_session].profile_state
     set: not_ready
   - path: agent.sessions[active_session].retry_state
     set: not_ready
   - path: agent.sessions[active_session].charge_state
     set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: CERT-409
   - path: agent.sessions[active_session].error_class
-    set: connectivity
+    set: billing
   - path: user.physical.screen_accessible
     set: true
   - path: user.physical.station_power_cycle_state
@@ -1023,303 +360,11 @@ tasks:
   start_bindings: []
   goal_world:
   - op: eq
-    path: agent.network_paths[active_station].backend_link_state
-    value: up
+    path: agent.accounts[active_account].hold_status
+    value: cleared
   - op: eq
-    path: agent.network_paths[active_station].cert_state
-    value: fresh
-  - op: eq
-    path: agent.sessions[active_session].last_fault_code
-    value: NONE
-  - op: eq
-    path: agent.sessions[active_session].profile_state
-    value: ready
-  - op: eq
-    path: agent.stations[active_station].diagnostics_state
-    value: ran
-  goal_bindings:
-  - app_error_class
-  - fault_code
-  required_actions:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_reprovision_connectivity
-  required_precedence:
-  - - acquire_fault_code_from_user
-    - acquire_error_class_from_user
-  - - acquire_error_class_from_user
-    - user_inspect_cable_path
-  - - user_inspect_cable_path
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
-    - user_set_vehicle_ready_mode
-  - - user_set_vehicle_ready_mode
-    - user_refresh_charging_app_session
-  - - user_refresh_charging_app_session
-    - assistant_run_backend_diagnostics
-  - - assistant_run_backend_diagnostics
-    - assistant_restore_backend_link
-  - - assistant_restore_backend_link
-    - assistant_rotate_station_certificate
-  - - assistant_rotate_station_certificate
-    - assistant_reprovision_connectivity
-  min_plan_length: 11
-  runtime:
-    domain: ev_charging_support
-    reason_for_call: __AUTHOR_ME__
-    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
-      asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Jordan Lee. You are a practical EV driver who can execute
-      technical steps when guided clearly.
-    known_info: __AUTHOR_ME__
-    unknown_info: null
-    ticket: __AUTHOR_ME__
-    purpose: null
-    relevant_policies: null
-    notes: null
-    initialization_actions:
-    - env_type: user
-      func_name: set_user_context
-      arguments:
-        user_id: U1001
-        name: Jordan Lee
-        account_id: A1001
-        station_id: ST1001
-        session_id: S1001
-    - env_type: assistant
-      func_name: set_fraud_lock_state
-      arguments:
-        value: 'off'
-    - env_type: assistant
-      func_name: set_hold_status
-      arguments:
-        value: cleared
-    - env_type: assistant
-      func_name: set_payment_token_status
-      arguments:
-        value: valid
-    - env_type: assistant
-      func_name: set_backend_link_state
-      arguments:
-        value: down
-    - env_type: assistant
-      func_name: set_cert_state
-      arguments:
-        value: stale
-    - env_type: assistant
-      func_name: set_charge_state
-      arguments:
-        value: inactive
-    - env_type: assistant
-      func_name: set_error_class
-      arguments:
-        value: connectivity
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: CERT-409
-    - env_type: assistant
-      func_name: set_profile_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_retry_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_diagnostics_state
-      arguments:
-        value: idle
-    - env_type: assistant
-      func_name: set_firmware_state
-      arguments:
-        value: current
-    - env_type: assistant
-      func_name: set_reachability_state
-      arguments:
-        value: reachable
-    - env_type: user
-      func_name: set_app_refresh_state
-      arguments:
-        value: stale
-    - env_type: user
-      func_name: set_cable_inspection_state
-      arguments:
-        value: not_checked
-    - env_type: user
-      func_name: set_connector_reseat_state
-      arguments:
-        value: not_reseated
-    - env_type: user
-      func_name: set_screen_accessible
-      arguments:
-        value: true
-    - env_type: user
-      func_name: set_station_power_cycle_state
-      arguments:
-        value: not_done
-    - env_type: user
-      func_name: set_test_charge_state
-      arguments:
-        value: not_run
-    - env_type: user
-      func_name: set_vehicle_ready_state
-      arguments:
-        value: not_ready
-    env_assertions:
-    - env_type: assistant
-      func_name: assert_backend_link_state
-      arguments:
-        expected: up
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_cert_state
-      arguments:
-        expected: fresh
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_last_fault_code
-      arguments:
-        expected: NONE
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_profile_state
-      arguments:
-        expected: ready
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_diagnostics_state
-      arguments:
-        expected: ran
-      assert_value: true
-      message: null
-    actions:
-    - action_id: acquire_fault_code_from_user
-      requestor: user
-      name: check_station_screen
-      arguments: {}
-      compare_args: []
-    - action_id: acquire_error_class_from_user
-      requestor: user
-      name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_inspect_cable_path
-      requestor: user
-      name: inspect_cable_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
-      arguments: {}
-      compare_args: []
-    - action_id: user_set_vehicle_ready_mode
-      requestor: user
-      name: set_vehicle_ready_mode
-      arguments: {}
-      compare_args: []
-    - action_id: user_refresh_charging_app_session
-      requestor: user
-      name: refresh_charging_app_session
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_run_backend_diagnostics
-      requestor: assistant
-      name: run_backend_diagnostics
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_restore_backend_link
-      requestor: assistant
-      name: restore_backend_link
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_rotate_station_certificate
-      requestor: assistant
-      name: rotate_station_certificate
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_reprovision_connectivity
-      requestor: assistant
-      name: reprovision_connectivity
-      arguments: {}
-      compare_args: []
-    reward_basis:
-    - ACTION
-    - ENV_ASSERTION
-- task_id: ev_connectivity_recovery_d12_069
-  start_world:
-  - path: agent.accounts[active_account].hold_status
-    set: cleared
-  - path: agent.accounts[active_account].payment_token_status
-    set: valid
-  - path: agent.accounts[active_account].fraud_lock_state
-    set: 'off'
-  - path: agent.stations[active_station].reachability_state
-    set: reachable
-  - path: agent.stations[active_station].firmware_state
-    set: current
-  - path: agent.stations[active_station].diagnostics_state
-    set: idle
-  - path: agent.network_paths[active_station].backend_link_state
-    set: down
-  - path: agent.network_paths[active_station].cert_state
-    set: stale
-  - path: agent.sessions[active_session].profile_state
-    set: not_ready
-  - path: agent.sessions[active_session].retry_state
-    set: not_ready
-  - path: agent.sessions[active_session].charge_state
-    set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: CERT-409
-  - path: agent.sessions[active_session].error_class
-    set: connectivity
-  - path: user.physical.screen_accessible
-    set: true
-  - path: user.physical.station_power_cycle_state
-    set: not_done
-  - path: user.physical.connector_reseat_state
-    set: not_reseated
-  - path: user.physical.cable_inspection_state
-    set: not_checked
-  - path: user.physical.vehicle_ready_state
-    set: not_ready
-  - path: user.physical.app_refresh_state
-    set: stale
-  - path: user.physical.test_charge_state
-    set: not_run
-  start_bindings: []
-  goal_world:
-  - op: eq
-    path: agent.network_paths[active_station].backend_link_state
-    value: up
-  - op: eq
-    path: agent.network_paths[active_station].cert_state
-    value: fresh
+    path: agent.sessions[active_session].charge_state
+    value: active
   - op: eq
     path: agent.sessions[active_session].last_fault_code
     value: NONE
@@ -1334,55 +379,51 @@ tasks:
     value: ran
   goal_bindings:
   - app_error_class
-  - fault_code
+  terminal_profile_id: billing_resolved
   required_actions:
-  - acquire_fault_code_from_user
+  - acquire_screen_fault_code_from_user
   - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
   - user_set_vehicle_ready_mode
   - user_refresh_charging_app_session
   - assistant_run_backend_diagnostics
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_reprovision_connectivity
+  - assistant_clear_backend_hold
+  - assistant_reprovision_billing
   - assistant_reset_retry_path
+  - user_run_test_charge_billing
   required_precedence:
-  - - acquire_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - acquire_error_class_from_user
   - - acquire_error_class_from_user
-    - user_inspect_cable_path
-  - - user_inspect_cable_path
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
     - user_set_vehicle_ready_mode
   - - user_set_vehicle_ready_mode
     - user_refresh_charging_app_session
   - - user_refresh_charging_app_session
     - assistant_run_backend_diagnostics
   - - assistant_run_backend_diagnostics
-    - assistant_restore_backend_link
-  - - assistant_restore_backend_link
-    - assistant_rotate_station_certificate
-  - - assistant_rotate_station_certificate
-    - assistant_reprovision_connectivity
-  - - assistant_reprovision_connectivity
+    - assistant_clear_backend_hold
+  - - assistant_clear_backend_hold
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
+    - assistant_reprovision_billing
+  - - assistant_reprovision_billing
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - assistant_reset_retry_path
-  min_plan_length: 12
+  - - assistant_reset_retry_path
+    - user_run_test_charge_billing
+  min_plan_length: 11
   runtime:
     domain: ev_charging_support
     reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Avery Chen. You are direct and pragmatic, and you execute
-      assistant requests one step at a time.
+      issue resolved when the assistant has achieved the assigned recovery target
+      and the remaining observable recovery criteria are satisfied. Before deciding
+      the issue is resolved, call check_resolution_status. Only emit ###STOP### when
+      check_resolution_status returns resolved=true. If resolved=false, report unmet
+      items and ask the assistant for the next step.'
+    persona: Your name is Sam Rivera. You are a practical EV driver under time pressure
+      who follows clear troubleshooting instructions.
     known_info: __AUTHOR_ME__
     unknown_info: null
     ticket: __AUTHOR_ME__
@@ -1393,11 +434,11 @@ tasks:
     - env_type: user
       func_name: set_user_context
       arguments:
-        user_id: U2001
-        name: Avery Chen
-        account_id: A2001
-        station_id: ST2001
-        session_id: S2001
+        user_id: U3001
+        name: Sam Rivera
+        account_id: A3001
+        station_id: ST3001
+        session_id: S3001
     - env_type: assistant
       func_name: set_fraud_lock_state
       arguments:
@@ -1405,7 +446,7 @@ tasks:
     - env_type: assistant
       func_name: set_hold_status
       arguments:
-        value: cleared
+        value: present
     - env_type: assistant
       func_name: set_payment_token_status
       arguments:
@@ -1413,11 +454,11 @@ tasks:
     - env_type: assistant
       func_name: set_backend_link_state
       arguments:
-        value: down
+        value: up
     - env_type: assistant
       func_name: set_cert_state
       arguments:
-        value: stale
+        value: fresh
     - env_type: assistant
       func_name: set_charge_state
       arguments:
@@ -1425,11 +466,7 @@ tasks:
     - env_type: assistant
       func_name: set_error_class
       arguments:
-        value: connectivity
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: CERT-409
+        value: billing
     - env_type: assistant
       func_name: set_profile_state
       arguments:
@@ -1480,15 +517,15 @@ tasks:
         value: not_ready
     env_assertions:
     - env_type: assistant
-      func_name: assert_backend_link_state
+      func_name: assert_hold_status
       arguments:
-        expected: up
+        expected: cleared
       assert_value: true
       message: null
     - env_type: assistant
-      func_name: assert_cert_state
+      func_name: assert_charge_state
       arguments:
-        expected: fresh
+        expected: active
       assert_value: true
       message: null
     - env_type: assistant
@@ -1516,7 +553,7 @@ tasks:
       assert_value: true
       message: null
     actions:
-    - action_id: acquire_fault_code_from_user
+    - action_id: acquire_screen_fault_code_from_user
       requestor: user
       name: check_station_screen
       arguments: {}
@@ -1524,21 +561,6 @@ tasks:
     - action_id: acquire_error_class_from_user
       requestor: user
       name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_inspect_cable_path
-      requestor: user
-      name: inspect_cable_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
       arguments: {}
       compare_args: []
     - action_id: user_set_vehicle_ready_mode
@@ -1556,19 +578,14 @@ tasks:
       name: run_backend_diagnostics
       arguments: {}
       compare_args: []
-    - action_id: assistant_restore_backend_link
+    - action_id: assistant_clear_backend_hold
       requestor: assistant
-      name: restore_backend_link
+      name: clear_billing_hold
       arguments: {}
       compare_args: []
-    - action_id: assistant_rotate_station_certificate
+    - action_id: assistant_reprovision_billing
       requestor: assistant
-      name: rotate_station_certificate
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_reprovision_connectivity
-      requestor: assistant
-      name: reprovision_connectivity
+      name: reprovision_billing
       arguments: {}
       compare_args: []
     - action_id: assistant_reset_retry_path
@@ -1576,15 +593,19 @@ tasks:
       name: reset_retry_path
       arguments: {}
       compare_args: []
+    - action_id: user_run_test_charge_billing
+      requestor: user
+      name: run_test_charge
+      arguments: {}
+      compare_args: []
     reward_basis:
-    - ACTION
     - ENV_ASSERTION
-- task_id: ev_connectivity_recovery_d13_070
+- task_id: billing_payment_only_d11_007
   start_world:
   - path: agent.accounts[active_account].hold_status
     set: cleared
   - path: agent.accounts[active_account].payment_token_status
-    set: valid
+    set: invalid
   - path: agent.accounts[active_account].fraud_lock_state
     set: 'off'
   - path: agent.stations[active_station].reachability_state
@@ -1594,19 +615,17 @@ tasks:
   - path: agent.stations[active_station].diagnostics_state
     set: idle
   - path: agent.network_paths[active_station].backend_link_state
-    set: down
+    set: up
   - path: agent.network_paths[active_station].cert_state
-    set: stale
+    set: fresh
   - path: agent.sessions[active_session].profile_state
     set: not_ready
   - path: agent.sessions[active_session].retry_state
     set: not_ready
   - path: agent.sessions[active_session].charge_state
     set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: CERT-409
   - path: agent.sessions[active_session].error_class
-    set: connectivity
+    set: billing
   - path: user.physical.screen_accessible
     set: true
   - path: user.physical.station_power_cycle_state
@@ -1624,11 +643,8 @@ tasks:
   start_bindings: []
   goal_world:
   - op: eq
-    path: agent.network_paths[active_station].backend_link_state
-    value: up
-  - op: eq
-    path: agent.network_paths[active_station].cert_state
-    value: fresh
+    path: agent.accounts[active_account].payment_token_status
+    value: valid
   - op: eq
     path: agent.sessions[active_session].charge_state
     value: active
@@ -1646,56 +662,49 @@ tasks:
     value: ran
   goal_bindings:
   - app_error_class
-  - fault_code
+  terminal_profile_id: billing_resolved
   required_actions:
-  - acquire_fault_code_from_user
+  - acquire_screen_fault_code_from_user
   - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
   - user_set_vehicle_ready_mode
   - user_refresh_charging_app_session
   - assistant_run_backend_diagnostics
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_reprovision_connectivity
+  - assistant_refresh_payment_token
+  - assistant_reprovision_billing
   - assistant_reset_retry_path
-  - user_run_test_charge
+  - user_run_test_charge_billing
   required_precedence:
-  - - acquire_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - acquire_error_class_from_user
   - - acquire_error_class_from_user
-    - user_inspect_cable_path
-  - - user_inspect_cable_path
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
     - user_set_vehicle_ready_mode
   - - user_set_vehicle_ready_mode
     - user_refresh_charging_app_session
   - - user_refresh_charging_app_session
     - assistant_run_backend_diagnostics
   - - assistant_run_backend_diagnostics
-    - assistant_restore_backend_link
-  - - assistant_restore_backend_link
-    - assistant_rotate_station_certificate
-  - - assistant_rotate_station_certificate
-    - assistant_reprovision_connectivity
-  - - assistant_reprovision_connectivity
+    - assistant_refresh_payment_token
+  - - assistant_refresh_payment_token
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
+    - assistant_reprovision_billing
+  - - assistant_reprovision_billing
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - assistant_reset_retry_path
   - - assistant_reset_retry_path
-    - user_run_test_charge
-  min_plan_length: 13
+    - user_run_test_charge_billing
+  min_plan_length: 11
   runtime:
     domain: ev_charging_support
     reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
+      issue resolved when the assistant has achieved the assigned recovery target
+      and the remaining observable recovery criteria are satisfied. Before deciding
+      the issue is resolved, call check_resolution_status. Only emit ###STOP### when
+      check_resolution_status returns resolved=true. If resolved=false, report unmet
+      items and ask the assistant for the next step.'
     persona: Your name is Sam Rivera. You are a practical EV driver under time pressure
       who follows clear troubleshooting instructions.
     known_info: __AUTHOR_ME__
@@ -1724,15 +733,15 @@ tasks:
     - env_type: assistant
       func_name: set_payment_token_status
       arguments:
-        value: valid
+        value: invalid
     - env_type: assistant
       func_name: set_backend_link_state
       arguments:
-        value: down
+        value: up
     - env_type: assistant
       func_name: set_cert_state
       arguments:
-        value: stale
+        value: fresh
     - env_type: assistant
       func_name: set_charge_state
       arguments:
@@ -1740,11 +749,7 @@ tasks:
     - env_type: assistant
       func_name: set_error_class
       arguments:
-        value: connectivity
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: CERT-409
+        value: billing
     - env_type: assistant
       func_name: set_profile_state
       arguments:
@@ -1795,15 +800,9 @@ tasks:
         value: not_ready
     env_assertions:
     - env_type: assistant
-      func_name: assert_backend_link_state
+      func_name: assert_payment_token_status
       arguments:
-        expected: up
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_cert_state
-      arguments:
-        expected: fresh
+        expected: valid
       assert_value: true
       message: null
     - env_type: assistant
@@ -1837,7 +836,7 @@ tasks:
       assert_value: true
       message: null
     actions:
-    - action_id: acquire_fault_code_from_user
+    - action_id: acquire_screen_fault_code_from_user
       requestor: user
       name: check_station_screen
       arguments: {}
@@ -1845,21 +844,6 @@ tasks:
     - action_id: acquire_error_class_from_user
       requestor: user
       name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_inspect_cable_path
-      requestor: user
-      name: inspect_cable_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
       arguments: {}
       compare_args: []
     - action_id: user_set_vehicle_ready_mode
@@ -1877,19 +861,14 @@ tasks:
       name: run_backend_diagnostics
       arguments: {}
       compare_args: []
-    - action_id: assistant_restore_backend_link
+    - action_id: assistant_refresh_payment_token
       requestor: assistant
-      name: restore_backend_link
+      name: refresh_payment_token
       arguments: {}
       compare_args: []
-    - action_id: assistant_rotate_station_certificate
+    - action_id: assistant_reprovision_billing
       requestor: assistant
-      name: rotate_station_certificate
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_reprovision_connectivity
-      requestor: assistant
-      name: reprovision_connectivity
+      name: reprovision_billing
       arguments: {}
       compare_args: []
     - action_id: assistant_reset_retry_path
@@ -1897,1151 +876,19 @@ tasks:
       name: reset_retry_path
       arguments: {}
       compare_args: []
-    - action_id: user_run_test_charge
+    - action_id: user_run_test_charge_billing
       requestor: user
       name: run_test_charge
       arguments: {}
       compare_args: []
     reward_basis:
-    - ACTION
     - ENV_ASSERTION
-- task_id: ev_full_system_recovery_d15_148
+- task_id: billing_fraud_only_d11_010
   start_world:
   - path: agent.accounts[active_account].hold_status
-    set: present
+    set: cleared
   - path: agent.accounts[active_account].payment_token_status
-    set: invalid
-  - path: agent.accounts[active_account].fraud_lock_state
-    set: 'on'
-  - path: agent.stations[active_station].reachability_state
-    set: reachable
-  - path: agent.stations[active_station].firmware_state
-    set: outdated
-  - path: agent.stations[active_station].diagnostics_state
-    set: idle
-  - path: agent.network_paths[active_station].backend_link_state
-    set: down
-  - path: agent.network_paths[active_station].cert_state
-    set: stale
-  - path: agent.sessions[active_session].profile_state
-    set: not_ready
-  - path: agent.sessions[active_session].retry_state
-    set: not_ready
-  - path: agent.sessions[active_session].charge_state
-    set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: FW-410
-  - path: agent.sessions[active_session].error_class
-    set: full_system
-  - path: user.physical.screen_accessible
-    set: true
-  - path: user.physical.station_power_cycle_state
-    set: not_done
-  - path: user.physical.connector_reseat_state
-    set: not_reseated
-  - path: user.physical.cable_inspection_state
-    set: not_checked
-  - path: user.physical.vehicle_ready_state
-    set: not_ready
-  - path: user.physical.app_refresh_state
-    set: stale
-  - path: user.physical.test_charge_state
-    set: not_run
-  start_bindings: []
-  goal_world:
-  - op: eq
-    path: agent.accounts[active_account].fraud_lock_state
-    value: 'off'
-  - op: eq
-    path: agent.accounts[active_account].hold_status
-    value: cleared
-  - op: eq
-    path: agent.accounts[active_account].payment_token_status
-    value: valid
-  - op: eq
-    path: agent.network_paths[active_station].backend_link_state
-    value: up
-  - op: eq
-    path: agent.network_paths[active_station].cert_state
-    value: fresh
-  - op: eq
-    path: agent.sessions[active_session].last_fault_code
-    value: NONE
-  - op: eq
-    path: agent.sessions[active_session].profile_state
-    value: ready
-  - op: eq
-    path: agent.stations[active_station].diagnostics_state
-    value: ran
-  - op: eq
-    path: agent.stations[active_station].firmware_state
-    value: current
-  goal_bindings:
-  - app_error_class
-  - fault_code
-  required_actions:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_update_station_firmware
-  - assistant_reprovision_full_system
-  required_precedence:
-  - - acquire_fault_code_from_user
-    - acquire_error_class_from_user
-  - - acquire_error_class_from_user
-    - user_inspect_cable_path
-  - - user_inspect_cable_path
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
-    - user_set_vehicle_ready_mode
-  - - user_set_vehicle_ready_mode
-    - user_refresh_charging_app_session
-  - - user_refresh_charging_app_session
-    - assistant_run_backend_diagnostics
-  - - assistant_run_backend_diagnostics
-    - assistant_clear_backend_hold
-  - - assistant_clear_backend_hold
-    - assistant_refresh_payment_token
-  - - assistant_refresh_payment_token
-    - assistant_release_fraud_lock
-  - - assistant_release_fraud_lock
-    - assistant_restore_backend_link
-  - - assistant_restore_backend_link
-    - assistant_rotate_station_certificate
-  - - assistant_rotate_station_certificate
-    - assistant_update_station_firmware
-  - - assistant_update_station_firmware
-    - assistant_reprovision_full_system
-  min_plan_length: 15
-  runtime:
-    domain: ev_charging_support
-    reason_for_call: __AUTHOR_ME__
-    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
-      asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Avery Chen. You are a practical EV driver who can execute
-      technical steps when guided clearly.
-    known_info: __AUTHOR_ME__
-    unknown_info: null
-    ticket: __AUTHOR_ME__
-    purpose: null
-    relevant_policies: null
-    notes: null
-    initialization_actions:
-    - env_type: user
-      func_name: set_user_context
-      arguments:
-        user_id: U2001
-        name: Avery Chen
-        account_id: A2001
-        station_id: ST2001
-        session_id: S2001
-    - env_type: assistant
-      func_name: set_fraud_lock_state
-      arguments:
-        value: 'on'
-    - env_type: assistant
-      func_name: set_hold_status
-      arguments:
-        value: present
-    - env_type: assistant
-      func_name: set_payment_token_status
-      arguments:
-        value: invalid
-    - env_type: assistant
-      func_name: set_backend_link_state
-      arguments:
-        value: down
-    - env_type: assistant
-      func_name: set_cert_state
-      arguments:
-        value: stale
-    - env_type: assistant
-      func_name: set_charge_state
-      arguments:
-        value: inactive
-    - env_type: assistant
-      func_name: set_error_class
-      arguments:
-        value: full_system
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: FW-410
-    - env_type: assistant
-      func_name: set_profile_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_retry_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_diagnostics_state
-      arguments:
-        value: idle
-    - env_type: assistant
-      func_name: set_firmware_state
-      arguments:
-        value: outdated
-    - env_type: assistant
-      func_name: set_reachability_state
-      arguments:
-        value: reachable
-    - env_type: user
-      func_name: set_app_refresh_state
-      arguments:
-        value: stale
-    - env_type: user
-      func_name: set_cable_inspection_state
-      arguments:
-        value: not_checked
-    - env_type: user
-      func_name: set_connector_reseat_state
-      arguments:
-        value: not_reseated
-    - env_type: user
-      func_name: set_screen_accessible
-      arguments:
-        value: true
-    - env_type: user
-      func_name: set_station_power_cycle_state
-      arguments:
-        value: not_done
-    - env_type: user
-      func_name: set_test_charge_state
-      arguments:
-        value: not_run
-    - env_type: user
-      func_name: set_vehicle_ready_state
-      arguments:
-        value: not_ready
-    env_assertions:
-    - env_type: assistant
-      func_name: assert_fraud_lock_state
-      arguments:
-        expected: 'off'
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_hold_status
-      arguments:
-        expected: cleared
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_payment_token_status
-      arguments:
-        expected: valid
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_backend_link_state
-      arguments:
-        expected: up
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_cert_state
-      arguments:
-        expected: fresh
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_last_fault_code
-      arguments:
-        expected: NONE
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_profile_state
-      arguments:
-        expected: ready
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_diagnostics_state
-      arguments:
-        expected: ran
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_firmware_state
-      arguments:
-        expected: current
-      assert_value: true
-      message: null
-    actions:
-    - action_id: acquire_fault_code_from_user
-      requestor: user
-      name: check_station_screen
-      arguments: {}
-      compare_args: []
-    - action_id: acquire_error_class_from_user
-      requestor: user
-      name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_inspect_cable_path
-      requestor: user
-      name: inspect_cable_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
-      arguments: {}
-      compare_args: []
-    - action_id: user_set_vehicle_ready_mode
-      requestor: user
-      name: set_vehicle_ready_mode
-      arguments: {}
-      compare_args: []
-    - action_id: user_refresh_charging_app_session
-      requestor: user
-      name: refresh_charging_app_session
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_run_backend_diagnostics
-      requestor: assistant
-      name: run_backend_diagnostics
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_clear_backend_hold
-      requestor: assistant
-      name: clear_billing_hold
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_refresh_payment_token
-      requestor: assistant
-      name: refresh_payment_token
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_release_fraud_lock
-      requestor: assistant
-      name: release_fraud_lock
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_restore_backend_link
-      requestor: assistant
-      name: restore_backend_link
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_rotate_station_certificate
-      requestor: assistant
-      name: rotate_station_certificate
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_update_station_firmware
-      requestor: assistant
-      name: update_station_firmware
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_reprovision_full_system
-      requestor: assistant
-      name: reprovision_full_system
-      arguments: {}
-      compare_args: []
-    reward_basis:
-    - ACTION
-    - ENV_ASSERTION
-- task_id: ev_full_system_recovery_d16_149
-  start_world:
-  - path: agent.accounts[active_account].hold_status
-    set: present
-  - path: agent.accounts[active_account].payment_token_status
-    set: invalid
-  - path: agent.accounts[active_account].fraud_lock_state
-    set: 'on'
-  - path: agent.stations[active_station].reachability_state
-    set: reachable
-  - path: agent.stations[active_station].firmware_state
-    set: outdated
-  - path: agent.stations[active_station].diagnostics_state
-    set: idle
-  - path: agent.network_paths[active_station].backend_link_state
-    set: down
-  - path: agent.network_paths[active_station].cert_state
-    set: stale
-  - path: agent.sessions[active_session].profile_state
-    set: not_ready
-  - path: agent.sessions[active_session].retry_state
-    set: not_ready
-  - path: agent.sessions[active_session].charge_state
-    set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: FW-410
-  - path: agent.sessions[active_session].error_class
-    set: full_system
-  - path: user.physical.screen_accessible
-    set: true
-  - path: user.physical.station_power_cycle_state
-    set: not_done
-  - path: user.physical.connector_reseat_state
-    set: not_reseated
-  - path: user.physical.cable_inspection_state
-    set: not_checked
-  - path: user.physical.vehicle_ready_state
-    set: not_ready
-  - path: user.physical.app_refresh_state
-    set: stale
-  - path: user.physical.test_charge_state
-    set: not_run
-  start_bindings: []
-  goal_world:
-  - op: eq
-    path: agent.accounts[active_account].fraud_lock_state
-    value: 'off'
-  - op: eq
-    path: agent.accounts[active_account].hold_status
-    value: cleared
-  - op: eq
-    path: agent.accounts[active_account].payment_token_status
-    value: valid
-  - op: eq
-    path: agent.network_paths[active_station].backend_link_state
-    value: up
-  - op: eq
-    path: agent.network_paths[active_station].cert_state
-    value: fresh
-  - op: eq
-    path: agent.sessions[active_session].last_fault_code
-    value: NONE
-  - op: eq
-    path: agent.sessions[active_session].profile_state
-    value: ready
-  - op: eq
-    path: agent.sessions[active_session].retry_state
-    value: ready
-  - op: eq
-    path: agent.stations[active_station].diagnostics_state
-    value: ran
-  - op: eq
-    path: agent.stations[active_station].firmware_state
-    value: current
-  goal_bindings:
-  - app_error_class
-  - fault_code
-  required_actions:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_update_station_firmware
-  - assistant_reprovision_full_system
-  - assistant_reset_retry_path
-  required_precedence:
-  - - acquire_fault_code_from_user
-    - acquire_error_class_from_user
-  - - acquire_error_class_from_user
-    - user_inspect_cable_path
-  - - user_inspect_cable_path
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
-    - user_set_vehicle_ready_mode
-  - - user_set_vehicle_ready_mode
-    - user_refresh_charging_app_session
-  - - user_refresh_charging_app_session
-    - assistant_run_backend_diagnostics
-  - - assistant_run_backend_diagnostics
-    - assistant_clear_backend_hold
-  - - assistant_clear_backend_hold
-    - assistant_refresh_payment_token
-  - - assistant_refresh_payment_token
-    - assistant_release_fraud_lock
-  - - assistant_release_fraud_lock
-    - assistant_restore_backend_link
-  - - assistant_restore_backend_link
-    - assistant_rotate_station_certificate
-  - - assistant_rotate_station_certificate
-    - assistant_update_station_firmware
-  - - assistant_update_station_firmware
-    - assistant_reprovision_full_system
-  - - assistant_reprovision_full_system
-    - assistant_reset_retry_path
-  min_plan_length: 16
-  runtime:
-    domain: ev_charging_support
-    reason_for_call: __AUTHOR_ME__
-    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
-      asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Avery Chen. You are calm and cooperative, and you provide
-      tool-grounded updates only.
-    known_info: __AUTHOR_ME__
-    unknown_info: null
-    ticket: __AUTHOR_ME__
-    purpose: null
-    relevant_policies: null
-    notes: null
-    initialization_actions:
-    - env_type: user
-      func_name: set_user_context
-      arguments:
-        user_id: U2001
-        name: Avery Chen
-        account_id: A2001
-        station_id: ST2001
-        session_id: S2001
-    - env_type: assistant
-      func_name: set_fraud_lock_state
-      arguments:
-        value: 'on'
-    - env_type: assistant
-      func_name: set_hold_status
-      arguments:
-        value: present
-    - env_type: assistant
-      func_name: set_payment_token_status
-      arguments:
-        value: invalid
-    - env_type: assistant
-      func_name: set_backend_link_state
-      arguments:
-        value: down
-    - env_type: assistant
-      func_name: set_cert_state
-      arguments:
-        value: stale
-    - env_type: assistant
-      func_name: set_charge_state
-      arguments:
-        value: inactive
-    - env_type: assistant
-      func_name: set_error_class
-      arguments:
-        value: full_system
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: FW-410
-    - env_type: assistant
-      func_name: set_profile_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_retry_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_diagnostics_state
-      arguments:
-        value: idle
-    - env_type: assistant
-      func_name: set_firmware_state
-      arguments:
-        value: outdated
-    - env_type: assistant
-      func_name: set_reachability_state
-      arguments:
-        value: reachable
-    - env_type: user
-      func_name: set_app_refresh_state
-      arguments:
-        value: stale
-    - env_type: user
-      func_name: set_cable_inspection_state
-      arguments:
-        value: not_checked
-    - env_type: user
-      func_name: set_connector_reseat_state
-      arguments:
-        value: not_reseated
-    - env_type: user
-      func_name: set_screen_accessible
-      arguments:
-        value: true
-    - env_type: user
-      func_name: set_station_power_cycle_state
-      arguments:
-        value: not_done
-    - env_type: user
-      func_name: set_test_charge_state
-      arguments:
-        value: not_run
-    - env_type: user
-      func_name: set_vehicle_ready_state
-      arguments:
-        value: not_ready
-    env_assertions:
-    - env_type: assistant
-      func_name: assert_fraud_lock_state
-      arguments:
-        expected: 'off'
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_hold_status
-      arguments:
-        expected: cleared
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_payment_token_status
-      arguments:
-        expected: valid
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_backend_link_state
-      arguments:
-        expected: up
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_cert_state
-      arguments:
-        expected: fresh
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_last_fault_code
-      arguments:
-        expected: NONE
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_profile_state
-      arguments:
-        expected: ready
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_retry_state
-      arguments:
-        expected: ready
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_diagnostics_state
-      arguments:
-        expected: ran
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_firmware_state
-      arguments:
-        expected: current
-      assert_value: true
-      message: null
-    actions:
-    - action_id: acquire_fault_code_from_user
-      requestor: user
-      name: check_station_screen
-      arguments: {}
-      compare_args: []
-    - action_id: acquire_error_class_from_user
-      requestor: user
-      name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_inspect_cable_path
-      requestor: user
-      name: inspect_cable_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
-      arguments: {}
-      compare_args: []
-    - action_id: user_set_vehicle_ready_mode
-      requestor: user
-      name: set_vehicle_ready_mode
-      arguments: {}
-      compare_args: []
-    - action_id: user_refresh_charging_app_session
-      requestor: user
-      name: refresh_charging_app_session
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_run_backend_diagnostics
-      requestor: assistant
-      name: run_backend_diagnostics
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_clear_backend_hold
-      requestor: assistant
-      name: clear_billing_hold
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_refresh_payment_token
-      requestor: assistant
-      name: refresh_payment_token
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_release_fraud_lock
-      requestor: assistant
-      name: release_fraud_lock
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_restore_backend_link
-      requestor: assistant
-      name: restore_backend_link
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_rotate_station_certificate
-      requestor: assistant
-      name: rotate_station_certificate
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_update_station_firmware
-      requestor: assistant
-      name: update_station_firmware
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_reprovision_full_system
-      requestor: assistant
-      name: reprovision_full_system
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_reset_retry_path
-      requestor: assistant
-      name: reset_retry_path
-      arguments: {}
-      compare_args: []
-    reward_basis:
-    - ACTION
-    - ENV_ASSERTION
-- task_id: ev_full_system_recovery_d17_150
-  start_world:
-  - path: agent.accounts[active_account].hold_status
-    set: present
-  - path: agent.accounts[active_account].payment_token_status
-    set: invalid
-  - path: agent.accounts[active_account].fraud_lock_state
-    set: 'on'
-  - path: agent.stations[active_station].reachability_state
-    set: reachable
-  - path: agent.stations[active_station].firmware_state
-    set: outdated
-  - path: agent.stations[active_station].diagnostics_state
-    set: idle
-  - path: agent.network_paths[active_station].backend_link_state
-    set: down
-  - path: agent.network_paths[active_station].cert_state
-    set: stale
-  - path: agent.sessions[active_session].profile_state
-    set: not_ready
-  - path: agent.sessions[active_session].retry_state
-    set: not_ready
-  - path: agent.sessions[active_session].charge_state
-    set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: FW-410
-  - path: agent.sessions[active_session].error_class
-    set: full_system
-  - path: user.physical.screen_accessible
-    set: true
-  - path: user.physical.station_power_cycle_state
-    set: not_done
-  - path: user.physical.connector_reseat_state
-    set: not_reseated
-  - path: user.physical.cable_inspection_state
-    set: not_checked
-  - path: user.physical.vehicle_ready_state
-    set: not_ready
-  - path: user.physical.app_refresh_state
-    set: stale
-  - path: user.physical.test_charge_state
-    set: not_run
-  start_bindings: []
-  goal_world:
-  - op: eq
-    path: agent.accounts[active_account].fraud_lock_state
-    value: 'off'
-  - op: eq
-    path: agent.accounts[active_account].hold_status
-    value: cleared
-  - op: eq
-    path: agent.accounts[active_account].payment_token_status
-    value: valid
-  - op: eq
-    path: agent.network_paths[active_station].backend_link_state
-    value: up
-  - op: eq
-    path: agent.network_paths[active_station].cert_state
-    value: fresh
-  - op: eq
-    path: agent.sessions[active_session].charge_state
-    value: active
-  - op: eq
-    path: agent.sessions[active_session].last_fault_code
-    value: NONE
-  - op: eq
-    path: agent.sessions[active_session].profile_state
-    value: ready
-  - op: eq
-    path: agent.sessions[active_session].retry_state
-    value: ready
-  - op: eq
-    path: agent.stations[active_station].diagnostics_state
-    value: ran
-  - op: eq
-    path: agent.stations[active_station].firmware_state
-    value: current
-  goal_bindings:
-  - app_error_class
-  - fault_code
-  required_actions:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_update_station_firmware
-  - assistant_reprovision_full_system
-  - assistant_reset_retry_path
-  - user_run_test_charge
-  required_precedence:
-  - - acquire_fault_code_from_user
-    - acquire_error_class_from_user
-  - - acquire_error_class_from_user
-    - user_inspect_cable_path
-  - - user_inspect_cable_path
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
-    - user_set_vehicle_ready_mode
-  - - user_set_vehicle_ready_mode
-    - user_refresh_charging_app_session
-  - - user_refresh_charging_app_session
-    - assistant_run_backend_diagnostics
-  - - assistant_run_backend_diagnostics
-    - assistant_clear_backend_hold
-  - - assistant_clear_backend_hold
-    - assistant_refresh_payment_token
-  - - assistant_refresh_payment_token
-    - assistant_release_fraud_lock
-  - - assistant_release_fraud_lock
-    - assistant_restore_backend_link
-  - - assistant_restore_backend_link
-    - assistant_rotate_station_certificate
-  - - assistant_rotate_station_certificate
-    - assistant_update_station_firmware
-  - - assistant_update_station_firmware
-    - assistant_reprovision_full_system
-  - - assistant_reprovision_full_system
-    - assistant_reset_retry_path
-  - - assistant_reset_retry_path
-    - user_run_test_charge
-  min_plan_length: 17
-  runtime:
-    domain: ev_charging_support
-    reason_for_call: __AUTHOR_ME__
-    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
-      asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Avery Chen. You are direct and pragmatic, and you execute
-      assistant requests one step at a time.
-    known_info: __AUTHOR_ME__
-    unknown_info: null
-    ticket: __AUTHOR_ME__
-    purpose: null
-    relevant_policies: null
-    notes: null
-    initialization_actions:
-    - env_type: user
-      func_name: set_user_context
-      arguments:
-        user_id: U2001
-        name: Avery Chen
-        account_id: A2001
-        station_id: ST2001
-        session_id: S2001
-    - env_type: assistant
-      func_name: set_fraud_lock_state
-      arguments:
-        value: 'on'
-    - env_type: assistant
-      func_name: set_hold_status
-      arguments:
-        value: present
-    - env_type: assistant
-      func_name: set_payment_token_status
-      arguments:
-        value: invalid
-    - env_type: assistant
-      func_name: set_backend_link_state
-      arguments:
-        value: down
-    - env_type: assistant
-      func_name: set_cert_state
-      arguments:
-        value: stale
-    - env_type: assistant
-      func_name: set_charge_state
-      arguments:
-        value: inactive
-    - env_type: assistant
-      func_name: set_error_class
-      arguments:
-        value: full_system
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: FW-410
-    - env_type: assistant
-      func_name: set_profile_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_retry_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_diagnostics_state
-      arguments:
-        value: idle
-    - env_type: assistant
-      func_name: set_firmware_state
-      arguments:
-        value: outdated
-    - env_type: assistant
-      func_name: set_reachability_state
-      arguments:
-        value: reachable
-    - env_type: user
-      func_name: set_app_refresh_state
-      arguments:
-        value: stale
-    - env_type: user
-      func_name: set_cable_inspection_state
-      arguments:
-        value: not_checked
-    - env_type: user
-      func_name: set_connector_reseat_state
-      arguments:
-        value: not_reseated
-    - env_type: user
-      func_name: set_screen_accessible
-      arguments:
-        value: true
-    - env_type: user
-      func_name: set_station_power_cycle_state
-      arguments:
-        value: not_done
-    - env_type: user
-      func_name: set_test_charge_state
-      arguments:
-        value: not_run
-    - env_type: user
-      func_name: set_vehicle_ready_state
-      arguments:
-        value: not_ready
-    env_assertions:
-    - env_type: assistant
-      func_name: assert_fraud_lock_state
-      arguments:
-        expected: 'off'
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_hold_status
-      arguments:
-        expected: cleared
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_payment_token_status
-      arguments:
-        expected: valid
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_backend_link_state
-      arguments:
-        expected: up
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_cert_state
-      arguments:
-        expected: fresh
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_charge_state
-      arguments:
-        expected: active
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_last_fault_code
-      arguments:
-        expected: NONE
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_profile_state
-      arguments:
-        expected: ready
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_retry_state
-      arguments:
-        expected: ready
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_diagnostics_state
-      arguments:
-        expected: ran
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_firmware_state
-      arguments:
-        expected: current
-      assert_value: true
-      message: null
-    actions:
-    - action_id: acquire_fault_code_from_user
-      requestor: user
-      name: check_station_screen
-      arguments: {}
-      compare_args: []
-    - action_id: acquire_error_class_from_user
-      requestor: user
-      name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_inspect_cable_path
-      requestor: user
-      name: inspect_cable_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
-      arguments: {}
-      compare_args: []
-    - action_id: user_set_vehicle_ready_mode
-      requestor: user
-      name: set_vehicle_ready_mode
-      arguments: {}
-      compare_args: []
-    - action_id: user_refresh_charging_app_session
-      requestor: user
-      name: refresh_charging_app_session
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_run_backend_diagnostics
-      requestor: assistant
-      name: run_backend_diagnostics
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_clear_backend_hold
-      requestor: assistant
-      name: clear_billing_hold
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_refresh_payment_token
-      requestor: assistant
-      name: refresh_payment_token
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_release_fraud_lock
-      requestor: assistant
-      name: release_fraud_lock
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_restore_backend_link
-      requestor: assistant
-      name: restore_backend_link
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_rotate_station_certificate
-      requestor: assistant
-      name: rotate_station_certificate
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_update_station_firmware
-      requestor: assistant
-      name: update_station_firmware
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_reprovision_full_system
-      requestor: assistant
-      name: reprovision_full_system
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_reset_retry_path
-      requestor: assistant
-      name: reset_retry_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_run_test_charge
-      requestor: user
-      name: run_test_charge
-      arguments: {}
-      compare_args: []
-    reward_basis:
-    - ACTION
-    - ENV_ASSERTION
-- task_id: ev_billing_partial_knowledge_d11_176
-  start_world:
-  - path: agent.accounts[active_account].hold_status
-    set: present
-  - path: agent.accounts[active_account].payment_token_status
-    set: invalid
+    set: valid
   - path: agent.accounts[active_account].fraud_lock_state
     set: 'on'
   - path: agent.stations[active_station].reachability_state
@@ -3060,8 +907,6 @@ tasks:
     set: not_ready
   - path: agent.sessions[active_session].charge_state
     set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: BH-101
   - path: agent.sessions[active_session].error_class
     set: billing
   - path: user.physical.screen_accessible
@@ -3078,18 +923,14 @@ tasks:
     set: stale
   - path: user.physical.test_charge_state
     set: not_run
-  start_bindings:
-  - fault_code
+  start_bindings: []
   goal_world:
   - op: eq
     path: agent.accounts[active_account].fraud_lock_state
     value: 'off'
   - op: eq
-    path: agent.accounts[active_account].hold_status
-    value: cleared
-  - op: eq
-    path: agent.accounts[active_account].payment_token_status
-    value: valid
+    path: agent.sessions[active_session].charge_state
+    value: active
   - op: eq
     path: agent.sessions[active_session].last_fault_code
     value: NONE
@@ -3097,55 +938,58 @@ tasks:
     path: agent.sessions[active_session].profile_state
     value: ready
   - op: eq
+    path: agent.sessions[active_session].retry_state
+    value: ready
+  - op: eq
     path: agent.stations[active_station].diagnostics_state
     value: ran
   goal_bindings:
   - app_error_class
+  terminal_profile_id: billing_resolved
   required_actions:
+  - acquire_screen_fault_code_from_user
   - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
   - user_set_vehicle_ready_mode
   - user_refresh_charging_app_session
   - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
   - assistant_release_fraud_lock
   - assistant_reprovision_billing
+  - assistant_reset_retry_path
+  - user_run_test_charge_billing
   required_precedence:
+  - - acquire_screen_fault_code_from_user
+    - acquire_error_class_from_user
   - - acquire_error_class_from_user
-    - user_inspect_cable_path
-  - - user_inspect_cable_path
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
     - user_set_vehicle_ready_mode
   - - user_set_vehicle_ready_mode
     - user_refresh_charging_app_session
   - - user_refresh_charging_app_session
     - assistant_run_backend_diagnostics
   - - assistant_run_backend_diagnostics
-    - assistant_clear_backend_hold
-  - - assistant_clear_backend_hold
-    - assistant_refresh_payment_token
-  - - assistant_refresh_payment_token
     - assistant_release_fraud_lock
   - - assistant_release_fraud_lock
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - assistant_reprovision_billing
+  - - assistant_reprovision_billing
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
+    - assistant_reset_retry_path
+  - - assistant_reset_retry_path
+    - user_run_test_charge_billing
   min_plan_length: 11
   runtime:
     domain: ev_charging_support
     reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Jordan Lee. You are a practical EV driver who can execute
-      technical steps when guided clearly.
+      issue resolved when the assistant has achieved the assigned recovery target
+      and the remaining observable recovery criteria are satisfied. Before deciding
+      the issue is resolved, call check_resolution_status. Only emit ###STOP### when
+      check_resolution_status returns resolved=true. If resolved=false, report unmet
+      items and ask the assistant for the next step.'
+    persona: Your name is Jordan Lee. You are methodical and detail-oriented, and
+      you follow assistant instructions precisely.
     known_info: __AUTHOR_ME__
     unknown_info: null
     ticket: __AUTHOR_ME__
@@ -3168,11 +1012,11 @@ tasks:
     - env_type: assistant
       func_name: set_hold_status
       arguments:
-        value: present
+        value: cleared
     - env_type: assistant
       func_name: set_payment_token_status
       arguments:
-        value: invalid
+        value: valid
     - env_type: assistant
       func_name: set_backend_link_state
       arguments:
@@ -3189,10 +1033,6 @@ tasks:
       func_name: set_error_class
       arguments:
         value: billing
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: BH-101
     - env_type: assistant
       func_name: set_profile_state
       arguments:
@@ -3249,332 +1089,9 @@ tasks:
       assert_value: true
       message: null
     - env_type: assistant
-      func_name: assert_hold_status
+      func_name: assert_charge_state
       arguments:
-        expected: cleared
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_payment_token_status
-      arguments:
-        expected: valid
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_last_fault_code
-      arguments:
-        expected: NONE
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_profile_state
-      arguments:
-        expected: ready
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_diagnostics_state
-      arguments:
-        expected: ran
-      assert_value: true
-      message: null
-    actions:
-    - action_id: acquire_error_class_from_user
-      requestor: user
-      name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_inspect_cable_path
-      requestor: user
-      name: inspect_cable_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
-      arguments: {}
-      compare_args: []
-    - action_id: user_set_vehicle_ready_mode
-      requestor: user
-      name: set_vehicle_ready_mode
-      arguments: {}
-      compare_args: []
-    - action_id: user_refresh_charging_app_session
-      requestor: user
-      name: refresh_charging_app_session
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_run_backend_diagnostics
-      requestor: assistant
-      name: run_backend_diagnostics
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
-    - action_id: assistant_clear_backend_hold
-      requestor: assistant
-      name: clear_billing_hold
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
-    - action_id: assistant_refresh_payment_token
-      requestor: assistant
-      name: refresh_payment_token
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
-    - action_id: assistant_release_fraud_lock
-      requestor: assistant
-      name: release_fraud_lock
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
-    - action_id: assistant_reprovision_billing
-      requestor: assistant
-      name: reprovision_billing
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
-    reward_basis:
-    - ACTION
-    - ENV_ASSERTION
-- task_id: ev_billing_partial_knowledge_d12_177
-  start_world:
-  - path: agent.accounts[active_account].hold_status
-    set: present
-  - path: agent.accounts[active_account].payment_token_status
-    set: invalid
-  - path: agent.accounts[active_account].fraud_lock_state
-    set: 'on'
-  - path: agent.stations[active_station].reachability_state
-    set: reachable
-  - path: agent.stations[active_station].firmware_state
-    set: current
-  - path: agent.stations[active_station].diagnostics_state
-    set: idle
-  - path: agent.network_paths[active_station].backend_link_state
-    set: up
-  - path: agent.network_paths[active_station].cert_state
-    set: fresh
-  - path: agent.sessions[active_session].profile_state
-    set: not_ready
-  - path: agent.sessions[active_session].retry_state
-    set: not_ready
-  - path: agent.sessions[active_session].charge_state
-    set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: BH-101
-  - path: agent.sessions[active_session].error_class
-    set: billing
-  - path: user.physical.screen_accessible
-    set: true
-  - path: user.physical.station_power_cycle_state
-    set: not_done
-  - path: user.physical.connector_reseat_state
-    set: not_reseated
-  - path: user.physical.cable_inspection_state
-    set: not_checked
-  - path: user.physical.vehicle_ready_state
-    set: not_ready
-  - path: user.physical.app_refresh_state
-    set: stale
-  - path: user.physical.test_charge_state
-    set: not_run
-  start_bindings:
-  - fault_code
-  goal_world:
-  - op: eq
-    path: agent.accounts[active_account].fraud_lock_state
-    value: 'off'
-  - op: eq
-    path: agent.accounts[active_account].hold_status
-    value: cleared
-  - op: eq
-    path: agent.accounts[active_account].payment_token_status
-    value: valid
-  - op: eq
-    path: agent.sessions[active_session].last_fault_code
-    value: NONE
-  - op: eq
-    path: agent.sessions[active_session].profile_state
-    value: ready
-  - op: eq
-    path: agent.sessions[active_session].retry_state
-    value: ready
-  - op: eq
-    path: agent.stations[active_station].diagnostics_state
-    value: ran
-  goal_bindings:
-  - app_error_class
-  required_actions:
-  - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
-  - user_set_vehicle_ready_mode
-  - user_refresh_charging_app_session
-  - assistant_run_backend_diagnostics
-  - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
-  - assistant_release_fraud_lock
-  - assistant_reprovision_billing
-  - assistant_reset_retry_path
-  required_precedence:
-  - - acquire_error_class_from_user
-    - user_inspect_cable_path
-  - - user_inspect_cable_path
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
-    - user_set_vehicle_ready_mode
-  - - user_set_vehicle_ready_mode
-    - user_refresh_charging_app_session
-  - - user_refresh_charging_app_session
-    - assistant_run_backend_diagnostics
-  - - assistant_run_backend_diagnostics
-    - assistant_clear_backend_hold
-  - - assistant_clear_backend_hold
-    - assistant_refresh_payment_token
-  - - assistant_refresh_payment_token
-    - assistant_release_fraud_lock
-  - - assistant_release_fraud_lock
-    - assistant_reprovision_billing
-  - - assistant_reprovision_billing
-    - assistant_reset_retry_path
-  min_plan_length: 12
-  runtime:
-    domain: ev_charging_support
-    reason_for_call: __AUTHOR_ME__
-    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
-      asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Sam Rivera. You are calm and cooperative, and you provide
-      tool-grounded updates only.
-    known_info: __AUTHOR_ME__
-    unknown_info: null
-    ticket: __AUTHOR_ME__
-    purpose: null
-    relevant_policies: null
-    notes: null
-    initialization_actions:
-    - env_type: user
-      func_name: set_user_context
-      arguments:
-        user_id: U3001
-        name: Sam Rivera
-        account_id: A3001
-        station_id: ST3001
-        session_id: S3001
-    - env_type: assistant
-      func_name: set_fraud_lock_state
-      arguments:
-        value: 'on'
-    - env_type: assistant
-      func_name: set_hold_status
-      arguments:
-        value: present
-    - env_type: assistant
-      func_name: set_payment_token_status
-      arguments:
-        value: invalid
-    - env_type: assistant
-      func_name: set_backend_link_state
-      arguments:
-        value: up
-    - env_type: assistant
-      func_name: set_cert_state
-      arguments:
-        value: fresh
-    - env_type: assistant
-      func_name: set_charge_state
-      arguments:
-        value: inactive
-    - env_type: assistant
-      func_name: set_error_class
-      arguments:
-        value: billing
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: BH-101
-    - env_type: assistant
-      func_name: set_profile_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_retry_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_diagnostics_state
-      arguments:
-        value: idle
-    - env_type: assistant
-      func_name: set_firmware_state
-      arguments:
-        value: current
-    - env_type: assistant
-      func_name: set_reachability_state
-      arguments:
-        value: reachable
-    - env_type: user
-      func_name: set_app_refresh_state
-      arguments:
-        value: stale
-    - env_type: user
-      func_name: set_cable_inspection_state
-      arguments:
-        value: not_checked
-    - env_type: user
-      func_name: set_connector_reseat_state
-      arguments:
-        value: not_reseated
-    - env_type: user
-      func_name: set_screen_accessible
-      arguments:
-        value: true
-    - env_type: user
-      func_name: set_station_power_cycle_state
-      arguments:
-        value: not_done
-    - env_type: user
-      func_name: set_test_charge_state
-      arguments:
-        value: not_run
-    - env_type: user
-      func_name: set_vehicle_ready_state
-      arguments:
-        value: not_ready
-    env_assertions:
-    - env_type: assistant
-      func_name: assert_fraud_lock_state
-      arguments:
-        expected: 'off'
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_hold_status
-      arguments:
-        expected: cleared
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_payment_token_status
-      arguments:
-        expected: valid
+        expected: active
       assert_value: true
       message: null
     - env_type: assistant
@@ -3602,24 +1119,14 @@ tasks:
       assert_value: true
       message: null
     actions:
+    - action_id: acquire_screen_fault_code_from_user
+      requestor: user
+      name: check_station_screen
+      arguments: {}
+      compare_args: []
     - action_id: acquire_error_class_from_user
       requestor: user
       name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_inspect_cable_path
-      requestor: user
-      name: inspect_cable_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
       arguments: {}
       compare_args: []
     - action_id: user_set_vehicle_ready_mode
@@ -3635,54 +1142,36 @@ tasks:
     - action_id: assistant_run_backend_diagnostics
       requestor: assistant
       name: run_backend_diagnostics
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
-    - action_id: assistant_clear_backend_hold
-      requestor: assistant
-      name: clear_billing_hold
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
-    - action_id: assistant_refresh_payment_token
-      requestor: assistant
-      name: refresh_payment_token
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
+      arguments: {}
+      compare_args: []
     - action_id: assistant_release_fraud_lock
       requestor: assistant
       name: release_fraud_lock
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
+      arguments: {}
+      compare_args: []
     - action_id: assistant_reprovision_billing
       requestor: assistant
       name: reprovision_billing
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
+      arguments: {}
+      compare_args: []
     - action_id: assistant_reset_retry_path
       requestor: assistant
       name: reset_retry_path
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
+      arguments: {}
+      compare_args: []
+    - action_id: user_run_test_charge_billing
+      requestor: user
+      name: run_test_charge
+      arguments: {}
+      compare_args: []
     reward_basis:
-    - ACTION
     - ENV_ASSERTION
-- task_id: ev_billing_partial_knowledge_d13_178
+- task_id: billing_hold_and_fraud_d12_013
   start_world:
   - path: agent.accounts[active_account].hold_status
     set: present
   - path: agent.accounts[active_account].payment_token_status
-    set: invalid
+    set: valid
   - path: agent.accounts[active_account].fraud_lock_state
     set: 'on'
   - path: agent.stations[active_station].reachability_state
@@ -3701,8 +1190,6 @@ tasks:
     set: not_ready
   - path: agent.sessions[active_session].charge_state
     set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: BH-101
   - path: agent.sessions[active_session].error_class
     set: billing
   - path: user.physical.screen_accessible
@@ -3719,8 +1206,7 @@ tasks:
     set: stale
   - path: user.physical.test_charge_state
     set: not_run
-  start_bindings:
-  - fault_code
+  start_bindings: []
   goal_world:
   - op: eq
     path: agent.accounts[active_account].fraud_lock_state
@@ -3728,9 +1214,6 @@ tasks:
   - op: eq
     path: agent.accounts[active_account].hold_status
     value: cleared
-  - op: eq
-    path: agent.accounts[active_account].payment_token_status
-    value: valid
   - op: eq
     path: agent.sessions[active_session].charge_state
     value: active
@@ -3748,28 +1231,22 @@ tasks:
     value: ran
   goal_bindings:
   - app_error_class
+  terminal_profile_id: billing_resolved
   required_actions:
+  - acquire_screen_fault_code_from_user
   - acquire_error_class_from_user
-  - user_inspect_cable_path
-  - user_reseat_connector
-  - user_power_cycle_station
   - user_set_vehicle_ready_mode
   - user_refresh_charging_app_session
   - assistant_run_backend_diagnostics
   - assistant_clear_backend_hold
-  - assistant_refresh_payment_token
   - assistant_release_fraud_lock
   - assistant_reprovision_billing
   - assistant_reset_retry_path
-  - user_run_test_charge
+  - user_run_test_charge_billing
   required_precedence:
+  - - acquire_screen_fault_code_from_user
+    - acquire_error_class_from_user
   - - acquire_error_class_from_user
-    - user_inspect_cable_path
-  - - user_inspect_cable_path
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
     - user_set_vehicle_ready_mode
   - - user_set_vehicle_ready_mode
     - user_refresh_charging_app_session
@@ -3778,27 +1255,30 @@ tasks:
   - - assistant_run_backend_diagnostics
     - assistant_clear_backend_hold
   - - assistant_clear_backend_hold
-    - assistant_refresh_payment_token
-  - - assistant_refresh_payment_token
     - assistant_release_fraud_lock
   - - assistant_release_fraud_lock
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - assistant_reprovision_billing
   - - assistant_reprovision_billing
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - assistant_reset_retry_path
   - - assistant_reset_retry_path
-    - user_run_test_charge
-  min_plan_length: 13
+    - user_run_test_charge_billing
+  min_plan_length: 12
   runtime:
     domain: ev_charging_support
     reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Avery Chen. You are a practical EV driver who can execute
-      technical steps when guided clearly.
+      issue resolved when the assistant has achieved the assigned recovery target
+      and the remaining observable recovery criteria are satisfied. Before deciding
+      the issue is resolved, call check_resolution_status. Only emit ###STOP### when
+      check_resolution_status returns resolved=true. If resolved=false, report unmet
+      items and ask the assistant for the next step.'
+    persona: Your name is Avery Chen. You are a practical EV driver under time pressure
+      who follows clear troubleshooting instructions.
     known_info: __AUTHOR_ME__
     unknown_info: null
     ticket: __AUTHOR_ME__
@@ -3825,7 +1305,7 @@ tasks:
     - env_type: assistant
       func_name: set_payment_token_status
       arguments:
-        value: invalid
+        value: valid
     - env_type: assistant
       func_name: set_backend_link_state
       arguments:
@@ -3842,10 +1322,6 @@ tasks:
       func_name: set_error_class
       arguments:
         value: billing
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: BH-101
     - env_type: assistant
       func_name: set_profile_state
       arguments:
@@ -3901,6 +1377,547 @@ tasks:
         expected: 'off'
       assert_value: true
       message: null
+    - env_type: assistant
+      func_name: assert_hold_status
+      arguments:
+        expected: cleared
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_charge_state
+      arguments:
+        expected: active
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_last_fault_code
+      arguments:
+        expected: NONE
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_profile_state
+      arguments:
+        expected: ready
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_retry_state
+      arguments:
+        expected: ready
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_diagnostics_state
+      arguments:
+        expected: ran
+      assert_value: true
+      message: null
+    actions:
+    - action_id: acquire_screen_fault_code_from_user
+      requestor: user
+      name: check_station_screen
+      arguments: {}
+      compare_args: []
+    - action_id: acquire_error_class_from_user
+      requestor: user
+      name: check_app_status
+      arguments: {}
+      compare_args: []
+    - action_id: user_set_vehicle_ready_mode
+      requestor: user
+      name: set_vehicle_ready_mode
+      arguments: {}
+      compare_args: []
+    - action_id: user_refresh_charging_app_session
+      requestor: user
+      name: refresh_charging_app_session
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_run_backend_diagnostics
+      requestor: assistant
+      name: run_backend_diagnostics
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_clear_backend_hold
+      requestor: assistant
+      name: clear_billing_hold
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_release_fraud_lock
+      requestor: assistant
+      name: release_fraud_lock
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_reprovision_billing
+      requestor: assistant
+      name: reprovision_billing
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_reset_retry_path
+      requestor: assistant
+      name: reset_retry_path
+      arguments: {}
+      compare_args: []
+    - action_id: user_run_test_charge_billing
+      requestor: user
+      name: run_test_charge
+      arguments: {}
+      compare_args: []
+    reward_basis:
+    - ENV_ASSERTION
+- task_id: billing_ready_to_reprovision_d7_016
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: ready
+  - path: user.physical.app_refresh_state
+    set: refreshed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  goal_world:
+  - op: eq
+    path: agent.sessions[active_session].charge_state
+    value: active
+  - op: eq
+    path: agent.sessions[active_session].last_fault_code
+    value: NONE
+  - op: eq
+    path: agent.sessions[active_session].profile_state
+    value: ready
+  - op: eq
+    path: agent.sessions[active_session].retry_state
+    value: ready
+  - op: eq
+    path: agent.stations[active_station].diagnostics_state
+    value: ran
+  goal_bindings:
+  - app_error_class
+  terminal_profile_id: billing_resolved
+  required_actions:
+  - acquire_screen_fault_code_from_user
+  - acquire_error_class_from_user
+  - assistant_run_backend_diagnostics
+  - assistant_reprovision_billing
+  - assistant_reset_retry_path
+  - user_run_test_charge_billing
+  required_precedence:
+  - - acquire_screen_fault_code_from_user
+    - acquire_error_class_from_user
+  - - acquire_error_class_from_user
+    - assistant_run_backend_diagnostics
+  - - assistant_run_backend_diagnostics
+    - assistant_reprovision_billing
+  - - assistant_reprovision_billing
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
+    - assistant_reset_retry_path
+  - - assistant_reset_retry_path
+    - user_run_test_charge_billing
+  min_plan_length: 7
+  runtime:
+    domain: ev_charging_support
+    reason_for_call: __AUTHOR_ME__
+    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
+      asked. Base your updates on tool outputs, not guesses. You will consider the
+      issue resolved when the assistant has achieved the assigned recovery target
+      and the remaining observable recovery criteria are satisfied. Before deciding
+      the issue is resolved, call check_resolution_status. Only emit ###STOP### when
+      check_resolution_status returns resolved=true. If resolved=false, report unmet
+      items and ask the assistant for the next step.'
+    persona: Your name is Sam Rivera. You are methodical and detail-oriented, and
+      you follow assistant instructions precisely.
+    known_info: __AUTHOR_ME__
+    unknown_info: null
+    ticket: __AUTHOR_ME__
+    purpose: null
+    relevant_policies: null
+    notes: null
+    initialization_actions:
+    - env_type: user
+      func_name: set_user_context
+      arguments:
+        user_id: U3001
+        name: Sam Rivera
+        account_id: A3001
+        station_id: ST3001
+        session_id: S3001
+    - env_type: assistant
+      func_name: set_fraud_lock_state
+      arguments:
+        value: 'off'
+    - env_type: assistant
+      func_name: set_hold_status
+      arguments:
+        value: cleared
+    - env_type: assistant
+      func_name: set_payment_token_status
+      arguments:
+        value: valid
+    - env_type: assistant
+      func_name: set_backend_link_state
+      arguments:
+        value: up
+    - env_type: assistant
+      func_name: set_cert_state
+      arguments:
+        value: fresh
+    - env_type: assistant
+      func_name: set_charge_state
+      arguments:
+        value: inactive
+    - env_type: assistant
+      func_name: set_error_class
+      arguments:
+        value: billing
+    - env_type: assistant
+      func_name: set_profile_state
+      arguments:
+        value: not_ready
+    - env_type: assistant
+      func_name: set_retry_state
+      arguments:
+        value: not_ready
+    - env_type: assistant
+      func_name: set_diagnostics_state
+      arguments:
+        value: idle
+    - env_type: assistant
+      func_name: set_firmware_state
+      arguments:
+        value: current
+    - env_type: assistant
+      func_name: set_reachability_state
+      arguments:
+        value: reachable
+    - env_type: user
+      func_name: set_app_refresh_state
+      arguments:
+        value: refreshed
+    - env_type: user
+      func_name: set_cable_inspection_state
+      arguments:
+        value: not_checked
+    - env_type: user
+      func_name: set_connector_reseat_state
+      arguments:
+        value: not_reseated
+    - env_type: user
+      func_name: set_screen_accessible
+      arguments:
+        value: true
+    - env_type: user
+      func_name: set_station_power_cycle_state
+      arguments:
+        value: not_done
+    - env_type: user
+      func_name: set_test_charge_state
+      arguments:
+        value: not_run
+    - env_type: user
+      func_name: set_vehicle_ready_state
+      arguments:
+        value: ready
+    env_assertions:
+    - env_type: assistant
+      func_name: assert_charge_state
+      arguments:
+        expected: active
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_last_fault_code
+      arguments:
+        expected: NONE
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_profile_state
+      arguments:
+        expected: ready
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_retry_state
+      arguments:
+        expected: ready
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_diagnostics_state
+      arguments:
+        expected: ran
+      assert_value: true
+      message: null
+    actions:
+    - action_id: acquire_screen_fault_code_from_user
+      requestor: user
+      name: check_station_screen
+      arguments: {}
+      compare_args: []
+    - action_id: acquire_error_class_from_user
+      requestor: user
+      name: check_app_status
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_run_backend_diagnostics
+      requestor: assistant
+      name: run_backend_diagnostics
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_reprovision_billing
+      requestor: assistant
+      name: reprovision_billing
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_reset_retry_path
+      requestor: assistant
+      name: reset_retry_path
+      arguments: {}
+      compare_args: []
+    - action_id: user_run_test_charge_billing
+      requestor: user
+      name: run_test_charge
+      arguments: {}
+      compare_args: []
+    reward_basis:
+    - ENV_ASSERTION
+- task_id: billing_partial_knowledge_d11_020
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: invalid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings:
+  - screen_fault_code
+  goal_world:
+  - op: eq
+    path: agent.accounts[active_account].hold_status
+    value: cleared
+  - op: eq
+    path: agent.accounts[active_account].payment_token_status
+    value: valid
+  - op: eq
+    path: agent.sessions[active_session].charge_state
+    value: active
+  - op: eq
+    path: agent.sessions[active_session].last_fault_code
+    value: NONE
+  - op: eq
+    path: agent.sessions[active_session].profile_state
+    value: ready
+  - op: eq
+    path: agent.sessions[active_session].retry_state
+    value: ready
+  - op: eq
+    path: agent.stations[active_station].diagnostics_state
+    value: ran
+  goal_bindings:
+  - app_error_class
+  terminal_profile_id: billing_resolved
+  required_actions:
+  - acquire_error_class_from_user
+  - user_set_vehicle_ready_mode
+  - user_refresh_charging_app_session
+  - assistant_run_backend_diagnostics
+  - assistant_clear_backend_hold
+  - assistant_refresh_payment_token
+  - acquire_screen_fault_code_from_user
+  - assistant_reprovision_billing
+  - assistant_reset_retry_path
+  - user_run_test_charge_billing
+  required_precedence:
+  - - acquire_error_class_from_user
+    - user_set_vehicle_ready_mode
+  - - user_set_vehicle_ready_mode
+    - user_refresh_charging_app_session
+  - - user_refresh_charging_app_session
+    - assistant_run_backend_diagnostics
+  - - assistant_run_backend_diagnostics
+    - assistant_clear_backend_hold
+  - - assistant_clear_backend_hold
+    - assistant_refresh_payment_token
+  - - assistant_refresh_payment_token
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
+    - assistant_reprovision_billing
+  - - assistant_reprovision_billing
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
+    - assistant_reset_retry_path
+  - - assistant_reset_retry_path
+    - user_run_test_charge_billing
+  min_plan_length: 11
+  runtime:
+    domain: ev_charging_support
+    reason_for_call: __AUTHOR_ME__
+    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
+      asked. Base your updates on tool outputs, not guesses. You will consider the
+      issue resolved when the assistant has achieved the assigned recovery target
+      and the remaining observable recovery criteria are satisfied. Before deciding
+      the issue is resolved, call check_resolution_status. Only emit ###STOP### when
+      check_resolution_status returns resolved=true. If resolved=false, report unmet
+      items and ask the assistant for the next step.'
+    persona: Your name is Avery Chen. You are a practical EV driver under time pressure
+      who follows clear troubleshooting instructions.
+    known_info: __AUTHOR_ME__
+    unknown_info: null
+    ticket: __AUTHOR_ME__
+    purpose: null
+    relevant_policies: null
+    notes: null
+    initialization_actions:
+    - env_type: user
+      func_name: set_user_context
+      arguments:
+        user_id: U2001
+        name: Avery Chen
+        account_id: A2001
+        station_id: ST2001
+        session_id: S2001
+    - env_type: assistant
+      func_name: set_fraud_lock_state
+      arguments:
+        value: 'off'
+    - env_type: assistant
+      func_name: set_hold_status
+      arguments:
+        value: present
+    - env_type: assistant
+      func_name: set_payment_token_status
+      arguments:
+        value: invalid
+    - env_type: assistant
+      func_name: set_backend_link_state
+      arguments:
+        value: up
+    - env_type: assistant
+      func_name: set_cert_state
+      arguments:
+        value: fresh
+    - env_type: assistant
+      func_name: set_charge_state
+      arguments:
+        value: inactive
+    - env_type: assistant
+      func_name: set_error_class
+      arguments:
+        value: billing
+    - env_type: assistant
+      func_name: set_profile_state
+      arguments:
+        value: not_ready
+    - env_type: assistant
+      func_name: set_retry_state
+      arguments:
+        value: not_ready
+    - env_type: assistant
+      func_name: set_diagnostics_state
+      arguments:
+        value: idle
+    - env_type: assistant
+      func_name: set_firmware_state
+      arguments:
+        value: current
+    - env_type: assistant
+      func_name: set_reachability_state
+      arguments:
+        value: reachable
+    - env_type: user
+      func_name: set_app_refresh_state
+      arguments:
+        value: stale
+    - env_type: user
+      func_name: set_cable_inspection_state
+      arguments:
+        value: not_checked
+    - env_type: user
+      func_name: set_connector_reseat_state
+      arguments:
+        value: not_reseated
+    - env_type: user
+      func_name: set_screen_accessible
+      arguments:
+        value: true
+    - env_type: user
+      func_name: set_station_power_cycle_state
+      arguments:
+        value: not_done
+    - env_type: user
+      func_name: set_test_charge_state
+      arguments:
+        value: not_run
+    - env_type: user
+      func_name: set_vehicle_ready_state
+      arguments:
+        value: not_ready
+    env_assertions:
     - env_type: assistant
       func_name: assert_hold_status
       arguments:
@@ -3949,21 +1966,6 @@ tasks:
       name: check_app_status
       arguments: {}
       compare_args: []
-    - action_id: user_inspect_cable_path
-      requestor: user
-      name: inspect_cable_path
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
-      arguments: {}
-      compare_args: []
     - action_id: user_set_vehicle_ready_mode
       requestor: user
       name: set_vehicle_ready_mode
@@ -3979,52 +1981,42 @@ tasks:
       name: run_backend_diagnostics
       arguments:
         fault_code: BH-101
-      compare_args:
-      - fault_code
+      compare_args: []
     - action_id: assistant_clear_backend_hold
       requestor: assistant
       name: clear_billing_hold
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
+      arguments: {}
+      compare_args: []
     - action_id: assistant_refresh_payment_token
       requestor: assistant
       name: refresh_payment_token
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
-    - action_id: assistant_release_fraud_lock
-      requestor: assistant
-      name: release_fraud_lock
-      arguments:
-        fault_code: BH-101
-      compare_args:
-      - fault_code
+      arguments: {}
+      compare_args: []
+    - action_id: acquire_screen_fault_code_from_user
+      requestor: user
+      name: check_station_screen
+      arguments: {}
+      compare_args: []
     - action_id: assistant_reprovision_billing
       requestor: assistant
       name: reprovision_billing
       arguments:
         fault_code: BH-101
-      compare_args:
-      - fault_code
+      compare_args: []
     - action_id: assistant_reset_retry_path
       requestor: assistant
       name: reset_retry_path
       arguments:
         fault_code: BH-101
-      compare_args:
-      - fault_code
-    - action_id: user_run_test_charge
+      compare_args: []
+    - action_id: user_run_test_charge_billing
       requestor: user
       name: run_test_charge
       arguments: {}
       compare_args: []
     reward_basis:
-    - ACTION
     - ENV_ASSERTION
-- task_id: ev_connectivity_partial_physical_d5_183
+- task_id: connectivity_full_d15_024
   start_world:
   - path: agent.accounts[active_account].hold_status
     set: cleared
@@ -4048,8 +2040,6 @@ tasks:
     set: not_ready
   - path: agent.sessions[active_session].charge_state
     set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: CERT-409
   - path: agent.sessions[active_session].error_class
     set: connectivity
   - path: user.physical.screen_accessible
@@ -4059,237 +2049,11 @@ tasks:
   - path: user.physical.connector_reseat_state
     set: not_reseated
   - path: user.physical.cable_inspection_state
-    set: checked_ok
+    set: not_checked
   - path: user.physical.vehicle_ready_state
-    set: ready
+    set: not_ready
   - path: user.physical.app_refresh_state
-    set: refreshed
-  - path: user.physical.test_charge_state
-    set: not_run
-  start_bindings: []
-  goal_world:
-  - op: eq
-    path: agent.network_paths[active_station].backend_link_state
-    value: up
-  - op: eq
-    path: agent.network_paths[active_station].cert_state
-    value: fresh
-  - op: eq
-    path: agent.stations[active_station].diagnostics_state
-    value: ran
-  goal_bindings:
-  - app_error_class
-  - fault_code
-  required_actions:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - assistant_run_backend_diagnostics
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  required_precedence:
-  - - acquire_fault_code_from_user
-    - acquire_error_class_from_user
-  - - acquire_error_class_from_user
-    - assistant_run_backend_diagnostics
-  - - assistant_run_backend_diagnostics
-    - assistant_restore_backend_link
-  - - assistant_restore_backend_link
-    - assistant_rotate_station_certificate
-  min_plan_length: 5
-  runtime:
-    domain: ev_charging_support
-    reason_for_call: __AUTHOR_ME__
-    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
-      asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Avery Chen. You are methodical and detail-oriented, and
-      you follow assistant instructions precisely.
-    known_info: __AUTHOR_ME__
-    unknown_info: null
-    ticket: __AUTHOR_ME__
-    purpose: null
-    relevant_policies: null
-    notes: null
-    initialization_actions:
-    - env_type: user
-      func_name: set_user_context
-      arguments:
-        user_id: U2001
-        name: Avery Chen
-        account_id: A2001
-        station_id: ST2001
-        session_id: S2001
-    - env_type: assistant
-      func_name: set_fraud_lock_state
-      arguments:
-        value: 'off'
-    - env_type: assistant
-      func_name: set_hold_status
-      arguments:
-        value: cleared
-    - env_type: assistant
-      func_name: set_payment_token_status
-      arguments:
-        value: valid
-    - env_type: assistant
-      func_name: set_backend_link_state
-      arguments:
-        value: down
-    - env_type: assistant
-      func_name: set_cert_state
-      arguments:
-        value: stale
-    - env_type: assistant
-      func_name: set_charge_state
-      arguments:
-        value: inactive
-    - env_type: assistant
-      func_name: set_error_class
-      arguments:
-        value: connectivity
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: CERT-409
-    - env_type: assistant
-      func_name: set_profile_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_retry_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_diagnostics_state
-      arguments:
-        value: idle
-    - env_type: assistant
-      func_name: set_firmware_state
-      arguments:
-        value: current
-    - env_type: assistant
-      func_name: set_reachability_state
-      arguments:
-        value: reachable
-    - env_type: user
-      func_name: set_app_refresh_state
-      arguments:
-        value: refreshed
-    - env_type: user
-      func_name: set_cable_inspection_state
-      arguments:
-        value: checked_ok
-    - env_type: user
-      func_name: set_connector_reseat_state
-      arguments:
-        value: not_reseated
-    - env_type: user
-      func_name: set_screen_accessible
-      arguments:
-        value: true
-    - env_type: user
-      func_name: set_station_power_cycle_state
-      arguments:
-        value: not_done
-    - env_type: user
-      func_name: set_test_charge_state
-      arguments:
-        value: not_run
-    - env_type: user
-      func_name: set_vehicle_ready_state
-      arguments:
-        value: ready
-    env_assertions:
-    - env_type: assistant
-      func_name: assert_backend_link_state
-      arguments:
-        expected: up
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_cert_state
-      arguments:
-        expected: fresh
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_diagnostics_state
-      arguments:
-        expected: ran
-      assert_value: true
-      message: null
-    actions:
-    - action_id: acquire_fault_code_from_user
-      requestor: user
-      name: check_station_screen
-      arguments: {}
-      compare_args: []
-    - action_id: acquire_error_class_from_user
-      requestor: user
-      name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_run_backend_diagnostics
-      requestor: assistant
-      name: run_backend_diagnostics
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_restore_backend_link
-      requestor: assistant
-      name: restore_backend_link
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_rotate_station_certificate
-      requestor: assistant
-      name: rotate_station_certificate
-      arguments: {}
-      compare_args: []
-    reward_basis:
-    - ACTION
-    - ENV_ASSERTION
-- task_id: ev_connectivity_partial_physical_d8_189
-  start_world:
-  - path: agent.accounts[active_account].hold_status
-    set: cleared
-  - path: agent.accounts[active_account].payment_token_status
-    set: valid
-  - path: agent.accounts[active_account].fraud_lock_state
-    set: 'off'
-  - path: agent.stations[active_station].reachability_state
-    set: reachable
-  - path: agent.stations[active_station].firmware_state
-    set: current
-  - path: agent.stations[active_station].diagnostics_state
-    set: idle
-  - path: agent.network_paths[active_station].backend_link_state
-    set: down
-  - path: agent.network_paths[active_station].cert_state
     set: stale
-  - path: agent.sessions[active_session].profile_state
-    set: not_ready
-  - path: agent.sessions[active_session].retry_state
-    set: not_ready
-  - path: agent.sessions[active_session].charge_state
-    set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: CERT-409
-  - path: agent.sessions[active_session].error_class
-    set: connectivity
-  - path: user.physical.screen_accessible
-    set: true
-  - path: user.physical.station_power_cycle_state
-    set: not_done
-  - path: user.physical.connector_reseat_state
-    set: not_reseated
-  - path: user.physical.cable_inspection_state
-    set: checked_ok
-  - path: user.physical.vehicle_ready_state
-    set: ready
-  - path: user.physical.app_refresh_state
-    set: refreshed
   - path: user.physical.test_charge_state
     set: not_run
   start_bindings: []
@@ -4301,273 +2065,8 @@ tasks:
     path: agent.network_paths[active_station].cert_state
     value: fresh
   - op: eq
-    path: agent.sessions[active_session].last_fault_code
-    value: NONE
-  - op: eq
-    path: agent.sessions[active_session].profile_state
-    value: ready
-  - op: eq
-    path: agent.stations[active_station].diagnostics_state
-    value: ran
-  goal_bindings:
-  - app_error_class
-  - fault_code
-  required_actions:
-  - acquire_fault_code_from_user
-  - acquire_error_class_from_user
-  - user_reseat_connector
-  - user_power_cycle_station
-  - assistant_run_backend_diagnostics
-  - assistant_restore_backend_link
-  - assistant_rotate_station_certificate
-  - assistant_reprovision_connectivity
-  required_precedence:
-  - - acquire_fault_code_from_user
-    - acquire_error_class_from_user
-  - - acquire_error_class_from_user
-    - user_reseat_connector
-  - - user_reseat_connector
-    - user_power_cycle_station
-  - - user_power_cycle_station
-    - assistant_run_backend_diagnostics
-  - - assistant_run_backend_diagnostics
-    - assistant_restore_backend_link
-  - - assistant_restore_backend_link
-    - assistant_rotate_station_certificate
-  - - assistant_rotate_station_certificate
-    - assistant_reprovision_connectivity
-  min_plan_length: 8
-  runtime:
-    domain: ev_charging_support
-    reason_for_call: __AUTHOR_ME__
-    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
-      asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Avery Chen. You are calm and cooperative, and you provide
-      tool-grounded updates only.
-    known_info: __AUTHOR_ME__
-    unknown_info: null
-    ticket: __AUTHOR_ME__
-    purpose: null
-    relevant_policies: null
-    notes: null
-    initialization_actions:
-    - env_type: user
-      func_name: set_user_context
-      arguments:
-        user_id: U2001
-        name: Avery Chen
-        account_id: A2001
-        station_id: ST2001
-        session_id: S2001
-    - env_type: assistant
-      func_name: set_fraud_lock_state
-      arguments:
-        value: 'off'
-    - env_type: assistant
-      func_name: set_hold_status
-      arguments:
-        value: cleared
-    - env_type: assistant
-      func_name: set_payment_token_status
-      arguments:
-        value: valid
-    - env_type: assistant
-      func_name: set_backend_link_state
-      arguments:
-        value: down
-    - env_type: assistant
-      func_name: set_cert_state
-      arguments:
-        value: stale
-    - env_type: assistant
-      func_name: set_charge_state
-      arguments:
-        value: inactive
-    - env_type: assistant
-      func_name: set_error_class
-      arguments:
-        value: connectivity
-    - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: CERT-409
-    - env_type: assistant
-      func_name: set_profile_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_retry_state
-      arguments:
-        value: not_ready
-    - env_type: assistant
-      func_name: set_diagnostics_state
-      arguments:
-        value: idle
-    - env_type: assistant
-      func_name: set_firmware_state
-      arguments:
-        value: current
-    - env_type: assistant
-      func_name: set_reachability_state
-      arguments:
-        value: reachable
-    - env_type: user
-      func_name: set_app_refresh_state
-      arguments:
-        value: refreshed
-    - env_type: user
-      func_name: set_cable_inspection_state
-      arguments:
-        value: checked_ok
-    - env_type: user
-      func_name: set_connector_reseat_state
-      arguments:
-        value: not_reseated
-    - env_type: user
-      func_name: set_screen_accessible
-      arguments:
-        value: true
-    - env_type: user
-      func_name: set_station_power_cycle_state
-      arguments:
-        value: not_done
-    - env_type: user
-      func_name: set_test_charge_state
-      arguments:
-        value: not_run
-    - env_type: user
-      func_name: set_vehicle_ready_state
-      arguments:
-        value: ready
-    env_assertions:
-    - env_type: assistant
-      func_name: assert_backend_link_state
-      arguments:
-        expected: up
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_cert_state
-      arguments:
-        expected: fresh
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_last_fault_code
-      arguments:
-        expected: NONE
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_profile_state
-      arguments:
-        expected: ready
-      assert_value: true
-      message: null
-    - env_type: assistant
-      func_name: assert_diagnostics_state
-      arguments:
-        expected: ran
-      assert_value: true
-      message: null
-    actions:
-    - action_id: acquire_fault_code_from_user
-      requestor: user
-      name: check_station_screen
-      arguments: {}
-      compare_args: []
-    - action_id: acquire_error_class_from_user
-      requestor: user
-      name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
-      arguments: {}
-      compare_args: []
-    - action_id: user_power_cycle_station
-      requestor: user
-      name: power_cycle_station
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_run_backend_diagnostics
-      requestor: assistant
-      name: run_backend_diagnostics
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_restore_backend_link
-      requestor: assistant
-      name: restore_backend_link
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_rotate_station_certificate
-      requestor: assistant
-      name: rotate_station_certificate
-      arguments: {}
-      compare_args: []
-    - action_id: assistant_reprovision_connectivity
-      requestor: assistant
-      name: reprovision_connectivity
-      arguments: {}
-      compare_args: []
-    reward_basis:
-    - ACTION
-    - ENV_ASSERTION
-- task_id: ev_connectivity_partial_physical_d9_190
-  start_world:
-  - path: agent.accounts[active_account].hold_status
-    set: cleared
-  - path: agent.accounts[active_account].payment_token_status
-    set: valid
-  - path: agent.accounts[active_account].fraud_lock_state
-    set: 'off'
-  - path: agent.stations[active_station].reachability_state
-    set: reachable
-  - path: agent.stations[active_station].firmware_state
-    set: current
-  - path: agent.stations[active_station].diagnostics_state
-    set: idle
-  - path: agent.network_paths[active_station].backend_link_state
-    set: down
-  - path: agent.network_paths[active_station].cert_state
-    set: stale
-  - path: agent.sessions[active_session].profile_state
-    set: not_ready
-  - path: agent.sessions[active_session].retry_state
-    set: not_ready
-  - path: agent.sessions[active_session].charge_state
-    set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: CERT-409
-  - path: agent.sessions[active_session].error_class
-    set: connectivity
-  - path: user.physical.screen_accessible
-    set: true
-  - path: user.physical.station_power_cycle_state
-    set: not_done
-  - path: user.physical.connector_reseat_state
-    set: not_reseated
-  - path: user.physical.cable_inspection_state
-    set: checked_ok
-  - path: user.physical.vehicle_ready_state
-    set: ready
-  - path: user.physical.app_refresh_state
-    set: refreshed
-  - path: user.physical.test_charge_state
-    set: not_run
-  start_bindings: []
-  goal_world:
-  - op: eq
-    path: agent.network_paths[active_station].backend_link_state
-    value: up
-  - op: eq
-    path: agent.network_paths[active_station].cert_state
-    value: fresh
+    path: agent.sessions[active_session].charge_state
+    value: active
   - op: eq
     path: agent.sessions[active_session].last_fault_code
     value: NONE
@@ -4582,44 +2081,61 @@ tasks:
     value: ran
   goal_bindings:
   - app_error_class
-  - fault_code
+  terminal_profile_id: connectivity_resolved
   required_actions:
-  - acquire_fault_code_from_user
+  - acquire_screen_fault_code_from_user
   - acquire_error_class_from_user
+  - user_inspect_cable_path
   - user_reseat_connector
   - user_power_cycle_station
+  - user_set_vehicle_ready_mode
+  - user_refresh_charging_app_session
   - assistant_run_backend_diagnostics
   - assistant_restore_backend_link
   - assistant_rotate_station_certificate
   - assistant_reprovision_connectivity
   - assistant_reset_retry_path
+  - user_run_test_charge_hardware
   required_precedence:
-  - - acquire_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - acquire_error_class_from_user
   - - acquire_error_class_from_user
+    - user_inspect_cable_path
+  - - user_inspect_cable_path
     - user_reseat_connector
   - - user_reseat_connector
     - user_power_cycle_station
   - - user_power_cycle_station
+    - user_set_vehicle_ready_mode
+  - - user_set_vehicle_ready_mode
+    - user_refresh_charging_app_session
+  - - user_refresh_charging_app_session
     - assistant_run_backend_diagnostics
   - - assistant_run_backend_diagnostics
     - assistant_restore_backend_link
   - - assistant_restore_backend_link
     - assistant_rotate_station_certificate
   - - assistant_rotate_station_certificate
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - assistant_reprovision_connectivity
   - - assistant_reprovision_connectivity
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - assistant_reset_retry_path
-  min_plan_length: 9
+  - - assistant_reset_retry_path
+    - user_run_test_charge_hardware
+  min_plan_length: 15
   runtime:
     domain: ev_charging_support
     reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
+      issue resolved when the assistant has achieved the assigned recovery target
+      and the remaining observable recovery criteria are satisfied. Before deciding
+      the issue is resolved, call check_resolution_status. Only emit ###STOP### when
+      check_resolution_status returns resolved=true. If resolved=false, report unmet
+      items and ask the assistant for the next step.'
     persona: Your name is Sam Rivera. You are direct and pragmatic, and you execute
       assistant requests one step at a time.
     known_info: __AUTHOR_ME__
@@ -4666,10 +2182,6 @@ tasks:
       arguments:
         value: connectivity
     - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: CERT-409
-    - env_type: assistant
       func_name: set_profile_state
       arguments:
         value: not_ready
@@ -4692,11 +2204,11 @@ tasks:
     - env_type: user
       func_name: set_app_refresh_state
       arguments:
-        value: refreshed
+        value: stale
     - env_type: user
       func_name: set_cable_inspection_state
       arguments:
-        value: checked_ok
+        value: not_checked
     - env_type: user
       func_name: set_connector_reseat_state
       arguments:
@@ -4716,7 +2228,7 @@ tasks:
     - env_type: user
       func_name: set_vehicle_ready_state
       arguments:
-        value: ready
+        value: not_ready
     env_assertions:
     - env_type: assistant
       func_name: assert_backend_link_state
@@ -4728,6 +2240,12 @@ tasks:
       func_name: assert_cert_state
       arguments:
         expected: fresh
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_charge_state
+      arguments:
+        expected: active
       assert_value: true
       message: null
     - env_type: assistant
@@ -4755,7 +2273,7 @@ tasks:
       assert_value: true
       message: null
     actions:
-    - action_id: acquire_fault_code_from_user
+    - action_id: acquire_screen_fault_code_from_user
       requestor: user
       name: check_station_screen
       arguments: {}
@@ -4763,6 +2281,11 @@ tasks:
     - action_id: acquire_error_class_from_user
       requestor: user
       name: check_app_status
+      arguments: {}
+      compare_args: []
+    - action_id: user_inspect_cable_path
+      requestor: user
+      name: inspect_cable_path
       arguments: {}
       compare_args: []
     - action_id: user_reseat_connector
@@ -4773,6 +2296,16 @@ tasks:
     - action_id: user_power_cycle_station
       requestor: user
       name: power_cycle_station
+      arguments: {}
+      compare_args: []
+    - action_id: user_set_vehicle_ready_mode
+      requestor: user
+      name: set_vehicle_ready_mode
+      arguments: {}
+      compare_args: []
+    - action_id: user_refresh_charging_app_session
+      requestor: user
+      name: refresh_charging_app_session
       arguments: {}
       compare_args: []
     - action_id: assistant_run_backend_diagnostics
@@ -4800,10 +2333,628 @@ tasks:
       name: reset_retry_path
       arguments: {}
       compare_args: []
+    - action_id: user_run_test_charge_hardware
+      requestor: user
+      name: run_test_charge
+      arguments: {}
+      compare_args: []
     reward_basis:
-    - ACTION
     - ENV_ASSERTION
-- task_id: ev_connectivity_partial_physical_d10_191
+- task_id: connectivity_link_only_d14_025
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: down
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  goal_world:
+  - op: eq
+    path: agent.network_paths[active_station].backend_link_state
+    value: up
+  - op: eq
+    path: agent.sessions[active_session].charge_state
+    value: active
+  - op: eq
+    path: agent.sessions[active_session].last_fault_code
+    value: NONE
+  - op: eq
+    path: agent.sessions[active_session].profile_state
+    value: ready
+  - op: eq
+    path: agent.sessions[active_session].retry_state
+    value: ready
+  - op: eq
+    path: agent.stations[active_station].diagnostics_state
+    value: ran
+  goal_bindings:
+  - app_error_class
+  terminal_profile_id: connectivity_resolved
+  required_actions:
+  - acquire_screen_fault_code_from_user
+  - acquire_error_class_from_user
+  - user_inspect_cable_path
+  - user_reseat_connector
+  - user_power_cycle_station
+  - user_set_vehicle_ready_mode
+  - user_refresh_charging_app_session
+  - assistant_run_backend_diagnostics
+  - assistant_restore_backend_link
+  - assistant_reprovision_connectivity
+  - assistant_reset_retry_path
+  - user_run_test_charge_hardware
+  required_precedence:
+  - - acquire_screen_fault_code_from_user
+    - acquire_error_class_from_user
+  - - acquire_error_class_from_user
+    - user_inspect_cable_path
+  - - user_inspect_cable_path
+    - user_reseat_connector
+  - - user_reseat_connector
+    - user_power_cycle_station
+  - - user_power_cycle_station
+    - user_set_vehicle_ready_mode
+  - - user_set_vehicle_ready_mode
+    - user_refresh_charging_app_session
+  - - user_refresh_charging_app_session
+    - assistant_run_backend_diagnostics
+  - - assistant_run_backend_diagnostics
+    - assistant_restore_backend_link
+  - - assistant_restore_backend_link
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
+    - assistant_reprovision_connectivity
+  - - assistant_reprovision_connectivity
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
+    - assistant_reset_retry_path
+  - - assistant_reset_retry_path
+    - user_run_test_charge_hardware
+  min_plan_length: 14
+  runtime:
+    domain: ev_charging_support
+    reason_for_call: __AUTHOR_ME__
+    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
+      asked. Base your updates on tool outputs, not guesses. You will consider the
+      issue resolved when the assistant has achieved the assigned recovery target
+      and the remaining observable recovery criteria are satisfied. Before deciding
+      the issue is resolved, call check_resolution_status. Only emit ###STOP### when
+      check_resolution_status returns resolved=true. If resolved=false, report unmet
+      items and ask the assistant for the next step.'
+    persona: Your name is Sam Rivera. You are a practical EV driver under time pressure
+      who follows clear troubleshooting instructions.
+    known_info: __AUTHOR_ME__
+    unknown_info: null
+    ticket: __AUTHOR_ME__
+    purpose: null
+    relevant_policies: null
+    notes: null
+    initialization_actions:
+    - env_type: user
+      func_name: set_user_context
+      arguments:
+        user_id: U3001
+        name: Sam Rivera
+        account_id: A3001
+        station_id: ST3001
+        session_id: S3001
+    - env_type: assistant
+      func_name: set_fraud_lock_state
+      arguments:
+        value: 'off'
+    - env_type: assistant
+      func_name: set_hold_status
+      arguments:
+        value: cleared
+    - env_type: assistant
+      func_name: set_payment_token_status
+      arguments:
+        value: valid
+    - env_type: assistant
+      func_name: set_backend_link_state
+      arguments:
+        value: down
+    - env_type: assistant
+      func_name: set_cert_state
+      arguments:
+        value: fresh
+    - env_type: assistant
+      func_name: set_charge_state
+      arguments:
+        value: inactive
+    - env_type: assistant
+      func_name: set_error_class
+      arguments:
+        value: connectivity
+    - env_type: assistant
+      func_name: set_profile_state
+      arguments:
+        value: not_ready
+    - env_type: assistant
+      func_name: set_retry_state
+      arguments:
+        value: not_ready
+    - env_type: assistant
+      func_name: set_diagnostics_state
+      arguments:
+        value: idle
+    - env_type: assistant
+      func_name: set_firmware_state
+      arguments:
+        value: current
+    - env_type: assistant
+      func_name: set_reachability_state
+      arguments:
+        value: reachable
+    - env_type: user
+      func_name: set_app_refresh_state
+      arguments:
+        value: stale
+    - env_type: user
+      func_name: set_cable_inspection_state
+      arguments:
+        value: not_checked
+    - env_type: user
+      func_name: set_connector_reseat_state
+      arguments:
+        value: not_reseated
+    - env_type: user
+      func_name: set_screen_accessible
+      arguments:
+        value: true
+    - env_type: user
+      func_name: set_station_power_cycle_state
+      arguments:
+        value: not_done
+    - env_type: user
+      func_name: set_test_charge_state
+      arguments:
+        value: not_run
+    - env_type: user
+      func_name: set_vehicle_ready_state
+      arguments:
+        value: not_ready
+    env_assertions:
+    - env_type: assistant
+      func_name: assert_backend_link_state
+      arguments:
+        expected: up
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_charge_state
+      arguments:
+        expected: active
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_last_fault_code
+      arguments:
+        expected: NONE
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_profile_state
+      arguments:
+        expected: ready
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_retry_state
+      arguments:
+        expected: ready
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_diagnostics_state
+      arguments:
+        expected: ran
+      assert_value: true
+      message: null
+    actions:
+    - action_id: acquire_screen_fault_code_from_user
+      requestor: user
+      name: check_station_screen
+      arguments: {}
+      compare_args: []
+    - action_id: acquire_error_class_from_user
+      requestor: user
+      name: check_app_status
+      arguments: {}
+      compare_args: []
+    - action_id: user_inspect_cable_path
+      requestor: user
+      name: inspect_cable_path
+      arguments: {}
+      compare_args: []
+    - action_id: user_reseat_connector
+      requestor: user
+      name: reseat_connector
+      arguments: {}
+      compare_args: []
+    - action_id: user_power_cycle_station
+      requestor: user
+      name: power_cycle_station
+      arguments: {}
+      compare_args: []
+    - action_id: user_set_vehicle_ready_mode
+      requestor: user
+      name: set_vehicle_ready_mode
+      arguments: {}
+      compare_args: []
+    - action_id: user_refresh_charging_app_session
+      requestor: user
+      name: refresh_charging_app_session
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_run_backend_diagnostics
+      requestor: assistant
+      name: run_backend_diagnostics
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_restore_backend_link
+      requestor: assistant
+      name: restore_backend_link
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_reprovision_connectivity
+      requestor: assistant
+      name: reprovision_connectivity
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_reset_retry_path
+      requestor: assistant
+      name: reset_retry_path
+      arguments: {}
+      compare_args: []
+    - action_id: user_run_test_charge_hardware
+      requestor: user
+      name: run_test_charge
+      arguments: {}
+      compare_args: []
+    reward_basis:
+    - ENV_ASSERTION
+- task_id: connectivity_cert_only_d14_026
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: stale
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  goal_world:
+  - op: eq
+    path: agent.network_paths[active_station].cert_state
+    value: fresh
+  - op: eq
+    path: agent.sessions[active_session].charge_state
+    value: active
+  - op: eq
+    path: agent.sessions[active_session].last_fault_code
+    value: NONE
+  - op: eq
+    path: agent.sessions[active_session].profile_state
+    value: ready
+  - op: eq
+    path: agent.sessions[active_session].retry_state
+    value: ready
+  - op: eq
+    path: agent.stations[active_station].diagnostics_state
+    value: ran
+  goal_bindings:
+  - app_error_class
+  terminal_profile_id: connectivity_resolved
+  required_actions:
+  - acquire_screen_fault_code_from_user
+  - acquire_error_class_from_user
+  - user_inspect_cable_path
+  - user_reseat_connector
+  - user_power_cycle_station
+  - user_set_vehicle_ready_mode
+  - user_refresh_charging_app_session
+  - assistant_run_backend_diagnostics
+  - assistant_rotate_station_certificate
+  - assistant_reprovision_connectivity
+  - assistant_reset_retry_path
+  - user_run_test_charge_hardware
+  required_precedence:
+  - - acquire_screen_fault_code_from_user
+    - acquire_error_class_from_user
+  - - acquire_error_class_from_user
+    - user_inspect_cable_path
+  - - user_inspect_cable_path
+    - user_reseat_connector
+  - - user_reseat_connector
+    - user_power_cycle_station
+  - - user_power_cycle_station
+    - user_set_vehicle_ready_mode
+  - - user_set_vehicle_ready_mode
+    - user_refresh_charging_app_session
+  - - user_refresh_charging_app_session
+    - assistant_run_backend_diagnostics
+  - - assistant_run_backend_diagnostics
+    - assistant_rotate_station_certificate
+  - - assistant_rotate_station_certificate
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
+    - assistant_reprovision_connectivity
+  - - assistant_reprovision_connectivity
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
+    - assistant_reset_retry_path
+  - - assistant_reset_retry_path
+    - user_run_test_charge_hardware
+  min_plan_length: 14
+  runtime:
+    domain: ev_charging_support
+    reason_for_call: __AUTHOR_ME__
+    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
+      asked. Base your updates on tool outputs, not guesses. You will consider the
+      issue resolved when the assistant has achieved the assigned recovery target
+      and the remaining observable recovery criteria are satisfied. Before deciding
+      the issue is resolved, call check_resolution_status. Only emit ###STOP### when
+      check_resolution_status returns resolved=true. If resolved=false, report unmet
+      items and ask the assistant for the next step.'
+    persona: Your name is Jordan Lee. You are a practical EV driver under time pressure
+      who follows clear troubleshooting instructions.
+    known_info: __AUTHOR_ME__
+    unknown_info: null
+    ticket: __AUTHOR_ME__
+    purpose: null
+    relevant_policies: null
+    notes: null
+    initialization_actions:
+    - env_type: user
+      func_name: set_user_context
+      arguments:
+        user_id: U1001
+        name: Jordan Lee
+        account_id: A1001
+        station_id: ST1001
+        session_id: S1001
+    - env_type: assistant
+      func_name: set_fraud_lock_state
+      arguments:
+        value: 'off'
+    - env_type: assistant
+      func_name: set_hold_status
+      arguments:
+        value: cleared
+    - env_type: assistant
+      func_name: set_payment_token_status
+      arguments:
+        value: valid
+    - env_type: assistant
+      func_name: set_backend_link_state
+      arguments:
+        value: up
+    - env_type: assistant
+      func_name: set_cert_state
+      arguments:
+        value: stale
+    - env_type: assistant
+      func_name: set_charge_state
+      arguments:
+        value: inactive
+    - env_type: assistant
+      func_name: set_error_class
+      arguments:
+        value: connectivity
+    - env_type: assistant
+      func_name: set_profile_state
+      arguments:
+        value: not_ready
+    - env_type: assistant
+      func_name: set_retry_state
+      arguments:
+        value: not_ready
+    - env_type: assistant
+      func_name: set_diagnostics_state
+      arguments:
+        value: idle
+    - env_type: assistant
+      func_name: set_firmware_state
+      arguments:
+        value: current
+    - env_type: assistant
+      func_name: set_reachability_state
+      arguments:
+        value: reachable
+    - env_type: user
+      func_name: set_app_refresh_state
+      arguments:
+        value: stale
+    - env_type: user
+      func_name: set_cable_inspection_state
+      arguments:
+        value: not_checked
+    - env_type: user
+      func_name: set_connector_reseat_state
+      arguments:
+        value: not_reseated
+    - env_type: user
+      func_name: set_screen_accessible
+      arguments:
+        value: true
+    - env_type: user
+      func_name: set_station_power_cycle_state
+      arguments:
+        value: not_done
+    - env_type: user
+      func_name: set_test_charge_state
+      arguments:
+        value: not_run
+    - env_type: user
+      func_name: set_vehicle_ready_state
+      arguments:
+        value: not_ready
+    env_assertions:
+    - env_type: assistant
+      func_name: assert_cert_state
+      arguments:
+        expected: fresh
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_charge_state
+      arguments:
+        expected: active
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_last_fault_code
+      arguments:
+        expected: NONE
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_profile_state
+      arguments:
+        expected: ready
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_retry_state
+      arguments:
+        expected: ready
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_diagnostics_state
+      arguments:
+        expected: ran
+      assert_value: true
+      message: null
+    actions:
+    - action_id: acquire_screen_fault_code_from_user
+      requestor: user
+      name: check_station_screen
+      arguments: {}
+      compare_args: []
+    - action_id: acquire_error_class_from_user
+      requestor: user
+      name: check_app_status
+      arguments: {}
+      compare_args: []
+    - action_id: user_inspect_cable_path
+      requestor: user
+      name: inspect_cable_path
+      arguments: {}
+      compare_args: []
+    - action_id: user_reseat_connector
+      requestor: user
+      name: reseat_connector
+      arguments: {}
+      compare_args: []
+    - action_id: user_power_cycle_station
+      requestor: user
+      name: power_cycle_station
+      arguments: {}
+      compare_args: []
+    - action_id: user_set_vehicle_ready_mode
+      requestor: user
+      name: set_vehicle_ready_mode
+      arguments: {}
+      compare_args: []
+    - action_id: user_refresh_charging_app_session
+      requestor: user
+      name: refresh_charging_app_session
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_run_backend_diagnostics
+      requestor: assistant
+      name: run_backend_diagnostics
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_rotate_station_certificate
+      requestor: assistant
+      name: rotate_station_certificate
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_reprovision_connectivity
+      requestor: assistant
+      name: reprovision_connectivity
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_reset_retry_path
+      requestor: assistant
+      name: reset_retry_path
+      arguments: {}
+      compare_args: []
+    - action_id: user_run_test_charge_hardware
+      requestor: user
+      name: run_test_charge
+      arguments: {}
+      compare_args: []
+    reward_basis:
+    - ENV_ASSERTION
+- task_id: connectivity_physical_partial_d11_027
   start_world:
   - path: agent.accounts[active_account].hold_status
     set: cleared
@@ -4827,8 +2978,6 @@ tasks:
     set: not_ready
   - path: agent.sessions[active_session].charge_state
     set: inactive
-  - path: agent.sessions[active_session].last_fault_code
-    set: CERT-409
   - path: agent.sessions[active_session].error_class
     set: connectivity
   - path: user.physical.screen_accessible
@@ -4836,7 +2985,7 @@ tasks:
   - path: user.physical.station_power_cycle_state
     set: not_done
   - path: user.physical.connector_reseat_state
-    set: not_reseated
+    set: reseated
   - path: user.physical.cable_inspection_state
     set: checked_ok
   - path: user.physical.vehicle_ready_state
@@ -4870,24 +3019,21 @@ tasks:
     value: ran
   goal_bindings:
   - app_error_class
-  - fault_code
+  terminal_profile_id: connectivity_resolved
   required_actions:
-  - acquire_fault_code_from_user
+  - acquire_screen_fault_code_from_user
   - acquire_error_class_from_user
-  - user_reseat_connector
   - user_power_cycle_station
   - assistant_run_backend_diagnostics
   - assistant_restore_backend_link
   - assistant_rotate_station_certificate
   - assistant_reprovision_connectivity
   - assistant_reset_retry_path
-  - user_run_test_charge
+  - user_run_test_charge_hardware
   required_precedence:
-  - - acquire_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - acquire_error_class_from_user
   - - acquire_error_class_from_user
-    - user_reseat_connector
-  - - user_reseat_connector
     - user_power_cycle_station
   - - user_power_cycle_station
     - assistant_run_backend_diagnostics
@@ -4896,23 +3042,28 @@ tasks:
   - - assistant_restore_backend_link
     - assistant_rotate_station_certificate
   - - assistant_rotate_station_certificate
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - assistant_reprovision_connectivity
   - - assistant_reprovision_connectivity
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
     - assistant_reset_retry_path
   - - assistant_reset_retry_path
-    - user_run_test_charge
-  min_plan_length: 10
+    - user_run_test_charge_hardware
+  min_plan_length: 11
   runtime:
     domain: ev_charging_support
     reason_for_call: __AUTHOR_ME__
     task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
       asked. Base your updates on tool outputs, not guesses. You will consider the
-      issue resolved when charging can start and the remaining observable recovery
-      criteria are satisfied. Before deciding the issue is resolved, call check_resolution_status.
-      Only emit ###STOP### when check_resolution_status returns resolved=true. If
-      resolved=false, report unmet items and ask the assistant for the next step.'
-    persona: Your name is Avery Chen. You are calm and cooperative, and you provide
-      tool-grounded updates only.
+      issue resolved when the assistant has achieved the assigned recovery target
+      and the remaining observable recovery criteria are satisfied. Before deciding
+      the issue is resolved, call check_resolution_status. Only emit ###STOP### when
+      check_resolution_status returns resolved=true. If resolved=false, report unmet
+      items and ask the assistant for the next step.'
+    persona: Your name is Avery Chen. You are direct and pragmatic, and you execute
+      assistant requests one step at a time.
     known_info: __AUTHOR_ME__
     unknown_info: null
     ticket: __AUTHOR_ME__
@@ -4957,10 +3108,6 @@ tasks:
       arguments:
         value: connectivity
     - env_type: assistant
-      func_name: set_last_fault_code
-      arguments:
-        value: CERT-409
-    - env_type: assistant
       func_name: set_profile_state
       arguments:
         value: not_ready
@@ -4991,7 +3138,7 @@ tasks:
     - env_type: user
       func_name: set_connector_reseat_state
       arguments:
-        value: not_reseated
+        value: reseated
     - env_type: user
       func_name: set_screen_accessible
       arguments:
@@ -5052,7 +3199,7 @@ tasks:
       assert_value: true
       message: null
     actions:
-    - action_id: acquire_fault_code_from_user
+    - action_id: acquire_screen_fault_code_from_user
       requestor: user
       name: check_station_screen
       arguments: {}
@@ -5060,11 +3207,6 @@ tasks:
     - action_id: acquire_error_class_from_user
       requestor: user
       name: check_app_status
-      arguments: {}
-      compare_args: []
-    - action_id: user_reseat_connector
-      requestor: user
-      name: reseat_connector
       arguments: {}
       compare_args: []
     - action_id: user_power_cycle_station
@@ -5097,11 +3239,402 @@ tasks:
       name: reset_retry_path
       arguments: {}
       compare_args: []
-    - action_id: user_run_test_charge
+    - action_id: user_run_test_charge_hardware
       requestor: user
       name: run_test_charge
       arguments: {}
       compare_args: []
     reward_basis:
-    - ACTION
+    - ENV_ASSERTION
+- task_id: full_system_d19_028
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: invalid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'on'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: outdated
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: down
+  - path: agent.network_paths[active_station].cert_state
+    set: stale
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: full_system
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  goal_world:
+  - op: eq
+    path: agent.accounts[active_account].fraud_lock_state
+    value: 'off'
+  - op: eq
+    path: agent.accounts[active_account].hold_status
+    value: cleared
+  - op: eq
+    path: agent.accounts[active_account].payment_token_status
+    value: valid
+  - op: eq
+    path: agent.network_paths[active_station].backend_link_state
+    value: up
+  - op: eq
+    path: agent.network_paths[active_station].cert_state
+    value: fresh
+  - op: eq
+    path: agent.sessions[active_session].charge_state
+    value: active
+  - op: eq
+    path: agent.sessions[active_session].last_fault_code
+    value: NONE
+  - op: eq
+    path: agent.sessions[active_session].profile_state
+    value: ready
+  - op: eq
+    path: agent.sessions[active_session].retry_state
+    value: ready
+  - op: eq
+    path: agent.stations[active_station].diagnostics_state
+    value: ran
+  - op: eq
+    path: agent.stations[active_station].firmware_state
+    value: current
+  goal_bindings:
+  - app_error_class
+  terminal_profile_id: full_system_resolved
+  required_actions:
+  - acquire_screen_fault_code_from_user
+  - acquire_error_class_from_user
+  - user_inspect_cable_path
+  - user_reseat_connector
+  - user_power_cycle_station
+  - user_set_vehicle_ready_mode
+  - user_refresh_charging_app_session
+  - assistant_run_backend_diagnostics
+  - assistant_clear_backend_hold
+  - assistant_refresh_payment_token
+  - assistant_release_fraud_lock
+  - assistant_restore_backend_link
+  - assistant_rotate_station_certificate
+  - assistant_update_station_firmware
+  - assistant_reprovision_full_system
+  - assistant_reset_retry_path
+  - user_run_test_charge_hardware
+  required_precedence:
+  - - acquire_screen_fault_code_from_user
+    - acquire_error_class_from_user
+  - - acquire_error_class_from_user
+    - user_inspect_cable_path
+  - - user_inspect_cable_path
+    - user_reseat_connector
+  - - user_reseat_connector
+    - user_power_cycle_station
+  - - user_power_cycle_station
+    - user_set_vehicle_ready_mode
+  - - user_set_vehicle_ready_mode
+    - user_refresh_charging_app_session
+  - - user_refresh_charging_app_session
+    - assistant_run_backend_diagnostics
+  - - assistant_run_backend_diagnostics
+    - assistant_clear_backend_hold
+  - - assistant_clear_backend_hold
+    - assistant_refresh_payment_token
+  - - assistant_refresh_payment_token
+    - assistant_release_fraud_lock
+  - - assistant_release_fraud_lock
+    - assistant_restore_backend_link
+  - - assistant_restore_backend_link
+    - assistant_rotate_station_certificate
+  - - assistant_rotate_station_certificate
+    - assistant_update_station_firmware
+  - - assistant_update_station_firmware
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
+    - assistant_reprovision_full_system
+  - - assistant_reprovision_full_system
+    - acquire_screen_fault_code_from_user
+  - - acquire_screen_fault_code_from_user
+    - assistant_reset_retry_path
+  - - assistant_reset_retry_path
+    - user_run_test_charge_hardware
+  min_plan_length: 19
+  runtime:
+    domain: ev_charging_support
+    reason_for_call: __AUTHOR_ME__
+    task_instructions: 'Follow the assistant''s guidance and use tools only when explicitly
+      asked. Base your updates on tool outputs, not guesses. You will consider the
+      issue resolved when the assistant has achieved the assigned recovery target
+      and the remaining observable recovery criteria are satisfied. Before deciding
+      the issue is resolved, call check_resolution_status. Only emit ###STOP### when
+      check_resolution_status returns resolved=true. If resolved=false, report unmet
+      items and ask the assistant for the next step.'
+    persona: Your name is Sam Rivera. You are calm and cooperative, and you provide
+      tool-grounded updates only.
+    known_info: __AUTHOR_ME__
+    unknown_info: null
+    ticket: __AUTHOR_ME__
+    purpose: null
+    relevant_policies: null
+    notes: null
+    initialization_actions:
+    - env_type: user
+      func_name: set_user_context
+      arguments:
+        user_id: U3001
+        name: Sam Rivera
+        account_id: A3001
+        station_id: ST3001
+        session_id: S3001
+    - env_type: assistant
+      func_name: set_fraud_lock_state
+      arguments:
+        value: 'on'
+    - env_type: assistant
+      func_name: set_hold_status
+      arguments:
+        value: present
+    - env_type: assistant
+      func_name: set_payment_token_status
+      arguments:
+        value: invalid
+    - env_type: assistant
+      func_name: set_backend_link_state
+      arguments:
+        value: down
+    - env_type: assistant
+      func_name: set_cert_state
+      arguments:
+        value: stale
+    - env_type: assistant
+      func_name: set_charge_state
+      arguments:
+        value: inactive
+    - env_type: assistant
+      func_name: set_error_class
+      arguments:
+        value: full_system
+    - env_type: assistant
+      func_name: set_profile_state
+      arguments:
+        value: not_ready
+    - env_type: assistant
+      func_name: set_retry_state
+      arguments:
+        value: not_ready
+    - env_type: assistant
+      func_name: set_diagnostics_state
+      arguments:
+        value: idle
+    - env_type: assistant
+      func_name: set_firmware_state
+      arguments:
+        value: outdated
+    - env_type: assistant
+      func_name: set_reachability_state
+      arguments:
+        value: reachable
+    - env_type: user
+      func_name: set_app_refresh_state
+      arguments:
+        value: stale
+    - env_type: user
+      func_name: set_cable_inspection_state
+      arguments:
+        value: not_checked
+    - env_type: user
+      func_name: set_connector_reseat_state
+      arguments:
+        value: not_reseated
+    - env_type: user
+      func_name: set_screen_accessible
+      arguments:
+        value: true
+    - env_type: user
+      func_name: set_station_power_cycle_state
+      arguments:
+        value: not_done
+    - env_type: user
+      func_name: set_test_charge_state
+      arguments:
+        value: not_run
+    - env_type: user
+      func_name: set_vehicle_ready_state
+      arguments:
+        value: not_ready
+    env_assertions:
+    - env_type: assistant
+      func_name: assert_fraud_lock_state
+      arguments:
+        expected: 'off'
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_hold_status
+      arguments:
+        expected: cleared
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_payment_token_status
+      arguments:
+        expected: valid
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_backend_link_state
+      arguments:
+        expected: up
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_cert_state
+      arguments:
+        expected: fresh
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_charge_state
+      arguments:
+        expected: active
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_last_fault_code
+      arguments:
+        expected: NONE
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_profile_state
+      arguments:
+        expected: ready
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_retry_state
+      arguments:
+        expected: ready
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_diagnostics_state
+      arguments:
+        expected: ran
+      assert_value: true
+      message: null
+    - env_type: assistant
+      func_name: assert_firmware_state
+      arguments:
+        expected: current
+      assert_value: true
+      message: null
+    actions:
+    - action_id: acquire_screen_fault_code_from_user
+      requestor: user
+      name: check_station_screen
+      arguments: {}
+      compare_args: []
+    - action_id: acquire_error_class_from_user
+      requestor: user
+      name: check_app_status
+      arguments: {}
+      compare_args: []
+    - action_id: user_inspect_cable_path
+      requestor: user
+      name: inspect_cable_path
+      arguments: {}
+      compare_args: []
+    - action_id: user_reseat_connector
+      requestor: user
+      name: reseat_connector
+      arguments: {}
+      compare_args: []
+    - action_id: user_power_cycle_station
+      requestor: user
+      name: power_cycle_station
+      arguments: {}
+      compare_args: []
+    - action_id: user_set_vehicle_ready_mode
+      requestor: user
+      name: set_vehicle_ready_mode
+      arguments: {}
+      compare_args: []
+    - action_id: user_refresh_charging_app_session
+      requestor: user
+      name: refresh_charging_app_session
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_run_backend_diagnostics
+      requestor: assistant
+      name: run_backend_diagnostics
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_clear_backend_hold
+      requestor: assistant
+      name: clear_billing_hold
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_refresh_payment_token
+      requestor: assistant
+      name: refresh_payment_token
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_release_fraud_lock
+      requestor: assistant
+      name: release_fraud_lock
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_restore_backend_link
+      requestor: assistant
+      name: restore_backend_link
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_rotate_station_certificate
+      requestor: assistant
+      name: rotate_station_certificate
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_update_station_firmware
+      requestor: assistant
+      name: update_station_firmware
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_reprovision_full_system
+      requestor: assistant
+      name: reprovision_full_system
+      arguments: {}
+      compare_args: []
+    - action_id: assistant_reset_retry_path
+      requestor: assistant
+      name: reset_retry_path
+      arguments: {}
+      compare_args: []
+    - action_id: user_run_test_charge_hardware
+      requestor: user
+      name: run_test_charge
+      arguments: {}
+      compare_args: []
+    reward_basis:
     - ENV_ASSERTION

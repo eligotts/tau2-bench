@@ -6,9 +6,14 @@ Optional strict stop-gate validation can be enabled via --stop-gate-map.
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 from tau2.generators.depgraph.compiler import dump_tasks_json, preflight_and_compile
-from tau2.generators.depgraph.loaders import load_graph_contract, load_task_specs
+from tau2.generators.depgraph.loaders import (
+    load_graph_contract,
+    load_sampling_request,
+    load_task_specs,
+)
 from tau2.generators.depgraph.runtime_checks import (
     check_contract_against_environment,
     check_runtime_against_environment,
@@ -18,12 +23,24 @@ from tau2.generators.depgraph.runtime_checks import (
 from tau2.registry import registry
 
 
+def _resolve_sampling_request_path(
+    explicit_sampling_request: str | None,
+    graph_contract_path: str,
+) -> Path | None:
+    if explicit_sampling_request:
+        return Path(explicit_sampling_request)
+    inferred = Path(graph_contract_path).resolve().parent / "sampling_request.yaml"
+    if inferred.exists():
+        return inferred
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Preflight and compile depgraph tasks")
     parser.add_argument("--graph-contract", required=True)
     parser.add_argument("--task-specs", required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--max-depth", type=int, default=20)
+    parser.add_argument("--max-depth", type=int, default=None)
     parser.add_argument("--domain", required=False)
     parser.add_argument(
         "--stop-gate-map",
@@ -34,6 +51,11 @@ def main() -> int:
         "--strict-tool-coverage",
         action="store_true",
         help="Require all domain tools to be represented in contracts",
+    )
+    parser.add_argument(
+        "--sampling-request",
+        required=False,
+        help="Optional sampling_request.yaml to validate terminal-profile alignment",
     )
     args = parser.parse_args()
 
@@ -75,11 +97,32 @@ def main() -> int:
             print(f"  - {issue}")
         return 1
 
+    sampling_request_path = _resolve_sampling_request_path(
+        args.sampling_request, args.graph_contract
+    )
+    terminal_profiles = None
+    require_terminal_profile = False
+    if sampling_request_path is None or not sampling_request_path.exists():
+        if args.domain or args.sampling_request:
+            print("[FAIL] Terminal-profile alignment")
+            print(
+                "  - sampling_request.yaml not found; pass --sampling-request or place "
+                "sampling_request.yaml next to graph_contract.yaml"
+            )
+            return 1
+    else:
+        request = load_sampling_request(sampling_request_path)
+        terminal_profiles = {profile.profile_id: profile for profile in request.terminal_profiles}
+        require_terminal_profile = True
+        print("[PASS] Terminal-profile alignment config loaded")
+
     result = preflight_and_compile(
         contract,
         task_doc,
         max_depth=args.max_depth,
         require_runtime=True,
+        terminal_profiles=terminal_profiles,
+        require_terminal_profile=require_terminal_profile,
     )
     if result.errors:
         print("[FAIL] Compile checks")

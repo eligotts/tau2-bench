@@ -99,15 +99,20 @@ class EVChargingSupportTools(ToolKitBase):
         expected_codes: set[str] = set()
         if session.last_fault_code != "NONE":
             expected_codes.add(session.last_fault_code)
-        if self._user_db is not None and self._user_db.view.display_fault_code:
-            observed_code = self._user_db.view.display_fault_code
-            if observed_code != "UNKNOWN":
-                expected_codes.add(observed_code)
         if expected_codes and provided_fault_code not in expected_codes:
             return (
                 f"fault_code mismatch. expected one of {sorted(expected_codes)}, "
                 f"got '{provided_fault_code}'."
             )
+        return None
+
+    def _require_diagnostics_ran(self) -> Optional[Dict[str, Any]]:
+        station = self._get_station()
+        if station.diagnostics_state != DiagnosticsState.RAN:
+            return {
+                "status": "error",
+                "message": "Run backend diagnostics before attempting this recovery step.",
+            }
         return None
 
     @is_tool(ToolType.WRITE)
@@ -145,20 +150,12 @@ class EVChargingSupportTools(ToolKitBase):
         return {"status": "success", "message": "Backend diagnostics complete."}
 
     @is_tool(ToolType.WRITE)
-    def clear_billing_hold(self, fault_code: str) -> Dict[str, Any]:
-        """Clear backend account hold after diagnostics and fault-code verification."""
+    def clear_billing_hold(self) -> Dict[str, Any]:
+        """Clear the current account hold after diagnostics confirm a billing issue."""
         account = self._get_account()
-        station = self._get_station()
-
-        error = self._fault_code_guard(fault_code)
-        if error is not None:
-            return {"status": "error", "message": error}
-
-        if station.diagnostics_state != DiagnosticsState.RAN:
-            return {
-                "status": "error",
-                "message": "Run backend diagnostics before clearing hold.",
-            }
+        diagnostics_error = self._require_diagnostics_ran()
+        if diagnostics_error is not None:
+            return diagnostics_error
         if account.hold_status == HoldStatus.CLEARED:
             return {"status": "noop", "message": "Hold already cleared."}
 
@@ -166,19 +163,12 @@ class EVChargingSupportTools(ToolKitBase):
         return {"status": "success", "message": "Billing hold cleared."}
 
     @is_tool(ToolType.WRITE)
-    def refresh_payment_token(self, fault_code: str) -> Dict[str, Any]:
-        """Refresh payment token after hold is cleared."""
+    def refresh_payment_token(self) -> Dict[str, Any]:
+        """Refresh the payment token after diagnostics confirm a billing issue."""
         account = self._get_account()
-
-        error = self._fault_code_guard(fault_code)
-        if error is not None:
-            return {"status": "error", "message": error}
-
-        if account.hold_status != HoldStatus.CLEARED:
-            return {
-                "status": "error",
-                "message": "Hold must be cleared before payment-token refresh.",
-            }
+        diagnostics_error = self._require_diagnostics_ran()
+        if diagnostics_error is not None:
+            return diagnostics_error
         if account.payment_token_status == PaymentTokenStatus.VALID:
             return {"status": "noop", "message": "Payment token already valid."}
 
@@ -186,19 +176,12 @@ class EVChargingSupportTools(ToolKitBase):
         return {"status": "success", "message": "Payment token refreshed."}
 
     @is_tool(ToolType.WRITE)
-    def release_fraud_lock(self, fault_code: str) -> Dict[str, Any]:
-        """Release fraud lock after payment token is valid."""
+    def release_fraud_lock(self) -> Dict[str, Any]:
+        """Release the fraud lock after diagnostics confirm a billing issue."""
         account = self._get_account()
-
-        error = self._fault_code_guard(fault_code)
-        if error is not None:
-            return {"status": "error", "message": error}
-
-        if account.payment_token_status != PaymentTokenStatus.VALID:
-            return {
-                "status": "error",
-                "message": "Payment token must be valid before releasing fraud lock.",
-            }
+        diagnostics_error = self._require_diagnostics_ran()
+        if diagnostics_error is not None:
+            return diagnostics_error
         if account.fraud_lock_state == FraudLockState.OFF:
             return {"status": "noop", "message": "Fraud lock already released."}
 
@@ -206,13 +189,12 @@ class EVChargingSupportTools(ToolKitBase):
         return {"status": "success", "message": "Fraud lock released."}
 
     @is_tool(ToolType.WRITE)
-    def restore_backend_link(self, fault_code: str) -> Dict[str, Any]:
+    def restore_backend_link(self) -> Dict[str, Any]:
         """Restore backend connectivity for the current charging session."""
         network = self._get_network_path()
-
-        error = self._fault_code_guard(fault_code)
-        if error is not None:
-            return {"status": "error", "message": error}
+        diagnostics_error = self._require_diagnostics_ran()
+        if diagnostics_error is not None:
+            return diagnostics_error
 
         if network.backend_link_state == BackendLinkState.UP:
             return {"status": "noop", "message": "Backend link already up."}
@@ -221,13 +203,12 @@ class EVChargingSupportTools(ToolKitBase):
         return {"status": "success", "message": "Backend link restored."}
 
     @is_tool(ToolType.WRITE)
-    def rotate_station_certificate(self, fault_code: str) -> Dict[str, Any]:
+    def rotate_station_certificate(self) -> Dict[str, Any]:
         """Rotate stale security certificate once backend link is up."""
         network = self._get_network_path()
-
-        error = self._fault_code_guard(fault_code)
-        if error is not None:
-            return {"status": "error", "message": error}
+        diagnostics_error = self._require_diagnostics_ran()
+        if diagnostics_error is not None:
+            return diagnostics_error
 
         if network.backend_link_state != BackendLinkState.UP:
             return {
@@ -241,14 +222,13 @@ class EVChargingSupportTools(ToolKitBase):
         return {"status": "success", "message": "Certificate rotated."}
 
     @is_tool(ToolType.WRITE)
-    def update_station_firmware(self, fault_code: str) -> Dict[str, Any]:
+    def update_station_firmware(self) -> Dict[str, Any]:
         """Update firmware after network prerequisites are satisfied."""
         station = self._get_station()
         network = self._get_network_path()
-
-        error = self._fault_code_guard(fault_code)
-        if error is not None:
-            return {"status": "error", "message": error}
+        diagnostics_error = self._require_diagnostics_ran()
+        if diagnostics_error is not None:
+            return diagnostics_error
 
         if station.reachability_state != ReachabilityState.REACHABLE:
             return {"status": "error", "message": "Station unreachable; firmware update blocked."}
@@ -266,38 +246,45 @@ class EVChargingSupportTools(ToolKitBase):
         return {"status": "success", "message": "Firmware updated."}
 
     def _check_common_reprovision_prereqs(self, fault_code: str) -> Optional[Dict[str, Any]]:
-        """Shared precondition checks for all reprovision variants."""
+        """Shared checks for observation-driven reprovision steps."""
         session = self._get_session()
-        station = self._get_station()
 
         error = self._fault_code_guard(fault_code)
         if error is not None:
             return {"status": "error", "message": error}
 
-        if station.diagnostics_state != DiagnosticsState.RAN:
-            return {"status": "error", "message": "Diagnostics must be run before reprovision."}
+        diagnostics_error = self._require_diagnostics_ran()
+        if diagnostics_error is not None:
+            return diagnostics_error
         if session.profile_state != ProfileState.NOT_READY:
             return {"status": "noop", "message": "Profile already ready."}
         if self._user_db is None:
             return {"status": "error", "message": "User context unavailable."}
 
         user_physical = self._user_db.physical
-        if user_physical.station_power_cycle_state != StationPowerCycleState.DONE:
-            return {"status": "error", "message": "User has not completed station power cycle."}
-        if user_physical.connector_reseat_state != ConnectorReseatState.RESEATED:
-            return {"status": "error", "message": "User has not reseated connector."}
-        if user_physical.cable_inspection_state != CableInspectionState.CHECKED_OK:
-            return {"status": "error", "message": "User has not completed cable inspection."}
         if user_physical.vehicle_ready_state != VehicleReadyState.READY:
             return {"status": "error", "message": "Vehicle is not in ready mode."}
         if user_physical.app_refresh_state != AppRefreshState.REFRESHED:
             return {"status": "error", "message": "Charging app session has not been refreshed."}
         return None
 
+    def _check_hardware_physical_prereqs(self) -> Optional[Dict[str, Any]]:
+        """Additional hardware physical checks for connectivity/full-system reprovision."""
+        if self._user_db is None:
+            return {"status": "error", "message": "User context unavailable."}
+
+        user_physical = self._user_db.physical
+        if user_physical.cable_inspection_state != CableInspectionState.CHECKED_OK:
+            return {"status": "error", "message": "User has not completed cable inspection."}
+        if user_physical.connector_reseat_state != ConnectorReseatState.RESEATED:
+            return {"status": "error", "message": "User has not reseated connector."}
+        if user_physical.station_power_cycle_state != StationPowerCycleState.DONE:
+            return {"status": "error", "message": "User has not completed station power cycle."}
+        return None
+
     def _do_reprovision(self) -> Dict[str, Any]:
         session = self._get_session()
         session.profile_state = ProfileState.READY
-        session.last_fault_code = "NONE"
         return {"status": "success", "message": "Charging profile reprovisioned."}
 
     @is_tool(ToolType.WRITE)
@@ -335,6 +322,10 @@ class EVChargingSupportTools(ToolKitBase):
         if prereq_error is not None:
             return prereq_error
 
+        hw_error = self._check_hardware_physical_prereqs()
+        if hw_error is not None:
+            return hw_error
+
         if network.backend_link_state != BackendLinkState.UP:
             return {"status": "error", "message": "Backend link must be up before reprovision."}
         if network.cert_state != CertState.FRESH:
@@ -357,6 +348,10 @@ class EVChargingSupportTools(ToolKitBase):
         if prereq_error is not None:
             return prereq_error
 
+        hw_error = self._check_hardware_physical_prereqs()
+        if hw_error is not None:
+            return hw_error
+
         if account.hold_status != HoldStatus.CLEARED:
             return {"status": "error", "message": "Hold must be cleared before reprovision."}
         if account.payment_token_status != PaymentTokenStatus.VALID:
@@ -374,7 +369,7 @@ class EVChargingSupportTools(ToolKitBase):
 
     @is_tool(ToolType.WRITE)
     def reset_retry_path(self, fault_code: str) -> Dict[str, Any]:
-        """Reset retry path after profile is ready."""
+        """Reset the retry path after the station advances to the retry stage."""
         session = self._get_session()
 
         error = self._fault_code_guard(fault_code)

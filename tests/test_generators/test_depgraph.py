@@ -4,12 +4,15 @@ from tau2.generators.depgraph.compiler import preflight_and_compile
 from tau2.generators.depgraph.preflight import run_task_preflight
 from tau2.generators.depgraph.runtime_checks import (
     check_contract_against_environment,
+    check_policy_against_contract,
     check_runtime_against_environment,
     check_start_bindings_visibility,
 )
 from tau2.generators.depgraph.sampler import sample_task_intents
+from tau2.generators.depgraph.semantics import apply_action, materialize_world
 from tau2.generators.depgraph.types import (
     ActionContract,
+    BindingPredicateSpec,
     BindingSourceSpec,
     EnvAssertionSpec,
     EnvFunctionCallSpec,
@@ -17,18 +20,22 @@ from tau2.generators.depgraph.types import (
     RuntimeTaskSpec,
     SamplingRequestDoc,
     SamplingSeedSpec,
+    SyncEffectSpec,
+    SyncRuleSpec,
     TaskIntent,
     TaskSpecsDoc,
+    TerminalProfileSpec,
     WorldEffectSpec,
     WorldPredicateSpec,
 )
 
 
-def _make_chain_contract():
+def _make_chain_contract() -> GraphContractSpec:
     """Telecom-like chain: power_on -> acquire_iccid -> restart -> reprovision -> run_data_test."""
     return GraphContractSpec(
         projection_fields=[
             "agent.line_exists",
+            "agent.iccid_value",
             "user.phone_powered_on",
             "user.phone_restarted",
             "agent.profile_ready",
@@ -52,9 +59,8 @@ def _make_chain_contract():
                 requestor="user",
                 tool_name="power_on_phone",
                 classification="causal",
-                requires_world=[],
-                requires_absent_world=[
-                    WorldPredicateSpec(op="eq", path="user.phone_powered_on", value=True),
+                requires_world=[
+                    WorldPredicateSpec(op="neq", path="user.phone_powered_on", value=True),
                 ],
                 effects_world=[
                     WorldEffectSpec(path="user.phone_powered_on", set=True),
@@ -69,7 +75,9 @@ def _make_chain_contract():
                     WorldPredicateSpec(op="eq", path="agent.line_exists", value=True),
                     WorldPredicateSpec(op="eq", path="user.phone_powered_on", value=True),
                 ],
-                requires_absent_bindings=["iccid"],
+                requires_bindings=[
+                    BindingPredicateSpec(binding_id="iccid", acquired=False),
+                ],
                 effects_bindings=["iccid"],
             ),
             ActionContract(
@@ -77,8 +85,8 @@ def _make_chain_contract():
                 requestor="user",
                 tool_name="restart_phone",
                 classification="causal",
-                requires_absent_world=[
-                    WorldPredicateSpec(op="eq", path="user.phone_restarted", value=True),
+                requires_world=[
+                    WorldPredicateSpec(op="neq", path="user.phone_restarted", value=True),
                 ],
                 effects_world=[
                     WorldEffectSpec(path="user.phone_restarted", set=True),
@@ -92,7 +100,9 @@ def _make_chain_contract():
                 requires_world=[
                     WorldPredicateSpec(op="eq", path="user.phone_restarted", value=True),
                 ],
-                requires_bindings=["iccid"],
+                requires_bindings=[
+                    BindingPredicateSpec(binding_id="iccid", acquired=True),
+                ],
                 effects_world=[
                     WorldEffectSpec(path="agent.profile_ready", set=True),
                 ],
@@ -105,9 +115,7 @@ def _make_chain_contract():
                 classification="causal",
                 requires_world=[
                     WorldPredicateSpec(op="eq", path="agent.profile_ready", value=True),
-                ],
-                requires_absent_world=[
-                    WorldPredicateSpec(op="eq", path="agent.data_active", value=True),
+                    WorldPredicateSpec(op="neq", path="agent.data_active", value=True),
                 ],
                 effects_world=[
                     WorldEffectSpec(path="agent.data_active", set=True),
@@ -117,7 +125,7 @@ def _make_chain_contract():
     )
 
 
-def _make_simple_contract():
+def _make_simple_contract() -> GraphContractSpec:
     """Minimal two-step chain: a -> b."""
     return GraphContractSpec(
         projection_fields=["agent.a", "agent.b"],
@@ -127,8 +135,8 @@ def _make_simple_contract():
                 requestor="assistant",
                 tool_name="tool_a",
                 classification="causal",
-                requires_absent_world=[
-                    WorldPredicateSpec(op="eq", path="agent.a", value=True),
+                requires_world=[
+                    WorldPredicateSpec(op="neq", path="agent.a", value=True),
                 ],
                 effects_world=[WorldEffectSpec(path="agent.a", set=True)],
             ),
@@ -139,13 +147,18 @@ def _make_simple_contract():
                 classification="causal",
                 requires_world=[
                     WorldPredicateSpec(op="eq", path="agent.a", value=True),
-                ],
-                requires_absent_world=[
-                    WorldPredicateSpec(op="eq", path="agent.b", value=True),
+                    WorldPredicateSpec(op="neq", path="agent.b", value=True),
                 ],
                 effects_world=[WorldEffectSpec(path="agent.b", set=True)],
             ),
         ],
+    )
+
+
+def _make_terminal_profile(profile_id: str, path: str, value: object) -> TerminalProfileSpec:
+    return TerminalProfileSpec(
+        profile_id=profile_id,
+        requires_world=[WorldPredicateSpec(op="eq", path=path, value=value)],
     )
 
 
@@ -246,6 +259,7 @@ class TestDepgraphPreflight(unittest.TestCase):
             projection_fields=[
                 "agent.line_exists",
                 "agent.profile_ready",
+                "user.phone_powered_on",
             ],
             bindings=[
                 BindingSourceSpec(
@@ -267,7 +281,9 @@ class TestDepgraphPreflight(unittest.TestCase):
                         WorldPredicateSpec(op="eq", path="agent.line_exists", value=True),
                         WorldPredicateSpec(op="eq", path="user.phone_powered_on", value=True),
                     ],
-                    requires_absent_bindings=["iccid"],
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="iccid", acquired=False),
+                    ],
                     effects_bindings=["iccid"],
                 ),
                 ActionContract(
@@ -275,7 +291,9 @@ class TestDepgraphPreflight(unittest.TestCase):
                     requestor="assistant",
                     tool_name="reprovision_esim",
                     classification="causal",
-                    requires_bindings=["iccid"],
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="iccid", acquired=True),
+                    ],
                     effects_world=[
                         WorldEffectSpec(path="agent.profile_ready", set=True),
                     ],
@@ -312,6 +330,175 @@ class TestDepgraphPreflight(unittest.TestCase):
         self.assertFalse(report.passed)
         self.assertTrue(any("Goal contradiction" in issue for issue in report.issues))
 
+    def test_sync_rules_materialize_start_world(self):
+        contract = GraphContractSpec(
+            projection_fields=["user.test_charge_ran", "agent.charge_state"],
+            sync_rules=[
+                SyncRuleSpec(
+                    rule_id="mirror_test_charge",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="user.test_charge_ran", value=True),
+                    ],
+                    effects_world=[
+                        SyncEffectSpec(path="agent.charge_state", set="active"),
+                    ],
+                )
+            ],
+            actions=[],
+        )
+        task = TaskIntent(
+            task_id="sync_start_goal",
+            start_world=[
+                WorldEffectSpec(path="user.test_charge_ran", set=True),
+            ],
+            goal_world=[
+                WorldPredicateSpec(op="eq", path="agent.charge_state", value="active"),
+            ],
+            min_plan_length=0,
+        )
+        report = run_task_preflight(contract, task, max_depth=1)
+        self.assertTrue(report.passed)
+        self.assertTrue(report.sat_full.sat)
+        self.assertEqual(report.sat_full.plan, [])
+
+    def test_binding_invalidation_requires_reacquire(self):
+        contract = GraphContractSpec(
+            projection_fields=["agent.current_fault_code", "agent.resolved"],
+            bindings=[
+                BindingSourceSpec(
+                    binding_id="fault_code",
+                    source_tool="read_fault_code",
+                    extraction_path="result.code",
+                    world_path="agent.current_fault_code",
+                )
+            ],
+            actions=[
+                ActionContract(
+                    action_id="acquire_fault_code",
+                    requestor="user",
+                    tool_name="read_fault_code",
+                    classification="knowledge-only",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="fault_code", acquired=False),
+                    ],
+                    effects_bindings=["fault_code"],
+                ),
+                ActionContract(
+                    action_id="advance_fault",
+                    requestor="assistant",
+                    tool_name="advance_fault",
+                    classification="causal",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="fault_code", acquired=True),
+                    ],
+                    effects_world=[
+                        WorldEffectSpec(path="agent.current_fault_code", set="RETRY"),
+                    ],
+                    tool_arg_bindings={"fault_code": "fault_code"},
+                ),
+                ActionContract(
+                    action_id="resolve_fault",
+                    requestor="assistant",
+                    tool_name="resolve_fault",
+                    classification="causal",
+                    requires_world=[
+                        WorldPredicateSpec(
+                            op="eq",
+                            path="agent.current_fault_code",
+                            value="RETRY",
+                        )
+                    ],
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="fault_code", acquired=True),
+                    ],
+                    effects_world=[
+                        WorldEffectSpec(path="agent.resolved", set=True),
+                    ],
+                    tool_arg_bindings={"fault_code": "fault_code"},
+                ),
+            ],
+        )
+        task = TaskIntent(
+            task_id="fault_reacquire",
+            start_world=[
+                WorldEffectSpec(path="agent.current_fault_code", set="NET"),
+            ],
+            goal_world=[
+                WorldPredicateSpec(op="eq", path="agent.resolved", value=True),
+            ],
+            required_actions=[
+                "acquire_fault_code",
+                "advance_fault",
+                "resolve_fault",
+            ],
+            min_plan_length=4,
+        )
+        report = run_task_preflight(contract, task, max_depth=5)
+        self.assertTrue(report.passed)
+        self.assertTrue(report.sat_full.sat)
+        self.assertEqual(
+            report.sat_full.plan,
+            ["acquire_fault_code", "advance_fault", "acquire_fault_code", "resolve_fault"],
+        )
+
+    def test_volatile_goal_binding_fails_preflight(self):
+        contract = GraphContractSpec(
+            projection_fields=["agent.visible_code", "agent.profile_ready"],
+            bindings=[
+                BindingSourceSpec(
+                    binding_id="visible_code",
+                    source_tool="check_station_screen",
+                    extraction_path="result.code",
+                    world_path="agent.visible_code",
+                )
+            ],
+            actions=[
+                ActionContract(
+                    action_id="acquire_visible_code",
+                    requestor="user",
+                    tool_name="check_station_screen",
+                    classification="knowledge-only",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="visible_code", acquired=False),
+                    ],
+                    effects_bindings=["visible_code"],
+                ),
+                ActionContract(
+                    action_id="advance_visible_code",
+                    requestor="assistant",
+                    tool_name="advance_visible_code",
+                    classification="causal",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="visible_code", acquired=True),
+                    ],
+                    effects_world=[
+                        WorldEffectSpec(path="agent.visible_code", set="NEXT"),
+                        WorldEffectSpec(path="agent.profile_ready", set=True),
+                    ],
+                    tool_arg_bindings={"visible_code": "visible_code"},
+                ),
+            ],
+        )
+        task = TaskIntent(
+            task_id="volatile_goal_binding",
+            start_world=[
+                WorldEffectSpec(path="agent.visible_code", set="START"),
+            ],
+            goal_world=[
+                WorldPredicateSpec(op="eq", path="agent.profile_ready", value=True),
+            ],
+            goal_bindings=["visible_code"],
+            required_actions=["acquire_visible_code", "advance_visible_code"],
+            min_plan_length=2,
+        )
+
+        report = run_task_preflight(contract, task, max_depth=4)
+
+        self.assertFalse(report.passed)
+        self.assertTrue(
+            any("volatile and should not be a terminal task goal" in issue for issue in report.issues)
+        )
+
 
 class TestDepgraphSampler(unittest.TestCase):
     def test_sampler_emits_chain_tasks(self):
@@ -325,9 +512,7 @@ class TestDepgraphSampler(unittest.TestCase):
                     classification="causal",
                     requires_world=[
                         WorldPredicateSpec(op="eq", path="agent.f0", value=True),
-                    ],
-                    requires_absent_world=[
-                        WorldPredicateSpec(op="eq", path="agent.f1", value=True),
+                        WorldPredicateSpec(op="neq", path="agent.f1", value=True),
                     ],
                     effects_world=[WorldEffectSpec(path="agent.f1", set=True)],
                 ),
@@ -338,9 +523,7 @@ class TestDepgraphSampler(unittest.TestCase):
                     classification="causal",
                     requires_world=[
                         WorldPredicateSpec(op="eq", path="agent.f1", value=True),
-                    ],
-                    requires_absent_world=[
-                        WorldPredicateSpec(op="eq", path="agent.f2", value=True),
+                        WorldPredicateSpec(op="neq", path="agent.f2", value=True),
                     ],
                     effects_world=[WorldEffectSpec(path="agent.f2", set=True)],
                 ),
@@ -351,9 +534,7 @@ class TestDepgraphSampler(unittest.TestCase):
                     classification="causal",
                     requires_world=[
                         WorldPredicateSpec(op="eq", path="agent.f2", value=True),
-                    ],
-                    requires_absent_world=[
-                        WorldPredicateSpec(op="eq", path="agent.f3", value=True),
+                        WorldPredicateSpec(op="neq", path="agent.f3", value=True),
                     ],
                     effects_world=[WorldEffectSpec(path="agent.f3", set=True)],
                 ),
@@ -362,10 +543,12 @@ class TestDepgraphSampler(unittest.TestCase):
         request = SamplingRequestDoc(
             max_tasks=5,
             goal_world_path_prefixes=["agent."],
+            terminal_profiles=[_make_terminal_profile("resolved", "agent.f3", True)],
             seeds=[
                 SamplingSeedSpec(
                     seed_id="seed",
                     start_world=[WorldEffectSpec(path="agent.f0", set=True)],
+                    allowed_terminal_profiles=["resolved"],
                     min_depth=3,
                     max_depth=3,
                 )
@@ -383,6 +566,9 @@ class TestDepgraphSampler(unittest.TestCase):
         request = SamplingRequestDoc(
             max_tasks=5,
             goal_world_path_prefixes=["agent."],
+            terminal_profiles=[
+                _make_terminal_profile("data_active", "agent.data_active", True)
+            ],
             seeds=[
                 SamplingSeedSpec(
                     seed_id="with_binding",
@@ -391,6 +577,7 @@ class TestDepgraphSampler(unittest.TestCase):
                         WorldEffectSpec(path="user.phone_powered_on", set=True),
                     ],
                     start_bindings=["iccid"],
+                    allowed_terminal_profiles=["data_active"],
                     min_depth=2,
                     max_depth=5,
                 )
@@ -401,6 +588,135 @@ class TestDepgraphSampler(unittest.TestCase):
         for entry in sampled:
             self.assertEqual(entry.task.start_bindings, ["iccid"])
             self.assertNotIn("acquire_iccid", entry.task.required_actions)
+
+    def test_sampler_drops_volatile_goal_bindings(self):
+        contract = GraphContractSpec(
+            projection_fields=["agent.visible_code", "agent.profile_ready"],
+            bindings=[
+                BindingSourceSpec(
+                    binding_id="visible_code",
+                    source_tool="check_station_screen",
+                    extraction_path="result.code",
+                    world_path="agent.visible_code",
+                )
+            ],
+            actions=[
+                ActionContract(
+                    action_id="acquire_visible_code",
+                    requestor="user",
+                    tool_name="check_station_screen",
+                    classification="knowledge-only",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="visible_code", acquired=False),
+                    ],
+                    effects_bindings=["visible_code"],
+                ),
+                ActionContract(
+                    action_id="advance_visible_code",
+                    requestor="assistant",
+                    tool_name="advance_visible_code",
+                    classification="causal",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="visible_code", acquired=True),
+                    ],
+                    effects_world=[
+                        WorldEffectSpec(path="agent.visible_code", set="NEXT"),
+                        WorldEffectSpec(path="agent.profile_ready", set=True),
+                    ],
+                    tool_arg_bindings={"visible_code": "visible_code"},
+                ),
+            ],
+        )
+        request = SamplingRequestDoc(
+            max_tasks=5,
+            goal_world_path_prefixes=["agent."],
+            terminal_profiles=[
+                _make_terminal_profile("profile_ready", "agent.profile_ready", True)
+            ],
+            seeds=[
+                SamplingSeedSpec(
+                    seed_id="volatile_seed",
+                    start_world=[WorldEffectSpec(path="agent.visible_code", set="START")],
+                    allowed_terminal_profiles=["profile_ready"],
+                    min_depth=2,
+                    max_depth=2,
+                )
+            ],
+        )
+
+        sampled = sample_task_intents(contract, request)
+
+        self.assertEqual(len(sampled), 1)
+        self.assertEqual(sampled[0].task.goal_bindings, [])
+        self.assertEqual(sampled[0].task.terminal_profile_id, "profile_ready")
+
+    def test_sampler_skips_nonterminal_intermediate_states(self):
+        contract = _make_simple_contract()
+        request = SamplingRequestDoc(
+            max_tasks=5,
+            goal_world_path_prefixes=["agent."],
+            terminal_profiles=[_make_terminal_profile("resolved", "agent.b", True)],
+            seeds=[
+                SamplingSeedSpec(
+                    seed_id="seed",
+                    start_world=[],
+                    allowed_terminal_profiles=["resolved"],
+                    min_depth=1,
+                    max_depth=2,
+                )
+            ],
+        )
+
+        sampled = sample_task_intents(contract, request)
+
+        self.assertEqual(len(sampled), 1)
+        self.assertEqual(sampled[0].task.min_plan_length, 2)
+        self.assertEqual(sampled[0].task.terminal_profile_id, "resolved")
+
+    def test_preflight_requires_terminal_profile_when_requested(self):
+        contract = _make_simple_contract()
+        task = TaskIntent(
+            task_id="missing_terminal_profile",
+            goal_world=[WorldPredicateSpec(op="eq", path="agent.b", value=True)],
+            required_actions=["do_a", "do_b"],
+            min_plan_length=2,
+        )
+
+        report = run_task_preflight(
+            contract,
+            task,
+            max_depth=4,
+            terminal_profiles=[_make_terminal_profile("resolved", "agent.b", True)],
+            require_terminal_profile=True,
+        )
+
+        self.assertFalse(report.passed)
+        self.assertTrue(
+            any("missing terminal_profile_id" in issue for issue in report.issues)
+        )
+
+    def test_preflight_rejects_goal_that_stops_before_terminal_profile(self):
+        contract = _make_simple_contract()
+        task = TaskIntent(
+            task_id="partial_goal",
+            goal_world=[WorldPredicateSpec(op="eq", path="agent.a", value=True)],
+            terminal_profile_id="resolved",
+            required_actions=["do_a"],
+            min_plan_length=1,
+        )
+
+        report = run_task_preflight(
+            contract,
+            task,
+            max_depth=4,
+            terminal_profiles=[_make_terminal_profile("resolved", "agent.b", True)],
+            require_terminal_profile=True,
+        )
+
+        self.assertFalse(report.passed)
+        self.assertTrue(
+            any("does not satisfy terminal profile" in issue for issue in report.issues)
+        )
 
 
 class TestDepgraphCompiler(unittest.TestCase):
@@ -434,7 +750,9 @@ class TestDepgraphCompiler(unittest.TestCase):
                 EnvFunctionCallSpec(
                     env_type="user",
                     func_name="set_stop_gate",
-                    arguments={"criteria": [{"check_field": "done", "op": "eq", "expected": True}]},
+                    arguments={
+                        "criteria": [{"check_field": "done", "op": "eq", "expected": True}]
+                    },
                 )
             ],
             env_assertions=[
@@ -556,6 +874,159 @@ class TestRuntimeAlignment(unittest.TestCase):
         issues = check_contract_against_environment(contract, get_environment)
         self.assertTrue(any("invalid extraction_path" in issue for issue in issues))
 
+    def test_contract_alignment_detects_volatile_binding_reused_by_generic_actions(self):
+        from tau2.domains.tech_support.environment import get_environment
+
+        contract = GraphContractSpec(
+            projection_fields=["agent.connection_status"],
+            bindings=[
+                BindingSourceSpec(
+                    binding_id="connection_status",
+                    source_tool="check_my_connection",
+                    extraction_path="result.connection_status",
+                    world_path="agent.connection_status",
+                )
+            ],
+            actions=[
+                ActionContract(
+                    action_id="repair_one",
+                    requestor="assistant",
+                    tool_name="run_remote_diagnostic",
+                    classification="causal",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="connection_status", acquired=True),
+                    ],
+                    tool_arg_bindings={"device_id": "connection_status"},
+                ),
+                ActionContract(
+                    action_id="repair_two",
+                    requestor="assistant",
+                    tool_name="run_remote_diagnostic",
+                    classification="causal",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="connection_status", acquired=True),
+                    ],
+                    tool_arg_bindings={"device_id": "connection_status"},
+                ),
+            ],
+            sync_rules=[
+                SyncRuleSpec(
+                    rule_id="rewrite_connection_status",
+                    requires_world=[],
+                    effects_world=[
+                        SyncEffectSpec(path="agent.connection_status", set="degraded"),
+                    ],
+                )
+            ],
+        )
+
+        issues = check_contract_against_environment(contract, get_environment)
+        self.assertTrue(any("Volatile binding 'connection_status'" in issue for issue in issues))
+
+    def test_policy_alignment_flags_missing_tool_mentions_and_resolution_guidance(self):
+        contract = GraphContractSpec(
+            projection_fields=["agent.done"],
+            bindings=[
+                BindingSourceSpec(
+                    binding_id="screen_fault_code",
+                    source_tool="check_station_screen",
+                    extraction_path="result.fault_code",
+                    world_path="agent.done",
+                )
+            ],
+            actions=[
+                ActionContract(
+                    action_id="diagnose",
+                    requestor="assistant",
+                    tool_name="run_backend_diagnostics",
+                    classification="causal",
+                ),
+                ActionContract(
+                    action_id="reset_retry",
+                    requestor="assistant",
+                    tool_name="reset_retry_path",
+                    classification="causal",
+                ),
+                ActionContract(
+                    action_id="resolution_gate",
+                    requestor="user",
+                    tool_name="check_resolution_status",
+                    classification="stutter-only",
+                ),
+            ],
+        )
+
+        issues = check_policy_against_contract(
+            contract,
+            policy_text=(
+                "Use `check_station_screen` first, then `run_backend_diagnostics`. "
+                "Call `check_resolution_status` before stopping."
+            ),
+        )
+        self.assertTrue(any("reset_retry_path" in issue for issue in issues))
+        self.assertTrue(any("resolved=true" in issue for issue in issues))
+        self.assertTrue(any("resolved=false" in issue for issue in issues))
+
+    def test_contract_alignment_allows_mutually_exclusive_stage_specific_consumers(self):
+        from tau2.domains.tech_support.environment import get_environment
+
+        contract = GraphContractSpec(
+            projection_fields=[
+                "agent.connection_status",
+                "agent.issue_class",
+            ],
+            bindings=[
+                BindingSourceSpec(
+                    binding_id="connection_status",
+                    source_tool="check_my_connection",
+                    extraction_path="result.connection_status",
+                    world_path="agent.connection_status",
+                )
+            ],
+            actions=[
+                ActionContract(
+                    action_id="reprovision_internet",
+                    requestor="assistant",
+                    tool_name="run_remote_diagnostic",
+                    classification="causal",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.connection_status", value="PROFILE"),
+                        WorldPredicateSpec(op="eq", path="agent.issue_class", value="internet"),
+                    ],
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="connection_status", acquired=True),
+                    ],
+                    tool_arg_bindings={"device_id": "connection_status"},
+                ),
+                ActionContract(
+                    action_id="reprovision_voice",
+                    requestor="assistant",
+                    tool_name="run_remote_diagnostic",
+                    classification="causal",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.connection_status", value="PROFILE"),
+                        WorldPredicateSpec(op="eq", path="agent.issue_class", value="voice"),
+                    ],
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="connection_status", acquired=True),
+                    ],
+                    tool_arg_bindings={"device_id": "connection_status"},
+                ),
+            ],
+            sync_rules=[
+                SyncRuleSpec(
+                    rule_id="rewrite_connection_status",
+                    requires_world=[],
+                    effects_world=[
+                        SyncEffectSpec(path="agent.connection_status", set="PROFILE"),
+                    ],
+                )
+            ],
+        )
+
+        issues = check_contract_against_environment(contract, get_environment)
+        self.assertFalse(any("Volatile binding 'connection_status'" in issue for issue in issues))
+
 
 class TestStartBindingsVisibility(unittest.TestCase):
     def test_missing_value_in_ticket_and_known_info_flagged(self):
@@ -580,10 +1051,8 @@ class TestStartBindingsVisibility(unittest.TestCase):
         task_doc = TaskSpecsDoc(tasks=[task])
         issues = check_start_bindings_visibility(task_doc, contract)
         self.assertEqual(len(issues), 2)
-        ticket_issue = [i for i in issues if "ticket" in i]
-        known_info_issue = [i for i in issues if "known_info" in i]
-        self.assertEqual(len(ticket_issue), 1)
-        self.assertEqual(len(known_info_issue), 1)
+        self.assertEqual(len([issue for issue in issues if "ticket" in issue]), 1)
+        self.assertEqual(len([issue for issue in issues if "known_info" in issue]), 1)
 
     def test_value_in_ticket_only_flags_known_info(self):
         contract = _make_chain_contract()
@@ -652,6 +1121,52 @@ class TestStartBindingsVisibility(unittest.TestCase):
         issues = check_start_bindings_visibility(task_doc, contract)
         self.assertEqual(issues, [])
 
+    def test_sync_derived_start_binding_value_present_in_both_passes(self):
+        contract = GraphContractSpec(
+            projection_fields=["user.screen_iccid", "agent.iccid_value"],
+            bindings=[
+                BindingSourceSpec(
+                    binding_id="iccid",
+                    source_tool="get_sim_info",
+                    extraction_path="result.iccid",
+                    world_path="agent.iccid_value",
+                )
+            ],
+            sync_rules=[
+                SyncRuleSpec(
+                    rule_id="copy_screen_to_agent",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="user.screen_iccid", value="89012345"),
+                    ],
+                    effects_world=[
+                        SyncEffectSpec(
+                            path="agent.iccid_value",
+                            from_path="user.screen_iccid",
+                        )
+                    ],
+                )
+            ],
+            actions=[],
+        )
+        task = TaskIntent(
+            task_id="t_sync_binding",
+            start_world=[
+                WorldEffectSpec(path="user.screen_iccid", set="89012345"),
+            ],
+            start_bindings=["iccid"],
+            goal_world=[],
+            runtime=RuntimeTaskSpec(
+                domain="test",
+                reason_for_call="Needs data fix.",
+                task_instructions=_VALID_TASK_INSTRUCTIONS,
+                ticket="SIM ICCID is 89012345 and service is not working.",
+                known_info="Your SIM ICCID is 89012345.",
+            ),
+        )
+        task_doc = TaskSpecsDoc(tasks=[task])
+        issues = check_start_bindings_visibility(task_doc, contract)
+        self.assertEqual(issues, [])
+
     def test_missing_world_path_flagged(self):
         """Binding without world_path can't resolve concrete value."""
         contract = GraphContractSpec(
@@ -661,7 +1176,6 @@ class TestStartBindingsVisibility(unittest.TestCase):
                     binding_id="some_fact",
                     source_tool="get_info",
                     extraction_path="result.value",
-                    # no world_path
                 )
             ],
             actions=[],
@@ -682,6 +1196,56 @@ class TestStartBindingsVisibility(unittest.TestCase):
         issues = check_start_bindings_visibility(task_doc, contract)
         self.assertEqual(len(issues), 1)
         self.assertIn("no world_path", issues[0])
+
+
+class TestDepgraphSemantics(unittest.TestCase):
+    def test_materialize_world_applies_sync_rules(self):
+        world, issues = materialize_world(
+            [WorldEffectSpec(path="user.test_charge_ran", set=True)],
+            sync_rules=[
+                SyncRuleSpec(
+                    rule_id="sync_charge_state",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="user.test_charge_ran", value=True),
+                    ],
+                    effects_world=[
+                        SyncEffectSpec(path="agent.charge_state", set="active"),
+                    ],
+                )
+            ],
+        )
+        self.assertEqual(issues, [])
+        self.assertEqual(world["agent.charge_state"], "active")
+
+    def test_apply_action_invalidates_binding_when_world_path_changes(self):
+        action = ActionContract(
+            action_id="advance_fault",
+            requestor="assistant",
+            tool_name="advance_fault",
+            classification="causal",
+            requires_bindings=[
+                BindingPredicateSpec(binding_id="fault_code", acquired=True),
+            ],
+            effects_world=[
+                WorldEffectSpec(path="agent.current_fault_code", set="RETRY"),
+            ],
+            tool_arg_bindings={"fault_code": "fault_code"},
+        )
+        next_world, next_bindings = apply_action(
+            action,
+            {"agent.current_fault_code": "NET"},
+            frozenset({"fault_code"}),
+            binding_specs=[
+                BindingSourceSpec(
+                    binding_id="fault_code",
+                    source_tool="read_fault_code",
+                    extraction_path="result.code",
+                    world_path="agent.current_fault_code",
+                )
+            ],
+        )
+        self.assertEqual(next_world["agent.current_fault_code"], "RETRY")
+        self.assertEqual(next_bindings, frozenset())
 
 
 if __name__ == "__main__":

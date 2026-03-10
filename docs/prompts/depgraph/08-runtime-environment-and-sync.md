@@ -26,9 +26,15 @@ Create:
 
 Requirements:
 
-1. Include user-guidance behavior aligned with task patterns.
-2. Mention that user should run tools only when instructed (if this is your design choice).
-3. Keep policy consistent with tool capabilities and constraints.
+1. Write `policy.md` as a behavioral contract and tool-affordance guide, not as a fixed step-by-step solve script.
+2. Include user-guidance behavior aligned with task patterns.
+3. Mention that user should run tools only when instructed (if this is your design choice).
+4. Keep policy consistent with tool capabilities and constraints.
+5. Name every contract-visible tool explicitly so the prompt surface matches the runtime surface.
+6. If any binding is a volatile stage token, explicitly name the reread points where the agent must reacquire it.
+7. If `check_resolution_status` exists, explicitly tell the agent to continue when it returns `resolved=false` and to stop only on `resolved=true`.
+8. Prefer sections like observables, available repair tools, customer-side actions, and stop rules over numbered "first do X, then do Y" trajectories.
+9. If the domain truly needs a detailed troubleshooting manual, keep it as a separate artifact and make sure the benchmark intent still relies on agent reasoning rather than rote prompt following.
 
 Validation:
 
@@ -53,12 +59,17 @@ Create:
 Requirements:
 
 1. Define `<Domain>Environment(Environment)` with `sync_tools()`.
-2. `sync_tools()` must mirror causal bridge logic from depgraph contracts.
-3. `sync_tools()` must project every stop-gate observable field needed by `check_resolution_status`.
-4. Implement `get_environment(...)` that loads DB/user DB + policy and returns environment.
-5. Implement `get_tasks(...)` and optional task split loader using current task file.
-6. Keep loader compatible with tau2 `Task` model.
-7. Keep `sync_tools()` idempotent: repeated calls without intervening tool actions should not create new deltas.
+2. `sync_tools()` must implement only the declared `sync_rules` from `graph_contract.yaml`.
+3. Keep sync logic declarative in shape:
+   - unconditional projections copy from one projected path to another
+   - conditional sync logic is expressed as explicit prereqs + literal effects
+   - no hidden sync-only cascades that are absent from the contract
+4. `sync_tools()` must project every stop-gate observable field needed by `check_resolution_status`.
+5. Implement `get_environment(...)` that loads DB/user DB + policy and returns environment.
+6. Implement `get_tasks(...)` and optional task split loader using current task file.
+7. Keep loader compatible with tau2 `Task` model.
+8. Keep `sync_tools()` idempotent: repeated calls without intervening tool actions should not create new deltas.
+9. `sync_tools()` must produce the same derived state when run against the initial start world as it does after later tool calls; do not rely on post-init-only fixes.
 
 Validation:
 

@@ -10,6 +10,7 @@ projection_fields:
   - agent.customers[active_customer].exists
   - agent.lines[active_line].profile_state
   - agent.lines[active_line].data_status
+  - agent.lines[active_line].iccid_observed
   - user.physical.phone_powered_on
   - user.physical.phone_restarted
 
@@ -17,6 +18,10 @@ bindings:
   - binding_id: iccid
     source_tool: get_sim_info
     extraction_path: result.iccid
+    # world_path allows the runtime to invalidate the binding if the canonical observed
+    # value changes. If this path is volatile, only immediate observation-driven tools
+    # should consume the binding through tool_arg_bindings.
+    world_path: agent.lines[active_line].iccid_observed
     observability_all_of:
       - op: eq
         path: user.physical.phone_powered_on
@@ -31,13 +36,11 @@ actions:
     requestor: user
     tool_name: power_on_phone
     classification: causal
-    requires_world: []
-    requires_absent_world:
-      - op: eq
+    requires_world:
+      - op: neq
         path: user.physical.phone_powered_on
         value: true
     requires_bindings: []
-    requires_absent_bindings: []
     effects_world:
       - path: user.physical.phone_powered_on
         set: true
@@ -52,9 +55,9 @@ actions:
       - op: eq
         path: user.physical.phone_powered_on
         value: true
-    requires_absent_world: []
-    requires_bindings: []
-    requires_absent_bindings: [iccid]
+    requires_bindings:
+      - binding_id: iccid
+        acquired: false
     effects_world: []
     effects_bindings: [iccid]
     tool_arg_bindings: {}
@@ -67,12 +70,10 @@ actions:
       - op: eq
         path: user.physical.phone_powered_on
         value: true
-    requires_absent_world:
-      - op: eq
+      - op: neq
         path: user.physical.phone_restarted
         value: true
     requires_bindings: []
-    requires_absent_bindings: []
     effects_world:
       - path: user.physical.phone_restarted
         set: true
@@ -90,9 +91,9 @@ actions:
       - op: eq
         path: agent.lines[active_line].profile_state
         value: pending
-    requires_absent_world: []
-    requires_bindings: [iccid]
-    requires_absent_bindings: []
+    requires_bindings:
+      - binding_id: iccid
+        acquired: true
     effects_world:
       - path: agent.lines[active_line].profile_state
         set: ready
@@ -108,9 +109,7 @@ actions:
       - op: eq
         path: agent.lines[active_line].profile_state
         value: ready
-    requires_absent_world: []
     requires_bindings: []
-    requires_absent_bindings: []
     effects_world:
       - path: agent.lines[active_line].data_status
         set: active
@@ -122,11 +121,11 @@ actions:
     tool_name: check_resolution_status
     classification: stutter-only
     requires_world: []
-    requires_absent_world: []
     requires_bindings: []
-    requires_absent_bindings: []
     effects_world: []
     effects_bindings: []
     tool_arg_bindings: {}
+
+sync_rules: []
 
 assistant_stutter_allowlist: []

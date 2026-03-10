@@ -6,7 +6,15 @@ import json
 from collections import defaultdict
 from typing import Any
 
-from tau2.generators.depgraph.types import ActionContract, BindingSourceSpec, WorldEffectSpec, WorldPredicateSpec
+from tau2.generators.depgraph.types import (
+    ActionContract,
+    BindingSourceSpec,
+    SyncRuleSpec,
+    WorldEffectSpec,
+    WorldPredicateSpec,
+)
+
+_MAX_SYNC_ITERATIONS = 32
 
 
 def _normalize_value(value: Any) -> Any:
@@ -36,9 +44,65 @@ def world_from_effects(effects: list[WorldEffectSpec]) -> tuple[dict[str, Any], 
 
 
 def predicate_holds(predicate: WorldPredicateSpec, world: dict[str, Any]) -> bool:
-    if predicate.op != "eq":
+    value = world.get(predicate.path, None)
+    if predicate.op == "eq":
+        return value == predicate.value
+    if predicate.op == "neq":
+        return value != predicate.value
+    if value is None:
         return False
-    return world.get(predicate.path, None) == predicate.value
+    if predicate.op == "gt":
+        return value > predicate.value
+    if predicate.op == "lt":
+        return value < predicate.value
+    if predicate.op == "gte":
+        return value >= predicate.value
+    if predicate.op == "lte":
+        return value <= predicate.value
+    return False
+
+
+def apply_sync_rules(
+    sync_rules: list[SyncRuleSpec],
+    world: dict[str, Any],
+) -> dict[str, Any]:
+    """Apply all eligible sync rules until the world reaches a fixed-point."""
+    if not sync_rules:
+        return world
+
+    for _ in range(_MAX_SYNC_ITERATIONS):
+        changed = False
+        for rule in sync_rules:
+            if not all(predicate_holds(predicate, world) for predicate in rule.requires_world):
+                continue
+            for effect in rule.effects_world:
+                new_value = effect.set
+                if effect.from_path is not None:
+                    new_value = world.get(effect.from_path)
+                if world.get(effect.path) != new_value:
+                    world[effect.path] = new_value
+                    changed = True
+        if not changed:
+            return world
+
+    raise ValueError(
+        f"Sync rules did not converge after {_MAX_SYNC_ITERATIONS} iterations. "
+        "Check for cyclical dependencies in sync_rules."
+    )
+
+
+def materialize_world(
+    effects: list[WorldEffectSpec],
+    *,
+    sync_rules: list[SyncRuleSpec] | None = None,
+) -> tuple[dict[str, Any], list[str]]:
+    """Build a world map from literal effects and then normalize it through sync rules."""
+    world, issues = world_from_effects(effects)
+    if issues:
+        return world, issues
+    if sync_rules:
+        world = apply_sync_rules(sync_rules, dict(world))
+    return world, issues
 
 
 def index_binding_sources(
@@ -93,26 +157,52 @@ def is_action_enabled(
     """Eligibility predicate for fan-out over (world, bindings)."""
     if not all(predicate_holds(predicate, world) for predicate in action.requires_world):
         return False
-    if any(predicate_holds(predicate, world) for predicate in action.requires_absent_world):
-        return False
-    if not set(action.requires_bindings).issubset(bindings):
-        return False
-    if set(action.requires_absent_bindings) & set(bindings):
-        return False
+    for predicate in action.requires_bindings:
+        binding_present = predicate.binding_id in bindings
+        if predicate.acquired and not binding_present:
+            return False
+        if not predicate.acquired and binding_present:
+            return False
     if not _knowledge_source_ok(action, world, bindings, binding_sources_by_id):
         return False
     return True
+
+
+def _invalidate_bindings(
+    old_world: dict[str, Any],
+    new_world: dict[str, Any],
+    bindings: set[str],
+    binding_specs: list[BindingSourceSpec],
+) -> set[str]:
+    """Drop acquired bindings whose canonical backing field changed value."""
+    for spec in binding_specs:
+        if spec.world_path is None:
+            continue
+        if spec.binding_id not in bindings:
+            continue
+        if old_world.get(spec.world_path) != new_world.get(spec.world_path):
+            bindings.discard(spec.binding_id)
+    return bindings
 
 
 def apply_action(
     action: ActionContract,
     world: dict[str, Any],
     bindings: frozenset[str],
+    *,
+    sync_rules: list[SyncRuleSpec] | None = None,
+    binding_specs: list[BindingSourceSpec] | None = None,
 ) -> tuple[dict[str, Any], frozenset[str]]:
-    """Apply forward effects of one action."""
+    """Apply one action, then sync rules, then binding invalidation."""
     next_world = dict(world)
     for effect in action.effects_world:
         next_world[effect.path] = effect.set
+
+    if sync_rules:
+        next_world = apply_sync_rules(sync_rules, next_world)
+
     next_bindings = set(bindings)
     next_bindings.update(action.effects_bindings)
+    if binding_specs:
+        next_bindings = _invalidate_bindings(world, next_world, next_bindings, binding_specs)
     return next_world, frozenset(next_bindings)

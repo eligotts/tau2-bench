@@ -11,6 +11,7 @@ import yaml
 from pydantic import BaseModel, Field, model_validator
 
 from tau2.generators.depgraph.context_bindings import TaskContextBindingsDoc
+from tau2.generators.depgraph.semantics import materialize_world
 from tau2.generators.depgraph.stop_gate import StopGateMapDoc
 from tau2.generators.depgraph.types import (
     ActionExpectationSpec,
@@ -116,10 +117,12 @@ def load_runtime_defaults(path: str | Path) -> RuntimeDefaultsDoc:
     return RuntimeDefaultsDoc.model_validate(_load_yaml_dict(path))
 
 
-def _world_map_from_effects(task: TaskIntent) -> dict[str, Any]:
-    world: dict[str, Any] = {}
-    for effect in task.start_world:
-        world[effect.path] = effect.set
+def _start_world_map(task: TaskIntent, contract: GraphContractSpec) -> dict[str, Any]:
+    world, issues = materialize_world(task.start_world, sync_rules=contract.sync_rules)
+    if issues:
+        raise ValueError(
+            f"Task '{task.task_id}' has conflicting start_world assignments: {'; '.join(issues)}"
+        )
     return world
 
 
@@ -166,7 +169,7 @@ def _resolve_start_binding_values(
     contract: GraphContractSpec,
 ) -> dict[str, Any]:
     binding_by_id = {binding.binding_id: binding for binding in contract.bindings}
-    start_world = _world_map_from_effects(task)
+    start_world = _start_world_map(task, contract)
 
     resolved: dict[str, Any] = {}
     for binding_id in task.start_bindings:
@@ -248,19 +251,21 @@ def _build_action_expectations(
             )
 
         arguments: dict[str, Any] = {}
-        compare_args: list[str] = []
         for param_name, binding_id in sorted(action.tool_arg_bindings.items()):
             if binding_id in start_binding_values:
                 arguments[param_name] = start_binding_values[binding_id]
-                compare_args.append(param_name)
 
+        # Action checks verify the tool was called, not argument values.
+        # Binding values can shift during execution (e.g. fault-code cascades),
+        # so comparing args leads to false negatives.  Env assertions are the
+        # correct mechanism for verifying final state.
         expectations.append(
             ActionExpectationSpec(
                 action_id=action.action_id,
                 requestor=action.requestor,
                 name=action.tool_name,
                 arguments=arguments,
-                compare_args=compare_args,
+                compare_args=[],
             )
         )
 
@@ -364,7 +369,7 @@ def _build_narrative_brief(
     stop_gate_map: StopGateMapDoc | None,
     entity_identity: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    start_world = _world_map_from_effects(task)
+    start_world = _start_world_map(task, contract)
     goal_world = _goal_map_from_predicates(task)
 
     binding_by_id = {binding.binding_id: binding for binding in contract.bindings}

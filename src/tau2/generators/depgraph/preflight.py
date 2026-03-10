@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from tau2.generators.depgraph.semantics import world_from_effects
+from tau2.generators.depgraph.semantics import materialize_world, predicate_holds
 from tau2.generators.depgraph.solver import SearchResult, find_plan
-from tau2.generators.depgraph.types import GraphContractSpec, TaskIntent
+from tau2.generators.depgraph.types import (
+    GraphContractSpec,
+    TaskIntent,
+    TerminalProfileSpec,
+)
 
 
 @dataclass
@@ -31,6 +35,53 @@ class TaskPreflightReport:
         if not self.min_plan_length_ok:
             return False
         return len(self.issues) == 0
+
+
+def world_path_is_volatile(contract: GraphContractSpec, world_path: str | None) -> bool:
+    """Return True when a projected world path can change after acquisition."""
+    if world_path is None:
+        return False
+    for action in contract.actions:
+        for effect in action.effects_world:
+            if effect.path == world_path:
+                return True
+    for rule in contract.sync_rules:
+        for effect in rule.effects_world:
+            if effect.path == world_path:
+                return True
+    return False
+
+
+def binding_is_volatile(contract: GraphContractSpec, binding_id: str) -> bool:
+    """Return True when a binding tracks a world path that can change over time."""
+    binding = next((spec for spec in contract.bindings if spec.binding_id == binding_id), None)
+    if binding is None:
+        return False
+    return world_path_is_volatile(contract, binding.world_path)
+
+
+def stable_goal_bindings(contract: GraphContractSpec, binding_ids: list[str]) -> list[str]:
+    """Keep only stable bindings in goal state requirements."""
+    return [binding_id for binding_id in binding_ids if not binding_is_volatile(contract, binding_id)]
+
+
+def terminal_profile_map(
+    terminal_profiles: list[TerminalProfileSpec] | dict[str, TerminalProfileSpec] | None,
+) -> dict[str, TerminalProfileSpec]:
+    """Normalize terminal profiles into a dictionary keyed by profile_id."""
+    if terminal_profiles is None:
+        return {}
+    if isinstance(terminal_profiles, dict):
+        return terminal_profiles
+    return {profile.profile_id: profile for profile in terminal_profiles}
+
+
+def world_matches_terminal_profile(
+    world: dict[str, object],
+    profile: TerminalProfileSpec,
+) -> bool:
+    """Return True when all predicates in the terminal profile hold."""
+    return all(predicate_holds(predicate, world) for predicate in profile.requires_world)
 
 
 def _check_refs(contract: GraphContractSpec, task: TaskIntent) -> list[str]:
@@ -99,7 +150,7 @@ def _check_precedence_cycle(task: TaskIntent) -> list[str]:
 def _check_goal_contradictions(task: TaskIntent) -> list[str]:
     """Detect contradictory assignments in start/goal world declarations."""
     issues: list[str] = []
-    _, start_issues = world_from_effects(task.start_world)
+    _, start_issues = materialize_world(task.start_world)
     for issue in start_issues:
         issues.append(f"Start-state contradiction: {issue}")
 
@@ -121,7 +172,7 @@ def _check_goal_contradictions(task: TaskIntent) -> list[str]:
 def _check_goal_producers(contract: GraphContractSpec, task: TaskIntent) -> list[str]:
     """Ensure every goal assignment has a producer action or is already true at start."""
     issues: list[str] = []
-    start_world, _ = world_from_effects(task.start_world)
+    start_world, _ = materialize_world(task.start_world, sync_rules=contract.sync_rules)
     start_bindings = set(task.start_bindings)
 
     world_producers: set[tuple[str, object]] = set()
@@ -132,10 +183,24 @@ def _check_goal_producers(contract: GraphContractSpec, task: TaskIntent) -> list
         for binding_id in action.effects_bindings:
             binding_producers.add(binding_id)
 
+    sync_literal_producers = {
+        (effect.path, effect.set)
+        for rule in contract.sync_rules
+        for effect in rule.effects_world
+        if effect.from_path is None
+    }
+    sync_target_paths = {
+        effect.path for rule in contract.sync_rules for effect in rule.effects_world
+    }
+
     for predicate in task.goal_world:
         if start_world.get(predicate.path, None) == predicate.value:
             continue
-        if (predicate.path, predicate.value) not in world_producers:
+        if (
+            (predicate.path, predicate.value) not in world_producers
+            and (predicate.path, predicate.value) not in sync_literal_producers
+            and predicate.path not in sync_target_paths
+        ):
             issues.append(
                 f"Goal world predicate '{predicate.path} == {predicate.value!r}' "
                 "has no producer action"
@@ -181,18 +246,124 @@ def _check_knowledge_edges(contract: GraphContractSpec) -> list[str]:
     return issues
 
 
+def _check_binding_self_invalidation(contract: GraphContractSpec) -> list[str]:
+    """Warn if an action writes the canonical world path of a binding it produces."""
+    issues: list[str] = []
+    binding_paths = {
+        spec.binding_id: spec.world_path for spec in contract.bindings if spec.world_path
+    }
+    for action in contract.actions:
+        produced = set(action.effects_bindings)
+        written_paths = {effect.path for effect in action.effects_world}
+        for binding_id in produced:
+            binding_path = binding_paths.get(binding_id)
+            if binding_path is None or binding_path not in written_paths:
+                continue
+            issues.append(
+                f"Action '{action.action_id}' produces binding '{binding_id}' but also "
+                f"writes to its world_path '{binding_path}'"
+            )
+    return issues
+
+
+def _check_volatile_goal_bindings(contract: GraphContractSpec, task: TaskIntent) -> list[str]:
+    """Fail tasks that keep moving observation bindings as terminal requirements."""
+    issues: list[str] = []
+    binding_by_id = {binding.binding_id: binding for binding in contract.bindings}
+    goal_world_paths = {predicate.path for predicate in task.goal_world}
+
+    for binding_id in task.goal_bindings:
+        binding = binding_by_id.get(binding_id)
+        if binding is None or not binding_is_volatile(contract, binding_id):
+            continue
+
+        world_path_note = ""
+        if binding.world_path and binding.world_path in goal_world_paths:
+            world_path_note = (
+                f" Its world_path '{binding.world_path}' is already modeled in goal_world."
+            )
+
+        issues.append(
+            f"Goal binding '{binding_id}' is volatile and should not be a terminal task goal."
+            f"{world_path_note} Move the terminal check into stable world state, stop-gate "
+            "observability, or an explicit final user observation step instead."
+        )
+
+    return issues
+
+
+def _check_terminal_profile_reference(
+    task: TaskIntent,
+    *,
+    terminal_profiles: dict[str, TerminalProfileSpec],
+    require_terminal_profile: bool,
+) -> list[str]:
+    """Validate that the task references a known terminal profile when required."""
+    issues: list[str] = []
+    if task.terminal_profile_id is None:
+        if require_terminal_profile:
+            issues.append(
+                "Task is missing terminal_profile_id. Terminal tasks must declare which "
+                "terminal profile they are sampled against."
+            )
+        return issues
+    if task.terminal_profile_id not in terminal_profiles:
+        issues.append(
+            f"Task references unknown terminal_profile_id '{task.terminal_profile_id}'"
+        )
+    return issues
+
+
+def _check_terminal_profile_goal_conflicts(
+    task: TaskIntent,
+    profile: TerminalProfileSpec,
+) -> list[str]:
+    """Catch explicit authored goal predicates that contradict the declared terminal profile."""
+    issues: list[str] = []
+    goal_values = {
+        predicate.path: predicate.value
+        for predicate in task.goal_world
+        if predicate.op == "eq"
+    }
+    for predicate in profile.requires_world:
+        authored = goal_values.get(predicate.path)
+        if authored is None:
+            continue
+        if authored != predicate.value:
+            issues.append(
+                f"Task goal contradicts terminal profile '{profile.profile_id}' on "
+                f"path '{predicate.path}': goal={authored!r}, profile={predicate.value!r}"
+            )
+    return issues
+
+
 def run_task_preflight(
     contract: GraphContractSpec,
     task: TaskIntent,
     *,
     max_depth: int = 20,
+    terminal_profiles: list[TerminalProfileSpec] | dict[str, TerminalProfileSpec] | None = None,
+    require_terminal_profile: bool = False,
 ) -> TaskPreflightReport:
     """Run SAT and dependency necessity checks for a task intent."""
+    terminal_profiles_by_id = terminal_profile_map(terminal_profiles)
     issues = _check_refs(contract, task)
-    issues.extend(_check_precedence_cycle(task))
     issues.extend(_check_goal_producers(contract, task))
     issues.extend(_check_knowledge_edges(contract))
     issues.extend(_check_goal_contradictions(task))
+    issues.extend(_check_binding_self_invalidation(contract))
+    issues.extend(_check_volatile_goal_bindings(contract, task))
+    issues.extend(
+        _check_terminal_profile_reference(
+            task,
+            terminal_profiles=terminal_profiles_by_id,
+            require_terminal_profile=require_terminal_profile,
+        )
+    )
+    if task.terminal_profile_id is not None:
+        profile = terminal_profiles_by_id.get(task.terminal_profile_id)
+        if profile is not None:
+            issues.extend(_check_terminal_profile_goal_conflicts(task, profile))
 
     sat_full = find_plan(
         contract.actions,
@@ -201,11 +372,22 @@ def run_task_preflight(
         task.goal_world,
         task.goal_bindings,
         binding_sources=contract.bindings,
+        sync_rules=contract.sync_rules,
         max_depth=max_depth,
     )
 
     if sat_full.issues:
         issues.extend(sat_full.issues)
+    if sat_full.sat and task.terminal_profile_id is not None:
+        profile = terminal_profiles_by_id.get(task.terminal_profile_id)
+        if profile is not None and (
+            sat_full.end_world is None
+            or not world_matches_terminal_profile(sat_full.end_world, profile)
+        ):
+            issues.append(
+                f"SAT_full terminal state does not satisfy terminal profile "
+                f"'{task.terminal_profile_id}'"
+            )
 
     report = TaskPreflightReport(
         task_id=task.task_id,
@@ -240,6 +422,7 @@ def run_task_preflight(
             task.goal_world,
             task.goal_bindings,
             binding_sources=contract.bindings,
+            sync_rules=contract.sync_rules,
             forbidden_actions={required},
             max_depth=max_depth,
         )

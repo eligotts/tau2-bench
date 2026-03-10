@@ -1,10 +1,119 @@
-# Prompt 05: Gap Review
+# Prompt 05: Rubric Review + Gap Review
 
-## Instruction
+Use this prompt in one of two modes:
 
-After a pilot run, generate a concise gap analysis.
+- `Mode A: authoring audit` before simulation, sign-off, or PR
+- `Mode B: post-run gap review` after simulation traces exist
 
-Sections:
+The coding agent should use a code-review mindset in both modes: findings first, ordered by
+severity, with exact file/function evidence and testable fixes.
+
+## Mode A: Authoring Audit
+
+### Goal
+
+Ask the coding agent to review the authored domain against a fixed rubric before you spend
+time on LLM simulations.
+
+### Required inputs
+
+- `data/tau2/domains/<domain>/review_bundle.md`
+- the source files cited in that bundle, especially:
+  - `domain_scope.md`
+  - `graph_contract.yaml`
+  - `policy.md`
+  - `runtime_defaults.yaml`
+  - `sampling_request.yaml`
+  - `stop_gate_map.yaml`
+  - `tools.py`
+  - `user_tools.py`
+  - `environment.py`
+  - `task_specs.runtime.yaml`
+
+Generate the bundle first:
+
+```bash
+uv run python -m tau2.generators.depgraph.run_review_bundle \
+  --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
+  --task-specs data/tau2/domains/<domain>/task_specs.runtime.yaml \
+  --domain <domain> \
+  --policy data/tau2/domains/<domain>/policy.md \
+  --domain-scope data/tau2/domains/<domain>/domain_scope.md \
+  --runtime-defaults data/tau2/domains/<domain>/runtime_defaults.yaml \
+  --sampling-request data/tau2/domains/<domain>/sampling_request.yaml \
+  --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
+  --out data/tau2/domains/<domain>/review_bundle.md
+```
+
+### Rubric
+
+Judge the domain against these exact categories:
+
+1. `policy_contract_parity`
+   - Does `policy.md` teach the same tool surface the contract exposes?
+   - Does it teach the actual reread points and stop semantics the runtime requires?
+   - Does it expose constraints and tool affordances without hardcoding a single exact repair trajectory?
+2. `volatile_binding_discipline`
+   - Are volatile bindings only used for immediate observation-driven transitions?
+   - Is any moving observation value threaded through a long repair chain?
+3. `sync_rule_fidelity`
+   - Is every derived/runtime-visible behavior declared in `sync_rules` and mirrored in `sync_tools()`?
+   - Does init-time sync match post-tool sync?
+4. `branch_specific_consistency`
+   - Do policy, contract, sync logic, and stop-gates agree for each branch/family?
+   - Are billing-only tasks free of hardware-only prerequisites unless intentionally modeled?
+5. `terminal_end_state_discipline`
+   - Do sampled tasks end in explicit terminal profiles rather than intermediate repair states?
+   - Do shorter tasks come from easier starts rather than partial endings?
+6. `stop_gate_clarity`
+   - Are user-observable completion fields projected and checked?
+   - Does the policy tell the agent what to do for both `resolved=true` and `resolved=false`?
+7. `reward_eval_fit`
+   - Does `reward_basis` fit the task mechanics?
+   - If reacquisition is expected, is correctness driven by `ENV_ASSERTION`/stop-gate rather than `ACTION` alone?
+8. `task_realism_and_teachability`
+   - Do representative SAT plans require behaviors the policy actually teaches?
+   - Would an agent following only the policy plus tool definitions know how to complete the representative tasks?
+
+### Required output
+
+Output sections, in this order:
+
+1. `Findings`
+   - ordered by severity
+   - one finding per bullet
+   - each finding must name the rubric category
+   - each finding must cite exact file/function references
+   - each finding must include the smallest concrete fix
+2. `Open questions / assumptions`
+3. `Residual risks`
+
+### Minimum evidence per finding
+
+Every failing finding must include:
+
+1. the rubric category id
+2. one exact file reference
+3. one concrete symptom from `review_bundle.md`:
+   - representative SAT plan requirement
+   - repeated reacquisition pattern
+   - branch mismatch
+   - stop-gate mismatch
+4. one testable acceptance criterion for the fix
+
+### Hard rule
+
+Do not proceed to simulation or sign-off until all high-severity findings are fixed or
+explicitly waived.
+
+## Mode B: Post-Run Gap Review
+
+### Goal
+
+After a pilot run, generate a concise root-cause analysis that attributes failures to the
+right layer.
+
+### Sections
 
 1. `What worked`
 2. `What failed`
@@ -16,7 +125,7 @@ Sections:
 8. `Failure attribution` (agent vs user-sim vs task/setup)
 9. `Stop-gate adherence` (did user call checker, did stop condition match checker result)
 
-Quality bar:
+### Quality bar
 
 - no vague statements
 - each gap must reference one concrete file/function
@@ -28,7 +137,7 @@ Quality bar:
   - `tool_semantics_bug`
   - `unsat_or_bad_task_design`
 
-Minimum evidence per failed task:
+### Minimum evidence per failed task
 
 1. expected required actions from task spec
 2. observed tool-call sequence from trace

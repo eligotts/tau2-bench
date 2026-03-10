@@ -4,17 +4,24 @@ Usage:
   uv run python -m tau2.generators.depgraph.run_preflight \
     --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
     --task-specs data/tau2/domains/<domain>/task_specs.yaml \
+    [--policy data/tau2/domains/<domain>/policy.md] \
     [--stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml]
 """
 
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
-from tau2.generators.depgraph.loaders import load_graph_contract, load_task_specs
+from tau2.generators.depgraph.loaders import (
+    load_graph_contract,
+    load_sampling_request,
+    load_task_specs,
+)
 from tau2.generators.depgraph.preflight import run_task_preflight
 from tau2.generators.depgraph.runtime_checks import (
     check_contract_against_environment,
+    check_policy_against_contract,
     check_runtime_against_environment,
     check_start_bindings_visibility,
     check_stop_gate_runtime,
@@ -23,22 +30,59 @@ from tau2.generators.depgraph.runtime_checks import (
 from tau2.registry import registry
 
 
+def _resolve_policy_path(explicit_policy: str | None, graph_contract_path: str) -> Path | None:
+    if explicit_policy:
+        return Path(explicit_policy)
+    inferred = Path(graph_contract_path).resolve().parent / "policy.md"
+    if inferred.exists():
+        return inferred
+    return None
+
+
+def _resolve_sampling_request_path(
+    explicit_sampling_request: str | None,
+    graph_contract_path: str,
+) -> Path | None:
+    if explicit_sampling_request:
+        return Path(explicit_sampling_request)
+    inferred = Path(graph_contract_path).resolve().parent / "sampling_request.yaml"
+    if inferred.exists():
+        return inferred
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run depgraph preflight checks")
     parser.add_argument("--graph-contract", required=True)
     parser.add_argument("--task-specs", required=True)
-    parser.add_argument("--max-depth", type=int, default=20)
+    parser.add_argument("--max-depth", type=int, default=None)
     parser.add_argument("--domain", required=False)
     parser.add_argument(
         "--stop-gate-map",
         required=False,
         help="Optional stop-gate map YAML to validate strict user-stop wiring",
     )
+    parser.add_argument(
+        "--policy",
+        required=False,
+        help="Optional policy.md to validate against the contract-visible tool surface",
+    )
     parser.add_argument("--strict-tool-coverage", action="store_true")
+    parser.add_argument(
+        "--sampling-request",
+        required=False,
+        help="Optional sampling_request.yaml to validate terminal-profile alignment",
+    )
     args = parser.parse_args()
 
     contract = load_graph_contract(args.graph_contract)
     task_doc = load_task_specs(args.task_specs)
+    max_depth = args.max_depth
+    if max_depth is None:
+        max_depth = max(
+            20,
+            max((task.min_plan_length for task in task_doc.tasks), default=0),
+        )
 
     overall_ok = True
     if args.domain:
@@ -73,6 +117,24 @@ def main() -> int:
         else:
             print("[PASS] Stop-gate runtime alignment")
 
+    policy_path = _resolve_policy_path(args.policy, args.graph_contract)
+    if policy_path is None or not policy_path.exists():
+        if args.domain or args.policy:
+            overall_ok = False
+            print("[FAIL] Policy/contract alignment")
+            print(
+                "  - policy.md not found; pass --policy or place policy.md next to graph_contract.yaml"
+            )
+    else:
+        policy_issues = check_policy_against_contract(contract, policy_path.read_text())
+        if policy_issues:
+            overall_ok = False
+            print("[FAIL] Policy/contract alignment")
+            for issue in policy_issues:
+                print(f"  - {issue}")
+        else:
+            print("[PASS] Policy/contract alignment")
+
     binding_vis_issues = check_start_bindings_visibility(task_doc, contract)
     if binding_vis_issues:
         overall_ok = False
@@ -82,8 +144,33 @@ def main() -> int:
     else:
         print("[PASS] Start-binding visibility in ticket")
 
+    sampling_request_path = _resolve_sampling_request_path(
+        args.sampling_request, args.graph_contract
+    )
+    terminal_profiles = None
+    require_terminal_profile = False
+    if sampling_request_path is None or not sampling_request_path.exists():
+        if args.domain or args.sampling_request:
+            overall_ok = False
+            print("[FAIL] Terminal-profile alignment")
+            print(
+                "  - sampling_request.yaml not found; pass --sampling-request or place "
+                "sampling_request.yaml next to graph_contract.yaml"
+            )
+    else:
+        request = load_sampling_request(sampling_request_path)
+        terminal_profiles = {profile.profile_id: profile for profile in request.terminal_profiles}
+        require_terminal_profile = True
+        print("[PASS] Terminal-profile alignment config loaded")
+
     for task in task_doc.tasks:
-        report = run_task_preflight(contract, task, max_depth=args.max_depth)
+        report = run_task_preflight(
+            contract,
+            task,
+            max_depth=max_depth,
+            terminal_profiles=terminal_profiles,
+            require_terminal_profile=require_terminal_profile,
+        )
         runtime_field_issues = check_task_runtime_fields(task)
 
         status = "PASS" if (report.passed and not runtime_field_issues) else "FAIL"

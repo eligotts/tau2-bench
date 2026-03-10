@@ -17,6 +17,7 @@ Inputs to review before authoring:
 - `data/tau2/domains/<domain>/task_specs.sampled.yaml`
 - `data/tau2/domains/<domain>/task_context_bindings.yaml`
 - `data/tau2/domains/<domain>/graph_contract.yaml`
+- `data/tau2/domains/<domain>/sampling_request.yaml` (especially `terminal_profiles`)
 - `data/tau2/domains/<domain>/personas.yaml`
 - `data/tau2/domains/<domain>/runtime_defaults.yaml`
 - `data/tau2/domains/<domain>/stop_gate_map.yaml`
@@ -95,6 +96,8 @@ uv run python -m tau2.generators.depgraph.run_preflight \
   --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
   --task-specs data/tau2/domains/<domain>/task_specs.runtime.yaml \
   --domain <domain> \
+  --sampling-request data/tau2/domains/<domain>/sampling_request.yaml \
+  --policy data/tau2/domains/<domain>/policy.md \
   --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
   --strict-tool-coverage
 ```
@@ -106,6 +109,7 @@ uv run python -m tau2.generators.depgraph.run_compile \
   --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
   --task-specs data/tau2/domains/<domain>/task_specs.runtime.yaml \
   --domain <domain> \
+  --sampling-request data/tau2/domains/<domain>/sampling_request.yaml \
   --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
   --out data/tau2/domains/<domain>/tasks.depgraph.json
 ```
@@ -152,6 +156,8 @@ uv run python -m tau2.generators.depgraph.run_preflight \
   --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
   --task-specs data/tau2/domains/<domain>/task_specs.runtime.yaml \
   --domain <domain> \
+  --sampling-request data/tau2/domains/<domain>/sampling_request.yaml \
+  --policy data/tau2/domains/<domain>/policy.md \
   --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
   --strict-tool-coverage
 
@@ -159,6 +165,7 @@ uv run python -m tau2.generators.depgraph.run_compile \
   --graph-contract data/tau2/domains/<domain>/graph_contract.yaml \
   --task-specs data/tau2/domains/<domain>/task_specs.runtime.yaml \
   --domain <domain> \
+  --sampling-request data/tau2/domains/<domain>/sampling_request.yaml \
   --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
   --strict-tool-coverage \
   --out data/tau2/domains/<domain>/tasks.depgraph.json
@@ -186,7 +193,7 @@ Per-task authored (only 3 fields):
 Hard rules:
 
 1. Never edit sampled structural fields:
-   - `start_world`, `start_bindings`, `goal_world`, `goal_bindings`, `required_actions`, `required_precedence`.
+   - `start_world`, `start_bindings`, `goal_world`, `goal_bindings`, `terminal_profile_id`, `required_actions`, `required_precedence`.
 2. Never edit deterministic runtime fields listed above.
 3. Remove all `__AUTHOR_ME__` placeholders.
 4. Run both runtime author checks before stop-gate injection:
@@ -227,9 +234,18 @@ Bindings split into two categories with opposite authoring rules:
   `goal_binding_do_not_disclose` list for these values; the narrative check hard-fails if
   any appear in authored text.
 
+Important nuance: a goal binding may need to be reacquired multiple times if its `world_path`
+is volatile and the visible value changes during recovery. `goal_bindings` only says the task
+depends on discovering that binding type; it does not encode how many rereads the live run may
+need. Do not pre-disclose later-stage values just because the same binding source is used again.
+
 Why this matters: if a goal-binding value (e.g. fault code `BH-101`) is pre-disclosed in
 `reason_for_call` or `known_info`, the agent already has the information and never triggers
 the discovery tool call, causing the required action to fail evaluation.
+
+Also note: `required_actions` is a deduped structural coverage list. It may contain
+`check_station_screen` once even when a valid live run must reacquire the screen code three
+times. Treat `required_actions` as coverage context, not as the full literal runtime trace.
 
 Summary:
 
@@ -315,6 +331,12 @@ The narrative brief emits `goal_binding_do_not_disclose: [...]` listing the conc
 
 Why: if the user pre-discloses a goal-binding value, the agent already has the information
 and never triggers the discovery tool call, causing the required action to fail evaluation.
+
+## ACTION Reward Note
+
+If a domain uses volatile bindings that can invalidate and require reacquisition, `ACTION`
+should not be the sole correctness signal. Keep `ACTION` as optional weak coverage if you want
+visibility into tool usage, but drive pass/fail from `ENV_ASSERTION` and strict stop-gates.
 
 ## Stop and Completion Discipline
 

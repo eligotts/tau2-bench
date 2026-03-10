@@ -28,6 +28,7 @@ def main() -> int:
         task = sampled_task.task
         print(
             f"- {task.task_id}: plan_len={task.min_plan_length}, "
+            f"terminal={task.terminal_profile_id}, "
             f"goals_world={len(task.goal_world)}, goals_bindings={len(task.goal_bindings)}, "
             f"required_actions={len(task.required_actions)}"
         )
