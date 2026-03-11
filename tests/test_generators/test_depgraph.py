@@ -673,6 +673,69 @@ class TestDepgraphSampler(unittest.TestCase):
         self.assertEqual(sampled[0].task.min_plan_length, 2)
         self.assertEqual(sampled[0].task.terminal_profile_id, "resolved")
 
+    def test_sampler_canonicalizes_away_optional_extra_discovery(self):
+        contract = GraphContractSpec(
+            projection_fields=["agent.a", "agent.b", "agent.note_value"],
+            bindings=[
+                BindingSourceSpec(
+                    binding_id="note",
+                    source_tool="read_note",
+                    extraction_path="result.note",
+                    world_path="agent.note_value",
+                )
+            ],
+            actions=[
+                ActionContract(
+                    action_id="do_a",
+                    requestor="assistant",
+                    tool_name="tool_a",
+                    classification="causal",
+                    effects_world=[WorldEffectSpec(path="agent.a", set=True)],
+                ),
+                ActionContract(
+                    action_id="acquire_note",
+                    requestor="user",
+                    tool_name="read_note",
+                    classification="knowledge-only",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="note", acquired=False),
+                    ],
+                    effects_bindings=["note"],
+                ),
+                ActionContract(
+                    action_id="do_b",
+                    requestor="assistant",
+                    tool_name="tool_b",
+                    classification="causal",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.a", value=True),
+                    ],
+                    effects_world=[WorldEffectSpec(path="agent.b", set=True)],
+                ),
+            ],
+        )
+        request = SamplingRequestDoc(
+            max_tasks=5,
+            goal_world_path_prefixes=["agent."],
+            terminal_profiles=[_make_terminal_profile("resolved", "agent.b", True)],
+            seeds=[
+                SamplingSeedSpec(
+                    seed_id="seed",
+                    start_world=[WorldEffectSpec(path="agent.note_value", set="KNOWN")],
+                    allowed_terminal_profiles=["resolved"],
+                    min_depth=1,
+                    max_depth=3,
+                )
+            ],
+        )
+
+        sampled = sample_task_intents(contract, request)
+
+        self.assertEqual(len(sampled), 1)
+        self.assertEqual(sampled[0].task.required_actions, ["do_a", "do_b"])
+        self.assertEqual(sampled[0].task.goal_bindings, [])
+        self.assertEqual(sampled[0].task.min_plan_length, 2)
+
     def test_preflight_requires_terminal_profile_when_requested(self):
         contract = _make_simple_contract()
         task = TaskIntent(
@@ -1212,6 +1275,37 @@ class TestDepgraphSemantics(unittest.TestCase):
                         SyncEffectSpec(path="agent.charge_state", set="active"),
                     ],
                 )
+            ],
+        )
+        self.assertEqual(issues, [])
+        self.assertEqual(world["agent.charge_state"], "active")
+
+    def test_sync_rules_converge_when_default_rule_is_overridden_later_in_pass(self):
+        world, issues = materialize_world(
+            [
+                WorldEffectSpec(path="agent.branch", set="billing"),
+                WorldEffectSpec(path="user.test_charge_ran", set=True),
+            ],
+            sync_rules=[
+                SyncRuleSpec(
+                    rule_id="default_inactive",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.branch", value="billing"),
+                    ],
+                    effects_world=[
+                        SyncEffectSpec(path="agent.charge_state", set="inactive"),
+                    ],
+                ),
+                SyncRuleSpec(
+                    rule_id="activate_on_test",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.branch", value="billing"),
+                        WorldPredicateSpec(op="eq", path="user.test_charge_ran", value=True),
+                    ],
+                    effects_world=[
+                        SyncEffectSpec(path="agent.charge_state", set="active"),
+                    ],
+                ),
             ],
         )
         self.assertEqual(issues, [])

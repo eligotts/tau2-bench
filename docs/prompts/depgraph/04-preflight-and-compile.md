@@ -71,7 +71,9 @@ uv run python -m tau2.generators.depgraph.run_runtime_surface_check \
   --runtime data/tau2/domains/<domain>/task_specs.runtime.yaml
 ```
 
-Note: run this before `run_stop_gate_inject`; stop-gate injection intentionally mutates `initialization_actions`.
+Note: `run_runtime_surface_check` now tolerates the expected injected `user.set_stop_gate`
+in `initialization_actions`, so it can be run on either the pre-stop-gate authored file or
+the final post-injection runtime file. Other runtime mutations still fail.
 
 5. Validate authored narrative quality against briefs:
 
@@ -196,7 +198,7 @@ Hard rules:
    - `start_world`, `start_bindings`, `goal_world`, `goal_bindings`, `terminal_profile_id`, `required_actions`, `required_precedence`.
 2. Never edit deterministic runtime fields listed above.
 3. Remove all `__AUTHOR_ME__` placeholders.
-4. Run both runtime author checks before stop-gate injection:
+4. Run both runtime author checks on the authored runtime file:
    - `run_runtime_surface_check`
    - `run_runtime_narrative_check`
 
@@ -288,9 +290,10 @@ Writing constraints and voice:
    - Start with the problem description, then customer name (no entity slot IDs).
    - End with `"They will consider the issue resolved when..."` followed by a natural description of the end state.
    - The ticket gives the agent direction — it does not need to be mechanically precise because `check_resolution_status` handles the actual resolution gate. But it should be specific enough that the agent knows what kind of task this is (e.g. "get charging started" vs "update account settings").
+   - Keep the ticket on the surface of the case. It may include user-observable start-binding facts, but it must NOT enumerate latent blockers, internal branch/lane names, or predicted next-stage failures that the agent has not yet discovered.
    - Do NOT enumerate every state change as a checklist. The ticket should read like a support case note, not an answer sheet.
    - Good: `"The user reports their EV charging session failed to start with an error displayed on the station screen. Customer name: Jordan Lee. They will consider the issue resolved when charging begins successfully."`
-   - Bad: `"Customer Jordan Lee (account A1001) at station ST1001, session S1001, reports charging failure with fault code BH-101. Resolve when: fraud lock is off, billing hold is cleared, payment token is valid, backend link is up, station certificate is fresh, fault code reads NONE, charging profile is ready, diagnostics have run, and firmware is current."` (leaks entity IDs + goal-binding value + state checklist)
+   - Bad: `"Customer Jordan Lee (account A1001) at station ST1001, session S1001, reports charging failure with fault code BH-101. Likely blockers include stale session authorization, missing profile, pending vehicle authorization, and retry-path failure. Resolve when: fraud lock is off, billing hold is cleared, payment token is valid, backend link is up, station certificate is fresh, fault code reads NONE, charging profile is ready, diagnostics have run, and firmware is current."` (leaks entity IDs + latent blockers + goal-binding value + state checklist)
 
 Persona rule:
 
@@ -308,6 +311,7 @@ Narrative self-review (required):
 6. confirm start-binding values are present in both `known_info` and `ticket` when applicable — these are user-observable facts (error codes, plan names), not entity slot IDs,
 7. confirm goal-binding values (listed in `goal_binding_do_not_disclose`) do NOT appear anywhere in authored text — these must be discovered mid-conversation,
 8. confirm `known_info` and `ticket` use the customer name from `entity_context`, not a hardcoded or guessed name.
+9. confirm `ticket` and `known_info` do NOT name internal branch labels, lane labels, latent blocker lists, or predicted later-stage faults unless those are already directly user-observable start-binding facts.
 
 ## Start-Binding Visibility Rule
 

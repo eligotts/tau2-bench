@@ -79,6 +79,12 @@ Design for these properties:
    - Example: "run diagnostics" requires BOTH the fault code binding AND user having
      power-cycled the station. This is an early cross-lane convergence.
 
+4A. **Shared downstream gates.** Harder domains should not just add more independent
+   fixes. Multiple branches should fan into shared late-stage gates so branch repair,
+   customer readiness, and final verification all interact.
+   - Example: billing cleanup, secure-transport recovery, and firmware update all feed
+     a shared reprovision/auth/retry/test-charge funnel.
+
 5. **Non-uniform binding usage.** Not every tool should require the same binding. If every
    assistant action takes `fault_code`, the agent learns one pattern and repeats it.
    Design tools where some need binding A, some need binding B, and one critical tool
@@ -98,6 +104,7 @@ When sketching dependency patterns in this step, explicitly note:
 - Which bindings are volatile and where the policy must instruct the agent to reacquire them
 - How the policy will expose tool affordances and hard constraints without hardcoding a single end-to-end solution path
 - Which branch-specific terminal profiles the sampler should use, and why shorter tasks should come from easier starts rather than partial endings
+- Which late-stage shared gates every branch must still clear before terminal completion
 
 Output sections:
 

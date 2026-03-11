@@ -71,7 +71,7 @@ def apply_sync_rules(
         return world
 
     for _ in range(_MAX_SYNC_ITERATIONS):
-        changed = False
+        before_pass = world_state_key(world)
         for rule in sync_rules:
             if not all(predicate_holds(predicate, world) for predicate in rule.requires_world):
                 continue
@@ -81,8 +81,7 @@ def apply_sync_rules(
                     new_value = world.get(effect.from_path)
                 if world.get(effect.path) != new_value:
                     world[effect.path] = new_value
-                    changed = True
-        if not changed:
+        if world_state_key(world) == before_pass:
             return world
 
     raise ValueError(

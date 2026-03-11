@@ -14,10 +14,14 @@ projection_fields:
   - agent.accounts[active_account].fraud_lock_state
   - agent.stations[active_station].reachability_state
   - agent.stations[active_station].firmware_state
+  - agent.stations[active_station].clock_sync_state
   - agent.stations[active_station].diagnostics_state
   - agent.network_paths[active_station].backend_link_state
   - agent.network_paths[active_station].cert_state
+  - agent.network_paths[active_station].handshake_state
   - agent.sessions[active_session].profile_state
+  - agent.sessions[active_session].session_auth_state
+  - agent.sessions[active_session].vehicle_auth_state
   - agent.sessions[active_session].retry_state
   - agent.sessions[active_session].charge_state
   - agent.sessions[active_session].last_fault_code
@@ -28,6 +32,8 @@ projection_fields:
   - user.physical.cable_inspection_state
   - user.physical.vehicle_ready_state
   - user.physical.app_refresh_state
+  - user.physical.app_login_state
+  - user.physical.connector_latch_state
   - user.physical.test_charge_state
   - user.view.display_fault_code
   - user.view.display_charge_status
@@ -36,10 +42,14 @@ projection_fields:
   - user.view.display_fraud_lock_state
   - user.view.display_reachability_state
   - user.view.display_firmware_state
+  - user.view.display_clock_sync_state
   - user.view.display_profile_state
+  - user.view.display_session_auth_state
+  - user.view.display_vehicle_auth_state
   - user.view.display_retry_state
   - user.view.display_backend_link_state
   - user.view.display_cert_state
+  - user.view.display_handshake_state
   - user.view.display_diagnostics_state
   - user.view.display_error_class
 
@@ -161,6 +171,35 @@ actions:
     tool_arg_bindings: {}
     stutter_on_fail: true
 
+  - action_id: user_re_authenticate_charging_app
+    requestor: user
+    tool_name: re_authenticate_charging_app
+    classification: causal
+    requires_world: []
+    requires_bindings: []
+    effects_world:
+      - path: user.physical.app_login_state
+        set: active
+    effects_bindings: []
+    tool_arg_bindings: {}
+    stutter_on_fail: true
+
+  - action_id: user_confirm_connector_latch
+    requestor: user
+    tool_name: confirm_connector_latch
+    classification: causal
+    requires_world:
+      - op: eq
+        path: user.physical.vehicle_ready_state
+        value: ready
+    requires_bindings: []
+    effects_world:
+      - path: user.physical.connector_latch_state
+        set: confirmed
+    effects_bindings: []
+    tool_arg_bindings: {}
+    stutter_on_fail: true
+
   - action_id: assistant_run_backend_diagnostics
     requestor: assistant
     tool_name: run_backend_diagnostics
@@ -262,6 +301,31 @@ actions:
     tool_arg_bindings: {}
     stutter_on_fail: true
 
+  - action_id: assistant_sync_station_clock
+    requestor: assistant
+    tool_name: sync_station_clock
+    classification: causal
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].diagnostics_state
+        value: ran
+      - op: eq
+        path: agent.stations[active_station].reachability_state
+        value: reachable
+      - op: eq
+        path: agent.network_paths[active_station].backend_link_state
+        value: up
+      - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: skewed
+    requires_bindings: []
+    effects_world:
+      - path: agent.stations[active_station].clock_sync_state
+        set: synced
+    effects_bindings: []
+    tool_arg_bindings: {}
+    stutter_on_fail: true
+
   - action_id: assistant_rotate_station_certificate
     requestor: assistant
     tool_name: rotate_station_certificate
@@ -274,12 +338,40 @@ actions:
         path: agent.network_paths[active_station].backend_link_state
         value: up
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
         path: agent.network_paths[active_station].cert_state
         value: stale
     requires_bindings: []
     effects_world:
       - path: agent.network_paths[active_station].cert_state
         set: fresh
+    effects_bindings: []
+    tool_arg_bindings: {}
+    stutter_on_fail: true
+
+  - action_id: assistant_reestablish_station_handshake
+    requestor: assistant
+    tool_name: reestablish_station_handshake
+    classification: causal
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].diagnostics_state
+        value: ran
+      - op: eq
+        path: agent.network_paths[active_station].backend_link_state
+        value: up
+      - op: eq
+        path: agent.network_paths[active_station].cert_state
+        value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: broken
+    requires_bindings: []
+    effects_world:
+      - path: agent.network_paths[active_station].handshake_state
+        set: established
     effects_bindings: []
     tool_arg_bindings: {}
     stutter_on_fail: true
@@ -302,12 +394,61 @@ actions:
         path: agent.network_paths[active_station].cert_state
         value: fresh
       - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
         path: agent.stations[active_station].firmware_state
         value: outdated
     requires_bindings: []
     effects_world:
       - path: agent.stations[active_station].firmware_state
         set: current
+    effects_bindings: []
+    tool_arg_bindings: {}
+    stutter_on_fail: true
+
+  - action_id: assistant_refresh_session_authorization
+    requestor: assistant
+    tool_name: refresh_session_authorization
+    classification: causal
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].diagnostics_state
+        value: ran
+      - op: eq
+        path: agent.accounts[active_account].hold_status
+        value: cleared
+      - op: eq
+        path: agent.accounts[active_account].payment_token_status
+        value: valid
+      - op: eq
+        path: agent.accounts[active_account].fraud_lock_state
+        value: 'off'
+      - op: eq
+        path: agent.stations[active_station].firmware_state
+        value: current
+      - op: eq
+        path: agent.network_paths[active_station].backend_link_state
+        value: up
+      - op: eq
+        path: agent.network_paths[active_station].cert_state
+        value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
+        path: user.physical.app_login_state
+        value: active
+      - op: eq
+        path: agent.sessions[active_session].profile_state
+        value: not_ready
+      - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: stale
+    requires_bindings: []
+    effects_world:
+      - path: agent.sessions[active_session].session_auth_state
+        set: valid
     effects_bindings: []
     tool_arg_bindings: {}
     stutter_on_fail: true
@@ -338,6 +479,9 @@ actions:
       - op: eq
         path: user.physical.app_refresh_state
         value: refreshed
+      - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: valid
       - op: eq
         path: agent.sessions[active_session].profile_state
         value: not_ready
@@ -373,6 +517,9 @@ actions:
         path: agent.network_paths[active_station].cert_state
         value: fresh
       - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
         path: user.physical.cable_inspection_state
         value: checked_ok
       - op: eq
@@ -387,6 +534,9 @@ actions:
       - op: eq
         path: user.physical.app_refresh_state
         value: refreshed
+      - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: valid
       - op: eq
         path: agent.sessions[active_session].profile_state
         value: not_ready
@@ -431,6 +581,9 @@ actions:
         path: agent.network_paths[active_station].cert_state
         value: fresh
       - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
         path: agent.stations[active_station].firmware_state
         value: current
       - op: eq
@@ -449,6 +602,9 @@ actions:
         path: user.physical.app_refresh_state
         value: refreshed
       - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: valid
+      - op: eq
         path: agent.sessions[active_session].profile_state
         value: not_ready
       - op: eq
@@ -465,6 +621,37 @@ actions:
       fault_code: screen_fault_code
     stutter_on_fail: true
 
+  - action_id: assistant_refresh_vehicle_authorization
+    requestor: assistant
+    tool_name: refresh_vehicle_authorization
+    classification: causal
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].diagnostics_state
+        value: ran
+      - op: eq
+        path: agent.sessions[active_session].profile_state
+        value: ready
+      - op: eq
+        path: user.physical.vehicle_ready_state
+        value: ready
+      - op: eq
+        path: user.physical.app_refresh_state
+        value: refreshed
+      - op: eq
+        path: user.physical.connector_latch_state
+        value: confirmed
+      - op: eq
+        path: agent.sessions[active_session].vehicle_auth_state
+        value: pending
+    requires_bindings: []
+    effects_world:
+      - path: agent.sessions[active_session].vehicle_auth_state
+        set: validated
+    effects_bindings: []
+    tool_arg_bindings: {}
+    stutter_on_fail: true
+
   - action_id: assistant_reset_retry_path
     requestor: assistant
     tool_name: reset_retry_path
@@ -473,6 +660,9 @@ actions:
       - op: eq
         path: agent.sessions[active_session].profile_state
         value: ready
+      - op: eq
+        path: agent.sessions[active_session].vehicle_auth_state
+        value: validated
       - op: eq
         path: agent.sessions[active_session].retry_state
         value: not_ready
@@ -511,8 +701,26 @@ actions:
         path: agent.accounts[active_account].fraud_lock_state
         value: 'off'
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
+        path: agent.network_paths[active_station].backend_link_state
+        value: up
+      - op: eq
+        path: agent.network_paths[active_station].cert_state
+        value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: valid
+      - op: eq
         path: agent.sessions[active_session].profile_state
         value: ready
+      - op: eq
+        path: agent.sessions[active_session].vehicle_auth_state
+        value: validated
       - op: eq
         path: agent.sessions[active_session].retry_state
         value: ready
@@ -522,6 +730,9 @@ actions:
       - op: eq
         path: user.physical.app_refresh_state
         value: refreshed
+      - op: eq
+        path: user.physical.connector_latch_state
+        value: confirmed
     requires_bindings: []
     effects_world:
       - path: user.physical.test_charge_state
@@ -551,17 +762,29 @@ actions:
         path: agent.accounts[active_account].fraud_lock_state
         value: 'off'
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
         path: agent.network_paths[active_station].backend_link_state
         value: up
       - op: eq
         path: agent.network_paths[active_station].cert_state
         value: fresh
       - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
         path: agent.stations[active_station].firmware_state
         value: current
       - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: valid
+      - op: eq
         path: agent.sessions[active_session].profile_state
         value: ready
+      - op: eq
+        path: agent.sessions[active_session].vehicle_auth_state
+        value: validated
       - op: eq
         path: agent.sessions[active_session].retry_state
         value: ready
@@ -580,6 +803,9 @@ actions:
       - op: eq
         path: user.physical.app_refresh_state
         value: refreshed
+      - op: eq
+        path: user.physical.connector_latch_state
+        value: confirmed
     requires_bindings: []
     effects_world:
       - path: user.physical.test_charge_state
@@ -600,6 +826,24 @@ actions:
     stutter_on_fail: true
 
 sync_rules:
+  - rule_id: default_charge_billing_inactive
+    requires_world:
+      - op: eq
+        path: agent.sessions[active_session].error_class
+        value: billing
+    effects_world:
+      - path: agent.sessions[active_session].charge_state
+        set: inactive
+
+  - rule_id: default_charge_hardware_inactive
+    requires_world:
+      - op: neq
+        path: agent.sessions[active_session].error_class
+        value: billing
+    effects_world:
+      - path: agent.sessions[active_session].charge_state
+        set: inactive
+
   - rule_id: activate_charge_billing_on_test
     requires_world:
       - op: eq
@@ -627,14 +871,26 @@ sync_rules:
         path: agent.stations[active_station].firmware_state
         value: current
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
         path: agent.network_paths[active_station].backend_link_state
         value: up
       - op: eq
         path: agent.network_paths[active_station].cert_state
         value: fresh
       - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: valid
+      - op: eq
         path: agent.sessions[active_session].profile_state
         value: ready
+      - op: eq
+        path: agent.sessions[active_session].vehicle_auth_state
+        value: validated
       - op: eq
         path: agent.sessions[active_session].retry_state
         value: ready
@@ -644,6 +900,9 @@ sync_rules:
       - op: eq
         path: user.physical.app_refresh_state
         value: refreshed
+      - op: eq
+        path: user.physical.connector_latch_state
+        value: confirmed
     effects_world:
       - path: agent.sessions[active_session].charge_state
         set: active
@@ -675,14 +934,26 @@ sync_rules:
         path: agent.stations[active_station].firmware_state
         value: current
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
         path: agent.network_paths[active_station].backend_link_state
         value: up
       - op: eq
         path: agent.network_paths[active_station].cert_state
         value: fresh
       - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: valid
+      - op: eq
         path: agent.sessions[active_session].profile_state
         value: ready
+      - op: eq
+        path: agent.sessions[active_session].vehicle_auth_state
+        value: validated
       - op: eq
         path: agent.sessions[active_session].retry_state
         value: ready
@@ -701,6 +972,9 @@ sync_rules:
       - op: eq
         path: user.physical.app_refresh_state
         value: refreshed
+      - op: eq
+        path: user.physical.connector_latch_state
+        value: confirmed
     effects_world:
       - path: agent.sessions[active_session].charge_state
         set: active
@@ -726,6 +1000,21 @@ sync_rules:
       - path: agent.sessions[active_session].last_fault_code
         set: NET-410
 
+  - rule_id: fault_clock_skew
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].reachability_state
+        value: reachable
+      - op: eq
+        path: agent.network_paths[active_station].backend_link_state
+        value: up
+      - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: skewed
+    effects_world:
+      - path: agent.sessions[active_session].last_fault_code
+        set: TIME-405
+
   - rule_id: fault_cert_stale
     requires_world:
       - op: eq
@@ -735,11 +1024,35 @@ sync_rules:
         path: agent.network_paths[active_station].backend_link_state
         value: up
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
         path: agent.network_paths[active_station].cert_state
         value: stale
     effects_world:
       - path: agent.sessions[active_session].last_fault_code
         set: CERT-409
+
+  - rule_id: fault_handshake_broken
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].reachability_state
+        value: reachable
+      - op: eq
+        path: agent.network_paths[active_station].backend_link_state
+        value: up
+      - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
+        path: agent.network_paths[active_station].cert_state
+        value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: broken
+    effects_world:
+      - path: agent.sessions[active_session].last_fault_code
+        set: OCPP-411
 
   - rule_id: fault_hold_present
     requires_world:
@@ -750,8 +1063,14 @@ sync_rules:
         path: agent.network_paths[active_station].backend_link_state
         value: up
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
         path: agent.network_paths[active_station].cert_state
         value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
       - op: eq
         path: agent.accounts[active_account].hold_status
         value: present
@@ -768,8 +1087,14 @@ sync_rules:
         path: agent.network_paths[active_station].backend_link_state
         value: up
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
         path: agent.network_paths[active_station].cert_state
         value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
       - op: eq
         path: agent.accounts[active_account].hold_status
         value: cleared
@@ -789,8 +1114,14 @@ sync_rules:
         path: agent.network_paths[active_station].backend_link_state
         value: up
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
         path: agent.network_paths[active_station].cert_state
         value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
       - op: eq
         path: agent.accounts[active_account].hold_status
         value: cleared
@@ -813,8 +1144,14 @@ sync_rules:
         path: agent.network_paths[active_station].backend_link_state
         value: up
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
         path: agent.network_paths[active_station].cert_state
         value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
       - op: eq
         path: agent.accounts[active_account].hold_status
         value: cleared
@@ -831,7 +1168,7 @@ sync_rules:
       - path: agent.sessions[active_session].last_fault_code
         set: FW-410
 
-  - rule_id: fault_profile_not_ready
+  - rule_id: fault_session_auth_stale
     requires_world:
       - op: eq
         path: agent.stations[active_station].reachability_state
@@ -840,8 +1177,14 @@ sync_rules:
         path: agent.network_paths[active_station].backend_link_state
         value: up
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
         path: agent.network_paths[active_station].cert_state
         value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
       - op: eq
         path: agent.accounts[active_account].hold_status
         value: cleared
@@ -855,11 +1198,92 @@ sync_rules:
         path: agent.stations[active_station].firmware_state
         value: current
       - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: stale
+    effects_world:
+      - path: agent.sessions[active_session].last_fault_code
+        set: AUTH-220
+
+  - rule_id: fault_profile_not_ready
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].reachability_state
+        value: reachable
+      - op: eq
+        path: agent.network_paths[active_station].backend_link_state
+        value: up
+      - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
+        path: agent.network_paths[active_station].cert_state
+        value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
+        path: agent.accounts[active_account].hold_status
+        value: cleared
+      - op: eq
+        path: agent.accounts[active_account].payment_token_status
+        value: valid
+      - op: eq
+        path: agent.accounts[active_account].fraud_lock_state
+        value: 'off'
+      - op: eq
+        path: agent.stations[active_station].firmware_state
+        value: current
+      - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: valid
+      - op: eq
         path: agent.sessions[active_session].profile_state
         value: not_ready
     effects_world:
       - path: agent.sessions[active_session].last_fault_code
         set: PROFILE-201
+
+  - rule_id: fault_vehicle_auth_pending
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].reachability_state
+        value: reachable
+      - op: eq
+        path: agent.network_paths[active_station].backend_link_state
+        value: up
+      - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
+        path: agent.network_paths[active_station].cert_state
+        value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
+        path: agent.accounts[active_account].hold_status
+        value: cleared
+      - op: eq
+        path: agent.accounts[active_account].payment_token_status
+        value: valid
+      - op: eq
+        path: agent.accounts[active_account].fraud_lock_state
+        value: 'off'
+      - op: eq
+        path: agent.stations[active_station].firmware_state
+        value: current
+      - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: valid
+      - op: eq
+        path: agent.sessions[active_session].profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].vehicle_auth_state
+        value: pending
+    effects_world:
+      - path: agent.sessions[active_session].last_fault_code
+        set: VEH-230
 
   - rule_id: fault_retry_not_ready
     requires_world:
@@ -870,8 +1294,14 @@ sync_rules:
         path: agent.network_paths[active_station].backend_link_state
         value: up
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
         path: agent.network_paths[active_station].cert_state
         value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
       - op: eq
         path: agent.accounts[active_account].hold_status
         value: cleared
@@ -885,8 +1315,14 @@ sync_rules:
         path: agent.stations[active_station].firmware_state
         value: current
       - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: valid
+      - op: eq
         path: agent.sessions[active_session].profile_state
         value: ready
+      - op: eq
+        path: agent.sessions[active_session].vehicle_auth_state
+        value: validated
       - op: eq
         path: agent.sessions[active_session].retry_state
         value: not_ready
@@ -903,8 +1339,14 @@ sync_rules:
         path: agent.network_paths[active_station].backend_link_state
         value: up
       - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
         path: agent.network_paths[active_station].cert_state
         value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
       - op: eq
         path: agent.accounts[active_account].hold_status
         value: cleared
@@ -918,8 +1360,14 @@ sync_rules:
         path: agent.stations[active_station].firmware_state
         value: current
       - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: valid
+      - op: eq
         path: agent.sessions[active_session].profile_state
         value: ready
+      - op: eq
+        path: agent.sessions[active_session].vehicle_auth_state
+        value: validated
       - op: eq
         path: agent.sessions[active_session].retry_state
         value: ready
@@ -969,11 +1417,29 @@ sync_rules:
       - path: user.view.display_firmware_state
         from_path: agent.stations[active_station].firmware_state
 
+  - rule_id: project_display_clock_sync_state
+    requires_world: []
+    effects_world:
+      - path: user.view.display_clock_sync_state
+        from_path: agent.stations[active_station].clock_sync_state
+
   - rule_id: project_display_profile_state
     requires_world: []
     effects_world:
       - path: user.view.display_profile_state
         from_path: agent.sessions[active_session].profile_state
+
+  - rule_id: project_display_session_auth_state
+    requires_world: []
+    effects_world:
+      - path: user.view.display_session_auth_state
+        from_path: agent.sessions[active_session].session_auth_state
+
+  - rule_id: project_display_vehicle_auth_state
+    requires_world: []
+    effects_world:
+      - path: user.view.display_vehicle_auth_state
+        from_path: agent.sessions[active_session].vehicle_auth_state
 
   - rule_id: project_display_retry_state
     requires_world: []
@@ -992,6 +1458,12 @@ sync_rules:
     effects_world:
       - path: user.view.display_cert_state
         from_path: agent.network_paths[active_station].cert_state
+
+  - rule_id: project_display_handshake_state
+    requires_world: []
+    effects_world:
+      - path: user.view.display_handshake_state
+        from_path: agent.network_paths[active_station].handshake_state
 
   - rule_id: project_display_diagnostics_state
     requires_world: []

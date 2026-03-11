@@ -64,12 +64,19 @@ Requirements:
    - unconditional projections copy from one projected path to another
    - conditional sync logic is expressed as explicit prereqs + literal effects
    - no hidden sync-only cascades that are absent from the contract
-4. `sync_tools()` must project every stop-gate observable field needed by `check_resolution_status`.
-5. Implement `get_environment(...)` that loads DB/user DB + policy and returns environment.
-6. Implement `get_tasks(...)` and optional task split loader using current task file.
-7. Keep loader compatible with tau2 `Task` model.
-8. Keep `sync_tools()` idempotent: repeated calls without intervening tool actions should not create new deltas.
-9. `sync_tools()` must produce the same derived state when run against the initial start world as it does after later tool calls; do not rely on post-init-only fixes.
+   - if runtime recomputes a sync-owned field in both positive and fallback directions
+     (for example `inactive` by default, `active` when prereqs hold), the contract must
+     declare both outcomes explicitly; do not hide the fallback in a runtime-only `else`
+4. Default/fallback sync rules are allowed when a later rule in the same pass overrides them:
+   - write the fallback rule first
+   - write the stricter activating rule later
+   - make sure the end-of-pass world is stable and idempotent
+5. `sync_tools()` must project every stop-gate observable field needed by `check_resolution_status`.
+6. Implement `get_environment(...)` that loads DB/user DB + policy and returns environment.
+7. Implement `get_tasks(...)` and optional task split loader using current task file.
+8. Keep loader compatible with tau2 `Task` model.
+9. Keep `sync_tools()` idempotent: repeated calls without intervening tool actions should not create new deltas.
+10. `sync_tools()` must produce the same derived state when run against the initial start world as it does after later tool calls; do not rely on post-init-only fixes.
 
 Validation:
 

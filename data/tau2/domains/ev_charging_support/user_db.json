@@ -13,6 +13,8 @@
     "cable_inspection_state": "not_checked",
     "vehicle_ready_state": "not_ready",
     "app_refresh_state": "stale",
+    "app_login_state": "active",
+    "connector_latch_state": "unconfirmed",
     "test_charge_state": "not_run"
   },
   "view": {
@@ -25,10 +27,14 @@
     "display_fraud_lock_state": null,
     "display_reachability_state": null,
     "display_firmware_state": null,
+    "display_clock_sync_state": null,
     "display_profile_state": null,
+    "display_session_auth_state": null,
+    "display_vehicle_auth_state": null,
     "display_retry_state": null,
     "display_backend_link_state": null,
     "display_cert_state": null,
+    "display_handshake_state": null,
     "display_diagnostics_state": null
   },
   "stop_gate": {

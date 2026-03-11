@@ -28,6 +28,7 @@ Use this checklist in addition to step-specific prompts.
    - `runtime.ticket`
 5. Runtime author-surface check passes (`run_runtime_surface_check`).
 6. Runtime narrative check passes (`run_runtime_narrative_check`).
+7. Agent-visible runtime text does not leak latent blocker inventories, internal branch/lane names, or predicted later-stage failures beyond user-observable start-binding facts.
 
 ## 3. Stop-Gate Discipline
 
@@ -57,6 +58,7 @@ Use this checklist in addition to step-specific prompts.
 4. `sync_tools()` mirrors contract causal bridges and projects stop-gate observable fields.
 5. `sync_tools()` behavior is fully declared in `sync_rules`; there is no extra hidden sync logic.
 6. Any goal/world path produced only through sync is represented in `projection_fields` and stop-gate mappings if user-observable.
+7. If runtime recomputes a sync-owned field in both fallback and activated states, the contract declares both states explicitly in `sync_rules`; there is no runtime-only `else` branch for that field.
 
 ## 5. Quality and Diversity
 
@@ -67,6 +69,9 @@ Use this checklist in addition to step-specific prompts.
 5. Runtime persona assignments come from the pool and are reasonably distributed across tasks.
 6. Sampling seed depth budgets are large enough for any required binding re-acquisition after invalidation.
 7. If repeated binding reacquisition is expected, correctness is driven by `ENV_ASSERTION`/stop-gate, not `ACTION` alone.
+8. Sampled tasks are canonical minimal terminal plans, not variants that differ only by optional extra reads.
+9. Cheap seed additions do not mostly come from post-repair checkpoint starts. Prefer early broken states,
+   richer branch combinations, or `start_bindings` variations over starts with sync stages already advanced.
 
 ## 6. Fail-Closed Commands
 

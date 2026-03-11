@@ -31,11 +31,11 @@ Use this bundle with `docs/prompts/depgraph/05-gap-review.md` in authoring-audit
 
 ## Contract Snapshot
 
-- projection fields: 33
+- projection fields: 43
 - bindings: 2
-- sync rules: 25
-- assistant actions: 11
-- user actions: 10
+- sync rules: 35
+- assistant actions: 15
+- user actions: 12
 - terminal profiles in sampling_request: ['billing_resolved', 'connectivity_resolved', 'full_system_resolved']
 
 ### Bindings
@@ -47,181 +47,363 @@ Use this bundle with `docs/prompts/depgraph/05-gap-review.md` in authoring-audit
 
 ## Task Set Snapshot
 
-- tasks: 12
-- families: 12
-- tasks with `start_bindings`: 1
-- tasks with `goal_bindings`: 12
-- task counts by `terminal_profile_id`: {'billing_resolved': 7, 'connectivity_resolved': 4, 'full_system_resolved': 1}
-- `min_plan_length` stats: min=7, avg=12.42, max=19
-- `required_actions` stats: min=6, avg=10.58, max=17
+- tasks: 26
+- families: 26
+- tasks with `start_bindings`: 3
+- tasks with `goal_bindings`: 23
+- task counts by `terminal_profile_id`: {'billing_resolved': 8, 'connectivity_resolved': 10, 'full_system_resolved': 8}
+- `min_plan_length` stats: min=15, avg=18.54, max=25
+- `required_actions` stats: min=13, avg=16.54, max=23
 
 ### Family Counts
-- `billing_fraud_only`: 1
-- `billing_full`: 1
-- `billing_hold_and_fraud`: 1
-- `billing_hold_only`: 1
+- `billing_auth_stack_full`: 1
+- `billing_fraud_and_auth`: 1
+- `billing_hold_and_auth`: 1
+- `billing_hold_and_fraud_auth`: 1
+- `billing_hold_and_payment_auth`: 1
 - `billing_partial_knowledge`: 1
-- `billing_payment_only`: 1
-- `billing_ready_to_reprovision`: 1
+- `billing_payment_and_auth`: 1
+- `billing_payment_and_fraud_auth`: 1
+- `connectivity_cert_clock_auth`: 1
+- `connectivity_cert_handshake_auth`: 1
 - `connectivity_cert_only`: 1
-- `connectivity_full`: 1
+- `connectivity_clock_handshake_auth`: 1
+- `connectivity_clock_only`: 1
+- `connectivity_handshake_only`: 1
+- `connectivity_link_handshake_auth`: 1
 - `connectivity_link_only`: 1
-- `connectivity_physical_partial`: 1
-- `full_system`: 1
+- `connectivity_partial_knowledge`: 1
+- `connectivity_secure_transport_full`: 1
+- `full_system_all_lanes`: 1
+- `full_system_billing_firmware`: 1
+- `full_system_billing_firmware_fraud`: 1
+- `full_system_billing_transport`: 1
+- `full_system_cert_clock_firmware`: 1
+- `full_system_link_handshake_firmware`: 1
+- `full_system_partial_knowledge`: 1
+- `full_system_transport_firmware`: 1
 
 ### Hardest Tasks
-- `full_system_d19_028`: min_plan_length=19, required_actions=17
-- `connectivity_full_d15_024`: min_plan_length=15, required_actions=13
-- `connectivity_cert_only_d14_026`: min_plan_length=14, required_actions=12
-- `connectivity_link_only_d14_025`: min_plan_length=14, required_actions=12
-- `billing_full_d13_000`: min_plan_length=13, required_actions=11
+- `full_system_all_lanes_d25_018`: min_plan_length=25, required_actions=23
+- `full_system_billing_transport_d23_020`: min_plan_length=23, required_actions=21
+- `full_system_transport_firmware_d22_019`: min_plan_length=22, required_actions=20
+- `connectivity_secure_transport_full_d21_008`: min_plan_length=21, required_actions=19
+- `full_system_partial_knowledge_d21_025`: min_plan_length=21, required_actions=19
 
 ## Representative Tasks By Family
 
 These tasks include SAT plans so the reviewer can compare what the policy teaches against what the solver/runtime actually requires.
 
-### `billing_fraud_only`
-#### `billing_fraud_only_d11_010`
-- `min_plan_length`: 11
+### `billing_auth_stack_full`
+#### `billing_auth_stack_full_d17_000`
+- `min_plan_length`: 17
 - `start_bindings`: []
 - `goal_bindings`: ['app_error_class']
 - `terminal_profile_id`: 'billing_resolved'
-- `required_actions` (9): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'assistant_run_backend_diagnostics', 'assistant_release_fraud_lock', 'assistant_reprovision_billing', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
-- `required_precedence` count: 10
+- `required_actions` (15): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_refresh_payment_token', 'assistant_release_fraud_lock', 'assistant_refresh_session_authorization', 'assistant_reprovision_billing', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
+- `required_precedence` count: 16
 - `SAT_full`: True
-- `SAT_full plan` (11): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> assistant_run_backend_diagnostics -> assistant_release_fraud_lock -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
+- `SAT_full plan` (17): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_refresh_payment_token -> assistant_release_fraud_lock -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
 - repeated plan actions: acquire_screen_fault_code_from_user x3
 
-### `billing_full`
-#### `billing_full_d13_000`
-- `min_plan_length`: 13
-- `start_bindings`: []
-- `goal_bindings`: ['app_error_class']
-- `terminal_profile_id`: 'billing_resolved'
-- `required_actions` (11): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_refresh_payment_token', 'assistant_release_fraud_lock', 'assistant_reprovision_billing', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
-- `required_precedence` count: 12
-- `SAT_full`: True
-- `SAT_full plan` (13): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_refresh_payment_token -> assistant_release_fraud_lock -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
-- repeated plan actions: acquire_screen_fault_code_from_user x3
-
-### `billing_hold_and_fraud`
-#### `billing_hold_and_fraud_d12_013`
-- `min_plan_length`: 12
-- `start_bindings`: []
-- `goal_bindings`: ['app_error_class']
-- `terminal_profile_id`: 'billing_resolved'
-- `required_actions` (10): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_release_fraud_lock', 'assistant_reprovision_billing', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
-- `required_precedence` count: 11
-- `SAT_full`: True
-- `SAT_full plan` (12): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_release_fraud_lock -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
-- repeated plan actions: acquire_screen_fault_code_from_user x3
-
-### `billing_hold_only`
-#### `billing_hold_only_d11_004`
-- `min_plan_length`: 11
-- `start_bindings`: []
-- `goal_bindings`: ['app_error_class']
-- `terminal_profile_id`: 'billing_resolved'
-- `required_actions` (9): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_reprovision_billing', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
-- `required_precedence` count: 10
-- `SAT_full`: True
-- `SAT_full plan` (11): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
-- repeated plan actions: acquire_screen_fault_code_from_user x3
-
-### `billing_partial_knowledge`
-#### `billing_partial_knowledge_d11_020`
-- `min_plan_length`: 11
-- `start_bindings`: ['screen_fault_code']
-- `goal_bindings`: ['app_error_class']
-- `terminal_profile_id`: 'billing_resolved'
-- `required_actions` (10): ['acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_refresh_payment_token', 'acquire_screen_fault_code_from_user', 'assistant_reprovision_billing', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
-- `required_precedence` count: 10
-- `SAT_full`: True
-- `SAT_full plan` (11): acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_refresh_payment_token -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
-- repeated plan actions: acquire_screen_fault_code_from_user x2
-
-### `billing_payment_only`
-#### `billing_payment_only_d11_007`
-- `min_plan_length`: 11
-- `start_bindings`: []
-- `goal_bindings`: ['app_error_class']
-- `terminal_profile_id`: 'billing_resolved'
-- `required_actions` (9): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'assistant_run_backend_diagnostics', 'assistant_refresh_payment_token', 'assistant_reprovision_billing', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
-- `required_precedence` count: 10
-- `SAT_full`: True
-- `SAT_full plan` (11): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> assistant_run_backend_diagnostics -> assistant_refresh_payment_token -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
-- repeated plan actions: acquire_screen_fault_code_from_user x3
-
-### `billing_ready_to_reprovision`
-#### `billing_ready_to_reprovision_d7_016`
-- `min_plan_length`: 7
-- `start_bindings`: []
-- `goal_bindings`: ['app_error_class']
-- `terminal_profile_id`: 'billing_resolved'
-- `required_actions` (6): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'assistant_run_backend_diagnostics', 'assistant_reprovision_billing', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
-- `required_precedence` count: 6
-- `SAT_full`: True
-- `SAT_full plan` (7): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> assistant_run_backend_diagnostics -> assistant_reprovision_billing -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
-- repeated plan actions: acquire_screen_fault_code_from_user x2
-
-### `connectivity_cert_only`
-#### `connectivity_cert_only_d14_026`
-- `min_plan_length`: 14
-- `start_bindings`: []
-- `goal_bindings`: ['app_error_class']
-- `terminal_profile_id`: 'connectivity_resolved'
-- `required_actions` (12): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'assistant_run_backend_diagnostics', 'assistant_rotate_station_certificate', 'assistant_reprovision_connectivity', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
-- `required_precedence` count: 13
-- `SAT_full`: True
-- `SAT_full plan` (14): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> assistant_run_backend_diagnostics -> assistant_rotate_station_certificate -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
-- repeated plan actions: acquire_screen_fault_code_from_user x3
-
-### `connectivity_full`
-#### `connectivity_full_d15_024`
+### `billing_fraud_and_auth`
+#### `billing_fraud_and_auth_d15_003`
 - `min_plan_length`: 15
 - `start_bindings`: []
 - `goal_bindings`: ['app_error_class']
-- `terminal_profile_id`: 'connectivity_resolved'
-- `required_actions` (13): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'assistant_run_backend_diagnostics', 'assistant_restore_backend_link', 'assistant_rotate_station_certificate', 'assistant_reprovision_connectivity', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `terminal_profile_id`: 'billing_resolved'
+- `required_actions` (13): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_release_fraud_lock', 'assistant_refresh_session_authorization', 'assistant_reprovision_billing', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
 - `required_precedence` count: 14
 - `SAT_full`: True
-- `SAT_full plan` (15): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> assistant_run_backend_diagnostics -> assistant_restore_backend_link -> assistant_rotate_station_certificate -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- `SAT_full plan` (15): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_release_fraud_lock -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
 - repeated plan actions: acquire_screen_fault_code_from_user x3
 
-### `connectivity_link_only`
-#### `connectivity_link_only_d14_025`
-- `min_plan_length`: 14
+### `billing_hold_and_auth`
+#### `billing_hold_and_auth_d15_001`
+- `min_plan_length`: 15
 - `start_bindings`: []
 - `goal_bindings`: ['app_error_class']
-- `terminal_profile_id`: 'connectivity_resolved'
-- `required_actions` (12): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'assistant_run_backend_diagnostics', 'assistant_restore_backend_link', 'assistant_reprovision_connectivity', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
-- `required_precedence` count: 13
+- `terminal_profile_id`: 'billing_resolved'
+- `required_actions` (13): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_refresh_session_authorization', 'assistant_reprovision_billing', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
+- `required_precedence` count: 14
 - `SAT_full`: True
-- `SAT_full plan` (14): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> assistant_run_backend_diagnostics -> assistant_restore_backend_link -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- `SAT_full plan` (15): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
 - repeated plan actions: acquire_screen_fault_code_from_user x3
 
-### `connectivity_physical_partial`
-#### `connectivity_physical_partial_d11_027`
-- `min_plan_length`: 11
+### `billing_hold_and_fraud_auth`
+#### `billing_hold_and_fraud_auth_d16_005`
+- `min_plan_length`: 16
 - `start_bindings`: []
 - `goal_bindings`: ['app_error_class']
-- `terminal_profile_id`: 'connectivity_resolved'
-- `required_actions` (9): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_power_cycle_station', 'assistant_run_backend_diagnostics', 'assistant_restore_backend_link', 'assistant_rotate_station_certificate', 'assistant_reprovision_connectivity', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
-- `required_precedence` count: 10
+- `terminal_profile_id`: 'billing_resolved'
+- `required_actions` (14): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_release_fraud_lock', 'assistant_refresh_session_authorization', 'assistant_reprovision_billing', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
+- `required_precedence` count: 15
 - `SAT_full`: True
-- `SAT_full plan` (11): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_power_cycle_station -> assistant_run_backend_diagnostics -> assistant_restore_backend_link -> assistant_rotate_station_certificate -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- `SAT_full plan` (16): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_release_fraud_lock -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
 - repeated plan actions: acquire_screen_fault_code_from_user x3
 
-### `full_system`
-#### `full_system_d19_028`
+### `billing_hold_and_payment_auth`
+#### `billing_hold_and_payment_auth_d16_004`
+- `min_plan_length`: 16
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'billing_resolved'
+- `required_actions` (14): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_refresh_payment_token', 'assistant_refresh_session_authorization', 'assistant_reprovision_billing', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
+- `required_precedence` count: 15
+- `SAT_full`: True
+- `SAT_full plan` (16): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_refresh_payment_token -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `billing_partial_knowledge`
+#### `billing_partial_knowledge_d15_007`
+- `min_plan_length`: 15
+- `start_bindings`: ['app_error_class']
+- `goal_bindings`: []
+- `terminal_profile_id`: 'billing_resolved'
+- `required_actions` (13): ['acquire_screen_fault_code_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_release_fraud_lock', 'assistant_refresh_session_authorization', 'assistant_reprovision_billing', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
+- `required_precedence` count: 14
+- `SAT_full`: True
+- `SAT_full plan` (15): acquire_screen_fault_code_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_release_fraud_lock -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `billing_payment_and_auth`
+#### `billing_payment_and_auth_d15_002`
+- `min_plan_length`: 15
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'billing_resolved'
+- `required_actions` (13): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_refresh_payment_token', 'assistant_refresh_session_authorization', 'assistant_reprovision_billing', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
+- `required_precedence` count: 14
+- `SAT_full`: True
+- `SAT_full plan` (15): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_refresh_payment_token -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `billing_payment_and_fraud_auth`
+#### `billing_payment_and_fraud_auth_d16_006`
+- `min_plan_length`: 16
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'billing_resolved'
+- `required_actions` (14): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_refresh_payment_token', 'assistant_release_fraud_lock', 'assistant_refresh_session_authorization', 'assistant_reprovision_billing', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_billing']
+- `required_precedence` count: 15
+- `SAT_full`: True
+- `SAT_full plan` (16): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_refresh_payment_token -> assistant_release_fraud_lock -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_billing -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_billing
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `connectivity_cert_clock_auth`
+#### `connectivity_cert_clock_auth_d19_015`
 - `min_plan_length`: 19
 - `start_bindings`: []
 - `goal_bindings`: ['app_error_class']
-- `terminal_profile_id`: 'full_system_resolved'
-- `required_actions` (17): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_refresh_payment_token', 'assistant_release_fraud_lock', 'assistant_restore_backend_link', 'assistant_rotate_station_certificate', 'assistant_update_station_firmware', 'assistant_reprovision_full_system', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `terminal_profile_id`: 'connectivity_resolved'
+- `required_actions` (17): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_sync_station_clock', 'assistant_rotate_station_certificate', 'assistant_refresh_session_authorization', 'assistant_reprovision_connectivity', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
 - `required_precedence` count: 18
 - `SAT_full`: True
-- `SAT_full plan` (19): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_refresh_payment_token -> assistant_release_fraud_lock -> assistant_restore_backend_link -> assistant_rotate_station_certificate -> assistant_update_station_firmware -> acquire_screen_fault_code_from_user -> assistant_reprovision_full_system -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- `SAT_full plan` (19): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_sync_station_clock -> assistant_rotate_station_certificate -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `connectivity_cert_handshake_auth`
+#### `connectivity_cert_handshake_auth_d19_014`
+- `min_plan_length`: 19
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'connectivity_resolved'
+- `required_actions` (17): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_rotate_station_certificate', 'assistant_reestablish_station_handshake', 'assistant_refresh_session_authorization', 'assistant_reprovision_connectivity', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 18
+- `SAT_full`: True
+- `SAT_full plan` (19): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_rotate_station_certificate -> assistant_reestablish_station_handshake -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `connectivity_cert_only`
+#### `connectivity_cert_only_d18_011`
+- `min_plan_length`: 18
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'connectivity_resolved'
+- `required_actions` (16): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_rotate_station_certificate', 'assistant_refresh_session_authorization', 'assistant_reprovision_connectivity', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 17
+- `SAT_full`: True
+- `SAT_full plan` (18): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_rotate_station_certificate -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `connectivity_clock_handshake_auth`
+#### `connectivity_clock_handshake_auth_d19_016`
+- `min_plan_length`: 19
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'connectivity_resolved'
+- `required_actions` (17): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_sync_station_clock', 'assistant_reestablish_station_handshake', 'assistant_refresh_session_authorization', 'assistant_reprovision_connectivity', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 18
+- `SAT_full`: True
+- `SAT_full plan` (19): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_sync_station_clock -> assistant_reestablish_station_handshake -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `connectivity_clock_only`
+#### `connectivity_clock_only_d18_010`
+- `min_plan_length`: 18
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'connectivity_resolved'
+- `required_actions` (16): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_sync_station_clock', 'assistant_refresh_session_authorization', 'assistant_reprovision_connectivity', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 17
+- `SAT_full`: True
+- `SAT_full plan` (18): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_sync_station_clock -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `connectivity_handshake_only`
+#### `connectivity_handshake_only_d18_012`
+- `min_plan_length`: 18
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'connectivity_resolved'
+- `required_actions` (16): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_reestablish_station_handshake', 'assistant_refresh_session_authorization', 'assistant_reprovision_connectivity', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 17
+- `SAT_full`: True
+- `SAT_full plan` (18): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_reestablish_station_handshake -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `connectivity_link_handshake_auth`
+#### `connectivity_link_handshake_auth_d19_013`
+- `min_plan_length`: 19
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'connectivity_resolved'
+- `required_actions` (17): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_restore_backend_link', 'assistant_reestablish_station_handshake', 'assistant_refresh_session_authorization', 'assistant_reprovision_connectivity', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 18
+- `SAT_full`: True
+- `SAT_full plan` (19): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_restore_backend_link -> assistant_reestablish_station_handshake -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `connectivity_link_only`
+#### `connectivity_link_only_d18_009`
+- `min_plan_length`: 18
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'connectivity_resolved'
+- `required_actions` (16): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_restore_backend_link', 'assistant_refresh_session_authorization', 'assistant_reprovision_connectivity', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 17
+- `SAT_full`: True
+- `SAT_full plan` (18): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_restore_backend_link -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `connectivity_partial_knowledge`
+#### `connectivity_partial_knowledge_d17_017`
+- `min_plan_length`: 17
+- `start_bindings`: ['app_error_class']
+- `goal_bindings`: []
+- `terminal_profile_id`: 'connectivity_resolved'
+- `required_actions` (15): ['acquire_screen_fault_code_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_restore_backend_link', 'assistant_refresh_session_authorization', 'assistant_reprovision_connectivity', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 16
+- `SAT_full`: True
+- `SAT_full plan` (17): acquire_screen_fault_code_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_restore_backend_link -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `connectivity_secure_transport_full`
+#### `connectivity_secure_transport_full_d21_008`
+- `min_plan_length`: 21
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'connectivity_resolved'
+- `required_actions` (19): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_restore_backend_link', 'assistant_sync_station_clock', 'assistant_rotate_station_certificate', 'assistant_reestablish_station_handshake', 'assistant_refresh_session_authorization', 'assistant_reprovision_connectivity', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 20
+- `SAT_full`: True
+- `SAT_full plan` (21): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_restore_backend_link -> assistant_sync_station_clock -> assistant_rotate_station_certificate -> assistant_reestablish_station_handshake -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_connectivity -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `full_system_all_lanes`
+#### `full_system_all_lanes_d25_018`
+- `min_plan_length`: 25
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'full_system_resolved'
+- `required_actions` (23): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_refresh_payment_token', 'assistant_release_fraud_lock', 'assistant_restore_backend_link', 'assistant_sync_station_clock', 'assistant_rotate_station_certificate', 'assistant_reestablish_station_handshake', 'assistant_update_station_firmware', 'assistant_refresh_session_authorization', 'assistant_reprovision_full_system', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 24
+- `SAT_full`: True
+- `SAT_full plan` (25): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_refresh_payment_token -> assistant_release_fraud_lock -> assistant_restore_backend_link -> assistant_sync_station_clock -> assistant_rotate_station_certificate -> assistant_reestablish_station_handshake -> assistant_update_station_firmware -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_full_system -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `full_system_billing_firmware`
+#### `full_system_billing_firmware_d20_021`
+- `min_plan_length`: 20
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'full_system_resolved'
+- `required_actions` (18): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_refresh_payment_token', 'assistant_update_station_firmware', 'assistant_refresh_session_authorization', 'assistant_reprovision_full_system', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 19
+- `SAT_full`: True
+- `SAT_full plan` (20): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_refresh_payment_token -> assistant_update_station_firmware -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_full_system -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `full_system_billing_firmware_fraud`
+#### `full_system_billing_firmware_fraud_d20_022`
+- `min_plan_length`: 20
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'full_system_resolved'
+- `required_actions` (18): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_release_fraud_lock', 'assistant_update_station_firmware', 'assistant_refresh_session_authorization', 'assistant_reprovision_full_system', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 19
+- `SAT_full`: True
+- `SAT_full plan` (20): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_release_fraud_lock -> assistant_update_station_firmware -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_full_system -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `full_system_billing_transport`
+#### `full_system_billing_transport_d23_020`
+- `min_plan_length`: 23
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'full_system_resolved'
+- `required_actions` (21): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_refresh_payment_token', 'assistant_restore_backend_link', 'assistant_sync_station_clock', 'assistant_rotate_station_certificate', 'assistant_reestablish_station_handshake', 'assistant_refresh_session_authorization', 'assistant_reprovision_full_system', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 22
+- `SAT_full`: True
+- `SAT_full plan` (23): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_refresh_payment_token -> assistant_restore_backend_link -> assistant_sync_station_clock -> assistant_rotate_station_certificate -> assistant_reestablish_station_handshake -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_full_system -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `full_system_cert_clock_firmware`
+#### `full_system_cert_clock_firmware_d20_024`
+- `min_plan_length`: 20
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'full_system_resolved'
+- `required_actions` (18): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_sync_station_clock', 'assistant_rotate_station_certificate', 'assistant_update_station_firmware', 'assistant_refresh_session_authorization', 'assistant_reprovision_full_system', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 19
+- `SAT_full`: True
+- `SAT_full plan` (20): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_sync_station_clock -> assistant_rotate_station_certificate -> assistant_update_station_firmware -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_full_system -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `full_system_link_handshake_firmware`
+#### `full_system_link_handshake_firmware_d20_023`
+- `min_plan_length`: 20
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'full_system_resolved'
+- `required_actions` (18): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_restore_backend_link', 'assistant_reestablish_station_handshake', 'assistant_update_station_firmware', 'assistant_refresh_session_authorization', 'assistant_reprovision_full_system', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 19
+- `SAT_full`: True
+- `SAT_full plan` (20): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_restore_backend_link -> assistant_reestablish_station_handshake -> assistant_update_station_firmware -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_full_system -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `full_system_partial_knowledge`
+#### `full_system_partial_knowledge_d21_025`
+- `min_plan_length`: 21
+- `start_bindings`: ['app_error_class']
+- `goal_bindings`: []
+- `terminal_profile_id`: 'full_system_resolved'
+- `required_actions` (19): ['acquire_screen_fault_code_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_clear_backend_hold', 'assistant_release_fraud_lock', 'assistant_sync_station_clock', 'assistant_rotate_station_certificate', 'assistant_reestablish_station_handshake', 'assistant_refresh_session_authorization', 'assistant_reprovision_full_system', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 20
+- `SAT_full`: True
+- `SAT_full plan` (21): acquire_screen_fault_code_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_clear_backend_hold -> assistant_release_fraud_lock -> assistant_sync_station_clock -> assistant_rotate_station_certificate -> assistant_reestablish_station_handshake -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_full_system -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
+- repeated plan actions: acquire_screen_fault_code_from_user x3
+
+### `full_system_transport_firmware`
+#### `full_system_transport_firmware_d22_019`
+- `min_plan_length`: 22
+- `start_bindings`: []
+- `goal_bindings`: ['app_error_class']
+- `terminal_profile_id`: 'full_system_resolved'
+- `required_actions` (20): ['acquire_screen_fault_code_from_user', 'acquire_error_class_from_user', 'user_inspect_cable_path', 'user_reseat_connector', 'user_power_cycle_station', 'user_set_vehicle_ready_mode', 'user_refresh_charging_app_session', 'user_re_authenticate_charging_app', 'user_confirm_connector_latch', 'assistant_run_backend_diagnostics', 'assistant_restore_backend_link', 'assistant_sync_station_clock', 'assistant_rotate_station_certificate', 'assistant_reestablish_station_handshake', 'assistant_update_station_firmware', 'assistant_refresh_session_authorization', 'assistant_reprovision_full_system', 'assistant_refresh_vehicle_authorization', 'assistant_reset_retry_path', 'user_run_test_charge_hardware']
+- `required_precedence` count: 21
+- `SAT_full`: True
+- `SAT_full plan` (22): acquire_screen_fault_code_from_user -> acquire_error_class_from_user -> user_inspect_cable_path -> user_reseat_connector -> user_power_cycle_station -> user_set_vehicle_ready_mode -> user_refresh_charging_app_session -> user_re_authenticate_charging_app -> user_confirm_connector_latch -> assistant_run_backend_diagnostics -> assistant_restore_backend_link -> assistant_sync_station_clock -> assistant_rotate_station_certificate -> assistant_reestablish_station_handshake -> assistant_update_station_firmware -> assistant_refresh_session_authorization -> acquire_screen_fault_code_from_user -> assistant_reprovision_full_system -> assistant_refresh_vehicle_authorization -> acquire_screen_fault_code_from_user -> assistant_reset_retry_path -> user_run_test_charge_hardware
 - repeated plan actions: acquire_screen_fault_code_from_user x3
 
 ## Reviewer Notes

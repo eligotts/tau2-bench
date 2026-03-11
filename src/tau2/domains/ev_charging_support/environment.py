@@ -6,6 +6,7 @@ from tau2.domains.ev_charging_support.data_model import (
     BackendLinkState,
     CertState,
     ChargeState,
+    ClockSyncState,
     DiagnosticsState,
     ErrorClass,
     EVAccount,
@@ -15,17 +16,21 @@ from tau2.domains.ev_charging_support.data_model import (
     EVStation,
     FirmwareState,
     FraudLockState,
+    HandshakeState,
     HoldStatus,
     PaymentTokenStatus,
     ProfileState,
     ReachabilityState,
     RetryState,
+    SessionAuthState,
+    VehicleAuthState,
 )
 from tau2.domains.ev_charging_support.tools import EVChargingSupportTools
 from tau2.domains.ev_charging_support.user_data_model import (
     AppRefreshState,
     CableInspectionState,
     ConnectorReseatState,
+    ConnectorLatchState,
     EVChargingSupportUserDB,
     StationPowerCycleState,
     TestChargeState,
@@ -99,8 +104,12 @@ class EVChargingSupportEnvironment(Environment):
             return "STATION_UNREACHABLE"
         if network.backend_link_state == BackendLinkState.DOWN:
             return "NET-410"
+        if station.clock_sync_state == ClockSyncState.SKEWED:
+            return "TIME-405"
         if network.cert_state == CertState.STALE:
             return "CERT-409"
+        if network.handshake_state == HandshakeState.BROKEN:
+            return "OCPP-411"
         if account.hold_status == HoldStatus.PRESENT:
             return "BH-101"
         if account.payment_token_status == PaymentTokenStatus.INVALID:
@@ -109,8 +118,12 @@ class EVChargingSupportEnvironment(Environment):
             return "FRD-301"
         if station.firmware_state == FirmwareState.OUTDATED:
             return "FW-410"
+        if session.session_auth_state == SessionAuthState.STALE:
+            return "AUTH-220"
         if session.profile_state == ProfileState.NOT_READY:
             return "PROFILE-201"
+        if session.vehicle_auth_state == VehicleAuthState.PENDING:
+            return "VEH-230"
         if session.retry_state == RetryState.NOT_READY:
             return "RETRY-301"
         return "NONE"
@@ -138,12 +151,17 @@ class EVChargingSupportEnvironment(Environment):
             and account.fraud_lock_state == FraudLockState.OFF
             and station.reachability_state == ReachabilityState.REACHABLE
             and station.firmware_state == FirmwareState.CURRENT
+            and station.clock_sync_state == ClockSyncState.SYNCED
             and network.backend_link_state == BackendLinkState.UP
             and network.cert_state == CertState.FRESH
+            and network.handshake_state == HandshakeState.ESTABLISHED
+            and session.session_auth_state == SessionAuthState.VALID
             and session.profile_state == ProfileState.READY
+            and session.vehicle_auth_state == VehicleAuthState.VALIDATED
             and session.retry_state == RetryState.READY
             and user.physical.vehicle_ready_state == VehicleReadyState.READY
             and user.physical.app_refresh_state == AppRefreshState.REFRESHED
+            and user.physical.connector_latch_state == ConnectorLatchState.CONFIRMED
         )
         hardware_ready = (
             user.physical.station_power_cycle_state == StationPowerCycleState.DONE
@@ -156,6 +174,8 @@ class EVChargingSupportEnvironment(Environment):
             billing_ready and hardware_ready
         ):
             session.charge_state = ChargeState.ACTIVE
+        else:
+            session.charge_state = ChargeState.INACTIVE
 
         session.last_fault_code = self._current_fault_code(account, station, network, session)
 
@@ -167,10 +187,14 @@ class EVChargingSupportEnvironment(Environment):
         user.view.display_fraud_lock_state = account.fraud_lock_state.value
         user.view.display_reachability_state = station.reachability_state.value
         user.view.display_firmware_state = station.firmware_state.value
+        user.view.display_clock_sync_state = station.clock_sync_state.value
         user.view.display_profile_state = session.profile_state.value
+        user.view.display_session_auth_state = session.session_auth_state.value
+        user.view.display_vehicle_auth_state = session.vehicle_auth_state.value
         user.view.display_retry_state = session.retry_state.value
         user.view.display_backend_link_state = network.backend_link_state.value
         user.view.display_cert_state = network.cert_state.value
+        user.view.display_handshake_state = network.handshake_state.value
         user.view.display_diagnostics_state = station.diagnostics_state.value
         user.view.display_error_class = session.error_class.value
 

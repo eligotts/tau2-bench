@@ -66,7 +66,24 @@ If the contract has multiple bindings, create seeds where:
 
 This produces tasks that differ in what the agent needs to discover.
 
-### Vary which lanes are pre-solved
+### Prefer real entry states over post-repair milestones
+
+When you want more cheap seeds, first add:
+- New branch combinations in the initial broken state
+- New `start_bindings` combinations (partial knowledge)
+- Externally plausible pre-contact state differences
+
+Do **not** add seeds that are just the domain's own repair path with several earlier
+steps already completed. In practice, avoid starts like:
+- `diagnostics_state = ran` when the normal same-session path begins at `idle`
+- `profile_state = ready` or `retry_state = ready` while the main repair chain is still in flight
+- user physical/app remediation fields already advanced unless the scenario explicitly models that
+  as customer-done work before the session begins
+
+A good cheap seed should still look like a legitimate incoming ticket, not like a saved
+checkpoint halfway through the benchmark's own solution path.
+
+### Vary which lanes are active
 
 Instead of just "everything broken" vs "less broken," think in terms of which parallel
 lanes need work:
@@ -80,7 +97,8 @@ lanes need work:
 
 **Anti-pattern:** 5 seeds that are identical except for how many actions are pre-completed
 in the same chain. This produces tasks that look different (depth 5 vs depth 12) but test
-identical reasoning.
+identical reasoning, and often turns one task's start state into another task's mid-trajectory
+checkpoint.
 
 **Good pattern:** 5 seeds that activate different subgraphs, different binding requirements,
 or different value-gated branches. Even if depths overlap, the tasks test different
@@ -94,6 +112,9 @@ Terminal profiles define the states that count as legitimate task endings.
 - A seed may only emit tasks whose end state matches one of its `allowed_terminal_profiles`.
 - Shorter tasks should come from seeds that start closer to resolution, not from stopping in
   the middle of an otherwise-fixable repair chain.
+- Sampled tasks should be canonicalized to the minimal terminal-reaching plan for that
+  `goal_world`. Optional extra reads or unused binding acquisitions should not create
+  separate task variants.
 - If the domain needs milestone tasks, model them explicitly as milestone profiles with a
   matching prompt/tool surface. Do not reuse a full-resolution policy and then stop halfway.
 
@@ -108,3 +129,6 @@ Acceptance checks:
    across all sampled tasks. At least 60% of tasks should have a unique action set, not
    just a prefix/suffix of another task's set.
 7. Every sampled task has a non-empty `terminal_profile_id`.
+8. Sampling does not emit duplicate tasks that differ only by optional extra discovery actions.
+9. Cheap seed expansion prefers new early entry states or binding-known variants over
+   post-repair checkpoint starts.

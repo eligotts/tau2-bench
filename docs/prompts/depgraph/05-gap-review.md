@@ -65,6 +65,8 @@ Judge the domain against these exact categories:
 5. `terminal_end_state_discipline`
    - Do sampled tasks end in explicit terminal profiles rather than intermediate repair states?
    - Do shorter tasks come from easier starts rather than partial endings?
+   - Do sampled tasks reflect the minimal terminal-reaching plan, rather than duplicate variants
+     created by optional extra reads or unused binding acquisitions?
 6. `stop_gate_clarity`
    - Are user-observable completion fields projected and checked?
    - Does the policy tell the agent what to do for both `resolved=true` and `resolved=false`?
@@ -74,6 +76,7 @@ Judge the domain against these exact categories:
 8. `task_realism_and_teachability`
    - Do representative SAT plans require behaviors the policy actually teaches?
    - Would an agent following only the policy plus tool definitions know how to complete the representative tasks?
+   - Do `reason_for_call`, `known_info`, and `ticket` stay at the user-observable case surface, or do they leak latent blocker inventories / internal path labels that pre-solve the task?
 
 ### Required output
 

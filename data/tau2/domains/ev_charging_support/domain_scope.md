@@ -2,18 +2,19 @@
 
 ## 1. Pilot domain
 
-EV charging recovery for blocked charge-start sessions where backend controls and user
-physical/app actions must be coordinated across long, value-gated dependency chains.
+EV charging recovery for blocked charge-start sessions where assistant-side backend repair,
+customer-side physical/app actions, and late-stage authorization gates must converge before
+charging can actually start.
 
 Pilot slice:
 
-- One active account, station, network path, and charging session per task.
+- One active account, station, network path, and charge session per task.
 - Three recovery branches:
   - `billing`
   - `connectivity`
   - `full_system`
-- The final success condition is an observable successful test charge, checked through
-  strict stop-gating rather than prompt-only instructions.
+- Each branch ends only at a true terminal state where the visible station fault is gone,
+  retry is ready, and a real test charge has been run.
 
 ## 2. Agent DB schema sketch
 
@@ -31,6 +32,7 @@ Entity: `EVStation`
 - `site_id: str`
 - `reachability_state: enum[reachable, unreachable]`
 - `firmware_state: enum[outdated, current]`
+- `clock_sync_state: enum[skewed, synced]`
 - `diagnostics_state: enum[idle, ran]`
 
 Entity: `EVNetworkPath`
@@ -38,6 +40,7 @@ Entity: `EVNetworkPath`
 - `station_id: str`
 - `backend_link_state: enum[down, up]`
 - `cert_state: enum[stale, fresh]`
+- `handshake_state: enum[broken, established]`
 
 Entity: `EVChargeSession`
 
@@ -45,7 +48,9 @@ Entity: `EVChargeSession`
 - `account_id: str`
 - `station_id: str`
 - `error_class: enum[billing, connectivity, full_system]`
+- `session_auth_state: enum[stale, valid]`
 - `profile_state: enum[not_ready, ready]`
+- `vehicle_auth_state: enum[pending, validated]`
 - `retry_state: enum[not_ready, ready]`
 - `charge_state: enum[inactive, active]`
 - `last_fault_code: str`
@@ -54,6 +59,8 @@ Entity: `EVChargeSession`
 
 Entity: `UserContext`
 
+- `user_id: str | null`
+- `name: str | null`
 - `account_id: str | null`
 - `station_id: str | null`
 - `session_id: str | null`
@@ -66,6 +73,8 @@ Entity: `PhysicalState`
 - `cable_inspection_state: enum[not_checked, checked_ok]`
 - `vehicle_ready_state: enum[not_ready, ready]`
 - `app_refresh_state: enum[stale, refreshed]`
+- `app_login_state: enum[expired, active]`
+- `connector_latch_state: enum[unconfirmed, confirmed]`
 - `test_charge_state: enum[not_run, run]`
 
 Entity: `ViewState`
@@ -77,10 +86,14 @@ Entity: `ViewState`
 - `display_fraud_lock_state: str | null`
 - `display_reachability_state: str | null`
 - `display_firmware_state: str | null`
+- `display_clock_sync_state: str | null`
 - `display_profile_state: str | null`
+- `display_session_auth_state: str | null`
+- `display_vehicle_auth_state: str | null`
 - `display_retry_state: str | null`
 - `display_backend_link_state: str | null`
 - `display_cert_state: str | null`
+- `display_handshake_state: str | null`
 - `display_diagnostics_state: str | null`
 - `display_error_class: str | null`
 
@@ -92,20 +105,24 @@ Entity: `StopGateState`
 
 | field_path | owner_db | type_or_domain | projected_for_solver | update_source | notes |
 | --- | --- | --- | --- | --- | --- |
-| `agent.accounts[active_account].hold_status` | agent | enum | yes | assistant_tool | billing gate |
-| `agent.accounts[active_account].payment_token_status` | agent | enum | yes | assistant_tool | billing gate |
-| `agent.accounts[active_account].fraud_lock_state` | agent | enum | yes | assistant_tool | billing gate |
-| `agent.stations[active_station].reachability_state` | agent | enum | yes | assistant_tool | connectivity gate |
-| `agent.stations[active_station].firmware_state` | agent | enum | yes | assistant_tool | firmware gate |
+| `agent.accounts[active_account].hold_status` | agent | enum | yes | assistant_tool | billing lane |
+| `agent.accounts[active_account].payment_token_status` | agent | enum | yes | assistant_tool | billing lane |
+| `agent.accounts[active_account].fraud_lock_state` | agent | enum | yes | assistant_tool | billing lane |
+| `agent.stations[active_station].reachability_state` | agent | enum | yes | assistant_tool | top-level station reachability |
+| `agent.stations[active_station].firmware_state` | agent | enum | yes | assistant_tool | firmware lane |
+| `agent.stations[active_station].clock_sync_state` | agent | enum | yes | assistant_tool | secure-transport prerequisite |
 | `agent.stations[active_station].diagnostics_state` | agent | enum | yes | assistant_tool | establishes stable repair context |
-| `agent.network_paths[active_station].backend_link_state` | agent | enum | yes | assistant_tool | connectivity gate |
-| `agent.network_paths[active_station].cert_state` | agent | enum | yes | assistant_tool | connectivity gate |
+| `agent.network_paths[active_station].backend_link_state` | agent | enum | yes | assistant_tool | secure-transport lane |
+| `agent.network_paths[active_station].cert_state` | agent | enum | yes | assistant_tool | secure-transport lane |
+| `agent.network_paths[active_station].handshake_state` | agent | enum | yes | assistant_tool | secure-transport lane |
 | `agent.sessions[active_session].error_class` | agent | enum | yes | init_only | branch discriminator |
+| `agent.sessions[active_session].session_auth_state` | agent | enum | yes | assistant_tool | late-stage auth lane |
 | `agent.sessions[active_session].profile_state` | agent | enum | yes | assistant_tool | reprovision target |
-| `agent.sessions[active_session].retry_state` | agent | enum | yes | assistant_tool | retry-reset target |
+| `agent.sessions[active_session].vehicle_auth_state` | agent | enum | yes | assistant_tool | post-profile auth lane |
+| `agent.sessions[active_session].retry_state` | agent | enum | yes | assistant_tool | retry-reset lane |
 | `agent.sessions[active_session].charge_state` | agent | enum | yes | sync | final success state |
-| `agent.sessions[active_session].last_fault_code` | agent | str | yes | sync | canonical current visible fault |
-| `user.physical.*` readiness fields | user | enums/bool | yes | user_tool | physical/app prerequisites |
+| `agent.sessions[active_session].last_fault_code` | agent | str | yes | sync | canonical current visible station code |
+| `user.physical.*` readiness fields | user | enums/bool | yes | user_tool | customer-side prerequisites |
 | `user.view.display_*` observables | user | strings | yes | sync | stop-gate observable surface |
 | `user.stop_gate.criteria` | user | list | no | init_only | runtime-only stop checker input |
 
@@ -117,21 +134,19 @@ Entity: `StopGateState`
 
 ## 6. Projected world paths
 
-Projected causal and observable paths used by the solver/runtime contract:
+Projected causal and observable paths used by solver state:
 
-- account gates: hold, payment token, fraud lock
-- station gates: reachability, firmware, diagnostics
-- network gates: backend link, certificate
-- session gates: error class, profile, retry, charge state, last fault code
-- user physical/app steps: screen accessibility, cable inspect, connector reseat, power cycle,
-  vehicle ready, app refresh, test charge
-- user view observables used by `check_resolution_status`: fault code, charge status, hold,
-  payment token, fraud lock, reachability, firmware, profile, retry, backend link,
-  certificate, diagnostics, error class
+- billing gates: hold, payment token, fraud lock
+- station gates: reachability, firmware, clock sync, diagnostics
+- network gates: backend link, certificate, handshake
+- session gates: error class, session auth, profile, vehicle auth, retry, charge state, last fault code
+- customer readiness: screen accessibility, cable inspection, connector reseat, power cycle,
+  vehicle ready, app refresh, app login, connector latch, test charge
+- user-visible projections consumed by `check_station_screen` and `check_resolution_status`
 
 ## 7. Assistant toolset (rough)
 
-Observation-driven tools:
+Observation-driven stage tools:
 
 - `run_backend_diagnostics(fault_code, app_error_class)`
 - `reprovision_billing(fault_code)`
@@ -139,19 +154,23 @@ Observation-driven tools:
 - `reprovision_full_system(fault_code)`
 - `reset_retry_path(fault_code)`
 
-Stable-state repair tools after diagnostics:
+Stable-state repair tools after diagnosis:
 
 - `clear_billing_hold()`
 - `refresh_payment_token()`
 - `release_fraud_lock()`
 - `restore_backend_link()`
+- `sync_station_clock()`
 - `rotate_station_certificate()`
+- `reestablish_station_handshake()`
 - `update_station_firmware()`
+- `refresh_session_authorization()`
+- `refresh_vehicle_authorization()`
 
 Helper callables:
 
-- context setters (`set_user_context`, etc.)
-- env assertions (`assert_*`)
+- context setters and per-field init helpers
+- env assertions on agent-side state
 
 ## 8. User toolset (rough)
 
@@ -160,13 +179,15 @@ Discovery tools:
 - `check_station_screen()` -> produces `screen_fault_code`
 - `check_app_status()` -> produces `app_error_class`
 
-Causal user actions:
+Customer-side causal actions:
 
 - `inspect_cable_path()`
 - `reseat_connector()`
 - `power_cycle_station()`
 - `set_vehicle_ready_mode()`
 - `refresh_charging_app_session()`
+- `re_authenticate_charging_app()`
+- `confirm_connector_latch()`
 - `run_test_charge()`
 
 Stutter-only checker:
@@ -175,76 +196,80 @@ Stutter-only checker:
 
 ## 9. World/sync logic
 
-Canonical fault-code priority, high to low:
+Canonical visible-fault priority, high to low:
 
 1. `STATION_UNREACHABLE`
 2. `NET-410`
-3. `CERT-409`
-4. `BH-101`
-5. `PAY-201`
-6. `FRD-301`
-7. `FW-410`
-8. `PROFILE-201`
-9. `RETRY-301`
-10. `NONE`
+3. `TIME-405`
+4. `CERT-409`
+5. `OCPP-411`
+6. `BH-101`
+7. `PAY-201`
+8. `FRD-301`
+9. `FW-410`
+10. `AUTH-220`
+11. `PROFILE-201`
+12. `VEH-230`
+13. `RETRY-301`
+14. `NONE`
 
 Design rules:
 
-- `last_fault_code` is a sync-owned projection of the current world state, not a stable
-  incident identifier.
-- `screen_fault_code` is therefore a volatile binding. It is only used at stages where
-  “what the screen shows right now” is the real contract:
-  diagnostics, reprovision, and retry reset.
-- Once diagnostics has run, the repair chain is expressed in stable world predicates
-  (`hold_status`, `payment_token_status`, `fraud_lock_state`, `backend_link_state`,
-  `cert_state`, `firmware_state`) rather than replaying screen codes through every tool.
-- `check_station_screen()` formats the user-facing message locally from projected fields.
-  Hidden display text is not authored inside `sync_tools()`.
-- Charge activation is split:
-  - `billing` requires backend readiness plus vehicle/app readiness
-  - `connectivity` and `full_system` additionally require cable inspect, connector reseat,
-    and station power cycle
+- `last_fault_code` is sync-owned. It reflects the current visible stage, not a stable incident id.
+- `screen_fault_code` is therefore a volatile binding. It is only consumed at immediate
+  observation-driven stage transitions: diagnostics, reprovision, and retry reset.
+- The long middle of the repair path runs on stable world predicates after diagnostics rather
+  than replaying a moving screen code through every tool.
+- `charge_state` is sync-owned and fully recomputed from the world every sync pass. The
+  contract must therefore declare both inactive defaults and active terminal conditions,
+  not rely on runtime-only `else` branches.
+- `user.view.display_*` fields are pure projections of projected agent/user state.
 
 ## 10. Dependency patterns to support
 
-Multiple bindings:
+Bindings:
 
 - `screen_fault_code` from `check_station_screen`
 - `app_error_class` from `check_app_status`
 
-Value-dependent branching:
+Value-gated branches:
 
 - `error_class` selects billing vs connectivity vs full-system reprovision path
 
-User action ordering:
+User-side ordering:
 
-- `inspect_cable_path -> reseat_connector -> power_cycle_station`
+- hardware lane: `inspect_cable_path -> reseat_connector -> power_cycle_station`
+- late-stage auth lane: `set_vehicle_ready_mode` supports `confirm_connector_latch`,
+  which supports `refresh_vehicle_authorization`
+- app auth lane: `re_authenticate_charging_app` may be required before `refresh_session_authorization`
 
 Early convergence:
 
-- `run_backend_diagnostics` requires both discovered values
-- reprovision requires branch-specific backend clearance plus user readiness steps
+- `run_backend_diagnostics` requires both discovered bindings
+- `refresh_session_authorization` sits after branch-specific backend cleanup and before reprovision
+- reprovision requires both stable backend readiness and customer readiness
 
-Volatile-stage discipline:
+Shared final funnel:
 
-- the same `screen_fault_code` binding may be reacquired multiple times
-- the policy must tell the agent that the screen code is volatile and must be reread
-  when reprovision or retry-reset decisions depend on the current visible value,
-  without prescribing a full repair script
+- branch repair -> session auth -> reprovision -> vehicle auth -> retry reset -> test charge
+
+Structural diversity target:
+
+- harder tasks add interacting lanes before the same final funnel
+- easier tasks start later in the funnel with more prerequisites already satisfied
+- shorter tasks never stop at partial milestone states under a full-resolution policy
 
 ## 11. Known risks
 
-- Policy drift: if `policy.md` omits a tool, volatile reread constraint, or stop rule,
-  the live agent behavior will diverge from the contract even when SAT/preflight pass.
-- Over-prescriptive policy: if `policy.md` encodes a fixed tool trajectory, the benchmark
-  stops testing agent reasoning and starts testing prompt obedience.
-- Volatile-binding overuse: if repair tools take `fault_code` directly, the current visible
-  code can advance mid-turn and invalidate otherwise-correct recovery calls.
-- Sync drift: if `sync_tools()` invents display logic not declared in `sync_rules`, start
-  worlds and runtime behavior will diverge.
-- Branch contamination: billing tasks must not accidentally inherit hardware-only
-  prerequisites.
-- Reward confusion: repeated binding reacquisition is not fully represented in deduped
+- Policy drift: if `policy.md` names an incomplete tool surface or misses volatile reread rules,
+  live agent behavior will diverge from the authored contract.
+- Sync drift: if `sync_tools()` recomputes a field in ways the contract cannot reproduce from
+  `sync_rules`, sampler/preflight/runtime will disagree.
+- False breadth: adding many independent fixes with no shared downstream gate would make EV look
+  larger without adding real reasoning depth.
+- Hidden prerequisites: if a terminal profile depends on a lane that is not exposed through tools
+  or policy, tasks become unfair instead of hard.
+- Reward confusion: repeated binding reacquisition is not faithfully represented by deduped
   `required_actions`, so correctness must come from env assertions and stop-gates.
 
 ## 12. Stop-gate observables (candidate)
@@ -254,33 +279,36 @@ Primary:
 - `fault_code`
 - `charge_status`
 
-Supporting branch observables:
+Supporting:
 
 - `hold_status`
 - `payment_token_status`
 - `fraud_lock_state`
+- `firmware_state`
+- `clock_sync_state`
 - `backend_link_state`
 - `cert_state`
-- `firmware_state`
+- `handshake_state`
+- `session_auth_state`
 - `profile_state`
+- `vehicle_auth_state`
 - `retry_state`
 - `diagnostics_state`
-- `error_class`
 
 ## 13. Persona strategy (candidate)
 
-- `hurried_commuter`: urgent, concise, less patient with repeated steps
-- `detail_oriented_driver`: careful, reports tool outputs accurately
-- `low_tech_user`: needs tighter sequencing and simpler instructions
-- `experienced_ev_user`: comfortable with app and vehicle-readiness steps
+- `hurried_commuter`: concise, impatient with redundant checks
+- `detail_oriented_driver`: reports tool outputs cleanly and follows ordering well
+- `low_tech_user`: needs simpler instructions and stricter sequencing
+- `experienced_ev_user`: comfortable with app and physical troubleshooting
 
-Easy tasks should skew toward cooperative/detail-oriented personas.
-Harder long-horizon tasks should still vary persona style without leaking backend knowledge.
+Easy tasks should still vary persona style without leaking backend knowledge.
+Hard tasks should mix deeper branch interaction with personas that may require clearer sequencing.
 
 ## 14. Out of scope (pilot)
 
-- Payments/refunds outside the charging-session recovery flow
-- Creating accounts, adding cards, or changing plan settings
-- Hardware replacement or dispatch workflows
-- Multi-session or multi-station coordination
-- General station-unreachable recovery beyond surfacing the current blocker and escalating
+- creating or editing payment methods
+- refunds, plan changes, or account-management workflows outside current session recovery
+- dispatching field technicians or replacing station hardware
+- multi-session or multi-station coordination
+- recovering truly unreachable stations beyond surfacing the blocker and escalating

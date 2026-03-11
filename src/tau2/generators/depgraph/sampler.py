@@ -159,13 +159,47 @@ def sample_task_intents(
                     end_world=next_world,
                     prefixes=request.goal_world_path_prefixes,
                 )
-                goal_bindings = stable_goal_bindings(
-                    contract,
-                    sorted(set(next_bindings) - set(start_bindings)),
-                )
                 if not goal_world:
                     continue
-                required_actions = _ordered_unique(next_plan)
+
+                # Canonicalize sampled tasks around the minimal plan for the terminal goal_world
+                # rather than the exploratory BFS trace that happened to hit it first. This avoids
+                # emitting duplicate tasks that differ only by optional extra reads/bindings.
+                canonical_probe = TaskIntent(
+                    task_id="__probe__",
+                    start_world=seed.start_world,
+                    start_bindings=seed.start_bindings,
+                    goal_world=goal_world,
+                    goal_bindings=[],
+                    terminal_profile_id=matched_terminal_profile.profile_id,
+                    required_actions=[],
+                    required_precedence=[],
+                    min_plan_length=0,
+                    runtime=None,
+                )
+                canonical_probe_report = run_task_preflight(
+                    contract,
+                    canonical_probe,
+                    max_depth=seed.max_depth,
+                    terminal_profiles=terminal_profiles_by_id,
+                    require_terminal_profile=True,
+                )
+                if not canonical_probe_report.passed:
+                    continue
+
+                canonical_plan = canonical_probe_report.sat_full.plan
+                canonical_depth = len(canonical_plan)
+                if canonical_depth < seed.min_depth:
+                    continue
+
+                goal_bindings = stable_goal_bindings(
+                    contract,
+                    sorted(
+                        set(canonical_probe_report.sat_full.end_bindings or frozenset())
+                        - set(start_bindings)
+                    ),
+                )
+                required_actions = _ordered_unique(canonical_plan)
                 signature = (
                     _goal_signature(goal_world, goal_bindings),
                     tuple(required_actions),
@@ -173,9 +207,8 @@ def sample_task_intents(
                 )
                 if signature in seen_signatures:
                     continue
-                seen_signatures.add(signature)
 
-                task_id = f"{seed.seed_id}_d{depth}_{task_counter:03d}"
+                task_id = f"{seed.seed_id}_d{canonical_depth}_{task_counter:03d}"
                 task_counter += 1
                 candidate = TaskIntent(
                     task_id=task_id,
@@ -185,8 +218,8 @@ def sample_task_intents(
                     goal_bindings=goal_bindings,
                     terminal_profile_id=matched_terminal_profile.profile_id,
                     required_actions=required_actions,
-                    required_precedence=_plan_precedence(next_plan),
-                    min_plan_length=depth,
+                    required_precedence=_plan_precedence(canonical_plan),
+                    min_plan_length=canonical_depth,
                     runtime=None,
                 )
                 report = run_task_preflight(
@@ -197,6 +230,7 @@ def sample_task_intents(
                     require_terminal_profile=True,
                 )
                 if report.passed:
+                    seen_signatures.add(signature)
                     sampled.append(SampledTask(task=candidate, report=report))
                     if len(sampled) >= request.max_tasks:
                         return sampled

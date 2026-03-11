@@ -31,6 +31,24 @@ def _task_index(task_doc: TaskSpecsDoc) -> tuple[dict[str, TaskIntent], list[str
     return index, issues
 
 
+def _strip_injected_stop_gate(initialization_actions: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    if not initialization_actions:
+        return []
+    return [
+        call
+        for call in initialization_actions
+        if not (call.get("env_type") == "user" and call.get("func_name") == "set_stop_gate")
+    ]
+
+
+def _normalized_runtime_dump(runtime: RuntimeTaskSpec) -> dict[str, Any]:
+    runtime_dump = runtime.model_dump(mode="python")
+    runtime_dump["initialization_actions"] = _strip_injected_stop_gate(
+        runtime_dump.get("initialization_actions")
+    )
+    return runtime_dump
+
+
 def _compare_non_runtime_fields(scaffold: TaskIntent, authored: TaskIntent) -> list[str]:
     issues: list[str] = []
     for field_name in (
@@ -57,8 +75,8 @@ def _compare_runtime(
 ) -> list[str]:
     issues: list[str] = []
 
-    scaffold_dump = scaffold.model_dump(mode="python")
-    authored_dump = authored.model_dump(mode="python")
+    scaffold_dump = _normalized_runtime_dump(scaffold)
+    authored_dump = _normalized_runtime_dump(authored)
 
     for field_name, scaffold_value in scaffold_dump.items():
         authored_value = authored_dump.get(field_name)
