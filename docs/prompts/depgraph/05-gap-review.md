@@ -67,6 +67,8 @@ Judge the domain against these exact categories:
    - Do shorter tasks come from easier starts rather than partial endings?
    - Do sampled tasks reflect the minimal terminal-reaching plan, rather than duplicate variants
      created by optional extra reads or unused binding acquisitions?
+   - If the domain uses `seed_schemas`, do the expanded starts represent genuine incoming-case
+     variation rather than checkpoint states copied from the middle of the repair funnel?
 6. `stop_gate_clarity`
    - Are user-observable completion fields projected and checked?
    - Does the policy tell the agent what to do for both `resolved=true` and `resolved=false`?

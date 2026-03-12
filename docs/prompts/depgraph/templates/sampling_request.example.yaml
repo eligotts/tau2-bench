@@ -9,16 +9,34 @@ terminal_profiles:
       - path: agent.lines[active_line].data_status
         op: eq
         value: active
-seeds:
-  - seed_id: telecom_seed_01
+seed_schemas:
+  - schema_id: line_repair
+    seed_id_template: "{issue}_{knowledge}"
     allowed_terminal_profiles: [fully_resolved]
-    start_world:
-      - path: agent.lines[active_line].profile_state
-        set: pending
-      - path: user.physical.phone_powered_on
-        set: true
-      - path: user.physical.phone_restarted
-        set: false
-    start_bindings: []
     min_depth: 4
     max_depth: 7
+    dimensions:
+      - dimension_id: issue
+        variants:
+          - variant_id: profile_pending
+            start_world:
+              - path: agent.lines[active_line].profile_state
+                set: pending
+              - path: user.physical.phone_powered_on
+                set: true
+              - path: user.physical.phone_restarted
+                set: false
+          - variant_id: sim_needs_reseat
+            start_world:
+              - path: agent.lines[active_line].sim_state
+                set: misseated
+              - path: user.physical.phone_powered_on
+                set: true
+              - path: user.physical.sim_reseated
+                set: false
+      - dimension_id: knowledge
+        variants:
+          - variant_id: base
+          - variant_id: line_known
+            start_bindings:
+              - active_line_binding

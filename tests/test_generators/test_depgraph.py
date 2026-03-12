@@ -23,6 +23,9 @@ from tau2.generators.depgraph.types import (
     GraphContractSpec,
     RuntimeTaskSpec,
     SamplingRequestDoc,
+    SeedSchemaDimensionSpec,
+    SeedSchemaSpec,
+    SeedSchemaVariantSpec,
     SamplingSeedSpec,
     SyncEffectSpec,
     SyncRuleSpec,
@@ -829,6 +832,68 @@ class TestDepgraphSampler(unittest.TestCase):
                 (("agent.b", True), ("agent.done", True)),
             },
         )
+
+    def test_sampling_request_expands_seed_schemas(self):
+        request = SamplingRequestDoc(
+            max_tasks=10,
+            goal_capture_paths=["agent"],
+            terminal_profiles=[_make_terminal_profile("resolved", "agent.done", True)],
+            seed_schemas=[
+                SeedSchemaSpec(
+                    schema_id="repair_cases",
+                    seed_id_template="{case}_{knowledge}",
+                    allowed_terminal_profiles=["resolved"],
+                    min_depth=2,
+                    max_depth=4,
+                    dimensions=[
+                        SeedSchemaDimensionSpec(
+                            dimension_id="case",
+                            variants=[
+                                SeedSchemaVariantSpec(
+                                    variant_id="case_a",
+                                    start_world=[
+                                        WorldEffectSpec(path="agent.a", set=False),
+                                    ],
+                                ),
+                                SeedSchemaVariantSpec(
+                                    variant_id="case_b",
+                                    start_world=[
+                                        WorldEffectSpec(path="agent.b", set=False),
+                                    ],
+                                ),
+                            ],
+                        ),
+                        SeedSchemaDimensionSpec(
+                            dimension_id="knowledge",
+                            variants=[
+                                SeedSchemaVariantSpec(variant_id="none"),
+                                SeedSchemaVariantSpec(
+                                    variant_id="screen_known",
+                                    start_bindings=["screen_fault_code"],
+                                    min_depth_delta=-1,
+                                    max_depth_delta=-1,
+                                ),
+                            ],
+                        ),
+                    ],
+                )
+            ],
+        )
+
+        self.assertEqual(len(request.seeds), 4)
+        self.assertEqual(
+            [seed.seed_id for seed in request.seeds],
+            [
+                "case_a_none",
+                "case_a_screen_known",
+                "case_b_none",
+                "case_b_screen_known",
+            ],
+        )
+        self.assertEqual(request.seeds[1].start_bindings, ["screen_fault_code"])
+        self.assertEqual(request.seeds[1].min_depth, 1)
+        self.assertEqual(request.seeds[1].max_depth, 3)
+        self.assertEqual(request.seeds[1].goal_capture_paths, ["agent"])
 
     def test_preflight_requires_terminal_profile_when_requested(self):
         contract = _make_simple_contract()

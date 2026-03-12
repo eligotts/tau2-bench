@@ -69,6 +69,9 @@ Use this checklist in addition to step-specific prompts.
 ## 5. Quality and Diversity
 
 1. Sampling seeds vary start worlds to avoid duplicate storyline shapes.
+2. If the domain has many related start states, `sampling_request.yaml` uses `seed_schemas`
+   to expand finite blocker/knowledge combinations instead of hand-copying large concrete
+   seed lists.
 2. At least one binding-dependent chain and one user-gated chain are sampled.
 3. Long-horizon paths use `min_depth >= 4` unless domain constraints justify shorter chains.
 4. Persona pool exists (`personas.yaml`) with at least 2 distinct `persona_id` values.

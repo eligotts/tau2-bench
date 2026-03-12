@@ -21,7 +21,11 @@ uv run python -m tau2.generators.depgraph.run_sampler \
    - `profile_id`
    - `requires_world`
 3. `goal_capture_paths` (global path-prefix list, or override per seed)
-4. `seeds[]`:
+4. Either `seeds[]` or `seed_schemas[]`:
+   - Prefer `seed_schemas[]` when the domain has a few repeated start-state patterns
+     that differ across finite dimensions (for example branch type, blocker subset, or
+     partial-knowledge variant).
+5. `seeds[]`:
    - `seed_id`
    - `start_world` (list of `{path, set}`)
    - optional `start_bindings`
@@ -29,6 +33,21 @@ uv run python -m tau2.generators.depgraph.run_sampler \
    - optional `goal_capture_paths` override
    - `min_depth`
    - `max_depth`
+6. `seed_schemas[]`:
+   - `schema_id`
+   - `seed_id_template`
+   - `allowed_terminal_profiles`
+   - optional `goal_capture_paths` override
+   - `min_depth`
+   - `max_depth`
+   - `dimensions[]`
+     - `dimension_id`
+     - `variants[]`
+       - `variant_id`
+       - optional `start_world`
+       - optional `start_bindings`
+       - optional `min_depth_delta`
+       - optional `max_depth_delta`
 
 Requirements:
 
@@ -41,12 +60,35 @@ Requirements:
    - bind concrete entities later in runtime enrichment.
 6. Every sampled task must end in an explicit terminal profile. Do not use intermediate repair states as ordinary task ends.
 7. `terminal_profiles` define which end states are valid. `goal_capture_paths` define which changed parts of the solved world become emitted `goal_world` and env assertions.
+8. If you need many related starts, prefer `seed_schemas` over hand-copying dozens of concrete seeds.
 
 ## Seed Design for Structural Diversity
 
 Seeds control which subgraphs of the contract are activated. The goal is to produce tasks
 that differ in **topology** (which actions are needed and how they connect), not just
 **depth** (how many steps of the same chain).
+
+## Seed Schemas
+
+When a domain has a small number of recurring start-state patterns, author `seed_schemas`
+instead of manually copying many concrete seeds.
+
+- A `seed_schema` defines:
+  - a family-level depth budget and terminal-profile set
+  - one or more variation dimensions
+  - a `seed_id_template` that combines chosen variant ids into concrete seed ids
+- Each concrete expanded seed is still a normal BFS root.
+- The sampler expands schemas before search, so preflight/runtime behavior stays identical.
+
+Use `seed_schemas` when the domain varies along finite axes such as:
+
+- branch family (`billing`, `connectivity`, `full_system`)
+- blocker subset (`hold`, `fraud`, `payment`)
+- partial-knowledge variant (`base`, `screen_known`, `app_known`)
+- shared downstream blockers (`allowlist`, `tariff`, `reservation`)
+
+Do not use `seed_schemas` to create checkpoint starts halfway through the repair funnel.
+The generated concrete seeds should still look like plausible incoming cases.
 
 ### Design seeds around value-gated branches
 
@@ -67,6 +109,8 @@ If the contract has multiple bindings, create seeds where:
 - Different bindings are pre-acquired in different seeds
 
 This produces tasks that differ in what the agent needs to discover.
+
+When using `seed_schemas`, model these as one dimension instead of cloning whole seeds.
 
 ### Prefer real entry states over post-repair milestones
 
@@ -109,6 +153,9 @@ checkpoint.
 or different value-gated branches. Even if depths overlap, the tasks test different
 decision-making.
 
+**Better pattern:** 3 `seed_schemas` with a few finite dimensions each, expanded into many
+concrete seeds that still differ in branch structure, blocker mix, or known information.
+
 ## Terminal Profiles
 
 Terminal profiles define the states that count as legitimate task endings.
@@ -143,3 +190,5 @@ Acceptance checks:
 8. Sampling does not emit duplicate tasks that differ only by optional extra discovery actions.
 9. Cheap seed expansion prefers new early entry states or binding-known variants over
    post-repair checkpoint starts.
+10. If the domain has many near-copy starts, they are authored as `seed_schemas` rather than
+    hand-maintained concrete seed lists.

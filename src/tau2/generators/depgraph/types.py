@@ -610,6 +610,158 @@ class SamplingSeedSpec(BaseModel):
         return self
 
 
+class SeedSchemaVariantSpec(BaseModel):
+    """One selectable variant inside a programmatically generated seed schema."""
+
+    variant_id: str
+    start_world: list[WorldEffectSpec] = Field(default_factory=list)
+    start_bindings: list[str] = Field(default_factory=list)
+    min_depth_delta: int = 0
+    max_depth_delta: int = 0
+
+    @model_validator(mode="after")
+    def validate_variant(self) -> "SeedSchemaVariantSpec":
+        if not self.variant_id.strip():
+            raise ValueError("seed schema variant_id cannot be empty")
+        _check_unique(
+            self.start_bindings,
+            label=f"seed schema variant '{self.variant_id}' start_bindings",
+        )
+        return self
+
+
+class SeedSchemaDimensionSpec(BaseModel):
+    """One exact-one variation axis in a generated seed schema."""
+
+    dimension_id: str
+    variants: list[SeedSchemaVariantSpec] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_dimension(self) -> "SeedSchemaDimensionSpec":
+        if not self.dimension_id.strip():
+            raise ValueError("seed schema dimension_id cannot be empty")
+        if not self.variants:
+            raise ValueError(
+                f"seed schema dimension '{self.dimension_id}' must declare at least one variant"
+            )
+        _check_unique(
+            [variant.variant_id for variant in self.variants],
+            label=f"seed schema dimension '{self.dimension_id}' variants.variant_id",
+        )
+        return self
+
+
+class SeedSchemaSpec(BaseModel):
+    """Authoring sugar for expanding one family of concrete start seeds."""
+
+    schema_id: str
+    seed_id_template: str
+    start_world: list[WorldEffectSpec] = Field(default_factory=list)
+    start_bindings: list[str] = Field(default_factory=list)
+    allowed_terminal_profiles: list[str] = Field(default_factory=list)
+    goal_capture_paths: list[str] = Field(default_factory=list)
+    min_depth: int = 3
+    max_depth: int = 8
+    dimensions: list[SeedSchemaDimensionSpec] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_schema(self) -> "SeedSchemaSpec":
+        if not self.schema_id.strip():
+            raise ValueError("seed schema_id cannot be empty")
+        if not self.seed_id_template.strip():
+            raise ValueError(
+                f"Seed schema '{self.schema_id}' has empty seed_id_template"
+            )
+        if not self.allowed_terminal_profiles:
+            raise ValueError(
+                f"Seed schema '{self.schema_id}' must declare allowed_terminal_profiles"
+            )
+        if self.max_depth < self.min_depth:
+            raise ValueError(
+                f"Seed schema '{self.schema_id}' max_depth must be >= min_depth"
+            )
+        _check_unique(
+            self.start_bindings,
+            label=f"seed schema '{self.schema_id}' start_bindings",
+        )
+        _check_unique(
+            self.allowed_terminal_profiles,
+            label=f"seed schema '{self.schema_id}' allowed_terminal_profiles",
+        )
+        _check_unique(
+            self.goal_capture_paths,
+            label=f"seed schema '{self.schema_id}' goal_capture_paths",
+        )
+        if any(not path.strip() for path in self.goal_capture_paths):
+            raise ValueError("goal_capture_paths cannot contain blank values")
+        if not self.dimensions:
+            raise ValueError(
+                f"Seed schema '{self.schema_id}' must declare at least one dimension"
+            )
+        _check_unique(
+            [dimension.dimension_id for dimension in self.dimensions],
+            label=f"seed schema '{self.schema_id}' dimensions.dimension_id",
+        )
+        return self
+
+    def expand_seeds(self, *, default_goal_capture_paths: list[str]) -> list[SamplingSeedSpec]:
+        """Expand exact-one dimension cross-products into concrete sampling seeds."""
+        from itertools import product
+
+        capture_paths = list(self.goal_capture_paths or default_goal_capture_paths)
+
+        def _ordered_unique(values: list[str]) -> list[str]:
+            seen: set[str] = set()
+            out: list[str] = []
+            for value in values:
+                if value in seen:
+                    continue
+                seen.add(value)
+                out.append(value)
+            return out
+
+        expanded: list[SamplingSeedSpec] = []
+        for chosen_variants in product(*[dimension.variants for dimension in self.dimensions]):
+            substitutions = {"schema_id": self.schema_id}
+            substitutions.update(
+                {
+                    dimension.dimension_id: variant.variant_id
+                    for dimension, variant in zip(self.dimensions, chosen_variants, strict=True)
+                }
+            )
+            try:
+                seed_id = self.seed_id_template.format(**substitutions)
+            except KeyError as exc:
+                raise ValueError(
+                    f"Seed schema '{self.schema_id}' seed_id_template references unknown "
+                    f"placeholder '{exc.args[0]}'"
+                ) from exc
+
+            start_world = [*self.start_world]
+            start_bindings = list(self.start_bindings)
+            min_depth = self.min_depth
+            max_depth = self.max_depth
+            for variant in chosen_variants:
+                start_world.extend(variant.start_world)
+                start_bindings.extend(variant.start_bindings)
+                min_depth += variant.min_depth_delta
+                max_depth += variant.max_depth_delta
+
+            expanded.append(
+                SamplingSeedSpec(
+                    seed_id=seed_id,
+                    start_world=start_world,
+                    start_bindings=_ordered_unique(start_bindings),
+                    allowed_terminal_profiles=list(self.allowed_terminal_profiles),
+                    goal_capture_paths=capture_paths,
+                    min_depth=min_depth,
+                    max_depth=max_depth,
+                )
+            )
+
+        return expanded
+
+
 class SamplingRequestDoc(BaseModel):
     """Input document for fan-out task-intent sampling."""
 
@@ -618,6 +770,43 @@ class SamplingRequestDoc(BaseModel):
     terminal_profiles: list[TerminalProfileSpec] = Field(default_factory=list)
     goal_capture_paths: list[str] = Field(default_factory=list)
     seeds: list[SamplingSeedSpec] = Field(default_factory=list)
+    seed_schemas: list[SeedSchemaSpec] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def expand_seed_schemas(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        raw_schemas = data.get("seed_schemas") or []
+        if not raw_schemas:
+            return data
+
+        default_goal_capture_paths = list(data.get("goal_capture_paths") or [])
+        expanded_seeds: list[dict[str, Any]] = []
+        for raw_schema in raw_schemas:
+            schema = (
+                raw_schema
+                if isinstance(raw_schema, SeedSchemaSpec)
+                else SeedSchemaSpec.model_validate(raw_schema)
+            )
+            expanded_seeds.extend(
+                seed.model_dump(mode="python")
+                for seed in schema.expand_seeds(
+                    default_goal_capture_paths=default_goal_capture_paths
+                )
+            )
+
+        raw_seeds = data.get("seeds") or []
+        normalized_seeds: list[dict[str, Any]] = []
+        for raw_seed in raw_seeds:
+            if isinstance(raw_seed, SamplingSeedSpec):
+                normalized_seeds.append(raw_seed.model_dump(mode="python"))
+            else:
+                normalized_seeds.append(raw_seed)
+
+        payload = dict(data)
+        payload["seeds"] = [*normalized_seeds, *expanded_seeds]
+        return payload
 
     @model_validator(mode="after")
     def validate_sampling_request(self) -> "SamplingRequestDoc":
@@ -638,6 +827,10 @@ class SamplingRequestDoc(BaseModel):
         _check_unique(
             [seed.seed_id for seed in self.seeds],
             label="sampling_request.seeds.seed_id",
+        )
+        _check_unique(
+            [schema.schema_id for schema in self.seed_schemas],
+            label="sampling_request.seed_schemas.schema_id",
         )
         known_profiles = {profile.profile_id for profile in self.terminal_profiles}
         for seed in self.seeds:

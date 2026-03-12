@@ -47,6 +47,7 @@ Use this split to avoid ambiguity and accidental over-automation:
    - Do not manually edit generated structure (`required_actions`, `required_precedence`, sampled start/goal intent) except via upstream source files and reruns.
    - Semantic enrichment happens in runtime fields only.
    - Terminal end states must be declared in `sampling_request.yaml` via `terminal_profiles`; do not create shorter tasks by stopping in intermediate repair states.
+   - If the domain needs many related starts, prefer `seed_schemas` in `sampling_request.yaml` over hand-maintained concrete seed lists.
 
 ## Order of use (trial run)
 
