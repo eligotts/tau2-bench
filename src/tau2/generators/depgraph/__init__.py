@@ -44,6 +44,8 @@ from tau2.generators.depgraph.sampler import SampledTask, sample_task_intents
 from tau2.generators.depgraph.solver import SearchResult, find_plan
 from tau2.generators.depgraph.types import (
     ActionContract,
+    ActionSchemaSpec,
+    ActionSchemaVariantSpec,
     ActionExpectationSpec,
     BindingPredicateSpec,
     EnvAssertionSpec,
@@ -63,6 +65,8 @@ from tau2.generators.depgraph.types import (
 
 __all__ = [
     "ActionContract",
+    "ActionSchemaSpec",
+    "ActionSchemaVariantSpec",
     "ActionExpectationSpec",
     "BindingPredicateSpec",
     "CompileResult",

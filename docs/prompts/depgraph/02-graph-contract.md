@@ -17,11 +17,12 @@ Requirements:
 
 1. Every callable action has classification: `causal`, `knowledge-only`, or `stutter-only`.
 2. Define context slots (for example `active_customer`, `active_line`) and project only task-relevant world paths into `projection_fields`.
-3. Every action defines:
+3. Every action or action-schema variant defines:
    - `requires_world` using explicit predicate ops (`eq`, `neq`, `gt`, `lt`, `gte`, `lte`)
    - `requires_bindings` using `{binding_id, acquired}` predicates
    - `effects_world`, `effects_bindings`
    - `tool_arg_bindings` when bindings gate runtime tool calls
+   - `tool_arg_literals` for finite literal params on the runtime tool call
 4. Model user-supplied knowledge as normal tool-backed actions:
    - `requestor=user`
    - `classification=knowledge-only`
@@ -32,28 +33,34 @@ Requirements:
 7. Include only causal user fields in world predicates/effects (`user.*` projected causal paths).
 8. Exclude projection-only user fields from causal contracts.
 9. Ensure each binding `extraction_path` is syntactically valid and schema-consistent where typed return schemas exist.
-10. For every action in contract, implement matching runtime tool callable now:
+10. For every concrete action in contract, implement matching runtime tool callable now:
    - `requestor=assistant` -> callable in `tools.py`
    - `requestor=user` -> callable in `user_tools.py`
 11. Ensure binding-gated actions expose concrete tool parameters matching `tool_arg_bindings` keys.
-12. If a binding has `world_path` and that path is rewritten by actions or `sync_rules`, treat it as volatile:
+12. If one conceptual tool has a finite enum/route/mode input, prefer one runtime tool plus an
+    `action_schemas` entry that expands into concrete actions, instead of hand-authoring several
+    near-duplicate actions that differ only by literal tool args.
+    Annotate that runtime tool parameter as `Literal[...]` or an `Enum`, not plain `str`, so the
+    agent-visible tool schema exposes the valid values.
+13. If a binding has `world_path` and that path is rewritten by actions or `sync_rules`, treat it as volatile:
    - only the immediate observation-driven tool, or clearly mutually-exclusive stage-specific tools, may map it through `tool_arg_bindings`
    - the longer repair chain should run from stable world predicates established by prior actions
-13. Define `sync_rules` in the contract for every runtime sync behavior:
+14. Define `sync_rules` in the contract for every runtime sync behavior:
    - unconditional projections via `{path, from_path}`
    - conditional bridges/derived updates via `requires_world` + `{path, set}`
    - no hidden sync behavior outside the declared rules
-14. Implement `sync_tools()` now to mirror the declared `sync_rules` exactly, both for the initial start world and after every tool call.
-15. If using strict checker-based STOP:
+15. Implement `sync_tools()` now to mirror the declared `sync_rules` exactly, both for the initial start world and after every tool call.
+16. If using strict checker-based STOP:
    - include a user `stutter-only` action for `check_resolution_status`
    - implement matching user tool callable now
    - keep checker tool non-causal (no world/binding effects).
-16. Runtime guard behavior must mirror contract preconditions:
+17. Runtime guard behavior must mirror contract preconditions:
    - unmet preconditions return explicit error/no-op message
    - no hidden state mutation on guard failure (`stutter_on_fail` semantics).
-17. Keep naming explicit:
+18. Keep naming explicit:
    - `action_id` is stable semantic unit
    - `tool_name` is executable callable
+   - `action_schemas` are authoring sugar only; after expansion, concrete `action_id`s still need clear semantic names
    - avoid implicit aliasing; if aliasing is unavoidable, document it in contract comments.
 
 ## Graph Topology Requirements
@@ -104,6 +111,10 @@ order. Cross-dependencies force the agent to sequence user instructions correctl
 At least one action in the middle of the graph (not the final gate) should require
 preconditions from 2+ different upstream paths. This creates a mid-graph convergence point
 where the agent must coordinate across lanes before continuing.
+
+If you want a real difficulty jump with minimal surface-area growth, add one shared downstream
+lane that multiple branches must clear, and expose its finite blocker choices through one
+enum-typed runtime tool plus an `action_schemas` expansion.
 
 Why: If the only multi-prerequisite action is the final gate, all reasoning about
 coordination is deferred to the end. Early convergence forces ongoing coordination.

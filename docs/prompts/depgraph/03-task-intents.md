@@ -17,15 +17,16 @@ uv run python -m tau2.generators.depgraph.run_sampler \
 `sampling_request.yaml` must define:
 
 1. `max_tasks`
-2. `goal_world_path_prefixes`
-3. `terminal_profiles[]`:
+2. `terminal_profiles[]`:
    - `profile_id`
    - `requires_world`
+3. `goal_capture_paths` (global path-prefix list, or override per seed)
 4. `seeds[]`:
    - `seed_id`
    - `start_world` (list of `{path, set}`)
    - optional `start_bindings`
    - `allowed_terminal_profiles`
+   - optional `goal_capture_paths` override
    - `min_depth`
    - `max_depth`
 
@@ -39,6 +40,7 @@ Requirements:
    - no concrete customer/account IDs in sampled intents
    - bind concrete entities later in runtime enrichment.
 6. Every sampled task must end in an explicit terminal profile. Do not use intermediate repair states as ordinary task ends.
+7. `terminal_profiles` define which end states are valid. `goal_capture_paths` define which changed parts of the solved world become emitted `goal_world` and env assertions.
 
 ## Seed Design for Structural Diversity
 
@@ -92,6 +94,9 @@ lanes need work:
 - Seed where only one agent-side branch is active
 - Seed where cross-lane coordination is the core challenge (both lanes partially broken,
   requiring interleaved work)
+- If you add a new shared downstream lane, prefer seeds that vary which subset of that lane's
+  blockers is active. This increases both task count and path depth without turning tasks into
+  post-repair checkpoints.
 
 ### Avoid depth-only variation
 
@@ -110,11 +115,17 @@ Terminal profiles define the states that count as legitimate task endings.
 
 - Put terminality in `terminal_profiles`, not in ad hoc depth cutoffs.
 - A seed may only emit tasks whose end state matches one of its `allowed_terminal_profiles`.
+- `terminal_profiles` are validity rules, not task identity by themselves. The emitted
+  `goal_world` should be captured from the reached solved state under `goal_capture_paths`.
 - Shorter tasks should come from seeds that start closer to resolution, not from stopping in
   the middle of an otherwise-fixable repair chain.
-- Sampled tasks should be canonicalized to the minimal terminal-reaching plan for that
-  `goal_world`. Optional extra reads or unused binding acquisitions should not create
-  separate task variants.
+- Sampled tasks should be canonicalized to the minimal terminal-reaching plan for the
+  captured `goal_world`. Optional extra reads or unused binding acquisitions should not
+  create separate task variants.
+- Keep the capture surface causal rather than exhaustive. Do not capture `user.view.*`,
+  stop-gate bookkeeping, or other sync/display projections just because they changed.
+- Fail closed on frame drift: if a sampled terminal plan changes authored start-state paths
+  outside the captured `goal_world`, reject it instead of rewarding incidental side effects.
 - If the domain needs milestone tasks, model them explicitly as milestone profiles with a
   matching prompt/tool surface. Do not reuse a full-resolution policy and then stop halfway.
 

@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from tau2.generators.depgraph.goal_capture import (
+    capture_goal_world,
+    explicit_start_world_map,
+    path_matches_capture,
+)
 from tau2.generators.depgraph.semantics import materialize_world, predicate_holds
 from tau2.generators.depgraph.solver import SearchResult, find_plan
 from tau2.generators.depgraph.types import (
@@ -314,6 +319,18 @@ def _check_terminal_profile_reference(
     return issues
 
 
+def _check_goal_capture_reference(task: TaskIntent) -> list[str]:
+    """Require goal-capture metadata for terminal-profile tasks."""
+    if task.terminal_profile_id is None:
+        return []
+    if task.goal_capture_paths:
+        return []
+    return [
+        "Task is missing goal_capture_paths. Terminal-profile tasks must declare which "
+        "captured end-state paths define goal_world/env assertions."
+    ]
+
+
 def _check_terminal_profile_goal_conflicts(
     task: TaskIntent,
     profile: TerminalProfileSpec,
@@ -360,6 +377,7 @@ def run_task_preflight(
             require_terminal_profile=require_terminal_profile,
         )
     )
+    issues.extend(_check_goal_capture_reference(task))
     if task.terminal_profile_id is not None:
         profile = terminal_profiles_by_id.get(task.terminal_profile_id)
         if profile is not None:
@@ -388,6 +406,50 @@ def run_task_preflight(
                 f"SAT_full terminal state does not satisfy terminal profile "
                 f"'{task.terminal_profile_id}'"
             )
+    if sat_full.sat and sat_full.end_world is not None and task.goal_capture_paths:
+        start_world, start_issues = materialize_world(
+            task.start_world,
+            sync_rules=contract.sync_rules,
+        )
+        if start_issues:
+            issues.extend(start_issues)
+        else:
+            authored_goal_paths = {predicate.path for predicate in task.goal_world}
+            for predicate in task.goal_world:
+                if not path_matches_capture(predicate.path, task.goal_capture_paths):
+                    issues.append(
+                        f"Goal predicate '{predicate.path}' falls outside goal_capture_paths"
+                    )
+
+            expected_goal_world = capture_goal_world(
+                start_world=start_world,
+                end_world=sat_full.end_world,
+                capture_paths=task.goal_capture_paths,
+                projected_paths=contract.projection_fields,
+            )
+            expected_goal_signature = {
+                (predicate.path, predicate.op, repr(predicate.value))
+                for predicate in expected_goal_world
+            }
+            authored_goal_signature = {
+                (predicate.path, predicate.op, repr(predicate.value))
+                for predicate in task.goal_world
+            }
+            if authored_goal_signature != expected_goal_signature:
+                issues.append(
+                    "goal_world does not match the captured end-state diff under "
+                    "goal_capture_paths"
+                )
+
+            explicit_start_map = explicit_start_world_map(task.start_world)
+            for path, start_value in sorted(explicit_start_map.items()):
+                if path in authored_goal_paths:
+                    continue
+                if sat_full.end_world.get(path) != start_value:
+                    issues.append(
+                        f"SAT_full changed protected start-world path '{path}' outside goal_world "
+                        f"(start={start_value!r}, end={sat_full.end_world.get(path)!r})"
+                    )
 
     report = TaskPreflightReport(
         task_id=task.task_id,

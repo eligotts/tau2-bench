@@ -1,6 +1,7 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
 from tau2.domains.ev_charging_support.data_model import (
+    AllowlistSyncState,
     BackendLinkState,
     CertState,
     ChargeState,
@@ -19,8 +20,10 @@ from tau2.domains.ev_charging_support.data_model import (
     PaymentTokenStatus,
     ProfileState,
     ReachabilityState,
+    ReservationLockState,
     RetryState,
     SessionAuthState,
+    TariffProfileState,
     VehicleAuthState,
 )
 from tau2.domains.ev_charging_support.user_data_model import (
@@ -330,6 +333,21 @@ class EVChargingSupportTools(ToolKitBase):
             return {"status": "error", "message": "Certificate must be fresh before refreshing session authorization."}
         if network.handshake_state != HandshakeState.ESTABLISHED:
             return {"status": "error", "message": "Handshake must be established before refreshing session authorization."}
+        if session.allowlist_sync_state != AllowlistSyncState.SYNCED:
+            return {
+                "status": "error",
+                "message": "Site allowlist sync must be cleared before refreshing session authorization.",
+            }
+        if session.tariff_profile_state != TariffProfileState.READY:
+            return {
+                "status": "error",
+                "message": "Tariff profile must be ready before refreshing session authorization.",
+            }
+        if session.reservation_lock_state != ReservationLockState.CLEARED:
+            return {
+                "status": "error",
+                "message": "Reservation lock must be cleared before refreshing session authorization.",
+            }
         if self._user_db.physical.app_login_state != AppLoginState.ACTIVE:
             return {
                 "status": "error",
@@ -338,6 +356,55 @@ class EVChargingSupportTools(ToolKitBase):
 
         session.session_auth_state = SessionAuthState.VALID
         return {"status": "success", "message": "Charging session authorization refreshed."}
+
+    @is_tool(ToolType.WRITE)
+    def clear_entitlement_blocker(
+        self,
+        blocker: Literal["allowlist_sync", "tariff_profile", "reservation_lock"],
+        fault_code: str,
+    ) -> Dict[str, Any]:
+        """Clear the current entitlement-stage blocker before session authorization."""
+        session = self._get_session()
+
+        error = self._fault_code_guard(fault_code)
+        if error is not None:
+            return {"status": "error", "message": error}
+
+        diagnostics_error = self._require_diagnostics_ran()
+        if diagnostics_error is not None:
+            return diagnostics_error
+        if session.profile_state != ProfileState.NOT_READY:
+            return {"status": "noop", "message": "Entitlement lane already complete."}
+
+        blocker_to_fault = {
+            "allowlist_sync": "ENT-210",
+            "tariff_profile": "ENT-220",
+            "reservation_lock": "ENT-230",
+        }
+        expected_fault = blocker_to_fault[blocker]
+        if session.last_fault_code != expected_fault:
+            return {
+                "status": "error",
+                "message": (
+                    f"Current entitlement blocker does not match '{blocker}'. "
+                    f"Station is currently at '{session.last_fault_code}'."
+                ),
+            }
+
+        if blocker == "allowlist_sync":
+            if session.allowlist_sync_state == AllowlistSyncState.SYNCED:
+                return {"status": "noop", "message": "Site allowlist is already synchronized."}
+            session.allowlist_sync_state = AllowlistSyncState.SYNCED
+            return {"status": "success", "message": "Site allowlist synchronized."}
+        if blocker == "tariff_profile":
+            if session.tariff_profile_state == TariffProfileState.READY:
+                return {"status": "noop", "message": "Tariff profile is already ready."}
+            session.tariff_profile_state = TariffProfileState.READY
+            return {"status": "success", "message": "Tariff profile repaired."}
+        if session.reservation_lock_state == ReservationLockState.CLEARED:
+            return {"status": "noop", "message": "Reservation lock is already cleared."}
+        session.reservation_lock_state = ReservationLockState.CLEARED
+        return {"status": "success", "message": "Reservation lock cleared."}
 
     def _check_common_reprovision_prereqs(self, fault_code: str) -> Optional[Dict[str, Any]]:
         """Shared checks for observation-driven reprovision steps."""
@@ -409,81 +476,62 @@ class EVChargingSupportTools(ToolKitBase):
         return {"status": "success", "message": "Vehicle authorization refreshed."}
 
     @is_tool(ToolType.WRITE)
-    def reprovision_billing(self, fault_code: str) -> Dict[str, Any]:
-        """Reprovision after billing-class recovery (account hold, payment, fraud lock)."""
-        account = self._get_account()
-        session = self._get_session()
+    def reprovision(
+        self,
+        branch: Literal["billing", "connectivity", "full_system"],
+        fault_code: str,
+    ) -> Dict[str, Any]:
+        """Reprovision the charging profile for the confirmed recovery branch.
 
-        if session.error_class != ErrorClass.BILLING:
-            return {"status": "error", "message": "This reprovision path is for billing errors only."}
-
-        prereq_error = self._check_common_reprovision_prereqs(fault_code)
-        if prereq_error is not None:
-            return prereq_error
-
-        if account.hold_status != HoldStatus.CLEARED:
-            return {"status": "error", "message": "Hold must be cleared before reprovision."}
-        if account.payment_token_status != PaymentTokenStatus.VALID:
-            return {"status": "error", "message": "Payment token must be valid before reprovision."}
-        if account.fraud_lock_state != FraudLockState.OFF:
-            return {"status": "error", "message": "Fraud lock must be released before reprovision."}
-
-        return self._do_reprovision()
-
-    @is_tool(ToolType.WRITE)
-    def reprovision_connectivity(self, fault_code: str) -> Dict[str, Any]:
-        """Reprovision after connectivity-class recovery (backend link, certificate)."""
-        network = self._get_network_path()
-        session = self._get_session()
-
-        if session.error_class != ErrorClass.CONNECTIVITY:
-            return {"status": "error", "message": "This reprovision path is for connectivity errors only."}
-
-        prereq_error = self._check_common_reprovision_prereqs(fault_code)
-        if prereq_error is not None:
-            return prereq_error
-
-        hw_error = self._check_hardware_physical_prereqs()
-        if hw_error is not None:
-            return hw_error
-
-        if network.backend_link_state != BackendLinkState.UP:
-            return {"status": "error", "message": "Backend link must be up before reprovision."}
-        if network.cert_state != CertState.FRESH:
-            return {"status": "error", "message": "Certificate must be fresh before reprovision."}
-
-        return self._do_reprovision()
-
-    @is_tool(ToolType.WRITE)
-    def reprovision_full_system(self, fault_code: str) -> Dict[str, Any]:
-        """Reprovision after full-system recovery (account, network, and firmware)."""
+        The branch value should match the current app-side error class.
+        """
         account = self._get_account()
         station = self._get_station()
         network = self._get_network_path()
         session = self._get_session()
-
-        if session.error_class != ErrorClass.FULL_SYSTEM:
-            return {"status": "error", "message": "This reprovision path is for full-system errors only."}
+        expected_error_class = {
+            "billing": ErrorClass.BILLING,
+            "connectivity": ErrorClass.CONNECTIVITY,
+            "full_system": ErrorClass.FULL_SYSTEM,
+        }.get(branch)
+        if expected_error_class is None:
+            return {
+                "status": "error",
+                "message": f"Unknown reprovision branch '{branch}'.",
+            }
+        if session.error_class != expected_error_class:
+            return {
+                "status": "error",
+                "message": f"This reprovision path is for {branch.replace('_', ' ')} errors only.",
+            }
 
         prereq_error = self._check_common_reprovision_prereqs(fault_code)
         if prereq_error is not None:
             return prereq_error
 
-        hw_error = self._check_hardware_physical_prereqs()
-        if hw_error is not None:
-            return hw_error
+        if branch in {"connectivity", "full_system"}:
+            hw_error = self._check_hardware_physical_prereqs()
+            if hw_error is not None:
+                return hw_error
 
-        if account.hold_status != HoldStatus.CLEARED:
-            return {"status": "error", "message": "Hold must be cleared before reprovision."}
-        if account.payment_token_status != PaymentTokenStatus.VALID:
-            return {"status": "error", "message": "Payment token must be valid before reprovision."}
-        if account.fraud_lock_state != FraudLockState.OFF:
-            return {"status": "error", "message": "Fraud lock must be released before reprovision."}
-        if network.backend_link_state != BackendLinkState.UP:
-            return {"status": "error", "message": "Backend link must be up before reprovision."}
-        if network.cert_state != CertState.FRESH:
-            return {"status": "error", "message": "Certificate must be fresh before reprovision."}
-        if station.firmware_state != FirmwareState.CURRENT:
+        if branch in {"billing", "full_system"}:
+            if account.hold_status != HoldStatus.CLEARED:
+                return {"status": "error", "message": "Hold must be cleared before reprovision."}
+            if account.payment_token_status != PaymentTokenStatus.VALID:
+                return {"status": "error", "message": "Payment token must be valid before reprovision."}
+            if account.fraud_lock_state != FraudLockState.OFF:
+                return {
+                    "status": "error",
+                    "message": "Fraud lock must be released before reprovision.",
+                }
+
+        if branch in {"connectivity", "full_system"}:
+            if network.backend_link_state != BackendLinkState.UP:
+                return {"status": "error", "message": "Backend link must be up before reprovision."}
+            if network.cert_state != CertState.FRESH:
+                return {"status": "error", "message": "Certificate must be fresh before reprovision."}
+
+        if branch == "full_system" and station.firmware_state != FirmwareState.CURRENT:
             return {"status": "error", "message": "Firmware must be current before reprovision."}
 
         return self._do_reprovision()
@@ -547,6 +595,15 @@ class EVChargingSupportTools(ToolKitBase):
     def set_session_auth_state(self, value: str) -> None:
         self._get_session().session_auth_state = SessionAuthState(value)
 
+    def set_allowlist_sync_state(self, value: str) -> None:
+        self._get_session().allowlist_sync_state = AllowlistSyncState(value)
+
+    def set_tariff_profile_state(self, value: str) -> None:
+        self._get_session().tariff_profile_state = TariffProfileState(value)
+
+    def set_reservation_lock_state(self, value: str) -> None:
+        self._get_session().reservation_lock_state = ReservationLockState(value)
+
     def set_vehicle_auth_state(self, value: str) -> None:
         self._get_session().vehicle_auth_state = VehicleAuthState(value)
 
@@ -601,6 +658,15 @@ class EVChargingSupportTools(ToolKitBase):
 
     def assert_session_auth_state(self, expected: str) -> bool:
         return self._get_session().session_auth_state == SessionAuthState(expected)
+
+    def assert_allowlist_sync_state(self, expected: str) -> bool:
+        return self._get_session().allowlist_sync_state == AllowlistSyncState(expected)
+
+    def assert_tariff_profile_state(self, expected: str) -> bool:
+        return self._get_session().tariff_profile_state == TariffProfileState(expected)
+
+    def assert_reservation_lock_state(self, expected: str) -> bool:
+        return self._get_session().reservation_lock_state == ReservationLockState(expected)
 
     def assert_vehicle_auth_state(self, expected: str) -> bool:
         return self._get_session().vehicle_auth_state == VehicleAuthState(expected)

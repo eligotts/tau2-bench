@@ -15,6 +15,9 @@ tasks:
       - op: eq
         path: agent.lines[active_line].data_status
         value: active
+    goal_capture_paths:
+      - agent.lines[active_line]
+      - user.physical
     goal_bindings: []
     terminal_profile_id: fully_resolved
     required_actions:
@@ -44,16 +47,30 @@ tasks:
                 op: eq
                 expected: active
                 unmet_reason: Mobile data is not active yet.
-                observed_from: check_resolution_status.observed.data_status
         - env_type: assistant
           func_name: set_profile_state
           arguments:
             value: pending
       env_assertions:
         - env_type: assistant
+          func_name: assert_profile_state
+          arguments:
+            expected: pending
+          assert_value: true
+        - env_type: assistant
           func_name: assert_data_active
           arguments:
             expected: true
+          assert_value: true
+        - env_type: user
+          func_name: assert_phone_powered_on
+          arguments:
+            expected: true
+          assert_value: true
+        - env_type: user
+          func_name: assert_phone_restarted
+          arguments:
+            expected: false
           assert_value: true
       actions: []
       reward_basis: [ENV_ASSERTION]

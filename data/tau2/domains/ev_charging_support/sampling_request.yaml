@@ -1,1710 +1,2819 @@
 version: 1
-max_tasks: 48
-goal_world_path_prefixes:
-  - agent.
-
+max_tasks: 72
+goal_capture_paths: &billing_goal_capture_paths
+- agent.accounts[active_account]
+- agent.stations[active_station].diagnostics_state
+- agent.sessions[active_session]
+- user.physical.vehicle_ready_state
+- user.physical.app_refresh_state
+- user.physical.app_login_state
+- user.physical.connector_latch_state
+- user.physical.test_charge_state
 terminal_profiles:
-  - profile_id: billing_resolved
-    description: Billing branch fully resolved, retry lane cleared, and charging is active.
-    requires_world:
-      - path: agent.sessions[active_session].error_class
-        op: eq
-        value: billing
-      - path: agent.accounts[active_account].hold_status
-        op: eq
-        value: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        op: eq
-        value: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        op: eq
-        value: 'off'
-      - path: agent.stations[active_station].reachability_state
-        op: eq
-        value: reachable
-      - path: agent.stations[active_station].firmware_state
-        op: eq
-        value: current
-      - path: agent.stations[active_station].clock_sync_state
-        op: eq
-        value: synced
-      - path: agent.stations[active_station].diagnostics_state
-        op: eq
-        value: ran
-      - path: agent.network_paths[active_station].backend_link_state
-        op: eq
-        value: up
-      - path: agent.network_paths[active_station].cert_state
-        op: eq
-        value: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        op: eq
-        value: established
-      - path: agent.sessions[active_session].session_auth_state
-        op: eq
-        value: valid
-      - path: agent.sessions[active_session].profile_state
-        op: eq
-        value: ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        op: eq
-        value: validated
-      - path: agent.sessions[active_session].retry_state
-        op: eq
-        value: ready
-      - path: agent.sessions[active_session].charge_state
-        op: eq
-        value: active
-      - path: agent.sessions[active_session].last_fault_code
-        op: eq
-        value: NONE
-      - path: user.physical.vehicle_ready_state
-        op: eq
-        value: ready
-      - path: user.physical.app_refresh_state
-        op: eq
-        value: refreshed
-      - path: user.physical.connector_latch_state
-        op: eq
-        value: confirmed
-      - path: user.physical.test_charge_state
-        op: eq
-        value: run
-
-  - profile_id: connectivity_resolved
-    description: Connectivity branch fully resolved, secure transport healthy, and charging is active.
-    requires_world:
-      - path: agent.sessions[active_session].error_class
-        op: eq
-        value: connectivity
-      - path: agent.accounts[active_account].hold_status
-        op: eq
-        value: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        op: eq
-        value: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        op: eq
-        value: 'off'
-      - path: agent.stations[active_station].reachability_state
-        op: eq
-        value: reachable
-      - path: agent.stations[active_station].firmware_state
-        op: eq
-        value: current
-      - path: agent.stations[active_station].clock_sync_state
-        op: eq
-        value: synced
-      - path: agent.stations[active_station].diagnostics_state
-        op: eq
-        value: ran
-      - path: agent.network_paths[active_station].backend_link_state
-        op: eq
-        value: up
-      - path: agent.network_paths[active_station].cert_state
-        op: eq
-        value: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        op: eq
-        value: established
-      - path: agent.sessions[active_session].session_auth_state
-        op: eq
-        value: valid
-      - path: agent.sessions[active_session].profile_state
-        op: eq
-        value: ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        op: eq
-        value: validated
-      - path: agent.sessions[active_session].retry_state
-        op: eq
-        value: ready
-      - path: agent.sessions[active_session].charge_state
-        op: eq
-        value: active
-      - path: agent.sessions[active_session].last_fault_code
-        op: eq
-        value: NONE
-      - path: user.physical.cable_inspection_state
-        op: eq
-        value: checked_ok
-      - path: user.physical.connector_reseat_state
-        op: eq
-        value: reseated
-      - path: user.physical.station_power_cycle_state
-        op: eq
-        value: done
-      - path: user.physical.vehicle_ready_state
-        op: eq
-        value: ready
-      - path: user.physical.app_refresh_state
-        op: eq
-        value: refreshed
-      - path: user.physical.connector_latch_state
-        op: eq
-        value: confirmed
-      - path: user.physical.test_charge_state
-        op: eq
-        value: run
-
-  - profile_id: full_system_resolved
-    description: Full-system branch fully resolved across billing, transport, and final readiness gates.
-    requires_world:
-      - path: agent.sessions[active_session].error_class
-        op: eq
-        value: full_system
-      - path: agent.accounts[active_account].hold_status
-        op: eq
-        value: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        op: eq
-        value: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        op: eq
-        value: 'off'
-      - path: agent.stations[active_station].reachability_state
-        op: eq
-        value: reachable
-      - path: agent.stations[active_station].firmware_state
-        op: eq
-        value: current
-      - path: agent.stations[active_station].clock_sync_state
-        op: eq
-        value: synced
-      - path: agent.stations[active_station].diagnostics_state
-        op: eq
-        value: ran
-      - path: agent.network_paths[active_station].backend_link_state
-        op: eq
-        value: up
-      - path: agent.network_paths[active_station].cert_state
-        op: eq
-        value: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        op: eq
-        value: established
-      - path: agent.sessions[active_session].session_auth_state
-        op: eq
-        value: valid
-      - path: agent.sessions[active_session].profile_state
-        op: eq
-        value: ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        op: eq
-        value: validated
-      - path: agent.sessions[active_session].retry_state
-        op: eq
-        value: ready
-      - path: agent.sessions[active_session].charge_state
-        op: eq
-        value: active
-      - path: agent.sessions[active_session].last_fault_code
-        op: eq
-        value: NONE
-      - path: user.physical.cable_inspection_state
-        op: eq
-        value: checked_ok
-      - path: user.physical.connector_reseat_state
-        op: eq
-        value: reseated
-      - path: user.physical.station_power_cycle_state
-        op: eq
-        value: done
-      - path: user.physical.vehicle_ready_state
-        op: eq
-        value: ready
-      - path: user.physical.app_refresh_state
-        op: eq
-        value: refreshed
-      - path: user.physical.connector_latch_state
-        op: eq
-        value: confirmed
-      - path: user.physical.test_charge_state
-        op: eq
-        value: run
-
+- profile_id: billing_resolved
+  description: Billing branch fully resolved, retry lane cleared, and charging is
+    active.
+  requires_world:
+  - path: agent.sessions[active_session].error_class
+    op: eq
+    value: billing
+  - path: agent.accounts[active_account].hold_status
+    op: eq
+    value: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    op: eq
+    value: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    op: eq
+    value: 'off'
+  - path: agent.stations[active_station].reachability_state
+    op: eq
+    value: reachable
+  - path: agent.stations[active_station].firmware_state
+    op: eq
+    value: current
+  - path: agent.stations[active_station].clock_sync_state
+    op: eq
+    value: synced
+  - path: agent.stations[active_station].diagnostics_state
+    op: eq
+    value: ran
+  - path: agent.network_paths[active_station].backend_link_state
+    op: eq
+    value: up
+  - path: agent.network_paths[active_station].cert_state
+    op: eq
+    value: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    op: eq
+    value: established
+  - path: agent.sessions[active_session].session_auth_state
+    op: eq
+    value: valid
+  - path: agent.sessions[active_session].allowlist_sync_state
+    op: eq
+    value: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    op: eq
+    value: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    op: eq
+    value: cleared
+  - path: agent.sessions[active_session].profile_state
+    op: eq
+    value: ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    op: eq
+    value: validated
+  - path: agent.sessions[active_session].retry_state
+    op: eq
+    value: ready
+  - path: agent.sessions[active_session].charge_state
+    op: eq
+    value: active
+  - path: agent.sessions[active_session].last_fault_code
+    op: eq
+    value: NONE
+  - path: user.physical.vehicle_ready_state
+    op: eq
+    value: ready
+  - path: user.physical.app_refresh_state
+    op: eq
+    value: refreshed
+  - path: user.physical.connector_latch_state
+    op: eq
+    value: confirmed
+  - path: user.physical.test_charge_state
+    op: eq
+    value: run
+- profile_id: connectivity_resolved
+  description: Connectivity branch fully resolved, secure transport healthy, and charging
+    is active.
+  requires_world:
+  - path: agent.sessions[active_session].error_class
+    op: eq
+    value: connectivity
+  - path: agent.accounts[active_account].hold_status
+    op: eq
+    value: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    op: eq
+    value: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    op: eq
+    value: 'off'
+  - path: agent.stations[active_station].reachability_state
+    op: eq
+    value: reachable
+  - path: agent.stations[active_station].firmware_state
+    op: eq
+    value: current
+  - path: agent.stations[active_station].clock_sync_state
+    op: eq
+    value: synced
+  - path: agent.stations[active_station].diagnostics_state
+    op: eq
+    value: ran
+  - path: agent.network_paths[active_station].backend_link_state
+    op: eq
+    value: up
+  - path: agent.network_paths[active_station].cert_state
+    op: eq
+    value: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    op: eq
+    value: established
+  - path: agent.sessions[active_session].session_auth_state
+    op: eq
+    value: valid
+  - path: agent.sessions[active_session].allowlist_sync_state
+    op: eq
+    value: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    op: eq
+    value: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    op: eq
+    value: cleared
+  - path: agent.sessions[active_session].profile_state
+    op: eq
+    value: ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    op: eq
+    value: validated
+  - path: agent.sessions[active_session].retry_state
+    op: eq
+    value: ready
+  - path: agent.sessions[active_session].charge_state
+    op: eq
+    value: active
+  - path: agent.sessions[active_session].last_fault_code
+    op: eq
+    value: NONE
+  - path: user.physical.cable_inspection_state
+    op: eq
+    value: checked_ok
+  - path: user.physical.connector_reseat_state
+    op: eq
+    value: reseated
+  - path: user.physical.station_power_cycle_state
+    op: eq
+    value: done
+  - path: user.physical.vehicle_ready_state
+    op: eq
+    value: ready
+  - path: user.physical.app_refresh_state
+    op: eq
+    value: refreshed
+  - path: user.physical.connector_latch_state
+    op: eq
+    value: confirmed
+  - path: user.physical.test_charge_state
+    op: eq
+    value: run
+- profile_id: full_system_resolved
+  description: Full-system branch fully resolved across billing, transport, and final
+    readiness gates.
+  requires_world:
+  - path: agent.sessions[active_session].error_class
+    op: eq
+    value: full_system
+  - path: agent.accounts[active_account].hold_status
+    op: eq
+    value: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    op: eq
+    value: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    op: eq
+    value: 'off'
+  - path: agent.stations[active_station].reachability_state
+    op: eq
+    value: reachable
+  - path: agent.stations[active_station].firmware_state
+    op: eq
+    value: current
+  - path: agent.stations[active_station].clock_sync_state
+    op: eq
+    value: synced
+  - path: agent.stations[active_station].diagnostics_state
+    op: eq
+    value: ran
+  - path: agent.network_paths[active_station].backend_link_state
+    op: eq
+    value: up
+  - path: agent.network_paths[active_station].cert_state
+    op: eq
+    value: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    op: eq
+    value: established
+  - path: agent.sessions[active_session].session_auth_state
+    op: eq
+    value: valid
+  - path: agent.sessions[active_session].allowlist_sync_state
+    op: eq
+    value: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    op: eq
+    value: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    op: eq
+    value: cleared
+  - path: agent.sessions[active_session].profile_state
+    op: eq
+    value: ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    op: eq
+    value: validated
+  - path: agent.sessions[active_session].retry_state
+    op: eq
+    value: ready
+  - path: agent.sessions[active_session].charge_state
+    op: eq
+    value: active
+  - path: agent.sessions[active_session].last_fault_code
+    op: eq
+    value: NONE
+  - path: user.physical.cable_inspection_state
+    op: eq
+    value: checked_ok
+  - path: user.physical.connector_reseat_state
+    op: eq
+    value: reseated
+  - path: user.physical.station_power_cycle_state
+    op: eq
+    value: done
+  - path: user.physical.vehicle_ready_state
+    op: eq
+    value: ready
+  - path: user.physical.app_refresh_state
+    op: eq
+    value: refreshed
+  - path: user.physical.connector_latch_state
+    op: eq
+    value: confirmed
+  - path: user.physical.test_charge_state
+    op: eq
+    value: run
 seeds:
-  - seed_id: billing_auth_stack_full
-    allowed_terminal_profiles: [billing_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: present
-      - path: agent.accounts[active_account].payment_token_status
-        set: invalid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'on'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: billing
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 14
-    max_depth: 22
-
-  - seed_id: billing_hold_and_auth
-    allowed_terminal_profiles: [billing_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: present
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: billing
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 12
-    max_depth: 20
-
-  - seed_id: billing_payment_and_auth
-    allowed_terminal_profiles: [billing_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: invalid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: billing
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 12
-    max_depth: 20
-
-  - seed_id: billing_fraud_and_auth
-    allowed_terminal_profiles: [billing_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'on'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: billing
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 12
-    max_depth: 20
-
-  - seed_id: billing_hold_and_payment_auth
-    allowed_terminal_profiles: [billing_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: present
-      - path: agent.accounts[active_account].payment_token_status
-        set: invalid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: billing
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 13
-    max_depth: 21
-
-  - seed_id: billing_hold_and_fraud_auth
-    allowed_terminal_profiles: [billing_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: present
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'on'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: billing
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 13
-    max_depth: 21
-
-  - seed_id: billing_payment_and_fraud_auth
-    allowed_terminal_profiles: [billing_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: invalid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'on'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: billing
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 13
-    max_depth: 21
-
-  - seed_id: billing_partial_knowledge
-    allowed_terminal_profiles: [billing_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: present
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'on'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: billing
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings:
-      - app_error_class
-    min_depth: 11
-    max_depth: 18
-
-  - seed_id: connectivity_secure_transport_full
-    allowed_terminal_profiles: [connectivity_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: skewed
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: down
-      - path: agent.network_paths[active_station].cert_state
-        set: stale
-      - path: agent.network_paths[active_station].handshake_state
-        set: broken
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: connectivity
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 16
-    max_depth: 24
-
-  - seed_id: connectivity_link_only
-    allowed_terminal_profiles: [connectivity_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: down
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: connectivity
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 14
-    max_depth: 22
-
-  - seed_id: connectivity_clock_only
-    allowed_terminal_profiles: [connectivity_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: skewed
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: connectivity
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 14
-    max_depth: 22
-
-  - seed_id: connectivity_cert_only
-    allowed_terminal_profiles: [connectivity_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: stale
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: connectivity
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 14
-    max_depth: 22
-
-  - seed_id: connectivity_handshake_only
-    allowed_terminal_profiles: [connectivity_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: broken
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: connectivity
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 13
-    max_depth: 20
-
-  - seed_id: connectivity_link_handshake_auth
-    allowed_terminal_profiles: [connectivity_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: down
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: broken
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: connectivity
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 15
-    max_depth: 23
-
-  - seed_id: connectivity_cert_handshake_auth
-    allowed_terminal_profiles: [connectivity_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: stale
-      - path: agent.network_paths[active_station].handshake_state
-        set: broken
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: connectivity
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 15
-    max_depth: 22
-
-  - seed_id: connectivity_cert_clock_auth
-    allowed_terminal_profiles: [connectivity_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: skewed
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: stale
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: connectivity
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 15
-    max_depth: 23
-
-  - seed_id: connectivity_clock_handshake_auth
-    allowed_terminal_profiles: [connectivity_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: skewed
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: broken
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: connectivity
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 15
-    max_depth: 23
-
-  - seed_id: connectivity_partial_knowledge
-    allowed_terminal_profiles: [connectivity_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: down
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: connectivity
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings:
-      - app_error_class
-    min_depth: 13
-    max_depth: 20
-
-  - seed_id: full_system_all_lanes
-    allowed_terminal_profiles: [full_system_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: present
-      - path: agent.accounts[active_account].payment_token_status
-        set: invalid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'on'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: outdated
-      - path: agent.stations[active_station].clock_sync_state
-        set: skewed
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: down
-      - path: agent.network_paths[active_station].cert_state
-        set: stale
-      - path: agent.network_paths[active_station].handshake_state
-        set: broken
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: full_system
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 19
-    max_depth: 28
-
-  - seed_id: full_system_transport_firmware
-    allowed_terminal_profiles: [full_system_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: outdated
-      - path: agent.stations[active_station].clock_sync_state
-        set: skewed
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: down
-      - path: agent.network_paths[active_station].cert_state
-        set: stale
-      - path: agent.network_paths[active_station].handshake_state
-        set: broken
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: full_system
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 17
-    max_depth: 26
-
-  - seed_id: full_system_billing_transport
-    allowed_terminal_profiles: [full_system_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: present
-      - path: agent.accounts[active_account].payment_token_status
-        set: invalid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: skewed
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: down
-      - path: agent.network_paths[active_station].cert_state
-        set: stale
-      - path: agent.network_paths[active_station].handshake_state
-        set: broken
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: full_system
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 17
-    max_depth: 26
-
-  - seed_id: full_system_billing_firmware
-    allowed_terminal_profiles: [full_system_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: present
-      - path: agent.accounts[active_account].payment_token_status
-        set: invalid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: outdated
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: full_system
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 16
-    max_depth: 24
-
-  - seed_id: full_system_billing_firmware_fraud
-    allowed_terminal_profiles: [full_system_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: present
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'on'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: outdated
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: full_system
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 16
-    max_depth: 24
-
-  - seed_id: full_system_link_handshake_firmware
-    allowed_terminal_profiles: [full_system_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: outdated
-      - path: agent.stations[active_station].clock_sync_state
-        set: synced
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: down
-      - path: agent.network_paths[active_station].cert_state
-        set: fresh
-      - path: agent.network_paths[active_station].handshake_state
-        set: broken
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: full_system
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 16
-    max_depth: 24
-
-  - seed_id: full_system_cert_clock_firmware
-    allowed_terminal_profiles: [full_system_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: cleared
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'off'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: outdated
-      - path: agent.stations[active_station].clock_sync_state
-        set: skewed
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: stale
-      - path: agent.network_paths[active_station].handshake_state
-        set: established
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: full_system
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings: []
-    min_depth: 16
-    max_depth: 24
-
-  - seed_id: full_system_partial_knowledge
-    allowed_terminal_profiles: [full_system_resolved]
-    start_world:
-      - path: agent.accounts[active_account].hold_status
-        set: present
-      - path: agent.accounts[active_account].payment_token_status
-        set: valid
-      - path: agent.accounts[active_account].fraud_lock_state
-        set: 'on'
-      - path: agent.stations[active_station].reachability_state
-        set: reachable
-      - path: agent.stations[active_station].firmware_state
-        set: current
-      - path: agent.stations[active_station].clock_sync_state
-        set: skewed
-      - path: agent.stations[active_station].diagnostics_state
-        set: idle
-      - path: agent.network_paths[active_station].backend_link_state
-        set: up
-      - path: agent.network_paths[active_station].cert_state
-        set: stale
-      - path: agent.network_paths[active_station].handshake_state
-        set: broken
-      - path: agent.sessions[active_session].session_auth_state
-        set: stale
-      - path: agent.sessions[active_session].profile_state
-        set: not_ready
-      - path: agent.sessions[active_session].vehicle_auth_state
-        set: pending
-      - path: agent.sessions[active_session].retry_state
-        set: not_ready
-      - path: agent.sessions[active_session].charge_state
-        set: inactive
-      - path: agent.sessions[active_session].error_class
-        set: full_system
-      - path: user.physical.screen_accessible
-        set: true
-      - path: user.physical.station_power_cycle_state
-        set: not_done
-      - path: user.physical.connector_reseat_state
-        set: not_reseated
-      - path: user.physical.cable_inspection_state
-        set: not_checked
-      - path: user.physical.vehicle_ready_state
-        set: not_ready
-      - path: user.physical.app_refresh_state
-        set: stale
-      - path: user.physical.app_login_state
-        set: expired
-      - path: user.physical.connector_latch_state
-        set: unconfirmed
-      - path: user.physical.test_charge_state
-        set: not_run
-    start_bindings:
-      - app_error_class
-    min_depth: 15
-    max_depth: 24
+- seed_id: billing_auth_stack_full
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: invalid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'on'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 14
+  max_depth: 22
+- seed_id: billing_hold_and_auth
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 12
+  max_depth: 20
+- seed_id: billing_payment_and_auth
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: invalid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 12
+  max_depth: 20
+- seed_id: billing_fraud_and_auth
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'on'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 12
+  max_depth: 20
+- seed_id: billing_hold_and_payment_auth
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: invalid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 13
+  max_depth: 21
+- seed_id: billing_hold_and_fraud_auth
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'on'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 13
+  max_depth: 21
+- seed_id: billing_payment_and_fraud_auth
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: invalid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'on'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 13
+  max_depth: 21
+- seed_id: billing_partial_knowledge
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'on'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings:
+  - app_error_class
+  min_depth: 11
+  max_depth: 18
+- seed_id: connectivity_secure_transport_full
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: &transport_goal_capture_paths
+  - agent.accounts[active_account]
+  - agent.stations[active_station]
+  - agent.network_paths[active_station]
+  - agent.sessions[active_session]
+  - user.physical.cable_inspection_state
+  - user.physical.connector_reseat_state
+  - user.physical.station_power_cycle_state
+  - user.physical.vehicle_ready_state
+  - user.physical.app_refresh_state
+  - user.physical.app_login_state
+  - user.physical.connector_latch_state
+  - user.physical.test_charge_state
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: skewed
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: down
+  - path: agent.network_paths[active_station].cert_state
+    set: stale
+  - path: agent.network_paths[active_station].handshake_state
+    set: broken
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 16
+  max_depth: 24
+- seed_id: connectivity_link_only
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: down
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 14
+  max_depth: 22
+- seed_id: connectivity_clock_only
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: skewed
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 14
+  max_depth: 22
+- seed_id: connectivity_cert_only
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: stale
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 14
+  max_depth: 22
+- seed_id: connectivity_handshake_only
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: broken
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 13
+  max_depth: 20
+- seed_id: connectivity_link_handshake_auth
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: down
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: broken
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 15
+  max_depth: 23
+- seed_id: connectivity_cert_handshake_auth
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: stale
+  - path: agent.network_paths[active_station].handshake_state
+    set: broken
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 15
+  max_depth: 22
+- seed_id: connectivity_cert_clock_auth
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: skewed
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: stale
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 15
+  max_depth: 23
+- seed_id: connectivity_clock_handshake_auth
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: skewed
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: broken
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 15
+  max_depth: 23
+- seed_id: connectivity_partial_knowledge
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: down
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings:
+  - app_error_class
+  min_depth: 13
+  max_depth: 20
+- seed_id: full_system_all_lanes
+  allowed_terminal_profiles:
+  - full_system_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: invalid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'on'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: outdated
+  - path: agent.stations[active_station].clock_sync_state
+    set: skewed
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: down
+  - path: agent.network_paths[active_station].cert_state
+    set: stale
+  - path: agent.network_paths[active_station].handshake_state
+    set: broken
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: full_system
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 19
+  max_depth: 28
+- seed_id: full_system_transport_firmware
+  allowed_terminal_profiles:
+  - full_system_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: outdated
+  - path: agent.stations[active_station].clock_sync_state
+    set: skewed
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: down
+  - path: agent.network_paths[active_station].cert_state
+    set: stale
+  - path: agent.network_paths[active_station].handshake_state
+    set: broken
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: full_system
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 17
+  max_depth: 26
+- seed_id: full_system_billing_transport
+  allowed_terminal_profiles:
+  - full_system_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: invalid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: skewed
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: down
+  - path: agent.network_paths[active_station].cert_state
+    set: stale
+  - path: agent.network_paths[active_station].handshake_state
+    set: broken
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: full_system
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 17
+  max_depth: 26
+- seed_id: full_system_billing_firmware
+  allowed_terminal_profiles:
+  - full_system_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: invalid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: outdated
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: full_system
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 16
+  max_depth: 24
+- seed_id: full_system_billing_firmware_fraud
+  allowed_terminal_profiles:
+  - full_system_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'on'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: outdated
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: full_system
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 16
+  max_depth: 24
+- seed_id: full_system_link_handshake_firmware
+  allowed_terminal_profiles:
+  - full_system_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: outdated
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: down
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: broken
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: full_system
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 16
+  max_depth: 24
+- seed_id: full_system_cert_clock_firmware
+  allowed_terminal_profiles:
+  - full_system_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: outdated
+  - path: agent.stations[active_station].clock_sync_state
+    set: skewed
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: stale
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: full_system
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 16
+  max_depth: 24
+- seed_id: full_system_partial_knowledge
+  allowed_terminal_profiles:
+  - full_system_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'on'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: skewed
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: stale
+  - path: agent.network_paths[active_station].handshake_state
+    set: broken
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: full_system
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings:
+  - app_error_class
+  min_depth: 15
+  max_depth: 24
+- seed_id: billing_allowlist_only
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: stale
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 11
+  max_depth: 22
+- seed_id: billing_tariff_only
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: missing
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 11
+  max_depth: 22
+- seed_id: billing_reservation_only
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: present
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 11
+  max_depth: 22
+- seed_id: billing_allowlist_tariff
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: stale
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: missing
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 12
+  max_depth: 23
+- seed_id: billing_allowlist_reservation
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: stale
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: present
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 12
+  max_depth: 23
+- seed_id: billing_tariff_reservation
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: missing
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: present
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 12
+  max_depth: 23
+- seed_id: billing_entitlement_stack_only
+  allowed_terminal_profiles:
+  - billing_resolved
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: stale
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: missing
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: present
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: billing
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 13
+  max_depth: 24
+- seed_id: connectivity_allowlist_only
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: stale
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 13
+  max_depth: 24
+- seed_id: connectivity_tariff_only
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: missing
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 13
+  max_depth: 24
+- seed_id: connectivity_reservation_only
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: present
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 13
+  max_depth: 24
+- seed_id: connectivity_entitlement_stack_only
+  allowed_terminal_profiles:
+  - connectivity_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: stale
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: missing
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: present
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: connectivity
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 15
+  max_depth: 26
+- seed_id: full_system_allowlist_only
+  allowed_terminal_profiles:
+  - full_system_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: stale
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: ready
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: full_system
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 13
+  max_depth: 24
+- seed_id: full_system_transport_entitlement
+  allowed_terminal_profiles:
+  - full_system_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: cleared
+  - path: agent.accounts[active_account].payment_token_status
+    set: valid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: skewed
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: down
+  - path: agent.network_paths[active_station].cert_state
+    set: stale
+  - path: agent.network_paths[active_station].handshake_state
+    set: broken
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: stale
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: missing
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: cleared
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: full_system
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 17
+  max_depth: 28
+- seed_id: full_system_billing_entitlement
+  allowed_terminal_profiles:
+  - full_system_resolved
+  goal_capture_paths: *transport_goal_capture_paths
+  start_world:
+  - path: agent.accounts[active_account].hold_status
+    set: present
+  - path: agent.accounts[active_account].payment_token_status
+    set: invalid
+  - path: agent.accounts[active_account].fraud_lock_state
+    set: 'off'
+  - path: agent.stations[active_station].reachability_state
+    set: reachable
+  - path: agent.stations[active_station].firmware_state
+    set: current
+  - path: agent.stations[active_station].clock_sync_state
+    set: synced
+  - path: agent.stations[active_station].diagnostics_state
+    set: idle
+  - path: agent.network_paths[active_station].backend_link_state
+    set: up
+  - path: agent.network_paths[active_station].cert_state
+    set: fresh
+  - path: agent.network_paths[active_station].handshake_state
+    set: established
+  - path: agent.sessions[active_session].session_auth_state
+    set: stale
+  - path: agent.sessions[active_session].allowlist_sync_state
+    set: synced
+  - path: agent.sessions[active_session].tariff_profile_state
+    set: missing
+  - path: agent.sessions[active_session].reservation_lock_state
+    set: present
+  - path: agent.sessions[active_session].profile_state
+    set: not_ready
+  - path: agent.sessions[active_session].vehicle_auth_state
+    set: pending
+  - path: agent.sessions[active_session].retry_state
+    set: not_ready
+  - path: agent.sessions[active_session].charge_state
+    set: inactive
+  - path: agent.sessions[active_session].error_class
+    set: full_system
+  - path: user.physical.screen_accessible
+    set: true
+  - path: user.physical.station_power_cycle_state
+    set: not_done
+  - path: user.physical.connector_reseat_state
+    set: not_reseated
+  - path: user.physical.cable_inspection_state
+    set: not_checked
+  - path: user.physical.vehicle_ready_state
+    set: not_ready
+  - path: user.physical.app_refresh_state
+    set: stale
+  - path: user.physical.app_login_state
+    set: expired
+  - path: user.physical.connector_latch_state
+    set: unconfirmed
+  - path: user.physical.test_charge_state
+    set: not_run
+  start_bindings: []
+  min_depth: 15
+  max_depth: 26

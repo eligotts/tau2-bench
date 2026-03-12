@@ -1,4 +1,6 @@
+import types
 import unittest
+from typing import Literal
 
 from tau2.generators.depgraph.compiler import preflight_and_compile
 from tau2.generators.depgraph.preflight import run_task_preflight
@@ -8,6 +10,8 @@ from tau2.generators.depgraph.runtime_checks import (
     check_runtime_against_environment,
     check_start_bindings_visibility,
 )
+from tau2.generators.depgraph.runtime_scaffold import _build_action_expectations
+from tau2.generators.depgraph.runtime_scaffold import _build_goal_env_assertions
 from tau2.generators.depgraph.sampler import sample_task_intents
 from tau2.generators.depgraph.semantics import apply_action, materialize_world
 from tau2.generators.depgraph.types import (
@@ -542,7 +546,7 @@ class TestDepgraphSampler(unittest.TestCase):
         )
         request = SamplingRequestDoc(
             max_tasks=5,
-            goal_world_path_prefixes=["agent."],
+            goal_capture_paths=["agent"],
             terminal_profiles=[_make_terminal_profile("resolved", "agent.f3", True)],
             seeds=[
                 SamplingSeedSpec(
@@ -565,7 +569,7 @@ class TestDepgraphSampler(unittest.TestCase):
         contract = _make_chain_contract()
         request = SamplingRequestDoc(
             max_tasks=5,
-            goal_world_path_prefixes=["agent."],
+            goal_capture_paths=["agent", "user"],
             terminal_profiles=[
                 _make_terminal_profile("data_active", "agent.data_active", True)
             ],
@@ -629,7 +633,7 @@ class TestDepgraphSampler(unittest.TestCase):
         )
         request = SamplingRequestDoc(
             max_tasks=5,
-            goal_world_path_prefixes=["agent."],
+            goal_capture_paths=["agent"],
             terminal_profiles=[
                 _make_terminal_profile("profile_ready", "agent.profile_ready", True)
             ],
@@ -654,7 +658,7 @@ class TestDepgraphSampler(unittest.TestCase):
         contract = _make_simple_contract()
         request = SamplingRequestDoc(
             max_tasks=5,
-            goal_world_path_prefixes=["agent."],
+            goal_capture_paths=["agent"],
             terminal_profiles=[_make_terminal_profile("resolved", "agent.b", True)],
             seeds=[
                 SamplingSeedSpec(
@@ -716,7 +720,7 @@ class TestDepgraphSampler(unittest.TestCase):
         )
         request = SamplingRequestDoc(
             max_tasks=5,
-            goal_world_path_prefixes=["agent."],
+            goal_capture_paths=["agent"],
             terminal_profiles=[_make_terminal_profile("resolved", "agent.b", True)],
             seeds=[
                 SamplingSeedSpec(
@@ -735,6 +739,96 @@ class TestDepgraphSampler(unittest.TestCase):
         self.assertEqual(sampled[0].task.required_actions, ["do_a", "do_b"])
         self.assertEqual(sampled[0].task.goal_bindings, [])
         self.assertEqual(sampled[0].task.min_plan_length, 2)
+
+    def test_sampler_can_emit_multiple_tasks_from_one_seed_via_goal_capture(self):
+        contract = GraphContractSpec(
+            projection_fields=["agent.a", "agent.b", "agent.done"],
+            actions=[
+                ActionContract(
+                    action_id="fix_a",
+                    requestor="assistant",
+                    tool_name="fix_a",
+                    classification="causal",
+                    requires_world=[
+                        WorldPredicateSpec(op="neq", path="agent.a", value=True),
+                    ],
+                    effects_world=[WorldEffectSpec(path="agent.a", set=True)],
+                ),
+                ActionContract(
+                    action_id="fix_b",
+                    requestor="assistant",
+                    tool_name="fix_b",
+                    classification="causal",
+                    requires_world=[
+                        WorldPredicateSpec(op="neq", path="agent.b", value=True),
+                    ],
+                    effects_world=[WorldEffectSpec(path="agent.b", set=True)],
+                ),
+                ActionContract(
+                    action_id="finalize_a",
+                    requestor="assistant",
+                    tool_name="finalize",
+                    classification="causal",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.a", value=True),
+                        WorldPredicateSpec(op="neq", path="agent.done", value=True),
+                    ],
+                    effects_world=[WorldEffectSpec(path="agent.done", set=True)],
+                    tool_arg_literals={"mode": "a"},
+                ),
+                ActionContract(
+                    action_id="finalize_b",
+                    requestor="assistant",
+                    tool_name="finalize",
+                    classification="causal",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.b", value=True),
+                        WorldPredicateSpec(op="neq", path="agent.done", value=True),
+                    ],
+                    effects_world=[WorldEffectSpec(path="agent.done", set=True)],
+                    tool_arg_literals={"mode": "b"},
+                ),
+            ],
+        )
+        request = SamplingRequestDoc(
+            max_tasks=10,
+            goal_capture_paths=["agent"],
+            terminal_profiles=[_make_terminal_profile("resolved", "agent.done", True)],
+            seeds=[
+                SamplingSeedSpec(
+                    seed_id="multi",
+                    start_world=[
+                        WorldEffectSpec(path="agent.a", set=False),
+                        WorldEffectSpec(path="agent.b", set=False),
+                        WorldEffectSpec(path="agent.done", set=False),
+                    ],
+                    allowed_terminal_profiles=["resolved"],
+                    min_depth=2,
+                    max_depth=2,
+                )
+            ],
+        )
+
+        sampled = sample_task_intents(contract, request)
+
+        self.assertEqual(len(sampled), 2)
+        self.assertEqual(
+            {tuple(task.task.required_actions) for task in sampled},
+            {
+                ("fix_a", "finalize_a"),
+                ("fix_b", "finalize_b"),
+            },
+        )
+        self.assertEqual(
+            {
+                tuple((predicate.path, predicate.value) for predicate in task.task.goal_world)
+                for task in sampled
+            },
+            {
+                (("agent.a", True), ("agent.done", True)),
+                (("agent.b", True), ("agent.done", True)),
+            },
+        )
 
     def test_preflight_requires_terminal_profile_when_requested(self):
         contract = _make_simple_contract()
@@ -763,6 +857,7 @@ class TestDepgraphSampler(unittest.TestCase):
         task = TaskIntent(
             task_id="partial_goal",
             goal_world=[WorldPredicateSpec(op="eq", path="agent.a", value=True)],
+            goal_capture_paths=["agent"],
             terminal_profile_id="resolved",
             required_actions=["do_a"],
             min_plan_length=1,
@@ -779,6 +874,67 @@ class TestDepgraphSampler(unittest.TestCase):
         self.assertFalse(report.passed)
         self.assertTrue(
             any("does not satisfy terminal profile" in issue for issue in report.issues)
+        )
+
+    def test_preflight_rejects_changes_to_protected_start_world_paths(self):
+        contract = GraphContractSpec(
+            projection_fields=["agent.a", "agent.b"],
+            actions=[
+                ActionContract(
+                    action_id="do_a",
+                    requestor="assistant",
+                    tool_name="tool_a",
+                    classification="causal",
+                    effects_world=[
+                        WorldEffectSpec(path="agent.a", set=True),
+                        WorldEffectSpec(path="agent.b", set=True),
+                    ],
+                )
+            ],
+        )
+        task = TaskIntent(
+            task_id="frame_violation",
+            start_world=[
+                WorldEffectSpec(path="agent.a", set=False),
+                WorldEffectSpec(path="agent.b", set=False),
+            ],
+            goal_world=[WorldPredicateSpec(op="eq", path="agent.a", value=True)],
+            goal_capture_paths=["agent.a"],
+            terminal_profile_id="resolved",
+            required_actions=["do_a"],
+            min_plan_length=1,
+        )
+
+        report = run_task_preflight(
+            contract,
+            task,
+            max_depth=2,
+            terminal_profiles=[_make_terminal_profile("resolved", "agent.a", True)],
+            require_terminal_profile=True,
+        )
+
+        self.assertFalse(report.passed)
+        self.assertTrue(
+            any("protected start-world path 'agent.b'" in issue for issue in report.issues),
+            report.issues,
+        )
+
+    def test_runtime_scaffold_protects_unchanged_start_world_paths(self):
+        task = TaskIntent(
+            task_id="frame_assertions",
+            start_world=[
+                WorldEffectSpec(path="agent.a", set=False),
+                WorldEffectSpec(path="agent.b", set=False),
+            ],
+            goal_world=[WorldPredicateSpec(op="eq", path="agent.a", value=True)],
+            goal_capture_paths=["agent.a"],
+        )
+
+        assertions = _build_goal_env_assertions(task)
+
+        self.assertEqual(
+            [(assertion.func_name, assertion.arguments["expected"]) for assertion in assertions],
+            [("assert_a", True), ("assert_b", False)],
         )
 
 
@@ -847,6 +1003,106 @@ class TestDepgraphCompiler(unittest.TestCase):
 
 
 class TestRuntimeAlignment(unittest.TestCase):
+    def test_contract_alignment_requires_literal_annotation_for_finite_tool_args(self):
+        class _BadAssistantTools:
+            def get_tools(self):
+                return {"reprovision": object()}
+
+            def reprovision(self, branch: str, fault_code: str) -> dict:
+                return {}
+
+        class _GoodAssistantTools:
+            def get_tools(self):
+                return {"reprovision": object()}
+
+            def reprovision(
+                self,
+                branch: Literal["billing", "connectivity", "full_system"],
+                fault_code: str,
+            ) -> dict:
+                return {}
+
+        class _DummyUserTools:
+            def get_tools(self):
+                return {}
+
+        contract = GraphContractSpec(
+            projection_fields=["agent.error_class", "agent.profile_state"],
+            actions=[
+                ActionContract(
+                    action_id="assistant_reprovision_billing",
+                    requestor="assistant",
+                    tool_name="reprovision",
+                    classification="causal",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.error_class", value="billing"),
+                    ],
+                    effects_world=[
+                        WorldEffectSpec(path="agent.profile_state", set="ready"),
+                    ],
+                    tool_arg_literals={"branch": "billing"},
+                ),
+                ActionContract(
+                    action_id="assistant_reprovision_connectivity",
+                    requestor="assistant",
+                    tool_name="reprovision",
+                    classification="causal",
+                    requires_world=[
+                        WorldPredicateSpec(
+                            op="eq",
+                            path="agent.error_class",
+                            value="connectivity",
+                        ),
+                    ],
+                    effects_world=[
+                        WorldEffectSpec(path="agent.profile_state", set="ready"),
+                    ],
+                    tool_arg_literals={"branch": "connectivity"},
+                ),
+                ActionContract(
+                    action_id="assistant_reprovision_full_system",
+                    requestor="assistant",
+                    tool_name="reprovision",
+                    classification="causal",
+                    requires_world=[
+                        WorldPredicateSpec(
+                            op="eq",
+                            path="agent.error_class",
+                            value="full_system",
+                        ),
+                    ],
+                    effects_world=[
+                        WorldEffectSpec(path="agent.profile_state", set="ready"),
+                    ],
+                    tool_arg_literals={"branch": "full_system"},
+                ),
+            ],
+        )
+
+        def _bad_environment():
+            return types.SimpleNamespace(
+                tools=_BadAssistantTools(),
+                user_tools=_DummyUserTools(),
+            )
+
+        def _good_environment():
+            return types.SimpleNamespace(
+                tools=_GoodAssistantTools(),
+                user_tools=_DummyUserTools(),
+            )
+
+        bad_issues = check_contract_against_environment(contract, _bad_environment)
+        self.assertTrue(
+            any("is not annotated as Literal[...] or Enum" in issue for issue in bad_issues),
+            bad_issues,
+        )
+
+        good_issues = check_contract_against_environment(contract, _good_environment)
+        self.assertFalse(
+            any("Literal[...] or Enum" in issue for issue in good_issues),
+            good_issues,
+        )
+
     def test_contract_tool_alignment_detects_missing_tools(self):
         from tau2.domains.tech_support.environment import get_environment
 
@@ -1340,6 +1596,131 @@ class TestDepgraphSemantics(unittest.TestCase):
         )
         self.assertEqual(next_world["agent.current_fault_code"], "RETRY")
         self.assertEqual(next_bindings, frozenset())
+
+    def test_action_schema_expands_to_concrete_actions_with_literal_args(self):
+        contract = GraphContractSpec.model_validate(
+            {
+                "version": 2,
+                "projection_fields": [
+                    "agent.error_class",
+                    "agent.last_fault_code",
+                    "agent.profile_state",
+                ],
+                "bindings": [
+                    {
+                        "binding_id": "fault_code",
+                        "source_tool": "check_station_screen",
+                        "extraction_path": "result.fault_code",
+                        "world_path": "agent.last_fault_code",
+                    }
+                ],
+                "action_schemas": [
+                    {
+                        "schema_id": "assistant_reprovision",
+                        "action_id_template": "assistant_reprovision_{branch}",
+                        "variant_param": "branch",
+                        "requestor": "assistant",
+                        "tool_name": "reprovision",
+                        "classification": "causal",
+                        "requires_world": [
+                            {
+                                "op": "eq",
+                                "path": "agent.last_fault_code",
+                                "value": "PROFILE-201",
+                            }
+                        ],
+                        "requires_bindings": [
+                            {"binding_id": "fault_code", "acquired": True}
+                        ],
+                        "effects_world": [
+                            {"path": "agent.profile_state", "set": "ready"}
+                        ],
+                        "tool_arg_bindings": {"fault_code": "fault_code"},
+                        "variants": [
+                            {
+                                "variant_id": "billing",
+                                "requires_world": [
+                                    {
+                                        "op": "eq",
+                                        "path": "agent.error_class",
+                                        "value": "billing",
+                                    }
+                                ],
+                                "tool_arg_literals": {"branch": "billing"},
+                            },
+                            {
+                                "variant_id": "connectivity",
+                                "requires_world": [
+                                    {
+                                        "op": "eq",
+                                        "path": "agent.error_class",
+                                        "value": "connectivity",
+                                    }
+                                ],
+                                "tool_arg_literals": {"branch": "connectivity"},
+                            },
+                        ],
+                    }
+                ],
+            }
+        )
+        self.assertEqual(
+            [action.action_id for action in contract.actions],
+            ["assistant_reprovision_billing", "assistant_reprovision_connectivity"],
+        )
+        self.assertEqual(contract.actions[0].tool_name, "reprovision")
+        self.assertEqual(contract.actions[0].tool_arg_bindings, {"fault_code": "fault_code"})
+        self.assertEqual(contract.actions[0].tool_arg_literals, {"branch": "billing"})
+        self.assertEqual(contract.actions[1].tool_arg_literals, {"branch": "connectivity"})
+
+    def test_action_expectations_merge_literal_and_binding_args(self):
+        contract = GraphContractSpec(
+            projection_fields=["agent.last_fault_code", "agent.profile_state"],
+            bindings=[
+                BindingSourceSpec(
+                    binding_id="fault_code",
+                    source_tool="check_station_screen",
+                    extraction_path="result.fault_code",
+                    world_path="agent.last_fault_code",
+                )
+            ],
+            actions=[
+                ActionContract(
+                    action_id="assistant_reprovision_billing",
+                    requestor="assistant",
+                    tool_name="reprovision",
+                    classification="causal",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="fault_code", acquired=True),
+                    ],
+                    effects_world=[
+                        WorldEffectSpec(path="agent.profile_state", set="ready"),
+                    ],
+                    tool_arg_bindings={"fault_code": "fault_code"},
+                    tool_arg_literals={"branch": "billing"},
+                )
+            ],
+        )
+        task = TaskIntent(
+            task_id="t1",
+            start_world=[
+                WorldEffectSpec(path="agent.last_fault_code", set="PROFILE-201"),
+                WorldEffectSpec(path="agent.profile_state", set="not_ready"),
+            ],
+            start_bindings=["fault_code"],
+            goal_world=[WorldPredicateSpec(op="eq", path="agent.profile_state", value="ready")],
+            required_actions=["assistant_reprovision_billing"],
+        )
+        expectations = _build_action_expectations(
+            task,
+            contract=contract,
+            start_binding_values={"fault_code": "PROFILE-201"},
+        )
+        self.assertEqual(len(expectations), 1)
+        self.assertEqual(
+            expectations[0].arguments,
+            {"branch": "billing", "fault_code": "PROFILE-201"},
+        )
 
 
 if __name__ == "__main__":

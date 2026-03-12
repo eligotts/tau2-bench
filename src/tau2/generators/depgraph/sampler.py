@@ -6,6 +6,7 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
+from tau2.generators.depgraph.goal_capture import capture_goal_world
 from tau2.generators.depgraph.preflight import (
     TaskPreflightReport,
     run_task_preflight,
@@ -64,22 +65,6 @@ def _plan_precedence(plan: list[str]) -> list[tuple[str, str]]:
     return edges
 
 
-def _goal_world_for_state(
-    *,
-    start_world: dict[str, Any],
-    end_world: dict[str, Any],
-    prefixes: list[str],
-) -> list[WorldPredicateSpec]:
-    goals: list[WorldPredicateSpec] = []
-    for path, value in sorted(end_world.items()):
-        if start_world.get(path, None) == value:
-            continue
-        if prefixes and not any(path.startswith(prefix) for prefix in prefixes):
-            continue
-        goals.append(WorldPredicateSpec(op="eq", path=path, value=value))
-    return goals
-
-
 def _goal_signature(goal_world: list[WorldPredicateSpec], goal_bindings: list[str]) -> tuple:
     world_part = tuple(sorted((goal.path, repr(goal.value)) for goal in goal_world))
     return (world_part, tuple(sorted(goal_bindings)))
@@ -97,6 +82,7 @@ def sample_task_intents(
     task_counter = 0
 
     for seed in request.seeds:
+        goal_capture_paths = request.goal_capture_paths_for_seed(seed)
         allowed_terminal_profiles = [
             terminal_profiles_by_id[profile_id]
             for profile_id in seed.allowed_terminal_profiles
@@ -154,10 +140,11 @@ def sample_task_intents(
                 depth = len(next_plan)
                 if depth < seed.min_depth or matched_terminal_profile is None:
                     continue
-                goal_world = _goal_world_for_state(
+                goal_world = capture_goal_world(
                     start_world=start_world,
                     end_world=next_world,
-                    prefixes=request.goal_world_path_prefixes,
+                    capture_paths=goal_capture_paths,
+                    projected_paths=contract.projection_fields,
                 )
                 if not goal_world:
                     continue
@@ -170,6 +157,7 @@ def sample_task_intents(
                     start_world=seed.start_world,
                     start_bindings=seed.start_bindings,
                     goal_world=goal_world,
+                    goal_capture_paths=goal_capture_paths,
                     goal_bindings=[],
                     terminal_profile_id=matched_terminal_profile.profile_id,
                     required_actions=[],
@@ -190,6 +178,18 @@ def sample_task_intents(
                 canonical_plan = canonical_probe_report.sat_full.plan
                 canonical_depth = len(canonical_plan)
                 if canonical_depth < seed.min_depth:
+                    continue
+
+                canonical_end_world = canonical_probe_report.sat_full.end_world
+                if canonical_end_world is None:
+                    continue
+                goal_world = capture_goal_world(
+                    start_world=start_world,
+                    end_world=canonical_end_world,
+                    capture_paths=goal_capture_paths,
+                    projected_paths=contract.projection_fields,
+                )
+                if not goal_world:
                     continue
 
                 goal_bindings = stable_goal_bindings(
@@ -215,6 +215,7 @@ def sample_task_intents(
                     start_world=seed.start_world,
                     start_bindings=seed.start_bindings,
                     goal_world=goal_world,
+                    goal_capture_paths=goal_capture_paths,
                     goal_bindings=goal_bindings,
                     terminal_profile_id=matched_terminal_profile.profile_id,
                     required_actions=required_actions,

@@ -75,6 +75,21 @@ class SessionAuthState(StrEnum):
     VALID = "valid"
 
 
+class AllowlistSyncState(StrEnum):
+    STALE = "stale"
+    SYNCED = "synced"
+
+
+class TariffProfileState(StrEnum):
+    MISSING = "missing"
+    READY = "ready"
+
+
+class ReservationLockState(StrEnum):
+    PRESENT = "present"
+    CLEARED = "cleared"
+
+
 class VehicleAuthState(StrEnum):
     PENDING = "pending"
     VALIDATED = "validated"
@@ -116,6 +131,9 @@ class EVChargeSession(BaseModelNoExtra):
     station_id: str
     profile_state: ProfileState = ProfileState.READY
     session_auth_state: SessionAuthState = SessionAuthState.VALID
+    allowlist_sync_state: AllowlistSyncState = AllowlistSyncState.SYNCED
+    tariff_profile_state: TariffProfileState = TariffProfileState.READY
+    reservation_lock_state: ReservationLockState = ReservationLockState.CLEARED
     vehicle_auth_state: VehicleAuthState = VehicleAuthState.VALIDATED
     retry_state: RetryState = RetryState.READY
     charge_state: ChargeState = ChargeState.INACTIVE

@@ -9,6 +9,8 @@ Use this checklist in addition to step-specific prompts.
 3. `knowledge-only` actions produce bindings; `stutter-only` actions produce no world/binding deltas.
 4. Projection-only fields are not used in causal contract predicates/effects.
 5. Volatile bindings are only mapped into immediate observation-driven tools or clearly mutually-exclusive stage-specific tools.
+6. If several actions differ only by a finite literal tool arg, author them as one `action_schemas` entry with variant expansion instead of hand-copying near-duplicates.
+7. If a contract action uses a finite literal tool arg, the runtime tool signature exposes that param with `Literal[...]` or an `Enum`; do not hide finite values behind plain `str`.
 
 ## 2. Structural Provenance
 
@@ -18,6 +20,7 @@ Use this checklist in addition to step-specific prompts.
    - `start_world`
    - `start_bindings`
    - `goal_world`
+   - `goal_capture_paths`
    - `goal_bindings`
    - `terminal_profile_id`
    - `required_actions`
@@ -32,23 +35,26 @@ Use this checklist in addition to step-specific prompts.
 
 ## 3. Stop-Gate Discipline
 
-1. Every goal-world equality used for user stop is mapped in `stop_gate_map.yaml`.
+1. `stop_gate_map.yaml` covers the user-observable subset of terminal `goal_world`; it does not need to map hidden/internal terminal predicates.
 2. Each runtime task has exactly one `user.set_stop_gate`.
 3. Task instructions require:
    - `check_resolution_status` before stopping
    - STOP only when `resolved=true`
    - continue/report unmet items when `resolved=false`
 4. `check_resolution_status` is stutter-only and deterministic.
-5. `policy.md` names every contract-visible tool, teaches volatile reread points and stop semantics, and tells the agent what to do on both `resolved=true` and `resolved=false`.
-6. `policy.md` is written as constraints, observables, and tool affordances, not as a hidden task-by-task solve script.
+5. `check_resolution_status` returns only `resolved` plus minimal human-readable `unmet` reasons; it does not expose a broad structured state snapshot.
+6. `policy.md` names every contract-visible tool, teaches volatile reread points and stop semantics, and tells the agent what to do on both `resolved=true` and `resolved=false`.
+7. `policy.md` is written as constraints, observables, and tool affordances, not as a hidden task-by-task solve script.
 
 ## 3A. Terminality Discipline
 
 1. `sampling_request.yaml` declares explicit `terminal_profiles`.
 2. Every sampling seed declares `allowed_terminal_profiles`.
 3. Every sampled/runtime task has a non-empty `terminal_profile_id`.
-4. Shorter tasks come from easier `start_world` seeds, not from intermediate partial-repair end states.
-5. Milestone tasks are only allowed when they use an explicit milestone terminal profile plus a matching prompt/tool surface.
+4. Every sampled/runtime terminal task has non-empty `goal_capture_paths`.
+5. `terminal_profiles` validate legitimate solved states; `goal_capture_paths` define emitted task identity and env assertions.
+6. Shorter tasks come from easier `start_world` seeds, not from intermediate partial-repair end states.
+7. Milestone tasks are only allowed when they use an explicit milestone terminal profile plus a matching prompt/tool surface.
 
 ## 4. Runtime Mapping
 
@@ -72,6 +78,8 @@ Use this checklist in addition to step-specific prompts.
 8. Sampled tasks are canonical minimal terminal plans, not variants that differ only by optional extra reads.
 9. Cheap seed additions do not mostly come from post-repair checkpoint starts. Prefer early broken states,
    richer branch combinations, or `start_bindings` variations over starts with sync stages already advanced.
+10. Bigger graphs should come from meaningful branching or shared-gate lanes, not from many copied actions that only rename the same tool call.
+11. The captured `goal_world` covers intended changed causal paths only; unchanged authored `start_world` paths are protected by env assertions instead of being silently ignored.
 
 ## 6. Fail-Closed Commands
 

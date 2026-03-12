@@ -21,6 +21,9 @@ projection_fields:
   - agent.network_paths[active_station].handshake_state
   - agent.sessions[active_session].profile_state
   - agent.sessions[active_session].session_auth_state
+  - agent.sessions[active_session].allowlist_sync_state
+  - agent.sessions[active_session].tariff_profile_state
+  - agent.sessions[active_session].reservation_lock_state
   - agent.sessions[active_session].vehicle_auth_state
   - agent.sessions[active_session].retry_state
   - agent.sessions[active_session].charge_state
@@ -437,6 +440,15 @@ actions:
         path: agent.network_paths[active_station].handshake_state
         value: established
       - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].reservation_lock_state
+        value: cleared
+      - op: eq
         path: user.physical.app_login_state
         value: active
       - op: eq
@@ -451,174 +463,6 @@ actions:
         set: valid
     effects_bindings: []
     tool_arg_bindings: {}
-    stutter_on_fail: true
-
-  - action_id: assistant_reprovision_billing
-    requestor: assistant
-    tool_name: reprovision_billing
-    classification: causal
-    requires_world:
-      - op: eq
-        path: agent.sessions[active_session].error_class
-        value: billing
-      - op: eq
-        path: agent.stations[active_station].diagnostics_state
-        value: ran
-      - op: eq
-        path: agent.accounts[active_account].hold_status
-        value: cleared
-      - op: eq
-        path: agent.accounts[active_account].payment_token_status
-        value: valid
-      - op: eq
-        path: agent.accounts[active_account].fraud_lock_state
-        value: 'off'
-      - op: eq
-        path: user.physical.vehicle_ready_state
-        value: ready
-      - op: eq
-        path: user.physical.app_refresh_state
-        value: refreshed
-      - op: eq
-        path: agent.sessions[active_session].session_auth_state
-        value: valid
-      - op: eq
-        path: agent.sessions[active_session].profile_state
-        value: not_ready
-      - op: eq
-        path: agent.sessions[active_session].last_fault_code
-        value: PROFILE-201
-    requires_bindings:
-      - binding_id: screen_fault_code
-        acquired: true
-    effects_world:
-      - path: agent.sessions[active_session].profile_state
-        set: ready
-    effects_bindings: []
-    tool_arg_bindings:
-      fault_code: screen_fault_code
-    stutter_on_fail: true
-
-  - action_id: assistant_reprovision_connectivity
-    requestor: assistant
-    tool_name: reprovision_connectivity
-    classification: causal
-    requires_world:
-      - op: eq
-        path: agent.sessions[active_session].error_class
-        value: connectivity
-      - op: eq
-        path: agent.stations[active_station].diagnostics_state
-        value: ran
-      - op: eq
-        path: agent.network_paths[active_station].backend_link_state
-        value: up
-      - op: eq
-        path: agent.network_paths[active_station].cert_state
-        value: fresh
-      - op: eq
-        path: agent.network_paths[active_station].handshake_state
-        value: established
-      - op: eq
-        path: user.physical.cable_inspection_state
-        value: checked_ok
-      - op: eq
-        path: user.physical.connector_reseat_state
-        value: reseated
-      - op: eq
-        path: user.physical.station_power_cycle_state
-        value: done
-      - op: eq
-        path: user.physical.vehicle_ready_state
-        value: ready
-      - op: eq
-        path: user.physical.app_refresh_state
-        value: refreshed
-      - op: eq
-        path: agent.sessions[active_session].session_auth_state
-        value: valid
-      - op: eq
-        path: agent.sessions[active_session].profile_state
-        value: not_ready
-      - op: eq
-        path: agent.sessions[active_session].last_fault_code
-        value: PROFILE-201
-    requires_bindings:
-      - binding_id: screen_fault_code
-        acquired: true
-    effects_world:
-      - path: agent.sessions[active_session].profile_state
-        set: ready
-    effects_bindings: []
-    tool_arg_bindings:
-      fault_code: screen_fault_code
-    stutter_on_fail: true
-
-  - action_id: assistant_reprovision_full_system
-    requestor: assistant
-    tool_name: reprovision_full_system
-    classification: causal
-    requires_world:
-      - op: eq
-        path: agent.sessions[active_session].error_class
-        value: full_system
-      - op: eq
-        path: agent.stations[active_station].diagnostics_state
-        value: ran
-      - op: eq
-        path: agent.accounts[active_account].hold_status
-        value: cleared
-      - op: eq
-        path: agent.accounts[active_account].payment_token_status
-        value: valid
-      - op: eq
-        path: agent.accounts[active_account].fraud_lock_state
-        value: 'off'
-      - op: eq
-        path: agent.network_paths[active_station].backend_link_state
-        value: up
-      - op: eq
-        path: agent.network_paths[active_station].cert_state
-        value: fresh
-      - op: eq
-        path: agent.network_paths[active_station].handshake_state
-        value: established
-      - op: eq
-        path: agent.stations[active_station].firmware_state
-        value: current
-      - op: eq
-        path: user.physical.cable_inspection_state
-        value: checked_ok
-      - op: eq
-        path: user.physical.connector_reseat_state
-        value: reseated
-      - op: eq
-        path: user.physical.station_power_cycle_state
-        value: done
-      - op: eq
-        path: user.physical.vehicle_ready_state
-        value: ready
-      - op: eq
-        path: user.physical.app_refresh_state
-        value: refreshed
-      - op: eq
-        path: agent.sessions[active_session].session_auth_state
-        value: valid
-      - op: eq
-        path: agent.sessions[active_session].profile_state
-        value: not_ready
-      - op: eq
-        path: agent.sessions[active_session].last_fault_code
-        value: PROFILE-201
-    requires_bindings:
-      - binding_id: screen_fault_code
-        acquired: true
-    effects_world:
-      - path: agent.sessions[active_session].profile_state
-        set: ready
-    effects_bindings: []
-    tool_arg_bindings:
-      fault_code: screen_fault_code
     stutter_on_fail: true
 
   - action_id: assistant_refresh_vehicle_authorization
@@ -713,6 +557,15 @@ actions:
         path: agent.network_paths[active_station].handshake_state
         value: established
       - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].reservation_lock_state
+        value: cleared
+      - op: eq
         path: agent.sessions[active_session].session_auth_state
         value: valid
       - op: eq
@@ -777,6 +630,15 @@ actions:
         path: agent.stations[active_station].firmware_state
         value: current
       - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].reservation_lock_state
+        value: cleared
+      - op: eq
         path: agent.sessions[active_session].session_auth_state
         value: valid
       - op: eq
@@ -824,6 +686,202 @@ actions:
     effects_bindings: []
     tool_arg_bindings: {}
     stutter_on_fail: true
+
+action_schemas:
+  - schema_id: assistant_clear_entitlement_blocker
+    action_id_template: assistant_clear_entitlement_blocker_{blocker}
+    variant_param: blocker
+    requestor: assistant
+    tool_name: clear_entitlement_blocker
+    classification: causal
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].diagnostics_state
+        value: ran
+      - op: eq
+        path: agent.sessions[active_session].profile_state
+        value: not_ready
+    requires_bindings:
+      - binding_id: screen_fault_code
+        acquired: true
+    effects_world: []
+    effects_bindings: []
+    tool_arg_bindings:
+      fault_code: screen_fault_code
+    stutter_on_fail: true
+    variants:
+      - variant_id: allowlist_sync
+        requires_world:
+          - op: eq
+            path: agent.sessions[active_session].allowlist_sync_state
+            value: stale
+          - op: eq
+            path: agent.sessions[active_session].last_fault_code
+            value: ENT-210
+        effects_world:
+          - path: agent.sessions[active_session].allowlist_sync_state
+            set: synced
+        tool_arg_literals:
+          blocker: allowlist_sync
+      - variant_id: tariff_profile
+        requires_world:
+          - op: eq
+            path: agent.sessions[active_session].allowlist_sync_state
+            value: synced
+          - op: eq
+            path: agent.sessions[active_session].tariff_profile_state
+            value: missing
+          - op: eq
+            path: agent.sessions[active_session].last_fault_code
+            value: ENT-220
+        effects_world:
+          - path: agent.sessions[active_session].tariff_profile_state
+            set: ready
+        tool_arg_literals:
+          blocker: tariff_profile
+      - variant_id: reservation_lock
+        requires_world:
+          - op: eq
+            path: agent.sessions[active_session].allowlist_sync_state
+            value: synced
+          - op: eq
+            path: agent.sessions[active_session].tariff_profile_state
+            value: ready
+          - op: eq
+            path: agent.sessions[active_session].reservation_lock_state
+            value: present
+          - op: eq
+            path: agent.sessions[active_session].last_fault_code
+            value: ENT-230
+        effects_world:
+          - path: agent.sessions[active_session].reservation_lock_state
+            set: cleared
+        tool_arg_literals:
+          blocker: reservation_lock
+
+  - schema_id: assistant_reprovision
+    action_id_template: assistant_reprovision_{branch}
+    variant_param: branch
+    requestor: assistant
+    tool_name: reprovision
+    classification: causal
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].diagnostics_state
+        value: ran
+      - op: eq
+        path: user.physical.vehicle_ready_state
+        value: ready
+      - op: eq
+        path: user.physical.app_refresh_state
+        value: refreshed
+      - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].reservation_lock_state
+        value: cleared
+      - op: eq
+        path: agent.sessions[active_session].session_auth_state
+        value: valid
+      - op: eq
+        path: agent.sessions[active_session].profile_state
+        value: not_ready
+      - op: eq
+        path: agent.sessions[active_session].last_fault_code
+        value: PROFILE-201
+    requires_bindings:
+      - binding_id: screen_fault_code
+        acquired: true
+    effects_world:
+      - path: agent.sessions[active_session].profile_state
+        set: ready
+    effects_bindings: []
+    tool_arg_bindings:
+      fault_code: screen_fault_code
+    stutter_on_fail: true
+    variants:
+      - variant_id: billing
+        requires_world:
+          - op: eq
+            path: agent.sessions[active_session].error_class
+            value: billing
+          - op: eq
+            path: agent.accounts[active_account].hold_status
+            value: cleared
+          - op: eq
+            path: agent.accounts[active_account].payment_token_status
+            value: valid
+          - op: eq
+            path: agent.accounts[active_account].fraud_lock_state
+            value: 'off'
+        tool_arg_literals:
+          branch: billing
+      - variant_id: connectivity
+        requires_world:
+          - op: eq
+            path: agent.sessions[active_session].error_class
+            value: connectivity
+          - op: eq
+            path: agent.network_paths[active_station].backend_link_state
+            value: up
+          - op: eq
+            path: agent.network_paths[active_station].cert_state
+            value: fresh
+          - op: eq
+            path: agent.network_paths[active_station].handshake_state
+            value: established
+          - op: eq
+            path: user.physical.cable_inspection_state
+            value: checked_ok
+          - op: eq
+            path: user.physical.connector_reseat_state
+            value: reseated
+          - op: eq
+            path: user.physical.station_power_cycle_state
+            value: done
+        tool_arg_literals:
+          branch: connectivity
+      - variant_id: full_system
+        requires_world:
+          - op: eq
+            path: agent.sessions[active_session].error_class
+            value: full_system
+          - op: eq
+            path: agent.accounts[active_account].hold_status
+            value: cleared
+          - op: eq
+            path: agent.accounts[active_account].payment_token_status
+            value: valid
+          - op: eq
+            path: agent.accounts[active_account].fraud_lock_state
+            value: 'off'
+          - op: eq
+            path: agent.network_paths[active_station].backend_link_state
+            value: up
+          - op: eq
+            path: agent.network_paths[active_station].cert_state
+            value: fresh
+          - op: eq
+            path: agent.network_paths[active_station].handshake_state
+            value: established
+          - op: eq
+            path: agent.stations[active_station].firmware_state
+            value: current
+          - op: eq
+            path: user.physical.cable_inspection_state
+            value: checked_ok
+          - op: eq
+            path: user.physical.connector_reseat_state
+            value: reseated
+          - op: eq
+            path: user.physical.station_power_cycle_state
+            value: done
+        tool_arg_literals:
+          branch: full_system
 
 sync_rules:
   - rule_id: default_charge_billing_inactive
@@ -882,6 +940,15 @@ sync_rules:
       - op: eq
         path: agent.network_paths[active_station].handshake_state
         value: established
+      - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].reservation_lock_state
+        value: cleared
       - op: eq
         path: agent.sessions[active_session].session_auth_state
         value: valid
@@ -945,6 +1012,15 @@ sync_rules:
       - op: eq
         path: agent.network_paths[active_station].handshake_state
         value: established
+      - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].reservation_lock_state
+        value: cleared
       - op: eq
         path: agent.sessions[active_session].session_auth_state
         value: valid
@@ -1168,6 +1244,123 @@ sync_rules:
       - path: agent.sessions[active_session].last_fault_code
         set: FW-410
 
+  - rule_id: fault_allowlist_sync_stale
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].reachability_state
+        value: reachable
+      - op: eq
+        path: agent.network_paths[active_station].backend_link_state
+        value: up
+      - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
+        path: agent.network_paths[active_station].cert_state
+        value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
+        path: agent.accounts[active_account].hold_status
+        value: cleared
+      - op: eq
+        path: agent.accounts[active_account].payment_token_status
+        value: valid
+      - op: eq
+        path: agent.accounts[active_account].fraud_lock_state
+        value: 'off'
+      - op: eq
+        path: agent.stations[active_station].firmware_state
+        value: current
+      - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: stale
+    effects_world:
+      - path: agent.sessions[active_session].last_fault_code
+        set: ENT-210
+
+  - rule_id: fault_tariff_profile_missing
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].reachability_state
+        value: reachable
+      - op: eq
+        path: agent.network_paths[active_station].backend_link_state
+        value: up
+      - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
+        path: agent.network_paths[active_station].cert_state
+        value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
+        path: agent.accounts[active_account].hold_status
+        value: cleared
+      - op: eq
+        path: agent.accounts[active_account].payment_token_status
+        value: valid
+      - op: eq
+        path: agent.accounts[active_account].fraud_lock_state
+        value: 'off'
+      - op: eq
+        path: agent.stations[active_station].firmware_state
+        value: current
+      - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: missing
+    effects_world:
+      - path: agent.sessions[active_session].last_fault_code
+        set: ENT-220
+
+  - rule_id: fault_reservation_lock_present
+    requires_world:
+      - op: eq
+        path: agent.stations[active_station].reachability_state
+        value: reachable
+      - op: eq
+        path: agent.network_paths[active_station].backend_link_state
+        value: up
+      - op: eq
+        path: agent.stations[active_station].clock_sync_state
+        value: synced
+      - op: eq
+        path: agent.network_paths[active_station].cert_state
+        value: fresh
+      - op: eq
+        path: agent.network_paths[active_station].handshake_state
+        value: established
+      - op: eq
+        path: agent.accounts[active_account].hold_status
+        value: cleared
+      - op: eq
+        path: agent.accounts[active_account].payment_token_status
+        value: valid
+      - op: eq
+        path: agent.accounts[active_account].fraud_lock_state
+        value: 'off'
+      - op: eq
+        path: agent.stations[active_station].firmware_state
+        value: current
+      - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].reservation_lock_state
+        value: present
+    effects_world:
+      - path: agent.sessions[active_session].last_fault_code
+        set: ENT-230
+
   - rule_id: fault_session_auth_stale
     requires_world:
       - op: eq
@@ -1197,6 +1390,15 @@ sync_rules:
       - op: eq
         path: agent.stations[active_station].firmware_state
         value: current
+      - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].reservation_lock_state
+        value: cleared
       - op: eq
         path: agent.sessions[active_session].session_auth_state
         value: stale
@@ -1233,6 +1435,15 @@ sync_rules:
       - op: eq
         path: agent.stations[active_station].firmware_state
         value: current
+      - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].reservation_lock_state
+        value: cleared
       - op: eq
         path: agent.sessions[active_session].session_auth_state
         value: valid
@@ -1272,6 +1483,15 @@ sync_rules:
       - op: eq
         path: agent.stations[active_station].firmware_state
         value: current
+      - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].reservation_lock_state
+        value: cleared
       - op: eq
         path: agent.sessions[active_session].session_auth_state
         value: valid
@@ -1314,6 +1534,15 @@ sync_rules:
       - op: eq
         path: agent.stations[active_station].firmware_state
         value: current
+      - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].reservation_lock_state
+        value: cleared
       - op: eq
         path: agent.sessions[active_session].session_auth_state
         value: valid
@@ -1359,6 +1588,15 @@ sync_rules:
       - op: eq
         path: agent.stations[active_station].firmware_state
         value: current
+      - op: eq
+        path: agent.sessions[active_session].allowlist_sync_state
+        value: synced
+      - op: eq
+        path: agent.sessions[active_session].tariff_profile_state
+        value: ready
+      - op: eq
+        path: agent.sessions[active_session].reservation_lock_state
+        value: cleared
       - op: eq
         path: agent.sessions[active_session].session_auth_state
         value: valid

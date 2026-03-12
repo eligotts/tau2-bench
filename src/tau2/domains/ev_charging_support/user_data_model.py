@@ -97,8 +97,7 @@ class StopCriterion(BaseModelNoExtra):
     check_field: str
     op: StopGateOp = StopGateOp.EQ
     expected: str
-    unmet_reason: Optional[str] = None
-    observed_from: Optional[str] = None
+    unmet_reason: str
 
 
 class StopGateState(BaseModelNoExtra):

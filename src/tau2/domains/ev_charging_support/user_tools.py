@@ -28,7 +28,6 @@ class AppStatusResult(BaseModelNoExtra):
 class ResolutionStatusResult(BaseModelNoExtra):
     resolved: bool
     unmet: list[str]
-    observed: dict[str, str]
 
 
 class EVChargingSupportUserTools(ToolKitBase):
@@ -56,6 +55,12 @@ class EVChargingSupportUserTools(ToolKitBase):
             return "Payment token is invalid."
         if fault_code == "FRD-301":
             return "Fraud lock is active."
+        if fault_code == "ENT-210":
+            return "Site allowlist is not synchronized."
+        if fault_code == "ENT-220":
+            return "Tariff profile is missing."
+        if fault_code == "ENT-230":
+            return "Reservation lock is still active."
         if fault_code == "AUTH-220":
             return "Charging session authorization needs to be refreshed."
         if fault_code == "FW-410":
@@ -155,21 +160,10 @@ class EVChargingSupportUserTools(ToolKitBase):
             observed_value = observed.get(criterion.check_field)
             if criterion.op == StopGateOp.EQ and observed_value == criterion.expected:
                 continue
-            if criterion.unmet_reason:
-                expected_msg = (
-                    f"{criterion.unmet_reason} "
-                    f"(Observed {criterion.check_field}='{observed_value}', "
-                    f"expected '{criterion.expected}'.)"
-                )
-            else:
-                expected_msg = (
-                    f"{criterion.check_field} is '{observed_value}', expected '{criterion.expected}'."
-                )
-            unmet.append(expected_msg)
+            unmet.append(criterion.unmet_reason)
         return ResolutionStatusResult(
             resolved=len(unmet) == 0,
             unmet=unmet,
-            observed=observed,
         )
 
     def _observed_stop_values(self) -> dict[str, str]:

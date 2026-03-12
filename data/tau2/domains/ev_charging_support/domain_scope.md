@@ -48,6 +48,9 @@ Entity: `EVChargeSession`
 - `account_id: str`
 - `station_id: str`
 - `error_class: enum[billing, connectivity, full_system]`
+- `allowlist_sync_state: enum[stale, synced]`
+- `tariff_profile_state: enum[missing, ready]`
+- `reservation_lock_state: enum[present, cleared]`
 - `session_auth_state: enum[stale, valid]`
 - `profile_state: enum[not_ready, ready]`
 - `vehicle_auth_state: enum[pending, validated]`
@@ -149,9 +152,7 @@ Projected causal and observable paths used by solver state:
 Observation-driven stage tools:
 
 - `run_backend_diagnostics(fault_code, app_error_class)`
-- `reprovision_billing(fault_code)`
-- `reprovision_connectivity(fault_code)`
-- `reprovision_full_system(fault_code)`
+- `reprovision(branch, fault_code)`
 - `reset_retry_path(fault_code)`
 
 Stable-state repair tools after diagnosis:
@@ -164,6 +165,7 @@ Stable-state repair tools after diagnosis:
 - `rotate_station_certificate()`
 - `reestablish_station_handshake()`
 - `update_station_firmware()`
+- `clear_entitlement_blocker(blocker, fault_code)`
 - `refresh_session_authorization()`
 - `refresh_vehicle_authorization()`
 
@@ -207,11 +209,14 @@ Canonical visible-fault priority, high to low:
 7. `PAY-201`
 8. `FRD-301`
 9. `FW-410`
-10. `AUTH-220`
-11. `PROFILE-201`
-12. `VEH-230`
-13. `RETRY-301`
-14. `NONE`
+10. `ENT-210`
+11. `ENT-220`
+12. `ENT-230`
+13. `AUTH-220`
+14. `PROFILE-201`
+15. `VEH-230`
+16. `RETRY-301`
+17. `NONE`
 
 Design rules:
 

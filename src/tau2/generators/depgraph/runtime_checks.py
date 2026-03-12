@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import inspect
 import re
-from typing import Any, Callable, get_args, get_origin
+from enum import Enum
+from typing import Any, Callable, Literal, get_args, get_origin
 
 from pydantic import BaseModel
 
@@ -86,6 +87,19 @@ def _is_bool_like_return(annotation: Any) -> bool:
         return False
     args = [arg for arg in get_args(annotation) if arg is not type(None)]  # noqa: E721
     return len(args) == 1 and args[0] is bool
+
+
+def _finite_annotation_values(annotation: Any) -> set[Any] | None:
+    """Return finite allowed values for Literal/Enum annotations, else None."""
+    annotation = _unwrap_optional(annotation)
+    origin = get_origin(annotation)
+    if origin is not None:
+        if origin is Literal:
+            return set(get_args(annotation))
+        return None
+    if isinstance(annotation, type) and issubclass(annotation, Enum):
+        return {member.value for member in annotation}
+    return None
 
 
 def _check_call_args(func: Callable[..., Any], args: dict[str, Any]) -> list[str]:
@@ -202,6 +216,7 @@ def check_contract_against_environment(
 
     contracted_assistant_tools: set[str] = set()
     contracted_user_tools: set[str] = set()
+    tool_funcs: dict[tuple[str, str], Callable[..., Any]] = {}
     for action in contract.actions:
         if action.requestor == "assistant":
             toolkit = environment.tools
@@ -237,6 +252,7 @@ def check_contract_against_environment(
                 f"{action.requestor} toolkit"
             )
             continue
+        tool_funcs[(action.requestor, action.tool_name)] = tool_func
 
         try:
             sig = inspect.signature(tool_func)
@@ -249,11 +265,44 @@ def check_contract_against_environment(
             for p in params
             if p.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY)
         }
-        unknown_param_bindings = sorted(set(action.tool_arg_bindings.keys()) - named_params)
+        contracted_param_names = set(action.tool_arg_bindings) | set(action.tool_arg_literals)
+        unknown_param_bindings = sorted(contracted_param_names - named_params)
         if unknown_param_bindings and not has_var_kw:
             issues.append(
-                f"Action '{action.action_id}' maps unknown tool params in tool_arg_bindings: "
+                f"Action '{action.action_id}' maps unknown tool params: "
                 f"{unknown_param_bindings}"
+            )
+
+    literal_args_by_tool: dict[tuple[str, str, str], set[Any]] = {}
+    for action in contract.actions:
+        for param_name, literal_value in action.tool_arg_literals.items():
+            literal_args_by_tool.setdefault(
+                (action.requestor, action.tool_name, param_name), set()
+            ).add(literal_value)
+
+    for (requestor, tool_name, param_name), literal_values in sorted(literal_args_by_tool.items()):
+        tool_func = tool_funcs.get((requestor, tool_name))
+        if tool_func is None:
+            continue
+        try:
+            sig = inspect.signature(tool_func)
+        except (TypeError, ValueError):
+            continue
+        param = sig.parameters.get(param_name)
+        if param is None:
+            continue
+        allowed_values = _finite_annotation_values(param.annotation)
+        if allowed_values is None:
+            issues.append(
+                f"Tool '{tool_name}' parameter '{param_name}' accepts finite contract literals "
+                f"{sorted(literal_values, key=repr)} but is not annotated as Literal[...] or Enum."
+            )
+            continue
+        missing_values = sorted(set(literal_values) - set(allowed_values), key=repr)
+        if missing_values:
+            issues.append(
+                f"Tool '{tool_name}' parameter '{param_name}' annotation does not cover contract "
+                f"literal values {missing_values}; allowed values are {sorted(allowed_values, key=repr)}."
             )
 
     for source in contract.bindings:

@@ -3,6 +3,7 @@ from typing import Optional
 
 from tau2.data_model.tasks import Task
 from tau2.domains.ev_charging_support.data_model import (
+    AllowlistSyncState,
     BackendLinkState,
     CertState,
     ChargeState,
@@ -21,8 +22,10 @@ from tau2.domains.ev_charging_support.data_model import (
     PaymentTokenStatus,
     ProfileState,
     ReachabilityState,
+    ReservationLockState,
     RetryState,
     SessionAuthState,
+    TariffProfileState,
     VehicleAuthState,
 )
 from tau2.domains.ev_charging_support.tools import EVChargingSupportTools
@@ -118,6 +121,12 @@ class EVChargingSupportEnvironment(Environment):
             return "FRD-301"
         if station.firmware_state == FirmwareState.OUTDATED:
             return "FW-410"
+        if session.allowlist_sync_state == AllowlistSyncState.STALE:
+            return "ENT-210"
+        if session.tariff_profile_state == TariffProfileState.MISSING:
+            return "ENT-220"
+        if session.reservation_lock_state == ReservationLockState.PRESENT:
+            return "ENT-230"
         if session.session_auth_state == SessionAuthState.STALE:
             return "AUTH-220"
         if session.profile_state == ProfileState.NOT_READY:
@@ -155,6 +164,9 @@ class EVChargingSupportEnvironment(Environment):
             and network.backend_link_state == BackendLinkState.UP
             and network.cert_state == CertState.FRESH
             and network.handshake_state == HandshakeState.ESTABLISHED
+            and session.allowlist_sync_state == AllowlistSyncState.SYNCED
+            and session.tariff_profile_state == TariffProfileState.READY
+            and session.reservation_lock_state == ReservationLockState.CLEARED
             and session.session_auth_state == SessionAuthState.VALID
             and session.profile_state == ProfileState.READY
             and session.vehicle_auth_state == VehicleAuthState.VALIDATED

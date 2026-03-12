@@ -151,6 +151,7 @@ class ActionContract(BaseModel):
     effects_world: list[WorldEffectSpec] = Field(default_factory=list)
     effects_bindings: list[str] = Field(default_factory=list)
     tool_arg_bindings: dict[str, str] = Field(default_factory=dict)
+    tool_arg_literals: dict[str, Any] = Field(default_factory=dict)
     stutter_on_fail: bool = True
 
     @model_validator(mode="after")
@@ -195,7 +196,128 @@ class ActionContract(BaseModel):
                     f"Action '{self.action_id}' maps tool param '{param_name}' to binding "
                     f"'{binding_id}' that is not listed in requires_bindings"
                 )
+        overlapping_arg_keys = set(self.tool_arg_bindings) & set(self.tool_arg_literals)
+        if overlapping_arg_keys:
+            raise ValueError(
+                f"Action '{self.action_id}' uses the same tool arg key in tool_arg_bindings "
+                f"and tool_arg_literals: {sorted(overlapping_arg_keys)}"
+            )
+        for param_name in self.tool_arg_literals:
+            if not param_name.strip():
+                raise ValueError(
+                    f"Action '{self.action_id}' has empty tool_arg_literals key"
+                )
         return self
+
+
+class ActionSchemaVariantSpec(BaseModel):
+    """One enum-like variant that expands to a concrete ActionContract."""
+
+    variant_id: str
+    action_id: Optional[str] = None
+    requires_world: list[WorldPredicateSpec] = Field(default_factory=list)
+    requires_bindings: list[BindingPredicateSpec] = Field(default_factory=list)
+    effects_world: list[WorldEffectSpec] = Field(default_factory=list)
+    effects_bindings: list[str] = Field(default_factory=list)
+    tool_arg_bindings: dict[str, str] = Field(default_factory=dict)
+    tool_arg_literals: dict[str, Any] = Field(default_factory=dict)
+    stutter_on_fail: Optional[bool] = None
+
+    @model_validator(mode="after")
+    def validate_variant(self) -> "ActionSchemaVariantSpec":
+        if not self.variant_id.strip():
+            raise ValueError("action schema variant_id cannot be empty")
+        _check_unique(
+            self.effects_bindings,
+            label=f"action schema variant '{self.variant_id}' effects_bindings",
+        )
+        overlapping_arg_keys = set(self.tool_arg_bindings) & set(self.tool_arg_literals)
+        if overlapping_arg_keys:
+            raise ValueError(
+                f"Action schema variant '{self.variant_id}' uses the same tool arg key in "
+                f"tool_arg_bindings and tool_arg_literals: {sorted(overlapping_arg_keys)}"
+            )
+        return self
+
+
+class ActionSchemaSpec(BaseModel):
+    """Authoring sugar for one conceptual tool with multiple concrete variants."""
+
+    schema_id: str
+    action_id_template: str
+    variant_param: str = "variant_id"
+    requestor: Literal["assistant", "user"]
+    tool_name: str
+    classification: ToolClassification
+    requires_world: list[WorldPredicateSpec] = Field(default_factory=list)
+    requires_bindings: list[BindingPredicateSpec] = Field(default_factory=list)
+    effects_world: list[WorldEffectSpec] = Field(default_factory=list)
+    effects_bindings: list[str] = Field(default_factory=list)
+    tool_arg_bindings: dict[str, str] = Field(default_factory=dict)
+    tool_arg_literals: dict[str, Any] = Field(default_factory=dict)
+    stutter_on_fail: bool = True
+    variants: list[ActionSchemaVariantSpec] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_schema(self) -> "ActionSchemaSpec":
+        if not self.schema_id.strip():
+            raise ValueError("action schema_id cannot be empty")
+        if not self.action_id_template.strip():
+            raise ValueError(f"Action schema '{self.schema_id}' has empty action_id_template")
+        if not self.variant_param.strip():
+            raise ValueError(f"Action schema '{self.schema_id}' has empty variant_param")
+        if not self.tool_name.strip():
+            raise ValueError(f"Action schema '{self.schema_id}' has empty tool_name")
+        if not self.variants:
+            raise ValueError(f"Action schema '{self.schema_id}' must declare at least one variant")
+        _check_unique(
+            [variant.variant_id for variant in self.variants],
+            label=f"action schema '{self.schema_id}' variants.variant_id",
+        )
+        overlapping_arg_keys = set(self.tool_arg_bindings) & set(self.tool_arg_literals)
+        if overlapping_arg_keys:
+            raise ValueError(
+                f"Action schema '{self.schema_id}' uses the same tool arg key in "
+                f"tool_arg_bindings and tool_arg_literals: {sorted(overlapping_arg_keys)}"
+            )
+        return self
+
+    def expand_actions(self) -> list[ActionContract]:
+        """Expand schema variants into concrete ActionContract entries."""
+        expanded: list[ActionContract] = []
+        for variant in self.variants:
+            substitutions = {
+                "schema_id": self.schema_id,
+                "variant_id": variant.variant_id,
+                self.variant_param: variant.variant_id,
+            }
+            try:
+                action_id = variant.action_id or self.action_id_template.format(**substitutions)
+            except KeyError as exc:
+                raise ValueError(
+                    f"Action schema '{self.schema_id}' action_id_template references unknown "
+                    f"placeholder '{exc.args[0]}'"
+                ) from exc
+            expanded.append(
+                ActionContract(
+                    action_id=action_id,
+                    requestor=self.requestor,
+                    tool_name=self.tool_name,
+                    classification=self.classification,
+                    requires_world=[*self.requires_world, *variant.requires_world],
+                    requires_bindings=[*self.requires_bindings, *variant.requires_bindings],
+                    effects_world=[*self.effects_world, *variant.effects_world],
+                    effects_bindings=[*self.effects_bindings, *variant.effects_bindings],
+                    tool_arg_bindings={**self.tool_arg_bindings, **variant.tool_arg_bindings},
+                    tool_arg_literals={**self.tool_arg_literals, **variant.tool_arg_literals},
+                    stutter_on_fail=(
+                        self.stutter_on_fail
+                        if variant.stutter_on_fail is None
+                        else variant.stutter_on_fail
+                    ),
+                )
+            )
+        return expanded
 
 
 class FactSourceSpec(BaseModel):
@@ -292,6 +414,7 @@ class GraphContractSpec(BaseModel):
     projection_fields: list[str] = Field(default_factory=list)
     bindings: list[BindingSourceSpec] = Field(default_factory=list)
     actions: list[ActionContract] = Field(default_factory=list)
+    action_schemas: list[ActionSchemaSpec] = Field(default_factory=list)
     sync_rules: list[SyncRuleSpec] = Field(default_factory=list)
 
     # Deprecated v1 fields kept only to avoid runtime import/attribute errors while
@@ -300,6 +423,38 @@ class GraphContractSpec(BaseModel):
     mutex_pairs: list[tuple[str, str]] = Field(default_factory=list)
     invariants: list[InvariantSpec] = Field(default_factory=list)
     assistant_stutter_allowlist: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def expand_action_schemas(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        raw_schemas = data.get("action_schemas") or []
+        if not raw_schemas:
+            return data
+
+        expanded_actions: list[dict[str, Any]] = []
+        for raw_schema in raw_schemas:
+            schema = (
+                raw_schema
+                if isinstance(raw_schema, ActionSchemaSpec)
+                else ActionSchemaSpec.model_validate(raw_schema)
+            )
+            expanded_actions.extend(
+                action.model_dump(mode="python") for action in schema.expand_actions()
+            )
+
+        raw_actions = data.get("actions") or []
+        normalized_actions: list[dict[str, Any] | ActionContract] = []
+        for raw_action in raw_actions:
+            if isinstance(raw_action, ActionContract):
+                normalized_actions.append(raw_action.model_dump(mode="python"))
+            else:
+                normalized_actions.append(raw_action)
+
+        payload = dict(data)
+        payload["actions"] = [*normalized_actions, *expanded_actions]
+        return payload
 
     @model_validator(mode="after")
     def validate_contract(self) -> "GraphContractSpec":
@@ -374,6 +529,7 @@ class TaskIntent(BaseModel):
     start_world: list[WorldEffectSpec] = Field(default_factory=list)
     start_bindings: list[str] = Field(default_factory=list)
     goal_world: list[WorldPredicateSpec] = Field(default_factory=list)
+    goal_capture_paths: list[str] = Field(default_factory=list)
     goal_bindings: list[str] = Field(default_factory=list)
     terminal_profile_id: Optional[str] = None
     required_actions: list[str] = Field(default_factory=list)
@@ -395,9 +551,15 @@ class TaskIntent(BaseModel):
             label=f"task '{self.task_id}' goal_bindings",
         )
         _check_unique(
+            self.goal_capture_paths,
+            label=f"task '{self.task_id}' goal_capture_paths",
+        )
+        _check_unique(
             self.required_actions,
             label=f"task '{self.task_id}' required_actions",
         )
+        if any(not path.strip() for path in self.goal_capture_paths):
+            raise ValueError("goal_capture_paths cannot contain blank values")
         if self.min_plan_length < 0:
             raise ValueError("min_plan_length must be >= 0")
         if self.terminal_profile_id is not None and not self.terminal_profile_id.strip():
@@ -419,6 +581,7 @@ class SamplingSeedSpec(BaseModel):
     start_world: list[WorldEffectSpec] = Field(default_factory=list)
     start_bindings: list[str] = Field(default_factory=list)
     allowed_terminal_profiles: list[str] = Field(default_factory=list)
+    goal_capture_paths: list[str] = Field(default_factory=list)
     min_depth: int = 3
     max_depth: int = 8
 
@@ -438,6 +601,12 @@ class SamplingSeedSpec(BaseModel):
             self.allowed_terminal_profiles,
             label=f"seed '{self.seed_id}' allowed_terminal_profiles",
         )
+        _check_unique(
+            self.goal_capture_paths,
+            label=f"seed '{self.seed_id}' goal_capture_paths",
+        )
+        if any(not path.strip() for path in self.goal_capture_paths):
+            raise ValueError("goal_capture_paths cannot contain blank values")
         return self
 
 
@@ -446,10 +615,8 @@ class SamplingRequestDoc(BaseModel):
 
     version: int = 1
     max_tasks: int = 20
-    goal_world_path_prefixes: list[str] = Field(
-        default_factory=lambda: ["agent.", "user."]
-    )
     terminal_profiles: list[TerminalProfileSpec] = Field(default_factory=list)
+    goal_capture_paths: list[str] = Field(default_factory=list)
     seeds: list[SamplingSeedSpec] = Field(default_factory=list)
 
     @model_validator(mode="after")
@@ -462,6 +629,12 @@ class SamplingRequestDoc(BaseModel):
             [profile.profile_id for profile in self.terminal_profiles],
             label="sampling_request.terminal_profiles.profile_id",
         )
+        _check_unique(
+            self.goal_capture_paths,
+            label="sampling_request.goal_capture_paths",
+        )
+        if any(not path.strip() for path in self.goal_capture_paths):
+            raise ValueError("goal_capture_paths cannot contain blank values")
         _check_unique(
             [seed.seed_id for seed in self.seeds],
             label="sampling_request.seeds.seed_id",
@@ -479,4 +652,14 @@ class SamplingRequestDoc(BaseModel):
                 raise ValueError(
                     f"seed '{seed.seed_id}' references unknown terminal profiles: {unknown_profiles}"
                 )
+            effective_capture_paths = seed.goal_capture_paths or self.goal_capture_paths
+            if not effective_capture_paths:
+                raise ValueError(
+                    f"seed '{seed.seed_id}' must declare goal_capture_paths or inherit "
+                    "sampling_request.goal_capture_paths"
+                )
         return self
+
+    def goal_capture_paths_for_seed(self, seed: SamplingSeedSpec) -> list[str]:
+        """Return the effective goal-capture path list for one seed."""
+        return list(seed.goal_capture_paths or self.goal_capture_paths)

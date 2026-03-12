@@ -28,12 +28,16 @@ Requirements:
 3. Implement helper assertion functions referenced by runtime env assertions (`assert_*` on assistant side) with bool returns.
 4. Use `ToolKitBase` and `@is_tool` for LLM-visible tools.
 5. For actions with `requires_bindings`, enforce binding usage at runtime via concrete tool params and guards.
-6. For binding-source read tools, use typed return models (Pydantic/dataclass-style) so extraction-path checks are meaningful.
-7. If a binding is tied to a volatile `world_path`, keep its runtime guard narrow:
+6. If contract actions use finite literal tool args for a runtime tool param (for example via
+   `tool_arg_literals` or `action_schemas` variants), annotate that Python parameter as
+   `Literal[...]` or an `Enum`, not plain `str`, so the generated tool schema exposes the valid
+   values to the agent.
+7. For binding-source read tools, use typed return models (Pydantic/dataclass-style) so extraction-path checks are meaningful.
+8. If a binding is tied to a volatile `world_path`, keep its runtime guard narrow:
    - immediate observation-driven steps may validate the current bound value
    - the longer repair chain should run from stable world state established by earlier tools
    - do not require the agent to keep replaying a moving screen code through every repair call
-8. **Docstring rule**: Tool docstrings become the `description` field in the OpenAI function-calling schema sent to the agent LLM. They must NOT reference entity type names (e.g. "station", "account", "session") because the agent will interpret these as information it needs to gather from the user. All entity resolution is context-scoped (via `set_user_context`), so the agent never needs entity identifiers. Use neutral phrasing like "Run backend diagnostics for the current charging session" instead of "Run backend diagnostics for the active station context."
+9. **Docstring rule**: Tool docstrings become the `description` field in the OpenAI function-calling schema sent to the agent LLM. They must NOT reference entity type names (e.g. "station", "account", "session") because the agent will interpret these as information it needs to gather from the user. All entity resolution is context-scoped (via `set_user_context`), so the agent never needs entity identifiers. Use neutral phrasing like "Run backend diagnostics for the current charging session" instead of "Run backend diagnostics for the active station context."
 
 Validation:
 
@@ -63,8 +67,17 @@ Requirements:
 4. Ensure stutter-only read tools do not mutate causal fields.
 5. Implement strict stop-gate callables:
    - init helper `set_stop_gate(criteria=[...])`
-   - read tool `check_resolution_status()` that evaluates all criteria and returns `{resolved, unmet, observed}`.
+   - read tool `check_resolution_status()` that evaluates all criteria and returns `{resolved, unmet}`.
+   - `criteria` come from the user-observable subset of terminal `goal_world`, not necessarily every terminal predicate.
 6. `check_resolution_status()` must be deterministic and side-effect free (stutter-only semantics).
+7. Keep `check_resolution_status()` minimal:
+   - `unmet` should use human-readable unmet reasons from stop-gate rules
+   - do not return a broad structured `observed` snapshot or raw internal field/value dumps
+   - the checker is for stop confirmation, not for giving the agent a rich progress oracle
+8. Expect runtime env assertions to enforce both:
+   - captured changed end-state values from `goal_world`
+   - unchanged authored `start_world` paths outside that captured goal
+   The stop gate remains a user-observable subset only; it is not the full frame checker.
 
 Validation:
 

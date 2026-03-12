@@ -174,6 +174,7 @@ def _summarize_task(
         f"#### `{task.task_id}`",
         f"- `min_plan_length`: {task.min_plan_length}",
         f"- `start_bindings`: {task.start_bindings or '[]'}",
+        f"- `goal_capture_paths`: {task.goal_capture_paths or '[]'}",
         f"- `goal_bindings`: {task.goal_bindings or '[]'}",
         f"- `terminal_profile_id`: {task.terminal_profile_id!r}",
         f"- `required_actions` ({len(task.required_actions)}): {task.required_actions or '[]'}",

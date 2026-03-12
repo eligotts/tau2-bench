@@ -6,11 +6,9 @@ rules:
     check_op: eq
     expected: active
     unmet_reason: Mobile data is not active yet.
-    observed_from: check_resolution_status.observed.data_status
   - goal_path: agent.lines[active_line].profile_state
     goal_value: ready
     check_field: profile_state
     check_op: eq
     expected: ready
     unmet_reason: Line profile is not ready yet.
-    observed_from: check_resolution_status.observed.profile_state

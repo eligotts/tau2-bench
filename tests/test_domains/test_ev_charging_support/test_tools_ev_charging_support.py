@@ -1,6 +1,7 @@
 import unittest
 
 from tau2.domains.ev_charging_support.data_model import (
+    AllowlistSyncState,
     BackendLinkState,
     CertState,
     ChargeState,
@@ -14,8 +15,10 @@ from tau2.domains.ev_charging_support.data_model import (
     PaymentTokenStatus,
     ProfileState,
     ReachabilityState,
+    ReservationLockState,
     RetryState,
     SessionAuthState,
+    TariffProfileState,
     VehicleAuthState,
 )
 from tau2.domains.ev_charging_support.environment import get_environment
@@ -31,6 +34,54 @@ from tau2.domains.ev_charging_support.user_data_model import (
 
 
 class TestEVChargingSupportTools(unittest.TestCase):
+    def test_reprovision_tool_schema_exposes_branch_enum(self):
+        env = get_environment()
+
+        schema = env.tools.get_tools()["reprovision"].openai_schema
+        branch_schema = schema["function"]["parameters"]["properties"]["branch"]
+
+        self.assertEqual(branch_schema["type"], "string")
+        self.assertEqual(
+            branch_schema["enum"],
+            ["billing", "connectivity", "full_system"],
+        )
+
+    def test_clear_entitlement_blocker_tool_schema_exposes_blocker_enum(self):
+        env = get_environment()
+
+        schema = env.tools.get_tools()["clear_entitlement_blocker"].openai_schema
+        blocker_schema = schema["function"]["parameters"]["properties"]["blocker"]
+
+        self.assertEqual(blocker_schema["type"], "string")
+        self.assertEqual(
+            blocker_schema["enum"],
+            ["allowlist_sync", "tariff_profile", "reservation_lock"],
+        )
+
+    def test_check_resolution_status_returns_minimal_stop_surface(self):
+        env = get_environment()
+        env.user_tools.set_stop_gate(
+            [
+                {
+                    "check_field": "fault_code",
+                    "op": "eq",
+                    "expected": "NONE",
+                    "unmet_reason": "Station still reports an unresolved fault code.",
+                }
+            ]
+        )
+        env.user_tools.db.view.display_fault_code = "RETRY-301"
+
+        result = env.user_tools.check_resolution_status()
+
+        self.assertEqual(
+            result.model_dump(),
+            {
+                "resolved": False,
+                "unmet": ["Station still reports an unresolved fault code."],
+            },
+        )
+
     def test_billing_backend_fixes_advance_fault_stages_without_stale_args(self):
         env = get_environment()
         account = env.tools.db.accounts[0]
@@ -102,11 +153,11 @@ class TestEVChargingSupportTools(unittest.TestCase):
         env.sync_tools()
         self.assertEqual(session.last_fault_code, "PROFILE-201")
         self.assertEqual(
-            env.tools.reprovision_billing("BH-101")["status"],
+            env.tools.reprovision("billing", "BH-101")["status"],
             "error",
         )
         self.assertEqual(
-            env.tools.reprovision_billing("PROFILE-201")["status"],
+            env.tools.reprovision("billing", "PROFILE-201")["status"],
             "success",
         )
 
@@ -225,7 +276,7 @@ class TestEVChargingSupportTools(unittest.TestCase):
         env.sync_tools()
         self.assertEqual(session.last_fault_code, "AUTH-220")
         self.assertEqual(
-            env.tools.reprovision_billing("PROFILE-201")["status"],
+            env.tools.reprovision("billing", "PROFILE-201")["status"],
             "error",
         )
         self.assertEqual(
@@ -242,7 +293,7 @@ class TestEVChargingSupportTools(unittest.TestCase):
         self.assertEqual(session.last_fault_code, "PROFILE-201")
 
         self.assertEqual(
-            env.tools.reprovision_billing("PROFILE-201")["status"],
+            env.tools.reprovision("billing", "PROFILE-201")["status"],
             "success",
         )
         env.sync_tools()
@@ -259,3 +310,59 @@ class TestEVChargingSupportTools(unittest.TestCase):
         )
         env.sync_tools()
         self.assertEqual(session.last_fault_code, "RETRY-301")
+
+    def test_entitlement_lane_advances_through_visible_stage_codes(self):
+        env = get_environment()
+        account = env.tools.db.accounts[0]
+        station = env.tools.db.stations[0]
+        network = env.tools.db.network_paths[0]
+        session = env.tools.db.sessions[0]
+        user = env.user_tools.db
+
+        account.hold_status = HoldStatus.CLEARED
+        account.payment_token_status = PaymentTokenStatus.VALID
+        account.fraud_lock_state = FraudLockState.OFF
+        station.reachability_state = ReachabilityState.REACHABLE
+        station.firmware_state = FirmwareState.CURRENT
+        station.clock_sync_state = ClockSyncState.SYNCED
+        station.diagnostics_state = DiagnosticsState.RAN
+        network.backend_link_state = BackendLinkState.UP
+        network.cert_state = CertState.FRESH
+        network.handshake_state = HandshakeState.ESTABLISHED
+        session.error_class = ErrorClass.BILLING
+        session.session_auth_state = SessionAuthState.STALE
+        session.allowlist_sync_state = AllowlistSyncState.STALE
+        session.tariff_profile_state = TariffProfileState.MISSING
+        session.reservation_lock_state = ReservationLockState.PRESENT
+        session.profile_state = ProfileState.NOT_READY
+        session.vehicle_auth_state = VehicleAuthState.PENDING
+        session.retry_state = RetryState.NOT_READY
+        user.physical.app_login_state = AppLoginState.ACTIVE
+
+        env.sync_tools()
+        self.assertEqual(session.last_fault_code, "ENT-210")
+
+        self.assertEqual(
+            env.tools.clear_entitlement_blocker("allowlist_sync", "ENT-210")["status"],
+            "success",
+        )
+        env.sync_tools()
+        self.assertEqual(session.last_fault_code, "ENT-220")
+
+        self.assertEqual(
+            env.tools.clear_entitlement_blocker("tariff_profile", "ENT-220")["status"],
+            "success",
+        )
+        env.sync_tools()
+        self.assertEqual(session.last_fault_code, "ENT-230")
+
+        self.assertEqual(
+            env.tools.clear_entitlement_blocker("reservation_lock", "ENT-230")["status"],
+            "success",
+        )
+        env.sync_tools()
+        self.assertEqual(session.last_fault_code, "AUTH-220")
+
+        self.assertEqual(env.tools.refresh_session_authorization()["status"], "success")
+        env.sync_tools()
+        self.assertEqual(session.last_fault_code, "PROFILE-201")

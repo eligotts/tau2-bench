@@ -182,7 +182,7 @@ Deterministic (from scaffold; do not edit):
 - `runtime.persona` (entity name from context bindings + personality from persona pool)
 - `runtime.unknown_info` (null)
 - `runtime.initialization_actions` (from start state + context bindings + runtime defaults prefix)
-- `runtime.env_assertions` (from goal state)
+- `runtime.env_assertions` (from captured `goal_world` plus unchanged authored `start_world` paths)
 - `runtime.actions` (from required action chain)
 - `runtime.reward_basis`
 
@@ -195,7 +195,7 @@ Per-task authored (only 3 fields):
 Hard rules:
 
 1. Never edit sampled structural fields:
-   - `start_world`, `start_bindings`, `goal_world`, `goal_bindings`, `terminal_profile_id`, `required_actions`, `required_precedence`.
+   - `start_world`, `start_bindings`, `goal_world`, `goal_capture_paths`, `goal_bindings`, `terminal_profile_id`, `required_actions`, `required_precedence`.
 2. Never edit deterministic runtime fields listed above.
 3. Remove all `__AUTHOR_ME__` placeholders.
 4. Run both runtime author checks on the authored runtime file:
@@ -344,7 +344,10 @@ visibility into tool usage, but drive pass/fail from `ENV_ASSERTION` and strict 
 
 ## Stop and Completion Discipline
 
-`run_stop_gate_inject` enforces strict stop-gate criteria per task goals.
+`run_stop_gate_inject` enforces strict stop-gate criteria for the user-observable subset of
+each task's captured `goal_world`, as defined by `stop_gate_map.yaml`. Full terminal-state
+correctness still comes from terminal-profile validity plus env assertions, including unchanged
+authored `start_world` paths outside the captured goal.
 
 Task instructions must keep strict stop behavior:
 

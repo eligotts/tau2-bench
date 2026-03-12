@@ -1,7 +1,8 @@
 version: 1
 max_tasks: 5
-goal_world_path_prefixes:
-  - agent.
+goal_capture_paths:
+  - agent.lines[active_line]
+  - user.physical
 terminal_profiles:
   - profile_id: fully_resolved
     requires_world:

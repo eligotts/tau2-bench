@@ -101,6 +101,29 @@ actions:
     tool_arg_bindings:
       iccid: iccid
 
+# Optional authoring sugar when one conceptual tool has multiple finite modes.
+# The loader expands these into ordinary `actions` before search/preflight.
+#
+# action_schemas:
+#   - schema_id: assistant_reprovision
+#     action_id_template: reprovision_{mode}
+#     variant_param: mode
+#     requestor: assistant
+#     tool_name: reprovision
+#     classification: causal
+#     requires_bindings:
+#       - binding_id: iccid
+#         acquired: true
+#     tool_arg_bindings:
+#       iccid: iccid
+#     variants:
+#       - variant_id: esim
+#         tool_arg_literals:
+#           mode: esim
+#       - variant_id: physical_sim
+#         tool_arg_literals:
+#           mode: physical_sim
+
   - action_id: run_data_test
     requestor: user
     tool_name: run_data_test

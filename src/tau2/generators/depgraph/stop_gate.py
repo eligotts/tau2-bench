@@ -26,8 +26,7 @@ class StopGateRule(BaseModel):
     check_field: str
     check_op: Literal["eq"] = "eq"
     expected: Any
-    unmet_reason: str | None = None
-    observed_from: str | None = None
+    unmet_reason: str
 
     @model_validator(mode="after")
     def validate_rule(self) -> "StopGateRule":
@@ -35,6 +34,8 @@ class StopGateRule(BaseModel):
             raise ValueError("stop-gate goal_path cannot be empty")
         if not self.check_field.strip():
             raise ValueError("stop-gate check_field cannot be empty")
+        if not self.unmet_reason.strip():
+            raise ValueError("stop-gate unmet_reason cannot be empty")
         return self
 
 
@@ -74,12 +75,19 @@ def _criteria_from_task_goal(
     task: TaskIntent,
     stop_gate_map: StopGateMapDoc,
 ) -> tuple[list[dict[str, Any]], list[str]]:
+    """Map the user-observable subset of goal_world into stop-gate criteria.
+
+    `goal_world` may be the full terminal state for env assertions and compile-time
+    validation. `stop_gate_map` intentionally covers only the subset that a user-facing
+    checker like `check_resolution_status` can observe and report.
+    """
     index = {
         (rule.goal_path, _stable_value_key(rule.goal_value)): rule
         for rule in stop_gate_map.rules
     }
     criteria: list[dict[str, Any]] = []
     issues: list[str] = []
+    mapped_any = False
     for goal in task.goal_world:
         if goal.op != "eq":
             issues.append(
@@ -90,19 +98,19 @@ def _criteria_from_task_goal(
         key = (goal.path, _stable_value_key(goal.value))
         rule = index.get(key)
         if rule is None:
-            issues.append(
-                f"Task '{task.task_id}' missing stop-gate mapping for "
-                f"goal {goal.path} == {goal.value!r}"
-            )
             continue
+        mapped_any = True
         criteria.append(
             {
                 "check_field": rule.check_field,
                 "op": rule.check_op,
                 "expected": rule.expected,
                 "unmet_reason": rule.unmet_reason,
-                "observed_from": rule.observed_from,
             }
+        )
+    if not mapped_any:
+        issues.append(
+            f"Task '{task.task_id}' has no user-observable stop-gate criteria mapped from goal_world"
         )
     return criteria, issues
 

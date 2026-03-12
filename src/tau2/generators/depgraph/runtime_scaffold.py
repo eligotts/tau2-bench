@@ -11,6 +11,7 @@ import yaml
 from pydantic import BaseModel, Field, model_validator
 
 from tau2.generators.depgraph.context_bindings import TaskContextBindingsDoc
+from tau2.generators.depgraph.goal_capture import explicit_start_world_map
 from tau2.generators.depgraph.semantics import materialize_world
 from tau2.generators.depgraph.stop_gate import StopGateMapDoc
 from tau2.generators.depgraph.types import (
@@ -216,17 +217,26 @@ def _build_start_init_actions(
 
 def _build_goal_env_assertions(task: TaskIntent) -> list[EnvAssertionSpec]:
     assertions: list[EnvAssertionSpec] = []
-    ordered_goals = sorted(task.goal_world, key=lambda predicate: predicate.path)
-    for goal in ordered_goals:
+    goal_by_path = {goal.path: goal for goal in task.goal_world}
+    for goal in goal_by_path.values():
         if goal.op != "eq":
             raise ValueError(
                 f"Task '{task.task_id}' has unsupported goal op '{goal.op}' for runtime scaffold"
             )
+
+    protected_start_by_path = explicit_start_world_map(task.start_world)
+    assertion_values: dict[str, Any] = {}
+    for path, value in protected_start_by_path.items():
+        assertion_values[path] = value
+    for path, goal in goal_by_path.items():
+        assertion_values[path] = goal.value
+
+    for path in sorted(assertion_values):
         assertions.append(
             EnvAssertionSpec(
-                env_type=_env_type_for_path(goal.path),
-                func_name=f"assert_{_leaf_field_name(goal.path)}",
-                arguments={"expected": goal.value},
+                env_type=_env_type_for_path(path),
+                func_name=f"assert_{_leaf_field_name(path)}",
+                arguments={"expected": assertion_values[path]},
                 assert_value=True,
                 message=None,
             )
@@ -251,6 +261,8 @@ def _build_action_expectations(
             )
 
         arguments: dict[str, Any] = {}
+        for param_name, literal_value in sorted(action.tool_arg_literals.items()):
+            arguments[param_name] = literal_value
         for param_name, binding_id in sorted(action.tool_arg_bindings.items()):
             if binding_id in start_binding_values:
                 arguments[param_name] = start_binding_values[binding_id]
@@ -356,7 +368,6 @@ def _goal_cues_for_task(
                 "check_field": rule.check_field,
                 "expected": rule.expected,
                 "unmet_reason": rule.unmet_reason,
-                "observed_from": rule.observed_from,
             }
         )
     return cues

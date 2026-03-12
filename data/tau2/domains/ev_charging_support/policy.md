@@ -38,17 +38,18 @@ Use the tools that match the confirmed blockers. More than one lane may need rep
   - `rotate_station_certificate`
   - `reestablish_station_handshake`
   - `update_station_firmware`
+- Entitlement-stage tool:
+  - `clear_entitlement_blocker(blocker, fault_code)`
 - Late-stage authorization tools:
   - `refresh_session_authorization`
   - `refresh_vehicle_authorization`
-- Reprovision tools:
-  - `reprovision_billing`
-  - `reprovision_connectivity`
-  - `reprovision_full_system`
+- Reprovision tool:
+  - `reprovision(branch, fault_code)`
 - Retry-stage tool:
   - `reset_retry_path`
 
-Use the reprovision tool that matches the confirmed branch. Re-check `check_station_screen`
+Use the reprovision tool with the branch that matches the confirmed diagnosis. The valid branch
+labels are the same labels returned by `check_app_status`. Re-check `check_station_screen`
 before any reprovision or retry-reset decision that depends on the current visible code.
 
 ## Customer-side tools and actions
@@ -78,6 +79,7 @@ and current stage.
 - Gather any diagnosis you still need with `check_station_screen` and `check_app_status`.
 - Run `run_backend_diagnostics` before backend repair tools that depend on confirmed diagnosis.
 - After diagnostics, choose the repair tools that fit the confirmed blockers instead of following a single fixed order.
+- Use `clear_entitlement_blocker` when the station advances to an entitlement-stage fault code before session authorization can proceed.
 - Use `re_authenticate_charging_app` when the late-stage session authorization lane depends on renewed app login.
 - Use `confirm_connector_latch` when the late-stage vehicle authorization lane needs the customer-side connection confirmed.
 - Use `inspect_cable_path`, `reseat_connector`, and `power_cycle_station` when the charging path needs customer-side hardware recovery.
