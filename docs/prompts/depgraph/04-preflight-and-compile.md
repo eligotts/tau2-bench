@@ -104,6 +104,14 @@ uv run python -m tau2.generators.depgraph.run_preflight \
   --strict-tool-coverage
 ```
 
+Default preflight proves that tasks are solvable and structurally aligned with terminal
+profiles, goal capture, runtime/tool coverage, and stop-gates. If you also want to prove
+that every `required_action` is individually indispensable, add:
+
+```bash
+  --strict-required-action-necessity
+```
+
 8. Compile tasks:
 
 ```bash
@@ -114,6 +122,12 @@ uv run python -m tau2.generators.depgraph.run_compile \
   --sampling-request data/tau2/domains/<domain>/sampling_request.yaml \
   --stop-gate-map data/tau2/domains/<domain>/stop_gate_map.yaml \
   --out data/tau2/domains/<domain>/tasks.depgraph.json
+```
+
+`run_compile` has the same optional strict necessity mode:
+
+```bash
+  --strict-required-action-necessity
 ```
 
 Canonical command sequence (copy/paste in order):

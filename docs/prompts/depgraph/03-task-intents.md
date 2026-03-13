@@ -21,19 +21,7 @@ uv run python -m tau2.generators.depgraph.run_sampler \
    - `profile_id`
    - `requires_world`
 3. `goal_capture_paths` (global path-prefix list, or override per seed)
-4. Either `seeds[]` or `seed_schemas[]`:
-   - Prefer `seed_schemas[]` when the domain has a few repeated start-state patterns
-     that differ across finite dimensions (for example branch type, blocker subset, or
-     partial-knowledge variant).
-5. `seeds[]`:
-   - `seed_id`
-   - `start_world` (list of `{path, set}`)
-   - optional `start_bindings`
-   - `allowed_terminal_profiles`
-   - optional `goal_capture_paths` override
-   - `min_depth`
-   - `max_depth`
-6. `seed_schemas[]`:
+4. `seed_schemas[]`:
    - `schema_id`
    - `seed_id_template`
    - `allowed_terminal_profiles`
@@ -60,7 +48,7 @@ Requirements:
    - bind concrete entities later in runtime enrichment.
 6. Every sampled task must end in an explicit terminal profile. Do not use intermediate repair states as ordinary task ends.
 7. `terminal_profiles` define which end states are valid. `goal_capture_paths` define which changed parts of the solved world become emitted `goal_world` and env assertions.
-8. If you need many related starts, prefer `seed_schemas` over hand-copying dozens of concrete seeds.
+8. Author start-state variation only through `seed_schemas`. Direct `seeds[]` authoring is removed.
 
 ## Seed Design for Structural Diversity
 

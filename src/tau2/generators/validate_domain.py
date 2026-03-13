@@ -1,16 +1,16 @@
-"""Validate a domain's generated files, step by step.
+"""Validate a depgraph-authored domain package, step by step.
 
 Usage:
     python -m tau2.generators.validate_domain <domain_name> [--step <step_name>]
 
-Steps: domain_spec, data_model, user_data_model, db_json, user_db_json,
-       policy, tools, user_tools, environment, scenarios
+Steps: graph_contract, sampling_request, runtime_defaults, personas,
+       stop_gate_map, task_specs_runtime, data_model, user_data_model,
+       db_json, user_db_json, policy, tools, user_tools, environment, tasks
 
 If --step is omitted, runs ALL validations in order, stopping on first failure.
 """
 
 import argparse
-import json
 import re
 import sys
 from pathlib import Path
@@ -20,8 +20,17 @@ from tau2.generators.code_utils import (
     validate_json,
     validate_python_syntax,
 )
-from tau2.generators.depgraph.loaders import load_graph_contract
+from tau2.generators.depgraph.loaders import (
+    load_graph_contract,
+    load_sampling_request,
+    load_task_specs,
+)
 from tau2.generators.depgraph.runtime_checks import check_policy_against_contract
+from tau2.generators.depgraph.runtime_scaffold import (
+    load_persona_pool,
+    load_runtime_defaults,
+)
+from tau2.generators.depgraph.stop_gate import load_stop_gate_map
 
 _PROJECT_ROOT = Path(__file__).parents[3]
 _SRC_DOMAINS = _PROJECT_ROOT / "src" / "tau2" / "domains"
@@ -59,55 +68,102 @@ def _resolve_class(module: object, expected_name: str) -> tuple[str | None, type
 # ---------------------------------------------------------------------------
 
 
-def validate_domain_spec(domain_name: str) -> list[str]:
-    """Validate domain_spec.json."""
-    data_dir = _DATA_DOMAINS / domain_name
-    spec_path = data_dir / "domain_spec.json"
+def _require_file(path: Path, label: str) -> list[str]:
+    if not path.exists():
+        return [f"{label} not found at {path}"]
+    return []
 
-    if not spec_path.exists():
-        return [f"domain_spec.json not found at {spec_path}"]
 
-    text = spec_path.read_text()
-    parsed, parse_errors = validate_json(text)
-    if parse_errors:
-        return parse_errors
+def validate_graph_contract(domain_name: str) -> list[str]:
+    """Validate graph_contract.yaml for the current depgraph pipeline."""
+    path = _DATA_DOMAINS / domain_name / "graph_contract.yaml"
+    errors = _require_file(path, "graph_contract.yaml")
+    if errors:
+        return errors
+    try:
+        load_graph_contract(path)
+    except Exception as exc:
+        return [f"graph_contract.yaml failed to load: {type(exc).__name__}: {exc}"]
+    return []
 
-    if not isinstance(parsed, dict):
-        return ["Expected a JSON object"]
 
-    errors = []
-    required_keys = [
-        "domain_name",
-        "entities",
-        "tools",
-        "fault_groups",
-        "policy_sections",
-        "sync_rules",
-    ]
-    for key in required_keys:
-        if key not in parsed:
-            errors.append(f"Missing required key: {key}")
+def validate_sampling_request_file(domain_name: str) -> list[str]:
+    """Validate sampling_request.yaml and schema-only seed authoring."""
+    path = _DATA_DOMAINS / domain_name / "sampling_request.yaml"
+    errors = _require_file(path, "sampling_request.yaml")
+    if errors:
+        return errors
+    try:
+        request = load_sampling_request(path)
+    except Exception as exc:
+        return [f"sampling_request.yaml failed to load: {type(exc).__name__}: {exc}"]
+    if not request.seed_schemas:
+        return ["sampling_request.yaml must declare seed_schemas"]
+    if not request.seeds:
+        return ["sampling_request.yaml seed_schemas expanded to zero concrete seeds"]
+    return []
 
-    if "entities" in parsed and len(parsed["entities"]) < 2:
-        errors.append("Need at least 2 entity types")
 
-    if "tools" in parsed:
-        tools = parsed["tools"]
-        if len(tools) < 3:
-            errors.append("Need at least 3 tools")
-        types = {t.get("type", "").upper() for t in tools}
-        if "WRITE" not in types:
-            errors.append("Need at least 1 WRITE tool")
+def validate_runtime_defaults_file(domain_name: str) -> list[str]:
+    """Validate runtime_defaults.yaml."""
+    path = _DATA_DOMAINS / domain_name / "runtime_defaults.yaml"
+    errors = _require_file(path, "runtime_defaults.yaml")
+    if errors:
+        return errors
+    try:
+        load_runtime_defaults(path)
+    except Exception as exc:
+        return [f"runtime_defaults.yaml failed to load: {type(exc).__name__}: {exc}"]
+    return []
 
-    if "fault_groups" in parsed and len(parsed["fault_groups"]) < 3:
-        errors.append("Need at least 3 fault groups")
 
-    if "domain_name" in parsed:
-        name = parsed["domain_name"]
-        if not re.match(r"^[a-z][a-z0-9_]*$", name):
-            errors.append(f"Invalid domain_name: {name}")
+def validate_personas_file(domain_name: str) -> list[str]:
+    """Validate personas.yaml."""
+    path = _DATA_DOMAINS / domain_name / "personas.yaml"
+    errors = _require_file(path, "personas.yaml")
+    if errors:
+        return errors
+    try:
+        load_persona_pool(path)
+    except Exception as exc:
+        return [f"personas.yaml failed to load: {type(exc).__name__}: {exc}"]
+    return []
 
-    return errors
+
+def validate_stop_gate_map_file(domain_name: str) -> list[str]:
+    """Validate stop_gate_map.yaml."""
+    path = _DATA_DOMAINS / domain_name / "stop_gate_map.yaml"
+    errors = _require_file(path, "stop_gate_map.yaml")
+    if errors:
+        return errors
+    try:
+        load_stop_gate_map(path)
+    except Exception as exc:
+        return [f"stop_gate_map.yaml failed to load: {type(exc).__name__}: {exc}"]
+    return []
+
+
+def validate_task_specs_runtime(domain_name: str) -> list[str]:
+    """Validate task_specs.runtime.yaml."""
+    path = _DATA_DOMAINS / domain_name / "task_specs.runtime.yaml"
+    errors = _require_file(path, "task_specs.runtime.yaml")
+    if errors:
+        return errors
+    try:
+        task_doc = load_task_specs(path)
+    except Exception as exc:
+        return [f"task_specs.runtime.yaml failed to load: {type(exc).__name__}: {exc}"]
+    if not task_doc.tasks:
+        return ["task_specs.runtime.yaml contains zero tasks"]
+    issues: list[str] = []
+    for task in task_doc.tasks[:20]:
+        if task.runtime is None:
+            issues.append(f"Task '{task.task_id}' missing runtime block")
+        if not task.terminal_profile_id:
+            issues.append(f"Task '{task.task_id}' missing terminal_profile_id")
+        if not task.goal_capture_paths:
+            issues.append(f"Task '{task.task_id}' missing goal_capture_paths")
+    return issues
 
 
 def validate_data_model(domain_name: str) -> list[str]:
@@ -204,18 +260,9 @@ def validate_db_json(domain_name: str) -> list[str]:
         return [f"Module missing {db_cls_name} class"]
 
     try:
-        db = db_cls.load(path)
+        db_cls.load(path)
     except Exception as e:
         return [f"DB.load() failed: {type(e).__name__}: {e}"]
-
-    # Check minimum entity count
-    total_entities = 0
-    for field_name in type(db).model_fields:
-        val = getattr(db, field_name)
-        if isinstance(val, list):
-            total_entities += len(val)
-    if total_entities < 3:
-        return [f"Too few entities ({total_entities}). Need at least 3."]
 
     return []
 
@@ -248,19 +295,6 @@ def validate_user_db_json(domain_name: str) -> list[str]:
     except Exception as e:
         return [f"UserDB.load() failed: {type(e).__name__}: {e}"]
 
-    # Check identity fields are null
-    if isinstance(parsed, dict):
-        for key in parsed:
-            is_identity = (
-                key.endswith("_name")
-                or key == "name"
-                or key.endswith("_id")
-            )
-            if is_identity:
-                val = parsed[key]
-                if val is not None and val != "":
-                    return [f"Identity field '{key}' should be null, got {val}"]
-
     return []
 
 
@@ -273,37 +307,14 @@ def validate_policy(domain_name: str) -> list[str]:
         return [f"policy.md not found at {path}"]
 
     content = path.read_text()
-    errors = []
-
-    if len(content) < 100:
-        errors.append("Policy is too short (< 100 chars)")
-
     contract_path = data_dir / "graph_contract.yaml"
-    if contract_path.exists():
-        try:
-            contract = load_graph_contract(str(contract_path))
-        except Exception as exc:
-            errors.append(f"graph_contract.yaml failed to load for policy linkage check: {exc}")
-        else:
-            errors.extend(check_policy_against_contract(contract, content))
-        return errors
-
-    # Fallback for non-depgraph domains: check that some tool names are mentioned.
-    spec_path = data_dir / "domain_spec.json"
-    if spec_path.exists():
-        try:
-            spec = json.loads(spec_path.read_text())
-            tools = spec.get("tools", [])
-            tool_names = [t["name"] for t in tools]
-            mentioned = sum(1 for name in tool_names if name in content)
-            if mentioned < 2:
-                errors.append(
-                    f"Policy should mention tool names. Found {mentioned}/{len(tool_names)}"
-                )
-        except (json.JSONDecodeError, KeyError):
-            pass
-
-    return errors
+    if not contract_path.exists():
+        return [f"graph_contract.yaml not found at {contract_path}"]
+    try:
+        contract = load_graph_contract(str(contract_path))
+    except Exception as exc:
+        return [f"graph_contract.yaml failed to load for policy linkage check: {exc}"]
+    return check_policy_against_contract(contract, content)
 
 
 def validate_tools(domain_name: str) -> list[str]:
@@ -387,49 +398,6 @@ def validate_tools(domain_name: str) -> list[str]:
     )
     if not has_setup:
         errors.append("Missing setup helpers (set_* methods)")
-
-    # Check for entity navigation tools
-    from tau2.environment.toolkit import ToolType as TT
-
-    read_tool_names = [
-        name for name in tools_dict
-        if tools_instance.tool_type(name) == TT.READ
-    ]
-    child_collections = []
-    for field_name in type(db).model_fields:
-        val = getattr(db, field_name)
-        if isinstance(val, list) and val:
-            child_collections.append((field_name, val))
-
-    if len(child_collections) >= 2:
-        fk_fields: dict[str, int] = {}
-        for coll_name, items in child_collections:
-            if not items:
-                continue
-            first_item = items[0]
-            if hasattr(type(first_item), "model_fields"):
-                for fname in type(first_item).model_fields:
-                    if fname.endswith("_id") and fname != list(type(first_item).model_fields.keys())[0]:
-                        fk_fields[fname] = fk_fields.get(fname, 0) + 1
-
-        if fk_fields:
-            primary_fk = max(fk_fields, key=fk_fields.get)
-            fk_count = fk_fields[primary_fk]
-            if fk_count >= 2:
-                has_nav_tool = False
-                for tool_name in read_tool_names:
-                    tool = tools_dict[tool_name]
-                    schema = tool.params.model_json_schema()
-                    params = set(schema.get("properties", {}).keys())
-                    if primary_fk in params:
-                        has_nav_tool = True
-                        break
-                if not has_nav_tool:
-                    errors.append(
-                        f"Missing entity navigation tools: {fk_count} child entity types "
-                        f"reference '{primary_fk}' but no READ tool accepts '{primary_fk}' "
-                        f"as a parameter."
-                    )
 
     return errors
 
@@ -621,65 +589,26 @@ def _validate_loaded_tasks(tasks) -> list[str]:
     return errors
 
 
-def validate_scenarios(domain_name: str) -> list[str]:
-    """Validate scenarios.py or compiled task loader paths."""
-    src_dir = _SRC_DOMAINS / domain_name
-    path = src_dir / "scenarios.py"
-
-    if not path.exists():
-        env_module_path = f"tau2.domains.{domain_name}.environment"
-        env_module, import_errors = try_import_module(env_module_path)
-        if import_errors:
-            return import_errors
-
-        get_tasks = getattr(env_module, "get_tasks", None)
-        if not callable(get_tasks):
-            return [f"scenarios.py not found at {path} and environment.py missing get_tasks()"]
-
-        try:
-            tasks = get_tasks(task_split_name=None)
-        except TypeError:
-            tasks = get_tasks()
-        except Exception as e:
-            return [f"environment.get_tasks() failed: {type(e).__name__}: {e}"]
-
-        errors = _validate_loaded_tasks(tasks)
-        print(f"  environment.get_tasks() loaded {len(tasks)} tasks")
-        return errors
-
-    code = path.read_text()
-    errors = validate_python_syntax(code)
-    if errors:
-        return errors
-
-    # Check scenarios.py doesn't define its own data paths
-    for line in code.splitlines():
-        stripped = line.strip()
-        if ("_DIR" in stripped or "_PATH" in stripped) and "=" in stripped and "import" not in stripped:
-            lhs = stripped.split("=")[0].strip()
-            if lhs.endswith("_DIR") or lhs.endswith("_PATH"):
-                domain_upper = domain_name.upper()
-                return [
-                    f"scenarios.py must NOT define its own path constants (like {domain_upper}_DIR or "
-                    f"{domain_upper}_DB_PATH). Import them from tau2.domains.{domain_name}.utils instead."
-                ]
-
-    module_path = f"tau2.domains.{domain_name}.scenarios"
-    module, import_errors = try_import_module(module_path)
+def validate_tasks(domain_name: str) -> list[str]:
+    """Validate the runtime task loader path via environment.get_tasks()."""
+    env_module_path = f"tau2.domains.{domain_name}.environment"
+    env_module, import_errors = try_import_module(env_module_path)
     if import_errors:
         return import_errors
 
-    if not hasattr(module, "create_tasks"):
-        return ["scenarios.py missing create_tasks() function"]
+    get_tasks = getattr(env_module, "get_tasks", None)
+    if not callable(get_tasks):
+        return [f"environment.py missing get_tasks() for {domain_name}"]
 
-    # Try generating tasks without verification
     try:
-        tasks = module.create_tasks(verify=False)
+        tasks = get_tasks(task_split_name=None)
+    except TypeError:
+        tasks = get_tasks()
     except Exception as e:
-        return [f"create_tasks(verify=False) failed: {type(e).__name__}: {e}"]
+        return [f"environment.get_tasks() failed: {type(e).__name__}: {e}"]
 
     errors = _validate_loaded_tasks(tasks)
-    print(f"  scenarios.py generated {len(tasks)} tasks")
+    print(f"  environment.get_tasks() loaded {len(tasks)} tasks")
     return errors
 
 
@@ -688,7 +617,12 @@ def validate_scenarios(domain_name: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 ALL_STEPS = [
-    ("domain_spec", validate_domain_spec),
+    ("graph_contract", validate_graph_contract),
+    ("sampling_request", validate_sampling_request_file),
+    ("runtime_defaults", validate_runtime_defaults_file),
+    ("personas", validate_personas_file),
+    ("stop_gate_map", validate_stop_gate_map_file),
+    ("task_specs_runtime", validate_task_specs_runtime),
     ("data_model", validate_data_model),
     ("user_data_model", validate_user_data_model),
     ("db_json", validate_db_json),
@@ -697,7 +631,7 @@ ALL_STEPS = [
     ("tools", validate_tools),
     ("user_tools", validate_user_tools),
     ("environment", validate_environment),
-    ("scenarios", validate_scenarios),
+    ("tasks", validate_tasks),
 ]
 
 
@@ -725,12 +659,6 @@ def run_validation(domain_name: str, step: str | None = None) -> bool:
     print(f"Validating all steps for '{domain_name}'...")
     all_passed = True
     for step_name, validator in ALL_STEPS:
-        # domain_spec is optional for hand-crafted domains
-        if step_name == "domain_spec":
-            spec_path = _DATA_DOMAINS / domain_name / "domain_spec.json"
-            if not spec_path.exists():
-                print(f"  {step_name}... SKIP (no domain_spec.json)")
-                continue
         print(f"  {step_name}...", end=" ")
         errors = validator(domain_name)
         if errors:

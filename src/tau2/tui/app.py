@@ -2,21 +2,19 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
-
 from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal
 from textual.theme import Theme
 from textual.timer import Timer
 from textual.widgets import Footer, Static
 
+from tau2.generators.depgraph.goal_capture import capture_goal_world
 from tau2.generators.depgraph.types import GraphContractSpec, SamplingRequestDoc
 
 from .stepper import BFSStepper, BFSStepResult
-from .widgets import ActionPanel, BFSTreePanel, SeedSelector, WorldStatePanel
+from .widgets import DetailPanel, GoalSummary, GraphPanel, SeedSelector
 
 # ---------------------------------------------------------------------------
 # Theme
@@ -37,7 +35,7 @@ WARM_DARK_THEME = Theme(
 
 
 class BFSExplorerApp(App):
-    """Interactive BFS sampling explorer for tau2 depgraph contracts."""
+    """Interactive BFS sampling explorer — watch the graph grow."""
 
     TITLE = "tau2 BFS Explorer"
 
@@ -60,65 +58,57 @@ class BFSExplorerApp(App):
         height: 1fr;
     }
 
-    #tree-panel {
-        width: 35%;
-        border-right: solid #e2c07c;
+    #graph-panel {
+        width: 1fr;
+        min-width: 40;
+    }
+
+    #bfs-tree {
+        height: 1fr;
         padding: 0 1;
     }
 
-    #right-panels {
-        width: 65%;
+    Tree {
+        background: #1a1a2e;
+        scrollbar-size: 1 1;
     }
 
-    #world-panel {
-        height: 50%;
-        border-bottom: solid #3a3a5e;
-        padding: 0 1;
-        overflow-y: auto;
+    Tree > .tree--cursor {
+        background: #2a2a4e;
     }
 
-    #action-panel {
-        height: 50%;
+    Tree > .tree--highlight {
+        background: #2a2a4e;
+    }
+
+    #detail-panel {
+        width: 50;
+        border-left: solid #3a3a5e;
+        display: block;
+    }
+
+    #detail-panel.hidden {
+        display: none;
+    }
+
+    #detail-scroll {
+        height: 1fr;
         padding: 0 1;
+    }
+
+    #detail-content {
+        padding: 0;
     }
 
     .panel-title {
         color: #e2c07c;
         text-style: bold;
-        padding: 0 0 0 0;
-        margin: 0 0 0 0;
-    }
-
-    #world-table {
-        height: 1fr;
-    }
-
-    #bindings-display {
-        padding: 0 1;
-        margin: 0 0 1 0;
-    }
-
-    #bfs-tree {
-        height: 1fr;
-    }
-
-    #enabled-list, #disabled-list {
-        height: 1fr;
-    }
-
-    #diff-scroll {
-        height: 1fr;
-        padding: 0 1;
-    }
-
-    #diff-content {
-        padding: 0;
     }
 
     #seed-modal {
-        width: 50;
+        width: 60;
         height: auto;
-        max-height: 20;
+        max-height: 24;
         background: #16213e;
         border: solid #e2c07c;
         padding: 1 2;
@@ -131,45 +121,7 @@ class BFSExplorerApp(App):
 
     #seed-options {
         height: auto;
-        max-height: 14;
-    }
-
-    DataTable {
-        background: #1a1a2e;
-    }
-
-    DataTable > .datatable--header {
-        background: #16213e;
-        color: #e2c07c;
-        text-style: bold;
-    }
-
-    DataTable > .datatable--cursor {
-        background: #2a2a4e;
-    }
-
-    Tree {
-        background: #1a1a2e;
-    }
-
-    Tree > .tree--cursor {
-        background: #2a2a4e;
-    }
-
-    ListView {
-        background: #1a1a2e;
-    }
-
-    ListView > .list-view--highlight {
-        background: #2a2a4e;
-    }
-
-    TabbedContent {
-        height: 1fr;
-    }
-
-    TabPane {
-        padding: 0;
+        max-height: 18;
     }
 
     OptionList {
@@ -183,18 +135,61 @@ class BFSExplorerApp(App):
     SeedSelector {
         align: center middle;
     }
+
+    GoalSummary {
+        align: center middle;
+    }
+
+    #goal-modal {
+        width: 120;
+        height: 40;
+        background: #16213e;
+        border: solid #98c379;
+        padding: 1 2;
+    }
+
+    #goal-modal-title {
+        text-align: center;
+        margin-bottom: 1;
+        color: #98c379;
+    }
+
+    #goal-layout {
+        height: 1fr;
+    }
+
+    #goal-options {
+        width: 35;
+        height: 1fr;
+        border-right: solid #3a3a5e;
+    }
+
+    #goal-detail-scroll {
+        width: 1fr;
+        height: 1fr;
+        padding: 0 1;
+    }
+
+    #goal-detail {
+        padding: 0;
+    }
+
+    #goal-empty {
+        text-align: center;
+        color: #d19a66;
+        padding: 1;
+    }
     """
 
     BINDINGS = [
-        Binding("space", "step", "Step"),
+        Binding("space,enter", "next", "Next"),
+        Binding("g", "go", "Go"),
         Binding("a", "toggle_auto", "Auto"),
-        Binding("plus,equal", "speed_up", "+Speed", show=False),
-        Binding("minus", "slow_down", "-Speed", show=False),
+        Binding("plus,equal", "speed_up", "+Spd", show=False),
+        Binding("minus", "slow_down", "-Spd", show=False),
         Binding("r", "reset", "Reset"),
         Binding("s", "pick_seed", "Seed"),
-        Binding("1", "focus_tree", "Tree", show=False),
-        Binding("2", "focus_world", "World", show=False),
-        Binding("3", "focus_actions", "Actions", show=False),
+        Binding("d", "toggle_detail", "Detail"),
         Binding("q", "quit", "Quit"),
     ]
 
@@ -204,47 +199,50 @@ class BFSExplorerApp(App):
         request: SamplingRequestDoc,
     ) -> None:
         super().__init__()
+        self.request = request
         self.stepper = BFSStepper(contract, request)
         self._auto_timer: Timer | None = None
-        self._auto_interval: float = 0.3
+        self._auto_interval: float = 0.2
         self._current_node: BFSStepResult | None = None
+        self._detail_visible: bool = True
+        self._go_mode: bool = False
+        self._goal_nodes: list[BFSStepResult] = []
+        self._seen_goal_sigs: set[tuple] = set()
         self.register_theme(WARM_DARK_THEME)
         self.theme = "warm-dark"
 
     def compose(self) -> ComposeResult:
         yield Static(id="header-bar")
         with Horizontal(id="main-layout"):
-            yield BFSTreePanel(id="tree-panel")
-            with Vertical(id="right-panels"):
-                yield WorldStatePanel(id="world-panel")
-                yield ActionPanel(id="action-panel")
+            yield GraphPanel(id="graph-panel")
+            yield DetailPanel(id="detail-panel")
         yield Footer()
 
     def on_mount(self) -> None:
         self._update_header()
-        # Auto-select first seed
         if self.stepper.seed_ids:
             self._start_seed(self.stepper.seed_ids[0])
+
+    # ---- Core ----
 
     def _start_seed(self, seed_id: str) -> None:
         if self._auto_timer:
             self._auto_timer.stop()
             self._auto_timer = None
+        self._go_mode = False
+        self._goal_nodes = []
+        self._seen_goal_sigs = set()
 
         root = self.stepper.select_seed(seed_id)
-        tree_panel = self.query_one("#tree-panel", BFSTreePanel)
-        tree_panel.reset(seed_id)
-        self._show_node(root)
+        graph = self.query_one("#graph-panel", GraphPanel)
+        graph.reset(seed_id)
+        self._select_node(root)
         self._update_header()
 
-    def _show_node(self, result: BFSStepResult) -> None:
+    def _select_node(self, result: BFSStepResult, *, is_bfs_step: bool = False) -> None:
         self._current_node = result
 
-        # Update tree
-        tree_panel = self.query_one("#tree-panel", BFSTreePanel)
-        tree_panel.add_step(result)
-
-        # Get parent for diff display
+        # Show detail
         prev_world = None
         prev_bindings = None
         if result.parent_id is not None:
@@ -253,48 +251,97 @@ class BFSExplorerApp(App):
                 prev_world = parent.world
                 prev_bindings = parent.bindings
 
-        # Update world state
-        world_panel = self.query_one("#world-panel", WorldStatePanel)
-        world_panel.update_state(result.world, result.bindings, prev_world, prev_bindings)
+        detail = self.query_one("#detail-panel", DetailPanel)
+        detail.show_node(result, prev_world, prev_bindings)
 
-        # Update actions
-        action_panel = self.query_one("#action-panel", ActionPanel)
-        action_panel.update_probes(result.action_probes)
-
-        self._update_header()
+        # Update tree marker and auto-collapse/expand on BFS steps
+        self._update_markers(is_bfs_step=is_bfs_step)
 
     def _update_header(self) -> None:
         header = self.query_one("#header-bar", Static)
         text = Text()
-        text.append("tau2 BFS Explorer", style="bold #e2c07c")
+        text.append(" BFS EXPLORER ", style="bold reverse #e2c07c")
 
         seed = self.stepper.current_seed
         if seed:
-            text.append("  |  ", style="#5c6370")
-            text.append(f"Seed: {seed.seed_id}", style="#61afef")
+            text.append("  ", style="")
+            text.append(seed.seed_id, style="bold #61afef")
+            text.append(
+                f"  d{seed.min_depth}-{seed.max_depth}", style="dim #a89984"
+            )
 
-        text.append("  |  ", style="#5c6370")
-        text.append(f"Nodes: {self.stepper.nodes_explored}", style="#eee8d5")
-        text.append(f"  Q: {self.stepper.queue_size}", style="#a89984")
-        text.append(f"  Visited: {self.stepper.visited_count}", style="#a89984")
-        text.append(f"  Tasks: {self.stepper.tasks_found}", style="#98c379")
+        text.append("  |  ", style="#3a3a5e")
+        text.append(f"{self.stepper.nodes_explored}", style="bold #eee8d5")
+        text.append(" nodes  ", style="dim #a89984")
+        text.append(f"{self.stepper.queue_size}", style="#eee8d5")
+        text.append(" queued  ", style="dim #a89984")
+        text.append(f"{self.stepper.tasks_found}", style="bold #98c379")
+        text.append(" goals", style="dim #a89984")
 
         if self._auto_timer:
-            text.append(f"  AUTO ({self._auto_interval:.1f}s)", style="bold #e06c75")
+            text.append("  ", style="")
+            text.append(
+                f" AUTO {self._auto_interval:.1f}s ",
+                style="bold reverse #e06c75",
+            )
 
         if self.stepper.is_complete:
-            text.append("  COMPLETE", style="bold #98c379")
+            text.append("  ", style="")
+            text.append(" DONE ", style="bold reverse #98c379")
 
         header.update(text)
 
+    def _update_markers(self, is_bfs_step: bool = False) -> None:
+        graph = self.query_one("#graph-panel", GraphPanel)
+
+        # Mark the current node with a visible indicator
+        if self._current_node is not None:
+            graph.mark_current(self._current_node.node_id)
+
+        # On BFS step: collapse previous source, expand new source
+        if is_bfs_step and self._current_node is not None:
+            graph.focus_bfs_source(self._current_node.parent_id)
+
+    def _try_collect_goal(self, result: BFSStepResult) -> None:
+        """Dedup and collect a terminal node, matching the real sampler's signature logic."""
+        if result.terminal_match is None:
+            return
+
+        root = self.stepper.get_node(0)
+        if root is None:
+            return
+
+        seed = self.stepper.current_seed
+        goal_capture_paths = self.request.goal_capture_paths_for_seed(seed) if seed else []
+        projected_paths = list(self.stepper.contract.projection_fields)
+
+        captured = capture_goal_world(
+            start_world=root.world,
+            end_world=result.world,
+            capture_paths=goal_capture_paths,
+            projected_paths=projected_paths,
+        )
+
+        # Signature: (captured_goal, required_actions, profile_id)
+        goal_part = tuple(sorted((p.path, repr(p.value)) for p in captured))
+        required_actions = tuple(dict.fromkeys(result.plan))  # ordered unique
+        sig = (goal_part, required_actions, result.terminal_match.profile_id)
+
+        if sig not in self._seen_goal_sigs:
+            self._seen_goal_sigs.add(sig)
+            self._goal_nodes.append(result)
+
     # ---- Actions ----
 
-    def action_step(self) -> None:
+    def action_next(self) -> None:
+        """Expand next node in BFS queue — all eligible actions fire at once."""
         result = self.stepper.step()
         if result:
-            self._show_node(result)
-        else:
-            self._update_header()
+            graph = self.query_one("#graph-panel", GraphPanel)
+            graph.add_step(result)
+            self._select_node(result, is_bfs_step=True)
+            self._try_collect_goal(result)
+        self._update_header()
 
     def action_toggle_auto(self) -> None:
         if self._auto_timer:
@@ -309,12 +356,18 @@ class BFSExplorerApp(App):
     def _auto_step(self) -> None:
         result = self.stepper.step()
         if result:
-            self._show_node(result)
+            graph = self.query_one("#graph-panel", GraphPanel)
+            graph.add_step(result)
+            self._select_node(result, is_bfs_step=True)
+            self._try_collect_goal(result)
         else:
             if self._auto_timer:
                 self._auto_timer.stop()
                 self._auto_timer = None
-            self._update_header()
+            if self._go_mode:
+                self._go_mode = False
+                self._show_goal_summary()
+        self._update_header()
 
     def action_speed_up(self) -> None:
         self._auto_interval = max(0.05, self._auto_interval * 0.6)
@@ -346,34 +399,59 @@ class BFSExplorerApp(App):
 
         self.push_screen(SeedSelector(self.stepper.seed_ids), on_seed_selected)
 
-    def action_focus_tree(self) -> None:
-        self.query_one("#bfs-tree").focus()
+    def action_toggle_detail(self) -> None:
+        panel = self.query_one("#detail-panel", DetailPanel)
+        self._detail_visible = not self._detail_visible
+        if self._detail_visible:
+            panel.remove_class("hidden")
+        else:
+            panel.add_class("hidden")
 
-    def action_focus_world(self) -> None:
-        self.query_one("#world-table").focus()
+    def action_go(self) -> None:
+        """Run BFS to completion, then show goal summary."""
+        if self._auto_timer:
+            self._auto_timer.stop()
+            self._auto_timer = None
+        self._go_mode = True
+        self._auto_timer = self.set_interval(0.02, self._auto_step)
+        self._update_header()
 
-    def action_focus_actions(self) -> None:
-        try:
-            self.query_one("#enabled-list").focus()
-        except Exception:
-            pass
+    def _show_goal_summary(self) -> None:
+        def on_goal_selected(node_id: int | None) -> None:
+            if node_id is not None:
+                node = self.stepper.get_node(node_id)
+                if node:
+                    graph = self.query_one("#graph-panel", GraphPanel)
+                    graph.mark_current(node_id)
+                    graph.focus_bfs_source(node.parent_id)
+                    self._select_node(node)
 
-    # ---- Tree node selection ----
+        # Get start world from root node
+        root = self.stepper.get_node(0)
+        start_world = root.world if root else {}
 
-    def on_bfs_tree_panel_node_selected(self, event: BFSTreePanel.NodeSelected) -> None:
+        # Get goal capture paths
+        seed = self.stepper.current_seed
+        goal_capture_paths = self.request.goal_capture_paths_for_seed(seed) if seed else []
+        projected_paths = list(self.stepper.contract.projection_fields)
+
+        self.push_screen(
+            GoalSummary(
+                self._goal_nodes,
+                start_world=start_world,
+                goal_capture_paths=goal_capture_paths,
+                projected_paths=projected_paths,
+            ),
+            on_goal_selected,
+        )
+
+    # ---- Tree click ----
+
+    def on_graph_panel_node_selected(self, event: GraphPanel.NodeSelected) -> None:
         node = self.stepper.get_node(event.node_id)
-        if node:
-            # Get parent for diff
-            prev_world = None
-            prev_bindings = None
-            if node.parent_id is not None:
-                parent = self.stepper.get_node(node.parent_id)
-                if parent:
-                    prev_world = parent.world
-                    prev_bindings = parent.bindings
-
-            self._current_node = node
-            world_panel = self.query_one("#world-panel", WorldStatePanel)
-            world_panel.update_state(node.world, node.bindings, prev_world, prev_bindings)
-            action_panel = self.query_one("#action-panel", ActionPanel)
-            action_panel.update_probes(node.action_probes)
+        if node is None:
+            return
+        try:
+            self._select_node(node)
+        except Exception:
+            pass  # Can fire during teardown

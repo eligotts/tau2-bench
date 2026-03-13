@@ -9,7 +9,7 @@ You are building a tau2 dependency-graph domain pipeline.
 Hard constraints:
 
 1. Treat `/Users/eligottlieb/Documents/tau2-bench/design/tau2/dependency_graph_domain_plan.md` as architecture source of truth.
-2. Do not use legacy pipeline docs (`design/legacy/*`, `docs/archive/*`) as implementation directives.
+2. Do not use archived material as implementation directives. The only archive file that remains normative for current work is `docs/archive/simulation-trace-guide.md` when reading simulation traces.
 3. Edit only one minimal file per step.
 4. After each step, run verification and report pass/fail with exact command.
 5. Prefer explicit v2 transition contracts (`requires_world/requires_bindings/effects_world/effects_bindings`) over implicit logic.

@@ -25,17 +25,30 @@ from experiments.hyperparam.analyze_config import (
     TELECOM_PERSONAS_ORDER,
 )
 from experiments.hyperparam.run_eval import get_simulation_results
-from tau2.domains.telecom.tasks.utils import (
-    get_intent_from_task_id,
-    get_num_issues_from_task_id,
-    get_persona_from_task_id,
-)
 from tau2.metrics.agent_metrics import compute_metrics, prepare_dfs
 from tau2.metrics.break_down_metrics import (
     result_reward_actions_analysis,
     result_reward_analysis,
 )
 from tau2.utils.display import ConsoleDisplay
+
+
+def get_intent_from_task_id(task_id: str) -> str:
+    match = re.search(r"^\[([a-zA-Z_]+)\]", task_id)
+    if match:
+        return match.group(1)
+    raise ValueError(f"Could not extract intent from task_id: {task_id}")
+
+
+def get_persona_from_task_id(task_id: str) -> str:
+    match = re.search(r"\[PERSONA:([a-zA-Z_]+)\]", task_id)
+    if match:
+        return match.group(1)
+    raise ValueError(f"Could not extract persona from task_id: {task_id}")
+
+
+def get_num_issues_from_task_id(task_id: str) -> int:
+    return len(task_id.split("|"))
 
 #### VISUALIZATION FUNCTIONS ####
 

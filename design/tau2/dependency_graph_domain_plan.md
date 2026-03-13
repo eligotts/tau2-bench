@@ -224,7 +224,6 @@ This design maps directly to tau2 runtime pieces:
 
 Detailed primitive-by-primitive mapping and implementation checklist:
 
-- `/Users/eligottlieb/Documents/tau2-bench/design/tau2/depgraph_to_tau2_primitive_mapping.md`
 
 Notes:
 

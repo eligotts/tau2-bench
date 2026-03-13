@@ -33,24 +33,15 @@ Use that document as the source of truth for:
 
 ## Legacy Material (Reference Only)
 
-- `/Users/eligottlieb/Documents/tau2-bench/design/legacy/`
-- `/Users/eligottlieb/Documents/tau2-bench/design/framework/`
-- `/Users/eligottlieb/Documents/tau2-bench/design/tau2/` (except the dependency graph plan doc)
-- `/Users/eligottlieb/Documents/tau2-bench/docs/archive/`
+- `/Users/eligottlieb/Documents/tau2-bench/docs/archive/simulation-trace-guide.md`
 
-These capture prior exploratory or older authoring systems. Do not treat them as current architecture directives.
+Do not treat any removed historical material as current architecture directives.
 
 ## Quick Navigation
 
 - Active architecture plan:
   - `/Users/eligottlieb/Documents/tau2-bench/design/tau2/dependency_graph_domain_plan.md`
-- Repo map:
-  - `/Users/eligottlieb/Documents/tau2-bench/docs/repo_map.md`
-- Domain provenance:
-  - `/Users/eligottlieb/Documents/tau2-bench/docs/domain_provenance.md`
 - Depgraph prompt pack:
   - `/Users/eligottlieb/Documents/tau2-bench/docs/prompts/depgraph/`
-- Depgraph skill:
-  - `/Users/eligottlieb/Documents/tau2-bench/.claude/skills/depgraph-bootstrap/SKILL.md`
-- Old docs archive:
-  - `/Users/eligottlieb/Documents/tau2-bench/docs/archive/`
+- Simulation trace guide:
+  - `/Users/eligottlieb/Documents/tau2-bench/docs/archive/simulation-trace-guide.md`

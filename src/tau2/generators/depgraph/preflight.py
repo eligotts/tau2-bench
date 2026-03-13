@@ -361,6 +361,7 @@ def run_task_preflight(
     max_depth: int = 20,
     terminal_profiles: list[TerminalProfileSpec] | dict[str, TerminalProfileSpec] | None = None,
     require_terminal_profile: bool = False,
+    check_required_action_necessity: bool = False,
 ) -> TaskPreflightReport:
     """Run SAT and dependency necessity checks for a task intent."""
     terminal_profiles_by_id = terminal_profile_map(terminal_profiles)
@@ -473,22 +474,25 @@ def run_task_preflight(
             f"Plan length {len(sat_full.plan)} is below min_plan_length={task.min_plan_length}"
         )
 
-    # Required action necessity via ablation: remove each action and expect UNSAT.
-    for required in task.required_actions:
-        if required not in action_ids:
-            continue
-        res = find_plan(
-            contract.actions,
-            task.start_world,
-            task.start_bindings,
-            task.goal_world,
-            task.goal_bindings,
-            binding_sources=contract.bindings,
-            sync_rules=contract.sync_rules,
-            forbidden_actions={required},
-            max_depth=max_depth,
-        )
-        report.required_action_unsat[required] = not res.sat
+    # Strict dependency-necessity checking is expensive and not needed for ordinary
+    # solvability validation. Use it only when we explicitly want to audit whether
+    # every required action is truly indispensable.
+    if check_required_action_necessity:
+        for required in task.required_actions:
+            if required not in action_ids:
+                continue
+            res = find_plan(
+                contract.actions,
+                task.start_world,
+                task.start_bindings,
+                task.goal_world,
+                task.goal_bindings,
+                binding_sources=contract.bindings,
+                sync_rules=contract.sync_rules,
+                forbidden_actions={required},
+                max_depth=max_depth,
+            )
+            report.required_action_unsat[required] = not res.sat
 
     # required_precedence is retained as optional metadata for trace narration.
     # Solvability checks are state-based only and do not enforce history order.

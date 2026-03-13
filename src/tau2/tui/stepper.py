@@ -133,6 +133,13 @@ class BFSStepper:
     def is_complete(self) -> bool:
         return len(self._queue) == 0 and len(self._nodes) > 0
 
+    @property
+    def peek_next_id(self) -> int | None:
+        """Return the node_id of the next entry that step() will process."""
+        if not self._queue:
+            return None
+        return self._queue[0].node_id
+
     def get_node(self, node_id: int) -> BFSStepResult | None:
         if 0 <= node_id < len(self._nodes):
             return self._nodes[node_id]

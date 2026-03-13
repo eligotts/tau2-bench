@@ -162,6 +162,7 @@ def _summarize_task(
         max_depth=max_depth,
         terminal_profiles=terminal_profiles,
         require_terminal_profile=require_terminal_profile,
+        check_required_action_necessity=False,
     )
     plan = report.sat_full.plan
     repeated = [

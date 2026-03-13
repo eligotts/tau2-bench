@@ -57,6 +57,11 @@ def main() -> int:
         required=False,
         help="Optional sampling_request.yaml to validate terminal-profile alignment",
     )
+    parser.add_argument(
+        "--strict-required-action-necessity",
+        action="store_true",
+        help="Also prove each required action is indispensable via action-ablation search",
+    )
     args = parser.parse_args()
 
     contract = load_graph_contract(args.graph_contract)
@@ -123,6 +128,7 @@ def main() -> int:
         require_runtime=True,
         terminal_profiles=terminal_profiles,
         require_terminal_profile=require_terminal_profile,
+        check_required_action_necessity=args.strict_required_action_necessity,
     )
     if result.errors:
         print("[FAIL] Compile checks")

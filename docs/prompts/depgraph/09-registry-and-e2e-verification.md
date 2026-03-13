@@ -99,6 +99,22 @@ Pass condition:
 
 - Tasks load and environment constructs through registry path.
 
+## Step 09.4A: Depgraph Package Validation
+
+Run:
+
+```bash
+uv run python -m tau2.generators.validate_domain <domain>
+```
+
+Pass condition:
+
+- The depgraph-authored domain package passes:
+  - contract/spec artifact loading
+  - runtime package loading
+  - `environment.get_tasks()` task loading
+- This validator is optimized for the current depgraph pipeline, not for archived pre-depgraph domain layouts.
+
 ## Step 09.5: Review Bundle + Rubric Audit
 
 Run:

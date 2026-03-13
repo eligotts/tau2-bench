@@ -777,6 +777,11 @@ class SamplingRequestDoc(BaseModel):
     def expand_seed_schemas(cls, data: Any) -> Any:
         if not isinstance(data, dict):
             return data
+        if data.get("seeds"):
+            raise ValueError(
+                "sampling_request direct 'seeds' authoring has been removed; use "
+                "'seed_schemas' to generate concrete seeds"
+            )
         raw_schemas = data.get("seed_schemas") or []
         if not raw_schemas:
             return data
@@ -796,16 +801,8 @@ class SamplingRequestDoc(BaseModel):
                 )
             )
 
-        raw_seeds = data.get("seeds") or []
-        normalized_seeds: list[dict[str, Any]] = []
-        for raw_seed in raw_seeds:
-            if isinstance(raw_seed, SamplingSeedSpec):
-                normalized_seeds.append(raw_seed.model_dump(mode="python"))
-            else:
-                normalized_seeds.append(raw_seed)
-
         payload = dict(data)
-        payload["seeds"] = [*normalized_seeds, *expanded_seeds]
+        payload["seeds"] = expanded_seeds
         return payload
 
     @model_validator(mode="after")

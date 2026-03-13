@@ -127,6 +127,7 @@ def preflight_and_compile(
     require_runtime: bool = True,
     terminal_profiles: list[TerminalProfileSpec] | dict[str, TerminalProfileSpec] | None = None,
     require_terminal_profile: bool = False,
+    check_required_action_necessity: bool = False,
 ) -> CompileResult:
     """Run preflight checks and compile passing tasks."""
     result = CompileResult()
@@ -143,6 +144,7 @@ def preflight_and_compile(
             max_depth=effective_max_depth,
             terminal_profiles=terminal_profiles,
             require_terminal_profile=require_terminal_profile,
+            check_required_action_necessity=check_required_action_necessity,
         )
         if not report.passed:
             result.skipped.append(task.task_id)

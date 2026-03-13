@@ -21,13 +21,14 @@ Key modules:
 - `semantics.py`: action eligibility over `(world, bindings)` and binding-source observability
 - `loaders.py`: YAML loading and schema parsing
 - `solver.py`: world-state BFS search (state key is projected world assignments + bindings)
-- `preflight.py`: SAT checks (`SAT_full`, required-action ablations, contradiction checks)
+- `preflight.py`: default solvability + terminal/capture/frame checks, with optional strict required-action ablations
 - `runtime_checks.py`: env/tool alignment checks, binding-source extraction-path checks, and runtime callable/argument validation
 - `runtime_scaffold.py`: deterministic runtime scaffold generation + per-task narrative briefs
 - `runtime_surface.py`: strict validation that authored runtime edits only touch allowed narrative fields
 - `runtime_narrative_checks.py`: validation that authored narrative fields follow brief-based rules
 - `stop_gate.py`: goal->observable stop-gate mapping, runtime injection, and stop-gate validation
 - `sampler.py`: fan-out sampling for structural task intents
+- `sampling_request.yaml` authoring is schema-only (`seed_schemas`); direct `seeds[]` authoring is rejected
 - `compiler.py`: fail-closed preflight+compile to tau2 `Task`
 - `run_preflight.py`: CLI preflight report
 - `run_sampler.py`: CLI sampler
@@ -38,3 +39,4 @@ Key modules:
 - `run_runtime_narrative_check.py`: CLI hard gate that validates authored runtime reason/known/ticket content
 - `run_stop_gate_inject.py`: CLI to inject strict `set_stop_gate` criteria into runtime specs
 - `run_compile.py`: CLI compile path
+- `tau2.generators.validate_domain`: depgraph-package validator for current pipeline domains

@@ -27,8 +27,6 @@
 - **🏋️ Train RL Agents**: Use the gym interface to train agents with popular RL frameworks. 
 - **🎮 Play as Agent or User**: Interactive mode lets you control either the agent or the user in conversations
 - **📊 Train/Test Splits**: To help support experiments around training Agents and evaluating them, all domains include standardized task splits for proper train/test evaluation.
-
-> **⚠️ IMPORTANT FOR BACKWARD COMPATIBILITY**: If you are just evaluating an agent (not training), you **MUST** use the `base` task split to evaluate on the complete task set that matches the original τ²-bench structure. This ensures your results are comparable to previous evaluations and maintains consistency with the established benchmark. (If you don't specify a task split, it will default to `base`.)
 - **🔧 Gymnasium Compatible**: Standard gym interface works with existing RL tools and libraries
 
 [**→ See Gym Documentation**](src/tau2/gym/README.md) | [**→ Try CLI Play Mode**](#interactive-play-mode)
@@ -48,6 +46,18 @@ The τ²-bench leaderboard is now live at **[taubench.com](https://taubench.com)
 $\tau^2$-bench implements a simulation framework for evaluating customer service agents across various domains.
 
 **$\tau^2$-bench is the new iteration of the original $\tau$-bench**, featuring code fixes and an additional telecom domain.
+
+Current domain authoring in this repo is centered on the dependency-graph pipeline:
+
+- author domain contracts and runtime code
+- sample tasks from `seed_schemas` + BFS fan-out
+- validate with depgraph preflight/compile
+- compile runnable task sets into domain task files
+
+See:
+
+- [docs/prompts/depgraph/README.md](docs/prompts/depgraph/README.md)
+- [design/tau2/dependency_graph_domain_plan.md](design/tau2/dependency_graph_domain_plan.md)
 
 Each domain specifies:
 - a policy that the agent must follow
@@ -132,7 +142,7 @@ tau2 run \
 
 Results will be saved in `data/tau2/simulations/`.
 
-> **💡 Tip**: For full agent evaluation that matches the original τ²-bench methodology, remove `--num-tasks` and use `--task-split base` to evaluate on the complete task set.
+> **💡 Tip**: For full evaluation on a published domain task set, remove `--num-tasks` and use the domain's default task split.
 
 ## Command Line Interface
 

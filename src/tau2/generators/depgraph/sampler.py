@@ -14,6 +14,7 @@ from tau2.generators.depgraph.preflight import (
     terminal_profile_map,
     world_matches_terminal_profile,
 )
+from tau2.generators.depgraph.solver import find_plan
 from tau2.generators.depgraph.semantics import (
     apply_action,
     index_binding_sources,
@@ -152,36 +153,30 @@ def sample_task_intents(
                 # Canonicalize sampled tasks around the minimal plan for the terminal goal_world
                 # rather than the exploratory BFS trace that happened to hit it first. This avoids
                 # emitting duplicate tasks that differ only by optional extra reads/bindings.
-                canonical_probe = TaskIntent(
-                    task_id="__probe__",
-                    start_world=seed.start_world,
-                    start_bindings=seed.start_bindings,
-                    goal_world=goal_world,
-                    goal_capture_paths=goal_capture_paths,
-                    goal_bindings=[],
-                    terminal_profile_id=matched_terminal_profile.profile_id,
-                    required_actions=[],
-                    required_precedence=[],
-                    min_plan_length=0,
-                    runtime=None,
-                )
-                canonical_probe_report = run_task_preflight(
-                    contract,
-                    canonical_probe,
+                canonical_result = find_plan(
+                    contract.actions,
+                    seed.start_world,
+                    seed.start_bindings,
+                    goal_world,
+                    [],
+                    binding_sources=contract.bindings,
+                    sync_rules=contract.sync_rules,
                     max_depth=seed.max_depth,
-                    terminal_profiles=terminal_profiles_by_id,
-                    require_terminal_profile=True,
                 )
-                if not canonical_probe_report.passed:
+                if not canonical_result.sat:
                     continue
 
-                canonical_plan = canonical_probe_report.sat_full.plan
+                canonical_plan = canonical_result.plan
                 canonical_depth = len(canonical_plan)
                 if canonical_depth < seed.min_depth:
                     continue
 
-                canonical_end_world = canonical_probe_report.sat_full.end_world
+                canonical_end_world = canonical_result.end_world
                 if canonical_end_world is None:
+                    continue
+                if not world_matches_terminal_profile(
+                    canonical_end_world, matched_terminal_profile
+                ):
                     continue
                 goal_world = capture_goal_world(
                     start_world=start_world,
@@ -195,7 +190,7 @@ def sample_task_intents(
                 goal_bindings = stable_goal_bindings(
                     contract,
                     sorted(
-                        set(canonical_probe_report.sat_full.end_bindings or frozenset())
+                        set(canonical_result.end_bindings or frozenset())
                         - set(start_bindings)
                     ),
                 )
@@ -229,6 +224,7 @@ def sample_task_intents(
                     max_depth=seed.max_depth,
                     terminal_profiles=terminal_profiles_by_id,
                     require_terminal_profile=True,
+                    check_required_action_necessity=False,
                 )
                 if report.passed:
                     seen_signatures.add(signature)

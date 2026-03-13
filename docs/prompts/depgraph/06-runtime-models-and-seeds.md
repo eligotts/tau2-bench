@@ -9,7 +9,7 @@ Inputs:
 
 - `data/tau2/domains/<domain>/domain_scope.md`
 - `data/tau2/domains/<domain>/graph_contract.yaml`
-- `/Users/eligottlieb/Documents/tau2-bench/design/tau2/depgraph_to_tau2_primitive_mapping.md`
+- `/Users/eligottlieb/Documents/tau2-bench/design/tau2/dependency_graph_domain_plan.md`
 
 Author in this order, one minimal file at a time.
 

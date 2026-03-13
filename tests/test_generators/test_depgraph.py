@@ -169,6 +169,34 @@ def _make_terminal_profile(profile_id: str, path: str, value: object) -> Termina
     )
 
 
+def _single_seed_schema(
+    *,
+    seed_id: str,
+    allowed_terminal_profiles: list[str],
+    start_world: list[WorldEffectSpec] | None = None,
+    start_bindings: list[str] | None = None,
+    min_depth: int = 3,
+    max_depth: int = 8,
+) -> list[SeedSchemaSpec]:
+    return [
+        SeedSchemaSpec(
+            schema_id=f"{seed_id}_schema",
+            seed_id_template=seed_id,
+            start_world=list(start_world or []),
+            start_bindings=list(start_bindings or []),
+            allowed_terminal_profiles=allowed_terminal_profiles,
+            min_depth=min_depth,
+            max_depth=max_depth,
+            dimensions=[
+                SeedSchemaDimensionSpec(
+                    dimension_id="variant",
+                    variants=[SeedSchemaVariantSpec(variant_id="only")],
+                )
+            ],
+        )
+    ]
+
+
 _VALID_TASK_INSTRUCTIONS = (
     "You will consider the issue resolved when the data connection is active. "
     "When that condition is met, reply with ###STOP###. "
@@ -192,6 +220,27 @@ class TestDepgraphPreflight(unittest.TestCase):
         self.assertTrue(report.passed)
         self.assertTrue(report.sat_full.sat)
         self.assertEqual(len(report.sat_full.plan), 2)
+        self.assertEqual(report.required_action_unsat, {})
+
+    def test_preflight_can_check_required_action_necessity_in_strict_mode(self):
+        contract = _make_simple_contract()
+        task = TaskIntent(
+            task_id="strict_chain",
+            start_world=[],
+            goal_world=[WorldPredicateSpec(op="eq", path="agent.b", value=True)],
+            required_actions=["do_a", "do_b"],
+            min_plan_length=2,
+        )
+
+        report = run_task_preflight(
+            contract,
+            task,
+            max_depth=5,
+            check_required_action_necessity=True,
+        )
+
+        self.assertTrue(report.passed)
+        self.assertEqual(report.required_action_unsat, {"do_a": True, "do_b": True})
 
     def test_missing_action_is_unsat(self):
         contract = GraphContractSpec(
@@ -551,15 +600,13 @@ class TestDepgraphSampler(unittest.TestCase):
             max_tasks=5,
             goal_capture_paths=["agent"],
             terminal_profiles=[_make_terminal_profile("resolved", "agent.f3", True)],
-            seeds=[
-                SamplingSeedSpec(
-                    seed_id="seed",
-                    start_world=[WorldEffectSpec(path="agent.f0", set=True)],
-                    allowed_terminal_profiles=["resolved"],
-                    min_depth=3,
-                    max_depth=3,
-                )
-            ],
+            seed_schemas=_single_seed_schema(
+                seed_id="seed",
+                start_world=[WorldEffectSpec(path="agent.f0", set=True)],
+                allowed_terminal_profiles=["resolved"],
+                min_depth=3,
+                max_depth=3,
+            ),
         )
         sampled = sample_task_intents(contract, request)
         self.assertGreaterEqual(len(sampled), 1)
@@ -576,19 +623,17 @@ class TestDepgraphSampler(unittest.TestCase):
             terminal_profiles=[
                 _make_terminal_profile("data_active", "agent.data_active", True)
             ],
-            seeds=[
-                SamplingSeedSpec(
-                    seed_id="with_binding",
-                    start_world=[
-                        WorldEffectSpec(path="agent.line_exists", set=True),
-                        WorldEffectSpec(path="user.phone_powered_on", set=True),
-                    ],
-                    start_bindings=["iccid"],
-                    allowed_terminal_profiles=["data_active"],
-                    min_depth=2,
-                    max_depth=5,
-                )
-            ],
+            seed_schemas=_single_seed_schema(
+                seed_id="with_binding",
+                start_world=[
+                    WorldEffectSpec(path="agent.line_exists", set=True),
+                    WorldEffectSpec(path="user.phone_powered_on", set=True),
+                ],
+                start_bindings=["iccid"],
+                allowed_terminal_profiles=["data_active"],
+                min_depth=2,
+                max_depth=5,
+            ),
         )
         sampled = sample_task_intents(contract, request)
         self.assertGreaterEqual(len(sampled), 1)
@@ -640,15 +685,13 @@ class TestDepgraphSampler(unittest.TestCase):
             terminal_profiles=[
                 _make_terminal_profile("profile_ready", "agent.profile_ready", True)
             ],
-            seeds=[
-                SamplingSeedSpec(
-                    seed_id="volatile_seed",
-                    start_world=[WorldEffectSpec(path="agent.visible_code", set="START")],
-                    allowed_terminal_profiles=["profile_ready"],
-                    min_depth=2,
-                    max_depth=2,
-                )
-            ],
+            seed_schemas=_single_seed_schema(
+                seed_id="volatile_seed",
+                start_world=[WorldEffectSpec(path="agent.visible_code", set="START")],
+                allowed_terminal_profiles=["profile_ready"],
+                min_depth=2,
+                max_depth=2,
+            ),
         )
 
         sampled = sample_task_intents(contract, request)
@@ -663,15 +706,12 @@ class TestDepgraphSampler(unittest.TestCase):
             max_tasks=5,
             goal_capture_paths=["agent"],
             terminal_profiles=[_make_terminal_profile("resolved", "agent.b", True)],
-            seeds=[
-                SamplingSeedSpec(
-                    seed_id="seed",
-                    start_world=[],
-                    allowed_terminal_profiles=["resolved"],
-                    min_depth=1,
-                    max_depth=2,
-                )
-            ],
+            seed_schemas=_single_seed_schema(
+                seed_id="seed",
+                allowed_terminal_profiles=["resolved"],
+                min_depth=1,
+                max_depth=2,
+            ),
         )
 
         sampled = sample_task_intents(contract, request)
@@ -725,15 +765,13 @@ class TestDepgraphSampler(unittest.TestCase):
             max_tasks=5,
             goal_capture_paths=["agent"],
             terminal_profiles=[_make_terminal_profile("resolved", "agent.b", True)],
-            seeds=[
-                SamplingSeedSpec(
-                    seed_id="seed",
-                    start_world=[WorldEffectSpec(path="agent.note_value", set="KNOWN")],
-                    allowed_terminal_profiles=["resolved"],
-                    min_depth=1,
-                    max_depth=3,
-                )
-            ],
+            seed_schemas=_single_seed_schema(
+                seed_id="seed",
+                start_world=[WorldEffectSpec(path="agent.note_value", set="KNOWN")],
+                allowed_terminal_profiles=["resolved"],
+                min_depth=1,
+                max_depth=3,
+            ),
         )
 
         sampled = sample_task_intents(contract, request)
@@ -797,19 +835,17 @@ class TestDepgraphSampler(unittest.TestCase):
             max_tasks=10,
             goal_capture_paths=["agent"],
             terminal_profiles=[_make_terminal_profile("resolved", "agent.done", True)],
-            seeds=[
-                SamplingSeedSpec(
-                    seed_id="multi",
-                    start_world=[
-                        WorldEffectSpec(path="agent.a", set=False),
-                        WorldEffectSpec(path="agent.b", set=False),
-                        WorldEffectSpec(path="agent.done", set=False),
-                    ],
-                    allowed_terminal_profiles=["resolved"],
-                    min_depth=2,
-                    max_depth=2,
-                )
-            ],
+            seed_schemas=_single_seed_schema(
+                seed_id="multi",
+                start_world=[
+                    WorldEffectSpec(path="agent.a", set=False),
+                    WorldEffectSpec(path="agent.b", set=False),
+                    WorldEffectSpec(path="agent.done", set=False),
+                ],
+                allowed_terminal_profiles=["resolved"],
+                min_depth=2,
+                max_depth=2,
+            ),
         )
 
         sampled = sample_task_intents(contract, request)
@@ -894,6 +930,20 @@ class TestDepgraphSampler(unittest.TestCase):
         self.assertEqual(request.seeds[1].min_depth, 1)
         self.assertEqual(request.seeds[1].max_depth, 3)
         self.assertEqual(request.seeds[1].goal_capture_paths, ["agent"])
+
+    def test_sampling_request_rejects_direct_seed_authoring(self):
+        with self.assertRaisesRegex(ValueError, "direct 'seeds' authoring has been removed"):
+            SamplingRequestDoc(
+                max_tasks=5,
+                goal_capture_paths=["agent"],
+                terminal_profiles=[_make_terminal_profile("resolved", "agent.done", True)],
+                seeds=[
+                    SamplingSeedSpec(
+                        seed_id="legacy_seed",
+                        allowed_terminal_profiles=["resolved"],
+                    )
+                ],
+            )
 
     def test_preflight_requires_terminal_profile_when_requested(self):
         contract = _make_simple_contract()

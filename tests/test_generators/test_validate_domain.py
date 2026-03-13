@@ -4,7 +4,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from tau2.generators.validate_domain import _resolve_class, validate_policy
+from tau2.generators.validate_domain import (
+    _resolve_class,
+    validate_policy,
+    validate_sampling_request_file,
+)
 
 
 class TestValidateDomainClassResolution(unittest.TestCase):
@@ -171,6 +175,72 @@ assistant_stutter_allowlist: []
                 errors = validate_policy("sample_domain")
 
         self.assertEqual(errors, [])
+
+
+class TestValidateDomainSamplingRequest(unittest.TestCase):
+    def test_validate_sampling_request_accepts_seed_schemas(self):
+        with TemporaryDirectory() as tmp_dir:
+            domains_root = Path(tmp_dir)
+            domain_dir = domains_root / "sample_domain"
+            domain_dir.mkdir()
+            (domain_dir / "sampling_request.yaml").write_text(
+                """
+version: 1
+max_tasks: 4
+goal_capture_paths: [agent]
+terminal_profiles:
+  - profile_id: resolved
+    requires_world:
+      - path: agent.done
+        op: eq
+        value: true
+seed_schemas:
+  - schema_id: sample_cases
+    seed_id_template: "{case}"
+    allowed_terminal_profiles: [resolved]
+    min_depth: 1
+    max_depth: 2
+    dimensions:
+      - dimension_id: case
+        variants:
+          - variant_id: base
+""".strip()
+            )
+
+            with patch("tau2.generators.validate_domain._DATA_DOMAINS", domains_root):
+                errors = validate_sampling_request_file("sample_domain")
+
+        self.assertEqual(errors, [])
+
+    def test_validate_sampling_request_rejects_direct_seeds(self):
+        with TemporaryDirectory() as tmp_dir:
+            domains_root = Path(tmp_dir)
+            domain_dir = domains_root / "sample_domain"
+            domain_dir.mkdir()
+            (domain_dir / "sampling_request.yaml").write_text(
+                """
+version: 1
+max_tasks: 1
+goal_capture_paths: [agent]
+terminal_profiles:
+  - profile_id: resolved
+    requires_world:
+      - path: agent.done
+        op: eq
+        value: true
+seeds:
+  - seed_id: legacy
+    start_world: []
+    allowed_terminal_profiles: [resolved]
+    min_depth: 1
+    max_depth: 1
+""".strip()
+            )
+
+            with patch("tau2.generators.validate_domain._DATA_DOMAINS", domains_root):
+                errors = validate_sampling_request_file("sample_domain")
+
+        self.assertTrue(any("direct 'seeds' authoring has been removed" in e for e in errors))
 
 
 if __name__ == "__main__":
