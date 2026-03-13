@@ -1,0 +1,469 @@
+version: 2
+
+projection_fields:
+  # Navigation state
+  - nav.on_target_site
+  - nav.page_type
+  - nav.page_loaded
+  - nav.pages_visited
+
+  # Form state
+  - form.primary_filled
+  - form.secondary_filled
+  - form.date_filled
+  - form.filters_applied
+  - form.submitted
+
+  # Content / extraction state
+  - content.structure_known
+  - content.text_extracted
+  - content.items_found
+  - content.items_extracted
+  - content.detail_extracted
+
+  # Error injection flags (set by seed, read by tools)
+  - site.load_behavior
+  - site.detail_behavior
+  - site.fetch_behavior
+
+  # Error encounter / recovery state (mutated at runtime)
+  - error.encountered
+  - error.type
+  - error.alternative_found
+  - error.recovered
+
+  # Results state
+  - results.compiled
+  - results.submitted
+
+  # Task metadata (set by seed, gates which subgraph is active)
+  - task.type
+  - task.requires_form
+  - task.requires_detail
+  - task.site_category
+
+bindings:
+  - binding_id: K.page_structure
+    source_tool: read_page
+    extraction_path: result.elements
+    world_path: nav.page_type
+    observability_all_of:
+      - path: nav.page_loaded
+        value: true
+
+  - binding_id: K.available_filters
+    source_tool: read_page
+    extraction_path: result.interactive_elements
+    world_path: nav.page_type
+    observability_all_of:
+      - path: nav.page_type
+        value: search_form
+
+  - binding_id: K.result_urls
+    source_tool: get_page_text
+    extraction_path: result.urls
+    world_path: content.items_found
+    observability_all_of:
+      - path: nav.page_type
+        value: results_list
+
+  - binding_id: K.error_info
+    source_tool: read_page
+    extraction_path: result.error_details
+    world_path: error.type
+    observability_all_of:
+      - path: error.encountered
+        value: true
+
+# ---------------------------------------------------------------------------
+# Actions
+# ---------------------------------------------------------------------------
+
+actions:
+
+  # ── Navigation: site home (ok / fail split) ──
+
+  - action_id: navigate_to_site_ok
+    requestor: assistant
+    tool_name: navigate
+    classification: causal
+    tool_arg_literals: {target: site_home}
+    requires_world:
+      - {path: site.load_behavior, value: normal}
+    effects_world:
+      - {path: nav.on_target_site, set: true}
+      - {path: nav.page_type, set: home}
+      - {path: nav.page_loaded, set: true}
+
+  - action_id: navigate_to_site_fail
+    requestor: assistant
+    tool_name: navigate
+    classification: causal
+    tool_arg_literals: {target: site_home}
+    requires_world:
+      - {path: site.load_behavior, op: neq, value: normal}
+      - {path: error.encountered, value: false}
+    effects_world:
+      - {path: error.encountered, set: true}
+      - {path: nav.page_type, set: error}
+      - {path: nav.page_loaded, set: false}
+
+  # ── Navigation: search page ──
+
+  - action_id: navigate_to_search
+    requestor: assistant
+    tool_name: navigate
+    classification: causal
+    tool_arg_literals: {target: search_page}
+    requires_world:
+      - {path: nav.on_target_site, value: true}
+      - {path: task.requires_form, value: true}
+    effects_world:
+      - {path: nav.page_type, set: search_form}
+      - {path: nav.page_loaded, set: true}
+      - {path: content.structure_known, set: false}
+      - {path: content.text_extracted, set: false}
+
+  # ── Navigation: results page ──
+
+  - action_id: navigate_to_results
+    requestor: assistant
+    tool_name: navigate
+    classification: causal
+    tool_arg_literals: {target: results_page}
+    requires_world:
+      - {path: form.submitted, value: true}
+    effects_world:
+      - {path: nav.page_type, set: results_list}
+      - {path: nav.page_loaded, set: true}
+      - {path: content.structure_known, set: false}
+      - {path: content.text_extracted, set: false}
+
+  # ── Navigation: detail page (ok / fail split) ──
+  # Gate: requires K.result_urls (from list extraction) + task.requires_detail
+  # No page_type gate — detail can be reached from results_list or home (multi-page)
+
+  - action_id: navigate_to_detail_ok
+    requestor: assistant
+    tool_name: navigate
+    classification: causal
+    tool_arg_literals: {target: detail_page}
+    requires_world:
+      - {path: site.detail_behavior, value: normal}
+      - {path: task.requires_detail, value: true}
+    requires_bindings:
+      - {binding_id: K.result_urls, acquired: true}
+    effects_world:
+      - {path: nav.page_type, set: detail}
+      - {path: nav.page_loaded, set: true}
+      - {path: content.structure_known, set: false}
+      - {path: content.text_extracted, set: false}
+
+  - action_id: navigate_to_detail_fail
+    requestor: assistant
+    tool_name: navigate
+    classification: causal
+    tool_arg_literals: {target: detail_page}
+    requires_world:
+      - {path: site.detail_behavior, op: neq, value: normal}
+      - {path: error.encountered, value: false}
+      - {path: task.requires_detail, value: true}
+    requires_bindings:
+      - {binding_id: K.result_urls, acquired: true}
+    effects_world:
+      - {path: error.encountered, set: true}
+      - {path: nav.page_type, set: error}
+      - {path: nav.page_loaded, set: false}
+
+  # ── Navigation: next page (pagination) ──
+
+  - action_id: navigate_next_page
+    requestor: assistant
+    tool_name: navigate
+    classification: causal
+    tool_arg_literals: {target: next_page}
+    requires_world:
+      - {path: nav.page_type, value: results_list}
+      - {path: content.items_extracted, op: neq, value: none}
+      - {path: content.items_found, value: many}
+    effects_world:
+      - {path: nav.pages_visited, set: 2}
+      - {path: content.structure_known, set: false}
+      - {path: content.text_extracted, set: false}
+
+  # ── Extraction: read page structure (knowledge-only) ──
+
+  - action_id: read_page_structure
+    requestor: assistant
+    tool_name: read_page
+    classification: knowledge-only
+    tool_arg_literals: {filter: all}
+    requires_world:
+      - {path: nav.page_loaded, value: true}
+    effects_bindings:
+      - K.page_structure
+
+  # ── Extraction: identify form fields (knowledge-only) ──
+
+  - action_id: identify_form_fields
+    requestor: assistant
+    tool_name: read_page
+    classification: knowledge-only
+    tool_arg_literals: {filter: interactive}
+    requires_world:
+      - {path: nav.page_type, value: search_form}
+    effects_bindings:
+      - K.available_filters
+
+  # ── Extraction: page text ──
+
+  - action_id: extract_page_text
+    requestor: assistant
+    tool_name: get_page_text
+    classification: causal
+    requires_world:
+      - {path: nav.page_loaded, value: true}
+    effects_world:
+      - {path: content.text_extracted, set: true}
+
+  # ── Extraction: list items (final — no detail pages needed) ──
+
+  - action_id: extract_list_final
+    requestor: assistant
+    tool_name: get_page_text
+    classification: causal
+    tool_arg_literals: {extract_items: true}
+    requires_world:
+      - {path: nav.page_type, value: results_list}
+      - {path: task.requires_detail, value: false}
+    requires_bindings:
+      - {binding_id: K.page_structure, acquired: true}
+    effects_world:
+      - {path: content.items_extracted, set: complete}
+
+  # ── Extraction: list items (partial — detail pages still needed) ──
+
+  - action_id: extract_list_partial
+    requestor: assistant
+    tool_name: get_page_text
+    classification: causal
+    tool_arg_literals: {extract_items: true}
+    requires_world:
+      - {path: nav.page_type, value: results_list}
+      - {path: task.requires_detail, value: true}
+    requires_bindings:
+      - {binding_id: K.page_structure, acquired: true}
+    effects_world:
+      - {path: content.items_extracted, set: partial}
+    effects_bindings:
+      - K.result_urls
+
+  # ── Extraction: detail page info ──
+
+  - action_id: extract_detail_info
+    requestor: assistant
+    tool_name: get_page_text
+    classification: causal
+    tool_arg_literals: {extract_items: true}
+    requires_world:
+      - {path: nav.page_type, value: detail}
+      - {path: nav.page_loaded, value: true}
+    effects_world:
+      - {path: content.detail_extracted, set: true}
+      - {path: content.items_extracted, set: complete}
+
+  # ── Extraction: direct extract (no form, no detail — e.g. single page research) ──
+
+  - action_id: extract_direct
+    requestor: assistant
+    tool_name: get_page_text
+    classification: causal
+    tool_arg_literals: {extract_items: true}
+    requires_world:
+      - {path: nav.page_loaded, value: true}
+      - {path: task.requires_form, value: false}
+      - {path: task.requires_detail, value: false}
+    requires_bindings:
+      - {binding_id: K.page_structure, acquired: true}
+    effects_world:
+      - {path: content.items_extracted, set: complete}
+      - {path: content.text_extracted, set: true}
+
+  # ── Extraction: multi-page extract (no form, but needs detail pages) ──
+
+  - action_id: extract_multi_page_list
+    requestor: assistant
+    tool_name: get_page_text
+    classification: causal
+    tool_arg_literals: {extract_items: true}
+    requires_world:
+      - {path: nav.page_loaded, value: true}
+      - {path: task.requires_form, value: false}
+      - {path: task.requires_detail, value: true}
+      - {path: nav.page_type, op: neq, value: detail}
+    requires_bindings:
+      - {binding_id: K.page_structure, acquired: true}
+    effects_world:
+      - {path: content.items_extracted, set: partial}
+    effects_bindings:
+      - K.result_urls
+
+  # ── Extraction: fetch URL (ok / fail split) ──
+
+  - action_id: fetch_page_ok
+    requestor: assistant
+    tool_name: fetch_url
+    classification: causal
+    tool_arg_literals: {target: current_page}
+    requires_world:
+      - {path: nav.page_loaded, value: true}
+      - {path: site.fetch_behavior, value: normal}
+    effects_world:
+      - {path: content.text_extracted, set: true}
+
+  - action_id: fetch_page_fail
+    requestor: assistant
+    tool_name: fetch_url
+    classification: causal
+    tool_arg_literals: {target: current_page}
+    requires_world:
+      - {path: site.fetch_behavior, op: neq, value: normal}
+      - {path: error.encountered, value: false}
+    effects_world:
+      - {path: error.encountered, set: true}
+
+  # ── Error recovery ──
+
+  - action_id: detect_error
+    requestor: assistant
+    tool_name: read_page
+    classification: knowledge-only
+    tool_arg_literals: {filter: all}
+    requires_world:
+      - {path: error.encountered, value: true}
+    effects_bindings:
+      - K.error_info
+
+  - action_id: search_alternative
+    requestor: assistant
+    tool_name: search_web
+    classification: causal
+    tool_arg_literals: {query_type: error_recovery}
+    requires_bindings:
+      - {binding_id: K.error_info, acquired: true}
+    effects_world:
+      - {path: error.alternative_found, set: true}
+
+  - action_id: recover_site_load
+    requestor: assistant
+    tool_name: navigate
+    classification: causal
+    tool_arg_literals: {target: alternative_url}
+    requires_world:
+      - {path: error.alternative_found, value: true}
+      - {path: site.load_behavior, op: neq, value: normal}
+    effects_world:
+      - {path: site.load_behavior, set: normal}
+      - {path: error.recovered, set: true}
+      - {path: nav.on_target_site, set: true}
+      - {path: nav.page_type, set: home}
+      - {path: nav.page_loaded, set: true}
+
+  - action_id: recover_detail_load
+    requestor: assistant
+    tool_name: navigate
+    classification: causal
+    tool_arg_literals: {target: alternative_url}
+    requires_world:
+      - {path: error.alternative_found, value: true}
+      - {path: site.detail_behavior, op: neq, value: normal}
+    effects_world:
+      - {path: site.detail_behavior, set: normal}
+      - {path: error.recovered, set: true}
+      - {path: nav.page_type, set: detail}
+      - {path: nav.page_loaded, set: true}
+      - {path: content.structure_known, set: false}
+      - {path: content.text_extracted, set: false}
+
+  - action_id: recover_fetch
+    requestor: assistant
+    tool_name: fetch_url
+    classification: causal
+    tool_arg_literals: {target: api_endpoint}
+    requires_world:
+      - {path: error.alternative_found, value: true}
+      - {path: site.fetch_behavior, op: neq, value: normal}
+    effects_world:
+      - {path: site.fetch_behavior, set: normal}
+      - {path: error.recovered, set: true}
+      - {path: content.text_extracted, set: true}
+
+  # ── Results ──
+
+  - action_id: compile_results
+    requestor: assistant
+    tool_name: find
+    classification: causal
+    tool_arg_literals: {target: data_elements}
+    requires_world:
+      - {path: content.items_extracted, op: neq, value: none}
+    effects_world:
+      - {path: results.compiled, set: true}
+
+  - action_id: submit_results
+    requestor: assistant
+    tool_name: submit_result
+    classification: causal
+    requires_world:
+      - {path: results.compiled, value: true}
+    effects_world:
+      - {path: results.submitted, set: true}
+
+# ---------------------------------------------------------------------------
+# Action schemas (form filling via computer tool)
+# ---------------------------------------------------------------------------
+
+action_schemas:
+  - schema_id: computer_fill_form
+    action_id_template: "computer_{variant_id}"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    requires_world:
+      - {path: nav.page_type, value: search_form}
+    variants:
+      - variant_id: fill_primary
+        effects_world:
+          - {path: form.primary_filled, set: true}
+        tool_arg_literals: {action: type, target: form_field, text: primary_value}
+
+      - variant_id: fill_secondary
+        effects_world:
+          - {path: form.secondary_filled, set: true}
+        tool_arg_literals: {action: type, target: form_field, text: secondary_value}
+
+      - variant_id: fill_date
+        effects_world:
+          - {path: form.date_filled, set: true}
+        tool_arg_literals: {action: type, target: form_field, text: date_value}
+
+      - variant_id: apply_filters
+        requires_bindings:
+          - {binding_id: K.available_filters, acquired: true}
+        effects_world:
+          - {path: form.filters_applied, set: true}
+        tool_arg_literals: {action: click, target: filter_option}
+
+  - schema_id: computer_submit
+    action_id_template: "computer_{variant_id}"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    variants:
+      - variant_id: submit_search
+        requires_world:
+          - {path: form.primary_filled, value: true}
+          - {path: form.secondary_filled, value: true}
+        effects_world:
+          - {path: form.submitted, set: true}
+        tool_arg_literals: {action: click, target: search_button}

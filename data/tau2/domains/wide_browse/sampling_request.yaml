@@ -1,0 +1,150 @@
+version: 1
+max_tasks: 500
+
+goal_capture_paths:
+  - nav
+  - form
+  - content
+  - error
+  - results
+  - site
+
+terminal_profiles:
+  - profile_id: complete_submission
+    description: All requested data extracted and submitted successfully.
+    requires_world:
+      - {path: results.submitted, value: true}
+      - {path: content.items_extracted, value: complete}
+
+  - profile_id: partial_submission
+    description: Partial data extracted and submitted after error recovery.
+    requires_world:
+      - {path: results.submitted, value: true}
+      - {path: content.items_extracted, value: partial}
+      - {path: error.recovered, value: true}
+
+seed_schemas:
+  - schema_id: browse_tasks
+    seed_id_template: "{task_family}_{error}_{complexity}"
+    allowed_terminal_profiles:
+      - complete_submission
+      - partial_submission
+    min_depth: 4
+    max_depth: 16
+    # Base start_world: initialize all paths to defaults
+    start_world:
+      - {path: nav.on_target_site, set: false}
+      - {path: nav.page_type, set: blank}
+      - {path: nav.page_loaded, set: false}
+      - {path: nav.pages_visited, set: 0}
+      - {path: form.primary_filled, set: false}
+      - {path: form.secondary_filled, set: false}
+      - {path: form.date_filled, set: false}
+      - {path: form.filters_applied, set: false}
+      - {path: form.submitted, set: false}
+      - {path: content.structure_known, set: false}
+      - {path: content.text_extracted, set: false}
+      - {path: content.items_extracted, set: none}
+      - {path: content.detail_extracted, set: false}
+      - {path: results.compiled, set: false}
+      - {path: results.submitted, set: false}
+    dimensions:
+
+      # ── Dimension 1: Task family ──
+      - dimension_id: task_family
+        variants:
+          - variant_id: search_flight
+            start_world:
+              - {path: task.type, set: search}
+              - {path: task.requires_form, set: true}
+              - {path: task.requires_detail, set: false}
+              - {path: task.site_category, set: travel}
+
+          - variant_id: search_jobs
+            start_world:
+              - {path: task.type, set: search}
+              - {path: task.requires_form, set: true}
+              - {path: task.requires_detail, set: true}
+              - {path: task.site_category, set: jobs}
+            min_depth_delta: 2
+
+          - variant_id: direct_extract
+            start_world:
+              - {path: task.type, set: direct_extract}
+              - {path: task.requires_form, set: false}
+              - {path: task.requires_detail, set: false}
+              - {path: task.site_category, set: research}
+
+          - variant_id: multi_page
+            start_world:
+              - {path: task.type, set: multi_page}
+              - {path: task.requires_form, set: false}
+              - {path: task.requires_detail, set: true}
+              - {path: task.site_category, set: shopping}
+            min_depth_delta: 3
+
+          - variant_id: search_and_detail
+            start_world:
+              - {path: task.type, set: search}
+              - {path: task.requires_form, set: true}
+              - {path: task.requires_detail, set: true}
+              - {path: task.site_category, set: real_estate}
+            min_depth_delta: 2
+
+      # ── Dimension 2: Error injection ──
+      - dimension_id: error
+        variants:
+          - variant_id: clean
+            start_world:
+              - {path: site.load_behavior, set: normal}
+              - {path: site.detail_behavior, set: normal}
+              - {path: site.fetch_behavior, set: normal}
+              - {path: error.encountered, set: false}
+              - {path: error.type, set: none}
+              - {path: error.alternative_found, set: false}
+              - {path: error.recovered, set: false}
+
+          - variant_id: site_not_found
+            start_world:
+              - {path: site.load_behavior, set: page_not_found}
+              - {path: site.detail_behavior, set: normal}
+              - {path: site.fetch_behavior, set: normal}
+              - {path: error.encountered, set: false}
+              - {path: error.type, set: none}
+              - {path: error.alternative_found, set: false}
+              - {path: error.recovered, set: false}
+            min_depth_delta: 3
+
+          - variant_id: detail_paywall
+            start_world:
+              - {path: site.load_behavior, set: normal}
+              - {path: site.detail_behavior, set: paywall}
+              - {path: site.fetch_behavior, set: normal}
+              - {path: error.encountered, set: false}
+              - {path: error.type, set: none}
+              - {path: error.alternative_found, set: false}
+              - {path: error.recovered, set: false}
+            min_depth_delta: 3
+
+          - variant_id: fetch_blocked
+            start_world:
+              - {path: site.load_behavior, set: normal}
+              - {path: site.detail_behavior, set: normal}
+              - {path: site.fetch_behavior, set: blocked}
+              - {path: error.encountered, set: false}
+              - {path: error.type, set: none}
+              - {path: error.alternative_found, set: false}
+              - {path: error.recovered, set: false}
+            min_depth_delta: 2
+
+      # ── Dimension 3: Content complexity ──
+      - dimension_id: complexity
+        variants:
+          - variant_id: simple
+            start_world:
+              - {path: content.items_found, set: few}
+
+          - variant_id: rich
+            start_world:
+              - {path: content.items_found, set: many}
+            min_depth_delta: 1
