@@ -41,6 +41,20 @@ from tau2.generators.depgraph.runtime_checks import (
 )
 from tau2.generators.depgraph.runtime_surface import check_runtime_author_surface
 from tau2.generators.depgraph.sampler import SampledTask, sample_task_intents
+try:
+    from tau2.generators.depgraph.verifiers_env import (
+        DepgraphTaskConfig,
+        DepgraphToolEnv,
+        check_goal,
+        compile_task_config,
+    )
+    from tau2.generators.depgraph.verifiers_rubric import DepgraphRubric
+    from tau2.generators.depgraph.verifiers_compiler import (
+        VerifiersCompileResult,
+        compile_for_verifiers,
+    )
+except ImportError:
+    pass  # verifiers package not installed; adapter not available
 from tau2.generators.depgraph.solver import SearchResult, find_plan
 from tau2.generators.depgraph.types import (
     ActionContract,
@@ -113,4 +127,11 @@ __all__ = [
     "run_task_preflight",
     "select_representative_tasks",
     "sample_task_intents",
+    "DepgraphTaskConfig",
+    "DepgraphToolEnv",
+    "DepgraphRubric",
+    "VerifiersCompileResult",
+    "check_goal",
+    "compile_task_config",
+    "compile_for_verifiers",
 ]
