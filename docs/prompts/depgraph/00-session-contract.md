@@ -43,7 +43,7 @@ Hard constraints:
 11. Preserve creativity by constraining semantics/contracts, not narrative style/domain theme.
 12. Do not mutate generated structural fields (`required_actions`, `required_precedence`) by hand.
 13. Re-run `/Users/eligottlieb/Documents/tau2-bench/docs/prompts/depgraph/CHECKLIST.md` after each major phase.
-14. (tau2 only) Treat `policy.md` as an agent-facing contract and tool-affordance guide, not a hand-authored solve script. It should teach constraints, observables, and stop rules without prescribing one exact action trajectory.
+14. (tau2 only) Treat `policy.md` as domain reasoning guidance, not a tool catalog or solve script. Agent tools are injected via the API with docstrings — the policy should teach *when* and *why* to act (principles, ordering, side-effects, resolution criteria), not *what tools exist*. Do not list agent or user tool names in the policy.
 15. Declare valid task endings explicitly in `sampling_request.yaml` terminal profiles. Make tasks shorter by changing start states, not by stopping at intermediate fixable stages under a full-resolution policy.
 
 Output format:

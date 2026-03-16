@@ -54,12 +54,14 @@ def find_plan(
     sync_rules: Optional[list[SyncRuleSpec]] = None,
     forbidden_actions: Optional[set[str]] = None,
     max_depth: int = 20,
+    binding_sources_by_id: Optional[dict[str, list[BindingSourceSpec]]] = None,
 ) -> SearchResult:
     """Find a plan using BFS over (world, bindings) states."""
     forbidden_actions = forbidden_actions or set()
     binding_sources = binding_sources or []
     sync_rules = sync_rules or []
-    binding_sources_by_id = index_binding_sources(binding_sources)
+    if binding_sources_by_id is None:
+        binding_sources_by_id = index_binding_sources(binding_sources)
 
     start_world, start_world_issues = materialize_world(
         start_world_effects,

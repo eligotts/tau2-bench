@@ -1,0 +1,10 @@
+version: 1
+domain: cloud_incident_response
+task_instructions: >-
+  Follow the assistant's guidance and use tools only when explicitly asked. Base your updates on tool outputs, not guesses.
+  You will consider the incident resolved when the assistant has achieved the recovery target and all observable resolution criteria are satisfied.
+  Before deciding the incident is resolved, call check_resolution_status.
+  Only emit ###STOP### when check_resolution_status returns resolved=true.
+  If resolved=false, report unmet items and ask the assistant for the next step.
+reward_basis: [ENV_ASSERTION]
+initialization_actions_prefix: []

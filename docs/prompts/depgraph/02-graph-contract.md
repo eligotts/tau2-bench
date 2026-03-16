@@ -119,6 +119,140 @@ enum-typed runtime tool plus an `action_schemas` expansion.
 Why: If the only multi-prerequisite action is the final gate, all reasoning about
 coordination is deferred to the end. Early convergence forces ongoing coordination.
 
+## Difficulty Engineering
+
+These patterns increase the cognitive difficulty of generated tasks. Apply them when the
+domain goal is to challenge strong agents, not just test basic tool-following.
+
+### When to use each pattern
+
+Not every domain needs every pattern. Apply them in order of impact:
+
+| Pattern | Impact | When to use | Watch out for |
+|---------|--------|-------------|---------------|
+| **Cascading sync rules** | Highest — multiplies tasks from same seed pool | Always for Tier 3+. A single fault becomes a multi-system task automatically. | Cycles (ensure intermediate repair states don't re-trigger cascades). BFS explosion if too many systems cascade. |
+| **Repair side-effects** | High — forces discovery of non-obvious damage | When cascading alone isn't enough. Creates work the agent must discover from tool output, not from diagnostics. | Must pair with resolution gates or the damage is "free." |
+| **Multi-step repair chains** | Medium — increases plan depth per system | When single-action repairs are too easy. `locked → degraded → healthy` is harder than `locked → healthy`. | Depth adds up fast with multi-fault seeds. Keep chains to 2-3 steps max per system. |
+| **Cross-system prerequisites** | Medium — forces repair ordering reasoning | When the agent should reason about dependencies. `warm_cache` needs DB healthy first. | Creates hard dependencies that reduce BFS parallelism — use sparingly (3-5 per domain). |
+| **Sync-rule traps (bouncing)** | Very high — punishes pattern-matching | Only for Tier 4 / frontier targets. Agent tries obvious fix, it bounces back, must reason about root cause. | Easy to make tasks unsolvable. Always verify BFS can find the correct path. Use at most 1-2 traps per domain. |
+
+**Proportionality rule of thumb:** For a domain targeting 100+ tasks:
+- 60-70% of difficulty should come from cascading + value-gated branching (structural diversity)
+- 20-30% from side-effects + multi-step chains (discovery difficulty)
+- 0-10% from sync-rule traps (causal reasoning difficulty)
+
+### Cascading sync rules
+
+Add sync rules that model real-world system interdependencies: when one system fails, it
+damages downstream systems.
+
+```yaml
+# DB failure takes out cache (cache depends on DB for reads)
+- rule_id: sync_db_breaks_cache
+  requires_world:
+    - path: agent.db.health
+      op: neq
+      value: healthy
+    - path: agent.cache.health
+      value: healthy  # only fires once; won't re-fire when cache is already broken
+  effects_world:
+    - path: agent.cache.health
+      set: stale
+```
+
+Why this works: A single-fault seed becomes a multi-system task automatically. The agent
+must discover ALL broken systems (including cascade damage it didn't expect) and fix them
+in the right order. This multiplies both task count and difficulty from the same seed pool.
+
+Cycle safety: Cascading sync rules are safe from BFS cycles when the target system's
+intermediate repair states (e.g., `cold`, `crashing`) don't match the sync rule's trigger
+condition (e.g., `healthy`). The final repair action that sets `healthy` typically requires
+the root cause system to already be fixed, preventing re-triggering.
+
+### Repair side-effects
+
+Make certain repair actions create new problems in OTHER systems:
+
+```yaml
+- action_id: assistant_failover_db
+  effects_world:
+    - path: agent.db.health
+      set: healthy
+    - path: agent.queue.dlq_state
+      set: has_messages  # transactions lost during failover
+```
+
+The agent must notice collateral damage from its own repairs and address it. Pair
+side-effects with resolution gate requirements (see below) to force cleanup.
+
+### Sync-rule traps (bouncing state)
+
+A sync rule that undoes a repair when the root cause hasn't been addressed:
+
+```yaml
+# Canary deploy destabilizes app — repairs bounce back until rollback
+- rule_id: sync_canary_destabilizes_app
+  requires_world:
+    - path: agent.app.deploy_version
+      value: canary
+    - path: agent.app.health
+      value: healthy
+  effects_world:
+    - path: agent.app.health
+      set: high_latency
+```
+
+The BFS correctly discovers that rollback must come BEFORE app repair. But an LLM at
+runtime will likely try the obvious fix first, see it bounce back, and need to reason
+about the root cause. This is the highest-difficulty pattern because it punishes
+pattern-matching and rewards causal reasoning.
+
+BFS handles this correctly: the "fix then bounce" state was already visited, so BFS
+prunes it and explores the rollback-first path instead.
+
+### Resolution gate tightening
+
+When adding side-effects, ensure the resolution sync rule (or terminal profiles) requires
+the side-effect damage to be cleaned up:
+
+```yaml
+- rule_id: sync_incident_resolved
+  requires_world:
+    - path: agent.queue.dlq_state
+      op: neq
+      value: has_messages  # must replay DLQ before resolution
+    - path: agent.db.vacuum_state
+      value: clean  # must vacuum after crash loop
+    # ... plus all system health checks
+```
+
+Without this, side-effect damage is "free" — nobody has to clean it up, and the tasks
+don't get harder. Always pair side-effects with resolution gates.
+
+### Policy de-prescriptification
+
+If the policy maps faults directly to fixes (e.g., "locked → drain + restart"), it becomes
+an answer key that any LLM can follow mechanically. For hard domains:
+
+- Give **principles** ("fix root causes before symptoms", "check downstream systems after
+  repairs") instead of **recipes** ("for db_failure, do X then Y").
+- Mention that repairs may have side-effects without specifying which ones.
+- Tell the agent to check ALL systems before resolution, not just the ones it repaired.
+- Hint at dependency ordering without giving the exact order.
+- **Do not list tool names in the policy.** Agent tools are injected into the API call
+  with their names and docstrings — the agent already knows what tools it has. User tools
+  are the user's to discover — describe what information or actions the agent needs from
+  the user in natural language. Listing tool names in the policy creates two problems:
+  (1) it duplicates information already in the tool schema, creating maintenance drift, and
+  (2) listing both agent and user tool names in the same document creates ambiguity about
+  who calls what, causing agents to delegate their own tools to the user.
+- **Write good tool docstrings instead.** Each tool's docstring should describe what it does,
+  what state it applies to, and what prerequisites it has. This is the right place for tool
+  affordance information — not the policy.
+
+The difficulty comes from the agent needing to reason from diagnostic output and its
+tool definitions rather than pattern-matching against the policy.
+
 ## Companion Artifacts
 
 18. Author concrete persona pool in `personas.yaml` for runtime-stage assignment:

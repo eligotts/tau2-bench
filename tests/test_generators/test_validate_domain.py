@@ -38,7 +38,8 @@ class TestValidateDomainClassResolution(unittest.TestCase):
 
 
 class TestValidateDomainPolicy(unittest.TestCase):
-    def test_validate_policy_flags_contract_tool_drift(self):
+    def test_validate_policy_flags_missing_resolution_guidance(self):
+        """Policy check validates resolution semantics, not tool name listing."""
         with TemporaryDirectory() as tmp_dir:
             domains_root = Path(tmp_dir)
             domain_dir = domains_root / "sample_domain"
@@ -98,27 +99,22 @@ assistant_stutter_allowlist: []
                 errors = validate_policy("sample_domain")
 
         self.assertTrue(
-            any("check_station_screen" in error for error in errors),
+            any("resolution" in error.lower() for error in errors),
             errors,
         )
-        self.assertTrue(
-            any("run_backend_diagnostics" in error for error in errors),
-            errors,
-        )
-        self.assertTrue(any("resolved=true" in error for error in errors), errors)
-        self.assertTrue(any("resolved=false" in error for error in errors), errors)
 
-    def test_validate_policy_accepts_contract_aligned_policy(self):
+    def test_validate_policy_accepts_domain_reasoning_policy(self):
+        """Policy with resolution guidance and no tool names should pass."""
         with TemporaryDirectory() as tmp_dir:
             domains_root = Path(tmp_dir)
             domain_dir = domains_root / "sample_domain"
             domain_dir.mkdir()
             (domain_dir / "policy.md").write_text(
                 """
-Use check_station_screen first, then run_backend_diagnostics.
-Before stopping, call check_resolution_status.
-Only stop when check_resolution_status returns resolved=true.
-If check_resolution_status returns resolved=false, continue from the unmet items.
+Investigate before repairing. Fix root causes before symptoms.
+Ask the user to check resolution criteria before stopping.
+If unmet conditions remain, address them before checking again.
+Only consider the issue resolved when all criteria are confirmed met.
 """.strip()
             )
             (domain_dir / "graph_contract.yaml").write_text(

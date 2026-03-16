@@ -83,6 +83,15 @@ from tau2.domains.ev_charging_support.environment import (
 from tau2.domains.ev_charging_support.environment import (
     get_tasks_split as ev_charging_support_domain_get_tasks_split,
 )
+from tau2.domains.cloud_incident_response.environment import (
+    get_environment as cloud_incident_response_domain_get_environment,
+)
+from tau2.domains.cloud_incident_response.environment import (
+    get_tasks as cloud_incident_response_domain_get_tasks,
+)
+from tau2.domains.cloud_incident_response.environment import (
+    get_tasks_split as cloud_incident_response_domain_get_tasks_split,
+)
 from tau2.domains.travel_agency.environment import (
     get_environment as travel_agency_domain_get_environment,
 )
@@ -351,6 +360,15 @@ try:
         ev_charging_support_domain_get_tasks,
         "ev_charging_support",
         get_task_splits=ev_charging_support_domain_get_tasks_split,
+    )
+
+    registry.register_domain(
+        cloud_incident_response_domain_get_environment, "cloud_incident_response"
+    )
+    registry.register_tasks(
+        cloud_incident_response_domain_get_tasks,
+        "cloud_incident_response",
+        get_task_splits=cloud_incident_response_domain_get_tasks_split,
     )
 
     registry.register_domain(vet_clinic_domain_get_environment, "vet_clinic")

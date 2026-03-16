@@ -144,6 +144,89 @@ decision-making.
 **Better pattern:** 3 `seed_schemas` with a few finite dimensions each, expanded into many
 concrete seeds that still differ in branch structure, blocker mix, or known information.
 
+### Leverage cascading sync rules in seed design
+
+If the graph contract has cascading sync rules (e.g., `db_unhealthy → cache_stale`),
+single-fault seeds automatically become multi-system tasks. This means:
+
+- **Remove redundant multi-fault seeds.** If `db_corrupted` automatically cascades to
+  `cache_stale`, don't also create a `db_corrupted + cache_stale` seed — it's redundant.
+  Instead, create `db_corrupted + cache_eviction_storm` (a DIFFERENT cache fault that the
+  sync rule wouldn't produce).
+- **Single-fault seeds are now your highest-value seeds** because cascading turns them into
+  multi-system tasks with non-obvious damage that the agent must discover.
+- **Multi-fault seeds should combine systems that DON'T cascade into each other**, to
+  create truly independent parallel repair lanes.
+
+### Side-effect seeds
+
+If the graph contract has repair side-effects (e.g., `failover_db → dlq_has_messages`),
+account for the extra work in depth estimates. A single `db_corrupted` seed may need
+depth 12+ (investigation + triage + failover + DLQ replay + cache repair from cascade +
+comms + smoke test) even though it looks like a "single fault."
+
+### Depth estimation for complex domains
+
+Cascading sync rules, repair side-effects, and multi-step chains all expand depth beyond
+what the raw fault count suggests. Use this formula to estimate `min_depth` for a seed:
+
+```
+base_depth = (investigation actions) + (triage) + (comms)
+per_fault_depth = sum of repair chain length for each fault
+cascade_depth = number of systems damaged by cascading rules × avg repair steps
+side_effect_depth = number of side-effects that require cleanup
+verification_depth = smoke test + any DNS/network verification steps
+
+estimated_depth = base_depth + per_fault_depth + cascade_depth + side_effect_depth + verification_depth
+```
+
+**Rule of thumb by seed type:**
+- Single fault, no cascading: `min_depth` 5-8
+- Single fault with cascading: `min_depth` 8-12
+- Two faults with cross-dependencies: `min_depth` 10-14
+- Three faults or fault + side-effect chain: `min_depth` 13-18
+- Complex cascading + traps: `min_depth` 15-20
+
+Set `max_depth` to `estimated_depth + 4` to give BFS headroom for alternative paths.
+If BFS times out on a seed, the depth budget is likely too tight — increase `max_depth`
+before assuming the seed is unsolvable.
+
+### Diversity quantification targets
+
+When evaluating sampled output, use these targets:
+- **60%+ unique action sets** (distinct `required_actions` ignoring order)
+- **3+ distinct plan topologies** (different DAG shapes, not just depth variation)
+- **All terminal profiles represented** (at least 2 tasks per profile)
+- **Depth spread** — tasks should span at least a 2:1 ratio (e.g., 6-step to 14-step)
+- **No single action appearing in >80% of tasks** (unless it's universal like triage/comms)
+
+### Terminal profile reachability
+
+**Critical bug pattern:** A terminal profile requires a condition that some seeds can never
+achieve. Example: `cascading_resolved` requires `connectivity_verified`, which needs
+`dns_flushed_locally=done`, which needs DNS to have been server-side flushed. But many
+cascading seeds have no DNS fault, so DNS was never flushed, so `dns_flushed_locally`
+can never be set, so the seed is unsolvable.
+
+Always verify: for every (seed, terminal_profile) pair in `allowed_terminal_profiles`,
+can the BFS actually reach that profile? If a profile has extra requirements beyond
+"all systems healthy," ensure those requirements are achievable for all seeds that target
+that profile.
+
+### BFS performance with cascading
+
+Cascading sync rules increase BFS state space because more systems are broken (more
+investigation actions can fire, more triage options exist). Monitor per-seed BFS time:
+
+- < 100ms/seed: excellent
+- 100ms-1s/seed: acceptable
+- 1-5s/seed: borderline, check for optional binding explosion
+- > 5s/seed: investigate — likely optional investigation actions or too many triage variants
+
+The main BFS explosion risk is **optional knowledge-only actions** that can fire for any
+seed. Gate investigation actions on the relevant system being unhealthy AND on
+`triage_state=not_run` to prevent post-triage binding explosion.
+
 ## Terminal Profiles
 
 Terminal profiles define the states that count as legitimate task endings.

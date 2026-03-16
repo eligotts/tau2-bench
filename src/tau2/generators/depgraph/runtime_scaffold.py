@@ -224,10 +224,11 @@ def _build_goal_env_assertions(task: TaskIntent) -> list[EnvAssertionSpec]:
                 f"Task '{task.task_id}' has unsupported goal op '{goal.op}' for runtime scaffold"
             )
 
-    protected_start_by_path = explicit_start_world_map(task.start_world)
+    # Use goal_world as the sole source of truth for assertions.
+    # goal_world is the diff of start_world vs end_world under goal_capture_paths —
+    # it contains only fields the plan actually changed. This avoids penalizing
+    # the agent for reasonable actions beyond the minimal plan.
     assertion_values: dict[str, Any] = {}
-    for path, value in protected_start_by_path.items():
-        assertion_values[path] = value
     for path, goal in goal_by_path.items():
         assertion_values[path] = goal.value
 

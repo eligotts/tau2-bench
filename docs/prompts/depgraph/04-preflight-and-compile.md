@@ -196,7 +196,7 @@ Deterministic (from scaffold; do not edit):
 - `runtime.persona` (entity name from context bindings + personality from persona pool)
 - `runtime.unknown_info` (null)
 - `runtime.initialization_actions` (from start state + context bindings + runtime defaults prefix)
-- `runtime.env_assertions` (from captured `goal_world` plus unchanged authored `start_world` paths)
+- `runtime.env_assertions` (from captured `goal_world` only — the diff of start vs end state under `goal_capture_paths`)
 - `runtime.actions` (from required action chain)
 - `runtime.reward_basis`
 
@@ -360,8 +360,9 @@ visibility into tool usage, but drive pass/fail from `ENV_ASSERTION` and strict 
 
 `run_stop_gate_inject` enforces strict stop-gate criteria for the user-observable subset of
 each task's captured `goal_world`, as defined by `stop_gate_map.yaml`. Full terminal-state
-correctness still comes from terminal-profile validity plus env assertions, including unchanged
-authored `start_world` paths outside the captured goal.
+correctness comes from terminal-profile validity plus env assertions, which check only the
+`goal_world` diff (fields the plan actually changed). This avoids penalizing agents for
+reasonable actions beyond the minimal plan.
 
 Task instructions must keep strict stop behavior:
 

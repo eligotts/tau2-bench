@@ -9,12 +9,13 @@ from typing import Any
 from tau2.generators.depgraph.goal_capture import capture_goal_world
 from tau2.generators.depgraph.preflight import (
     TaskPreflightReport,
+    compute_volatile_binding_ids,
     run_task_preflight,
     stable_goal_bindings,
     terminal_profile_map,
     world_matches_terminal_profile,
 )
-from tau2.generators.depgraph.solver import find_plan
+from tau2.generators.depgraph.solver import SearchResult
 from tau2.generators.depgraph.semantics import (
     apply_action,
     index_binding_sources,
@@ -66,19 +67,24 @@ def _plan_precedence(plan: list[str]) -> list[tuple[str, str]]:
     return edges
 
 
-def _goal_signature(goal_world: list[WorldPredicateSpec], goal_bindings: list[str]) -> tuple:
-    world_part = tuple(sorted((goal.path, repr(goal.value)) for goal in goal_world))
-    return (world_part, tuple(sorted(goal_bindings)))
+def _goal_key(goal_world: list[WorldPredicateSpec]) -> tuple:
+    return tuple(sorted((g.path, g.op, repr(g.value)) for g in goal_world))
 
 
 def sample_task_intents(
     contract: GraphContractSpec,
     request: SamplingRequestDoc,
 ) -> list[SampledTask]:
-    """Generate candidate task intents by fan-out and keep only preflight-passing ones."""
+    """Generate candidate task intents by BFS fan-out.
+
+    Deduplicates by goal_world signature during BFS — different terminal states
+    that collapse to the same goal are kept only once (first/shortest BFS hit).
+    No solver calls needed: BFS traces are correct-by-construction proofs of SAT.
+    """
     sampled: list[SampledTask] = []
-    seen_signatures: set[tuple[tuple, tuple[str, ...]]] = set()
+    seen_signatures: set[tuple] = set()
     binding_sources_by_id = index_binding_sources(contract.bindings)
+    volatile_binding_ids = compute_volatile_binding_ids(contract)
     terminal_profiles_by_id = terminal_profile_map(request.terminal_profiles)
     task_counter = 0
 
@@ -101,6 +107,9 @@ def sample_task_intents(
         visited: set[tuple[tuple[tuple[str, Any], ...], frozenset[str]]] = {
             (world_state_key(root.world), root.bindings)
         }
+        # Dedup by (goal_world, terminal_profile) — first BFS hit wins
+        # (shortest path to that goal).
+        seen_goals: set[tuple] = set()
 
         while queue:
             node = queue.popleft()
@@ -141,6 +150,7 @@ def sample_task_intents(
                 depth = len(next_plan)
                 if depth < seed.min_depth or matched_terminal_profile is None:
                     continue
+
                 goal_world = capture_goal_world(
                     start_world=start_world,
                     end_world=next_world,
@@ -150,60 +160,30 @@ def sample_task_intents(
                 if not goal_world:
                     continue
 
-                # Canonicalize sampled tasks around the minimal plan for the terminal goal_world
-                # rather than the exploratory BFS trace that happened to hit it first. This avoids
-                # emitting duplicate tasks that differ only by optional extra reads/bindings.
-                canonical_result = find_plan(
-                    contract.actions,
-                    seed.start_world,
-                    seed.start_bindings,
-                    goal_world,
-                    [],
-                    binding_sources=contract.bindings,
-                    sync_rules=contract.sync_rules,
-                    max_depth=seed.max_depth,
-                )
-                if not canonical_result.sat:
+                # Dedup: same goal_world + terminal profile = same task.
+                gk = (_goal_key(goal_world), matched_terminal_profile.profile_id)
+                if gk in seen_goals:
                     continue
+                seen_goals.add(gk)
 
-                canonical_plan = canonical_result.plan
-                canonical_depth = len(canonical_plan)
-                if canonical_depth < seed.min_depth:
-                    continue
-
-                canonical_end_world = canonical_result.end_world
-                if canonical_end_world is None:
-                    continue
-                if not world_matches_terminal_profile(
-                    canonical_end_world, matched_terminal_profile
-                ):
-                    continue
-                goal_world = capture_goal_world(
-                    start_world=start_world,
-                    end_world=canonical_end_world,
-                    capture_paths=goal_capture_paths,
-                    projected_paths=contract.projection_fields,
-                )
-                if not goal_world:
-                    continue
-
+                plan = next_plan
+                plan_depth = depth
                 goal_bindings = stable_goal_bindings(
                     contract,
-                    sorted(
-                        set(canonical_result.end_bindings or frozenset())
-                        - set(start_bindings)
-                    ),
+                    sorted(set(next_bindings) - set(start_bindings)),
+                    volatile_binding_ids=volatile_binding_ids,
                 )
-                required_actions = _ordered_unique(canonical_plan)
+                required_actions = _ordered_unique(plan)
                 signature = (
-                    _goal_signature(goal_world, goal_bindings),
+                    _goal_key(goal_world),
+                    tuple(goal_bindings),
                     tuple(required_actions),
                     matched_terminal_profile.profile_id,
                 )
                 if signature in seen_signatures:
                     continue
 
-                task_id = f"{seed.seed_id}_d{canonical_depth}_{task_counter:03d}"
+                task_id = f"{seed.seed_id}_d{plan_depth}_{task_counter:03d}"
                 task_counter += 1
                 candidate = TaskIntent(
                     task_id=task_id,
@@ -214,9 +194,17 @@ def sample_task_intents(
                     goal_bindings=goal_bindings,
                     terminal_profile_id=matched_terminal_profile.profile_id,
                     required_actions=required_actions,
-                    required_precedence=_plan_precedence(canonical_plan),
-                    min_plan_length=canonical_depth,
+                    required_precedence=_plan_precedence(plan),
+                    min_plan_length=plan_depth,
                     runtime=None,
+                )
+                # BFS trace is the proof of SAT — pass directly to preflight.
+                bfs_sat = SearchResult(
+                    sat=True,
+                    plan=plan,
+                    explored_states=0,
+                    end_world=dict(next_world),
+                    end_bindings=frozenset(next_bindings),
                 )
                 report = run_task_preflight(
                     contract,
@@ -225,6 +213,8 @@ def sample_task_intents(
                     terminal_profiles=terminal_profiles_by_id,
                     require_terminal_profile=True,
                     check_required_action_necessity=False,
+                    binding_sources_by_id=binding_sources_by_id,
+                    sat_result=bfs_sat,
                 )
                 if report.passed:
                     seen_signatures.add(signature)

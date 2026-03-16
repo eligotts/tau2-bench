@@ -1,0 +1,106 @@
+version: 1
+rules:
+  - goal_path: agent.incident[active_incident].status
+    goal_value: resolved
+    check_field: incident_status
+    check_op: eq
+    expected: resolved
+    unmet_reason: Incident is not yet resolved.
+
+  - goal_path: agent.incident[active_incident].comms_state
+    goal_value: all_sent
+    check_field: comms_state
+    check_op: eq
+    expected: all_sent
+    unmet_reason: Not all incident communications have been sent.
+
+  - goal_path: agent.app[active_app].app_health
+    goal_value: healthy
+    check_field: app_status
+    check_op: eq
+    expected: healthy
+    unmet_reason: Application is not healthy yet.
+
+  - goal_path: agent.db[active_db].db_health
+    goal_value: healthy
+    check_field: db_status
+    check_op: eq
+    expected: healthy
+    unmet_reason: Database is not healthy yet.
+
+  - goal_path: agent.db[active_db].vacuum_state
+    goal_value: clean
+    check_field: vacuum_state
+    check_op: eq
+    expected: clean
+    unmet_reason: Database vacuum has not been run.
+
+  - goal_path: agent.cache[active_cache].cache_health
+    goal_value: healthy
+    check_field: cache_status
+    check_op: eq
+    expected: healthy
+    unmet_reason: Cache is not healthy yet.
+
+  - goal_path: agent.auth[active_auth].auth_health
+    goal_value: healthy
+    check_field: auth_status
+    check_op: eq
+    expected: healthy
+    unmet_reason: Auth service is not healthy yet.
+
+  - goal_path: agent.lb[active_lb].lb_health
+    goal_value: healthy
+    check_field: lb_status
+    check_op: eq
+    expected: healthy
+    unmet_reason: Load balancer is not healthy yet.
+
+  - goal_path: agent.queue[active_queue].queue_health
+    goal_value: healthy
+    check_field: queue_status
+    check_op: eq
+    expected: healthy
+    unmet_reason: Message queue is not healthy yet.
+
+  - goal_path: agent.queue[active_queue].dlq_state
+    goal_value: replayed
+    check_field: dlq_state
+    check_op: eq
+    expected: replayed
+    unmet_reason: Dead letter queue has not been replayed.
+
+  - goal_path: agent.dns[active_dns].resolution_state
+    goal_value: correct
+    check_field: dns_status
+    check_op: eq
+    expected: correct
+    unmet_reason: DNS resolution is not correct yet.
+
+  - goal_path: user.actions.smoke_test_state
+    goal_value: passed
+    check_field: smoke_test_state
+    check_op: eq
+    expected: passed
+    unmet_reason: Smoke test has not passed yet.
+
+  - goal_path: user.actions.connectivity_verified
+    goal_value: verified
+    check_field: connectivity_verified
+    check_op: eq
+    expected: verified
+    unmet_reason: Network connectivity has not been verified.
+
+  - goal_path: user.actions.dns_flushed_locally
+    goal_value: done
+    check_field: dns_flushed_locally
+    check_op: eq
+    expected: done
+    unmet_reason: Local DNS cache has not been flushed.
+
+  - goal_path: agent.app[active_app].deploy_version
+    goal_value: previous
+    check_field: deploy_version
+    check_op: eq
+    expected: previous
+    unmet_reason: Deploy has not been rolled back yet.

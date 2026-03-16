@@ -50,9 +50,9 @@ uv run python -m tau2.generators.depgraph.run_review_bundle \
 Judge the domain against these exact categories:
 
 1. `policy_contract_parity`
-   - Does `policy.md` teach the same tool surface the contract exposes?
+   - Does `policy.md` teach domain knowledge (principles, ordering constraints, side-effects, resolution criteria) without listing tool names? Agent tools are injected via the API with docstrings; user tools are the user's to discover.
    - Does it teach the actual reread points and stop semantics the runtime requires?
-   - Does it expose constraints and tool affordances without hardcoding a single exact repair trajectory?
+   - Does it expose constraints and domain reasoning guidance without hardcoding a single exact repair trajectory or duplicating the tool catalog?
 2. `volatile_binding_discipline`
    - Are volatile bindings only used for immediate observation-driven transitions?
    - Is any moving observation value threaded through a long repair chain?
@@ -77,8 +77,18 @@ Judge the domain against these exact categories:
    - If reacquisition is expected, is correctness driven by `ENV_ASSERTION`/stop-gate rather than `ACTION` alone?
 8. `task_realism_and_teachability`
    - Do representative SAT plans require behaviors the policy actually teaches?
-   - Would an agent following only the policy plus tool definitions know how to complete the representative tasks?
+   - Would an agent following the policy for domain reasoning plus its injected tool definitions for tool affordances know how to complete the representative tasks?
    - Do `reason_for_call`, `known_info`, and `ticket` stay at the user-observable case surface, or do they leak latent blocker inventories / internal path labels that pre-solve the task?
+9. `difficulty_engineering` (for domains targeting strong agents)
+   - Does the policy avoid being an answer key? (No direct fault→fix mappings that an LLM
+     can pattern-match without reasoning.)
+   - Do cascading sync rules or repair side-effects create non-obvious work the agent must
+     discover? What percentage of tasks require reasoning beyond "read fault, apply fix"?
+   - Are there sync-rule traps where naive repairs bounce back until the root cause is
+     addressed?
+   - Do resolution gates require side-effect cleanup, or is collateral damage "free"?
+   - Are terminal profile requirements achievable for ALL seeds targeting that profile?
+     (Check for unreachable preconditions like DNS verification for non-DNS seeds.)
 
 ### Required output
 

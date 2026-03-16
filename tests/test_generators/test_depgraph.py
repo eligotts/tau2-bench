@@ -991,7 +991,10 @@ class TestDepgraphSampler(unittest.TestCase):
             any("does not satisfy terminal profile" in issue for issue in report.issues)
         )
 
-    def test_preflight_rejects_changes_to_protected_start_world_paths(self):
+    def test_preflight_allows_side_effects_outside_goal_capture_paths(self):
+        """Actions that change start_world paths outside goal_capture_paths are
+        allowed — env_assertions only check goal_world (the start→end diff),
+        so incidental side-effects on non-goal paths are not penalized."""
         contract = GraphContractSpec(
             projection_fields=["agent.a", "agent.b"],
             actions=[
@@ -1008,7 +1011,7 @@ class TestDepgraphSampler(unittest.TestCase):
             ],
         )
         task = TaskIntent(
-            task_id="frame_violation",
+            task_id="side_effect_ok",
             start_world=[
                 WorldEffectSpec(path="agent.a", set=False),
                 WorldEffectSpec(path="agent.b", set=False),
@@ -1028,13 +1031,12 @@ class TestDepgraphSampler(unittest.TestCase):
             require_terminal_profile=True,
         )
 
-        self.assertFalse(report.passed)
-        self.assertTrue(
-            any("protected start-world path 'agent.b'" in issue for issue in report.issues),
-            report.issues,
-        )
+        self.assertTrue(report.passed, report.issues)
 
-    def test_runtime_scaffold_protects_unchanged_start_world_paths(self):
+    def test_runtime_scaffold_asserts_only_goal_world(self):
+        """Env assertions come solely from goal_world (the start->end diff),
+        not from unchanged start_world fields. This prevents penalizing agents
+        for reasonable extra actions that happen to touch non-goal fields."""
         task = TaskIntent(
             task_id="frame_assertions",
             start_world=[
@@ -1049,7 +1051,7 @@ class TestDepgraphSampler(unittest.TestCase):
 
         self.assertEqual(
             [(assertion.func_name, assertion.arguments["expected"]) for assertion in assertions],
-            [("assert_a", True), ("assert_b", False)],
+            [("assert_a", True)],
         )
 
 
@@ -1357,7 +1359,13 @@ class TestRuntimeAlignment(unittest.TestCase):
         issues = check_contract_against_environment(contract, get_environment)
         self.assertTrue(any("Volatile binding 'connection_status'" in issue for issue in issues))
 
-    def test_policy_alignment_flags_missing_tool_mentions_and_resolution_guidance(self):
+    def test_policy_alignment_checks_resolution_guidance_not_tool_names(self):
+        """Policy check validates resolution semantics, not tool name listing.
+
+        Agent tools are injected via the API with docstrings — the policy should
+        teach domain reasoning (principles, ordering, resolution criteria), not
+        duplicate the tool catalog.
+        """
         contract = GraphContractSpec(
             projection_fields=["agent.done"],
             bindings=[
@@ -1376,12 +1384,6 @@ class TestRuntimeAlignment(unittest.TestCase):
                     classification="causal",
                 ),
                 ActionContract(
-                    action_id="reset_retry",
-                    requestor="assistant",
-                    tool_name="reset_retry_path",
-                    classification="causal",
-                ),
-                ActionContract(
                     action_id="resolution_gate",
                     requestor="user",
                     tool_name="check_resolution_status",
@@ -1390,16 +1392,24 @@ class TestRuntimeAlignment(unittest.TestCase):
             ],
         )
 
+        # Policy that teaches resolution semantics should pass
         issues = check_policy_against_contract(
             contract,
             policy_text=(
-                "Use `check_station_screen` first, then `run_backend_diagnostics`. "
-                "Call `check_resolution_status` before stopping."
+                "Fix root causes before symptoms. Ask the user to check "
+                "resolution criteria before stopping. If unmet conditions "
+                "remain, address them before checking again."
             ),
         )
-        self.assertTrue(any("reset_retry_path" in issue for issue in issues))
-        self.assertTrue(any("resolved=true" in issue for issue in issues))
-        self.assertTrue(any("resolved=false" in issue for issue in issues))
+        self.assertEqual(issues, [])
+
+        # Policy missing any resolution language should fail
+        issues_no_resolution = check_policy_against_contract(
+            contract,
+            policy_text="Just fix stuff and stop when done.",
+        )
+        self.assertTrue(len(issues_no_resolution) > 0)
+        self.assertTrue(any("resolution" in issue.lower() for issue in issues_no_resolution))
 
     def test_contract_alignment_allows_mutually_exclusive_stage_specific_consumers(self):
         from tau2.domains.tech_support.environment import get_environment

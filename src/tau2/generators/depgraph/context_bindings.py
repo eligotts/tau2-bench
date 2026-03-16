@@ -88,6 +88,91 @@ def _load_json_object(path: str | Path) -> dict[str, Any]:
     return payload
 
 
+def generate_cloud_ir_context_bindings(
+    *,
+    sampled: TaskSpecsDoc,
+    contract: GraphContractSpec,
+    db_json_path: str | Path,
+    domain: str = "cloud_incident_response",
+) -> TaskContextBindingsDoc:
+    """Generate deterministic context bindings for cloud incident response.
+
+    This domain has exactly one entity per type, so every task binds to the same
+    set of entity IDs. The user context sets the on-call engineer identity.
+    """
+    expected_slots = {
+        "active_incident", "active_app", "active_db", "active_cache",
+        "active_auth", "active_lb", "active_queue", "active_dns",
+    }
+    contract_slots = {slot.slot_id for slot in contract.context_slots}
+    if contract_slots != expected_slots:
+        raise ValueError(
+            "Cloud IR context binding generator expects context slots "
+            f"{sorted(expected_slots)}, got {sorted(contract_slots)}"
+        )
+
+    db = _load_json_object(db_json_path)
+
+    # Extract single entity IDs
+    incident_id = db["incidents"][0]["incident_id"]
+    app_id = db["app_services"][0]["service_id"]
+    db_id = db["databases"][0]["db_id"]
+    cache_id = db["caches"][0]["cache_id"]
+    auth_id = db["auth_services"][0]["auth_id"]
+    lb_id = db["load_balancers"][0]["lb_id"]
+    queue_id = db["queues"][0]["queue_id"]
+    dns_id = db["dns_records"][0]["dns_id"]
+
+    slots = {
+        "active_incident": incident_id,
+        "active_app": app_id,
+        "active_db": db_id,
+        "active_cache": cache_id,
+        "active_auth": auth_id,
+        "active_lb": lb_id,
+        "active_queue": queue_id,
+        "active_dns": dns_id,
+    }
+
+    # Names for personas (deterministic assignment via hash)
+    oncall_names = [
+        "Alex Chen", "Sam Rivera", "Jordan Patel", "Morgan Kim",
+        "Casey O'Brien", "Riley Zhang", "Drew Nakamura", "Jamie Santos",
+    ]
+
+    task_entries: list[TaskContextBindingSpec] = []
+    for task in sampled.tasks:
+        idx = _stable_index(task.task_id, len(oncall_names))
+        name = oncall_names[idx]
+        user_id = f"U{idx + 1001}"
+
+        task_entries.append(
+            TaskContextBindingSpec(
+                task_id=task.task_id,
+                slots=dict(slots),
+                initialization_actions=[
+                    EnvFunctionCallSpec(
+                        env_type="user",
+                        func_name="set_user_context",
+                        arguments={
+                            "user_id": user_id,
+                            "name": name,
+                            "incident_id": incident_id,
+                            "oncall_role": "on-call engineer",
+                        },
+                    )
+                ],
+            )
+        )
+
+    return TaskContextBindingsDoc(
+        version=1,
+        domain=domain,
+        strategy="single_entity_set_with_persona_rotation",
+        tasks=task_entries,
+    )
+
+
 def generate_ev_context_bindings(
     *,
     sampled: TaskSpecsDoc,

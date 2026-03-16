@@ -43,8 +43,8 @@ Use this checklist in addition to step-specific prompts.
    - continue/report unmet items when `resolved=false`
 4. `check_resolution_status` is stutter-only and deterministic.
 5. `check_resolution_status` returns only `resolved` plus minimal human-readable `unmet` reasons; it does not expose a broad structured state snapshot.
-6. `policy.md` names every contract-visible tool, teaches volatile reread points and stop semantics, and tells the agent what to do on both `resolved=true` and `resolved=false`.
-7. `policy.md` is written as constraints, observables, and tool affordances, not as a hidden task-by-task solve script.
+6. `policy.md` does NOT list agent or user tool names. Agent tools are injected via the API with docstrings; user tools are the user's to discover. The policy teaches domain knowledge (principles, ordering, side-effects, resolution criteria) not tool catalogs. Tool docstrings describe what each tool does and when to use it.
+7. `policy.md` is written as constraints, observables, and domain reasoning guidance, not as a hidden task-by-task solve script or a tool reference manual.
 
 ## 3A. Terminality Discipline
 
@@ -68,21 +68,38 @@ Use this checklist in addition to step-specific prompts.
 
 ## 5. Quality and Diversity
 
+### Structural Diversity
 1. Sampling seeds vary start worlds to avoid duplicate storyline shapes.
 2. If the domain has many related start states, `sampling_request.yaml` uses `seed_schemas`
    to expand finite blocker/knowledge combinations instead of hand-copying large concrete
    seed lists.
-2. At least one binding-dependent chain and one user-gated chain are sampled.
-3. Long-horizon paths use `min_depth >= 4` unless domain constraints justify shorter chains.
-4. Persona pool exists (`personas.yaml`) with at least 2 distinct `persona_id` values.
-5. Runtime persona assignments come from the pool and are reasonably distributed across tasks.
-6. Sampling seed depth budgets are large enough for any required binding re-acquisition after invalidation.
-7. If repeated binding reacquisition is expected, correctness is driven by `ENV_ASSERTION`/stop-gate, not `ACTION` alone.
-8. Sampled tasks are canonical minimal terminal plans, not variants that differ only by optional extra reads.
-9. Cheap seed additions do not mostly come from post-repair checkpoint starts. Prefer early broken states,
-   richer branch combinations, or `start_bindings` variations over starts with sync stages already advanced.
-10. Bigger graphs should come from meaningful branching or shared-gate lanes, not from many copied actions that only rename the same tool call.
-11. The captured `goal_world` covers intended changed causal paths only; unchanged authored `start_world` paths are protected by env assertions instead of being silently ignored.
+3. At least one binding-dependent chain and one user-gated chain are sampled.
+4. At least 60% of sampled tasks have a unique `required_actions` set (ignoring order).
+5. Tasks span at least a 2:1 depth ratio (e.g., 6-step to 14-step tasks coexist).
+6. No single action appears in >80% of tasks (unless universal like triage/comms).
+7. All declared terminal profiles are represented by at least 2 tasks.
+
+### Complexity Depth
+8. Long-horizon paths use `min_depth >= 4` unless domain constraints justify shorter chains.
+9. Sampling seed depth budgets account for cascading sync expansion, repair side-effect cleanup, and multi-step repair chains — not just raw fault count.
+10. `max_depth` is set to `estimated_depth + 4` to give BFS headroom for alternative paths.
+
+### Difficulty Engineering (Tier 3+ domains)
+11. Cascading sync rules multiply tasks from single-fault seeds (one fault → multi-system task).
+12. Repair side-effects are paired with resolution gates that require cleanup.
+13. Cross-system prerequisites force repair ordering reasoning (e.g., cache warming requires DB healthy).
+14. Multi-fault seeds combine systems that do NOT cascade into each other (avoids redundancy with cascading rules).
+15. If sync-rule traps are used, they are limited to 1-2 per domain and BFS-verified solvable.
+
+### Sampling Hygiene
+16. Persona pool exists (`personas.yaml`) with at least 2 distinct `persona_id` values.
+17. Runtime persona assignments come from the pool and are reasonably distributed across tasks.
+18. If repeated binding reacquisition is expected, correctness is driven by `ENV_ASSERTION`/stop-gate, not `ACTION` alone.
+19. Sampled tasks are canonical minimal terminal plans, not variants that differ only by optional extra reads.
+20. Cheap seed additions do not mostly come from post-repair checkpoint starts. Prefer early broken states,
+    richer branch combinations, or `start_bindings` variations over starts with sync stages already advanced.
+21. Bigger graphs should come from meaningful branching or shared-gate lanes, not from many copied actions that only rename the same tool call.
+22. The captured `goal_world` covers intended changed causal paths only; env assertions check only `goal_world` (the start→end diff), not unchanged `start_world` paths.
 
 ## 6. Fail-Closed Commands
 

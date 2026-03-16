@@ -42,6 +42,28 @@ class TaskPreflightReport:
         return len(self.issues) == 0
 
 
+def compute_volatile_paths(contract: GraphContractSpec) -> set[str]:
+    """Pre-compute the set of world paths that any action or sync rule can change."""
+    volatile: set[str] = set()
+    for action in contract.actions:
+        for effect in action.effects_world:
+            volatile.add(effect.path)
+    for rule in contract.sync_rules:
+        for effect in rule.effects_world:
+            volatile.add(effect.path)
+    return volatile
+
+
+def compute_volatile_binding_ids(contract: GraphContractSpec) -> set[str]:
+    """Pre-compute binding IDs whose world_path is volatile."""
+    volatile_paths = compute_volatile_paths(contract)
+    return {
+        spec.binding_id
+        for spec in contract.bindings
+        if spec.world_path is not None and spec.world_path in volatile_paths
+    }
+
+
 def world_path_is_volatile(contract: GraphContractSpec, world_path: str | None) -> bool:
     """Return True when a projected world path can change after acquisition."""
     if world_path is None:
@@ -65,8 +87,14 @@ def binding_is_volatile(contract: GraphContractSpec, binding_id: str) -> bool:
     return world_path_is_volatile(contract, binding.world_path)
 
 
-def stable_goal_bindings(contract: GraphContractSpec, binding_ids: list[str]) -> list[str]:
+def stable_goal_bindings(
+    contract: GraphContractSpec,
+    binding_ids: list[str],
+    volatile_binding_ids: set[str] | None = None,
+) -> list[str]:
     """Keep only stable bindings in goal state requirements."""
+    if volatile_binding_ids is not None:
+        return [bid for bid in binding_ids if bid not in volatile_binding_ids]
     return [binding_id for binding_id in binding_ids if not binding_is_volatile(contract, binding_id)]
 
 
@@ -362,8 +390,16 @@ def run_task_preflight(
     terminal_profiles: list[TerminalProfileSpec] | dict[str, TerminalProfileSpec] | None = None,
     require_terminal_profile: bool = False,
     check_required_action_necessity: bool = False,
+    binding_sources_by_id: dict[str, list] | None = None,
+    sat_result: SearchResult | None = None,
 ) -> TaskPreflightReport:
-    """Run SAT and dependency necessity checks for a task intent."""
+    """Run SAT and dependency necessity checks for a task intent.
+
+    Args:
+        sat_result: If provided, skip the find_plan SAT check and use this
+            pre-computed result instead. Useful when the caller (e.g. BFS sampler)
+            has already proven reachability.
+    """
     terminal_profiles_by_id = terminal_profile_map(terminal_profiles)
     issues = _check_refs(contract, task)
     issues.extend(_check_goal_producers(contract, task))
@@ -384,16 +420,20 @@ def run_task_preflight(
         if profile is not None:
             issues.extend(_check_terminal_profile_goal_conflicts(task, profile))
 
-    sat_full = find_plan(
-        contract.actions,
-        task.start_world,
-        task.start_bindings,
-        task.goal_world,
-        task.goal_bindings,
-        binding_sources=contract.bindings,
-        sync_rules=contract.sync_rules,
-        max_depth=max_depth,
-    )
+    if sat_result is not None:
+        sat_full = sat_result
+    else:
+        sat_full = find_plan(
+            contract.actions,
+            task.start_world,
+            task.start_bindings,
+            task.goal_world,
+            task.goal_bindings,
+            binding_sources=contract.bindings,
+            sync_rules=contract.sync_rules,
+            max_depth=max_depth,
+            binding_sources_by_id=binding_sources_by_id,
+        )
 
     if sat_full.issues:
         issues.extend(sat_full.issues)
@@ -446,6 +486,10 @@ def run_task_preflight(
             for path, start_value in sorted(explicit_start_map.items()):
                 if path in authored_goal_paths:
                     continue
+                # Paths outside goal_capture_paths were intentionally excluded
+                # from goal capture (e.g. non-monotonic page.type) — don't flag them.
+                if not path_matches_capture(path, task.goal_capture_paths):
+                    continue
                 if sat_full.end_world.get(path) != start_value:
                     issues.append(
                         f"SAT_full changed protected start-world path '{path}' outside goal_world "
@@ -491,6 +535,7 @@ def run_task_preflight(
                 sync_rules=contract.sync_rules,
                 forbidden_actions={required},
                 max_depth=max_depth,
+                binding_sources_by_id=binding_sources_by_id,
             )
             report.required_action_unsat[required] = not res.sat
 

@@ -1,0 +1,875 @@
+version: 2
+
+# Amazon Shopping — Graph Contract
+#
+# Models browser-based product search, filtering, comparison, and
+# data extraction on Amazon. Designed for verifiers-path: the agent
+# interacts with a synthetic browser via computer/tabs_context/submit_result
+# tools, matching the real production tool signatures.
+#
+# Key design choices:
+# - Per-product state (p1/p2/p3) with strict sequential ordering
+# - Independent optional sub-actions per product (shipping, reviews, seller, variant)
+# - Filter/sort actions that invalidate cached results (force re-read)
+# - Variant clicks are real navigation (page updates with new price/ASIN)
+# - Tool signatures match production: computer(actions=[...], user_description)
+# - Two bindings: K.results_layout (page controls) and K.product_page_content (product info)
+
+# ---------------------------------------------------------------------------
+# Projection Fields
+# ---------------------------------------------------------------------------
+
+projection_fields:
+  # Page state
+  # home | search_results | product_detail | deals | category
+  - page.type
+  - page.current_product     # none | 1 | 2 | 3
+
+  # Search state
+  - search.query_entered     # bool
+  - search.executed          # bool
+  - search.refined           # bool — agent refined/changed search query
+
+  # Filter / sort state (each independent)
+  - filter.condition         # none | new | used
+  - filter.price_range       # bool — min/max price set
+  - filter.prime_only        # bool
+  - sort.applied             # none | price_asc | price_desc | avg_review
+
+  # Extraction state
+  - extract.results_read     # bool — agent has read current search results
+
+  # Product 1 state
+  - p1.detail_read           # bool
+  - p1.shipping_checked      # bool — entered ZIP, got delivery info
+  - p1.reviews_read          # bool
+  - p1.seller_checked        # bool
+  - p1.variant_a_viewed      # bool — clicked first alternative variant, saw new price
+  - p1.variant_b_viewed      # bool — clicked second alternative variant, saw new price
+  - p1.qa_read               # bool — read Q&A section
+  - p1.added_to_cart         # bool — added product to cart
+
+  # Product 2 state
+  - p2.detail_read           # bool
+  - p2.shipping_checked      # bool
+  - p2.reviews_read          # bool
+  - p2.seller_checked        # bool
+  - p2.qa_read               # bool
+  - p2.added_to_cart         # bool
+
+  # Product 3 state
+  - p3.detail_read           # bool
+  - p3.shipping_checked      # bool
+  - p3.reviews_read          # bool
+
+  # Category / deals browsing state
+  - category.navigated       # bool — agent navigated to a category page
+  - category.read            # bool — agent read category listings
+  - deals.navigated          # bool — agent navigated to deals page
+  - deals.read               # bool — agent read deal listings
+
+  # Cart state
+  - cart.opened              # bool — agent opened cart page
+  - cart.read                # bool — agent read cart contents (total, items)
+
+  # Results state
+  - results.compiled         # bool
+  - results.submitted        # bool
+
+  # Task config (set by seed, gates which actions are reachable)
+  - task.requires_detail     # bool — gates all product click actions
+  - task.requires_shipping   # bool — gates shipping check actions
+  - task.requires_reviews    # bool — gates review read actions
+  - task.requires_variants   # bool — gates variant navigation actions
+  - task.requires_filters    # bool — gates filter actions
+  - task.requires_qa         # bool — gates Q&A actions
+  - task.requires_cart       # bool — gates add-to-cart / cart actions
+  - task.entry_point         # search | category | deals — how the agent starts
+  - task.num_products        # 0 | 1 | 3 — metadata for description generation
+
+
+# ---------------------------------------------------------------------------
+# Bindings (knowledge the agent acquires mid-task)
+# ---------------------------------------------------------------------------
+
+bindings:
+  # K.results_layout: agent has screenshotted the search results page and
+  # knows what interactive controls exist (filter sidebar, sort dropdown,
+  # product cards). Gates filter/sort actions.
+  - binding_id: K.results_layout
+    source_tool: computer
+    extraction_path: result.interactive_elements
+    world_path: search.executed
+    observability_all_of:
+      - op: eq
+        path: page.type
+        value: search_results
+    observability_any_of: []
+
+  # K.product_page_content: agent has read the product detail page and
+  # knows the product info (price, features, shipping section, reviews
+  # link, seller link, variant selectors). Gates per-product sub-actions.
+  # Volatile: invalidated when page.current_product changes.
+  - binding_id: K.product_page_content
+    source_tool: computer
+    extraction_path: result.product_data
+    world_path: page.current_product
+    observability_all_of:
+      - op: eq
+        path: page.type
+        value: product_detail
+    observability_any_of: []
+
+
+# ---------------------------------------------------------------------------
+# Actions — Navigation spine
+# ---------------------------------------------------------------------------
+
+actions:
+
+  # ── Open Amazon home page ──
+  - action_id: navigate_to_amazon
+    requestor: assistant
+    tool_name: navigate
+    classification: causal
+    tool_arg_literals: {url: "amazon.com"}
+    requires_world: []
+    requires_bindings: []
+    effects_world:
+      - {path: page.type, set: home}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  # ── Type search query into search bar ──
+  - action_id: enter_search_query
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: type, text: search_query}]
+    requires_world:
+      - {path: page.type, op: eq, value: home}
+      - {path: task.entry_point, op: eq, value: search}
+    requires_bindings: []
+    effects_world:
+      - {path: search.query_entered, set: true}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  # ── Click search button / press Enter ──
+  - action_id: submit_search
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: key, text: Enter}]
+    requires_world:
+      - {path: search.query_entered, op: eq, value: true}
+    requires_bindings: []
+    effects_world:
+      - {path: search.executed, set: true}
+      - {path: page.type, set: search_results}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  # ── Navigate to category page (alternative entry to products) ──
+  - action_id: navigate_to_category
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: left_click, coordinate: category_menu}]
+    requires_world:
+      - {path: page.type, op: eq, value: home}
+      - {path: task.entry_point, op: eq, value: category}
+    requires_bindings: []
+    effects_world:
+      - {path: page.type, set: category}
+      - {path: category.navigated, set: true}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  # ── Read category listings (screenshot to observe content) ──
+  - action_id: read_category_listings
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: screenshot}]
+    requires_world:
+      - {path: page.type, op: eq, value: category}
+    requires_bindings: []
+    effects_world:
+      - {path: category.read, set: true}
+      - {path: extract.results_read, set: true}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  # ── Search from category page (type + submit in search bar) ──
+  - action_id: search_within_category
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions:
+        - {action: triple_click, coordinate: search_bar}
+        - {action: type, text: search_query}
+        - {action: key, text: Enter}
+    requires_world:
+      - {path: page.type, op: eq, value: category}
+      - {path: category.read, op: eq, value: true}
+    requires_bindings: []
+    effects_world:
+      - {path: search.query_entered, set: true}
+      - {path: search.executed, set: true}
+      - {path: page.type, set: search_results}
+      - {path: extract.results_read, set: false}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  # ── Navigate to deals page ──
+  - action_id: navigate_to_deals
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: left_click, coordinate: deals_link}]
+    requires_world:
+      - {path: page.type, op: eq, value: home}
+      - {path: task.entry_point, op: eq, value: deals}
+    requires_bindings: []
+    effects_world:
+      - {path: page.type, set: deals}
+      - {path: deals.navigated, set: true}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  # ── Read deal listings (screenshot to observe content) ──
+  - action_id: read_deal_listings
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: screenshot}]
+    requires_world:
+      - {path: page.type, op: eq, value: deals}
+    requires_bindings: []
+    effects_world:
+      - {path: deals.read, set: true}
+      - {path: extract.results_read, set: true}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  # ── Click a deal to go to product detail ──
+  - action_id: click_deal_product
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: left_click, coordinate: deal_card_1}]
+    requires_world:
+      - {path: page.type, op: eq, value: deals}
+      - {path: deals.read, op: eq, value: true}
+      - {path: task.requires_detail, op: eq, value: true}
+      - {path: p1.detail_read, op: eq, value: false}
+    requires_bindings: []
+    effects_world:
+      - {path: page.type, set: product_detail}
+      - {path: page.current_product, set: "1"}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  # ── Refine search (clear and retype query from results page) ──
+  - action_id: refine_search
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions:
+        - {action: triple_click, coordinate: search_bar}
+        - {action: type, text: refined_query}
+        - {action: key, text: Enter}
+    requires_world:
+      - {path: page.type, op: eq, value: search_results}
+      - {path: search.refined, op: eq, value: false}
+      - {path: extract.results_read, op: eq, value: true}
+    requires_bindings: []
+    effects_world:
+      - {path: search.refined, set: true}
+      - {path: extract.results_read, set: false}
+      - {path: page.type, set: search_results}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+
+# ---------------------------------------------------------------------------
+# Actions — Knowledge acquisition on results page
+# ---------------------------------------------------------------------------
+
+  # ── Screenshot results page to learn layout (filter panel, sort, etc.) ──
+  - action_id: screenshot_results_page
+    requestor: assistant
+    tool_name: computer
+    classification: knowledge-only
+    tool_arg_literals:
+      actions: [{action: screenshot}]
+    requires_world:
+      - {path: page.type, op: eq, value: search_results}
+    requires_bindings:
+      - {binding_id: K.results_layout, acquired: false}
+    effects_world: []
+    effects_bindings: [K.results_layout]
+    tool_arg_bindings: {}
+
+  # ── Read search results (screenshot to extract product list) ──
+  - action_id: read_results_text
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: screenshot}]
+    requires_world:
+      - {path: page.type, op: eq, value: search_results}
+    requires_bindings: []
+    effects_world:
+      - {path: extract.results_read, set: true}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+
+# ---------------------------------------------------------------------------
+# Actions — Compile and submit results
+# ---------------------------------------------------------------------------
+
+  # ── Compile gathered data into structured output ──
+  # In the real environment, the agent mentally compiles results before
+  # calling submit_result. This is a logical step, not a real tool call.
+  - action_id: compile_results
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: screenshot}]
+    requires_world:
+      - {path: extract.results_read, op: eq, value: true}
+    requires_bindings: []
+    effects_world:
+      - {path: results.compiled, set: true}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  # ── Submit final results ──
+  - action_id: submit_results
+    requestor: assistant
+    tool_name: submit_result
+    classification: causal
+    requires_world:
+      - {path: results.compiled, op: eq, value: true}
+    requires_bindings: []
+    effects_world:
+      - {path: results.submitted, set: true}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+
+  # ── Open cart to check totals ──
+  - action_id: open_cart
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: left_click, coordinate: cart_icon}]
+    requires_world:
+      - {path: task.requires_cart, op: eq, value: true}
+      - {path: cart.opened, op: eq, value: false}
+    requires_bindings: []
+    effects_world:
+      - {path: cart.opened, set: true}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+  # ── Read cart contents (screenshot to see prices, quantities, total) ──
+  - action_id: read_cart
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: screenshot}]
+    requires_world:
+      - {path: cart.opened, op: eq, value: true}
+      - {path: cart.read, op: eq, value: false}
+    requires_bindings: []
+    effects_world:
+      - {path: cart.read, set: true}
+    effects_bindings: []
+    tool_arg_bindings: {}
+
+
+# ---------------------------------------------------------------------------
+# Action Schemas — Filters and sort (all gate on K.results_layout)
+#
+# Each filter/sort action resets extract.results_read to false, forcing
+# the agent to re-read results after filtering (product list changed).
+# ---------------------------------------------------------------------------
+
+action_schemas:
+
+  - schema_id: apply_filter
+    action_id_template: "filter_{variant_id}"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    requires_world:
+      - {path: page.type, op: eq, value: search_results}
+      - {path: task.requires_filters, op: eq, value: true}
+    requires_bindings:
+      - {binding_id: K.results_layout, acquired: true}
+    variants:
+      - variant_id: condition_new
+        tool_arg_literals:
+          actions: [{action: left_click, coordinate: filter_condition_new}]
+        requires_world:
+          - {path: filter.condition, op: eq, value: none}
+        effects_world:
+          - {path: filter.condition, set: new}
+          - {path: extract.results_read, set: false}
+        effects_bindings: []
+      - variant_id: price_range
+        tool_arg_literals:
+          actions:
+            - {action: left_click, coordinate: price_min_input}
+            - {action: type, text: min_price}
+            - {action: left_click, coordinate: price_max_input}
+            - {action: type, text: max_price}
+            - {action: left_click, coordinate: price_go_button}
+        requires_world:
+          - {path: filter.price_range, op: eq, value: false}
+        effects_world:
+          - {path: filter.price_range, set: true}
+          - {path: extract.results_read, set: false}
+        effects_bindings: []
+      - variant_id: prime_only
+        tool_arg_literals:
+          actions: [{action: left_click, coordinate: filter_prime}]
+        requires_world:
+          - {path: filter.prime_only, op: eq, value: false}
+        effects_world:
+          - {path: filter.prime_only, set: true}
+          - {path: extract.results_read, set: false}
+        effects_bindings: []
+
+  - schema_id: apply_sort
+    action_id_template: "sort_{variant_id}"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    requires_world:
+      - {path: page.type, op: eq, value: search_results}
+      - {path: task.requires_filters, op: eq, value: true}
+    requires_bindings:
+      - {binding_id: K.results_layout, acquired: true}
+    variants:
+      - variant_id: price_asc
+        tool_arg_literals:
+          actions: [{action: left_click, coordinate: sort_price_low_high}]
+        requires_world:
+          - {path: sort.applied, op: neq, value: price_asc}
+        effects_world:
+          - {path: sort.applied, set: price_asc}
+          - {path: extract.results_read, set: false}
+        effects_bindings: []
+      - variant_id: avg_review
+        tool_arg_literals:
+          actions: [{action: left_click, coordinate: sort_avg_review}]
+        requires_world:
+          - {path: sort.applied, op: neq, value: avg_review}
+        effects_world:
+          - {path: sort.applied, set: avg_review}
+          - {path: extract.results_read, set: false}
+        effects_bindings: []
+
+
+  # -----------------------------------------------------------------------
+  # Action Schemas — Product navigation (click into product detail)
+  #
+  # Strict sequential ordering: p2 requires p1.detail_read, p3 requires
+  # p2.detail_read. Agent must return to search_results between products.
+  # -----------------------------------------------------------------------
+
+  - schema_id: click_product
+    action_id_template: "click_product_{variant_id}"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    requires_world:
+      - {path: page.type, op: eq, value: search_results}
+      - {path: extract.results_read, op: eq, value: true}
+      - {path: task.requires_detail, op: eq, value: true}
+    requires_bindings: []
+    variants:
+      - variant_id: "1"
+        tool_arg_literals:
+          actions: [{action: left_click, coordinate: product_card_1}]
+        requires_world:
+          - {path: p1.detail_read, op: eq, value: false}
+        effects_world:
+          - {path: page.type, set: product_detail}
+          - {path: page.current_product, set: "1"}
+        effects_bindings: []
+      - variant_id: "2"
+        tool_arg_literals:
+          actions: [{action: left_click, coordinate: product_card_2}]
+        requires_world:
+          - {path: p1.detail_read, op: eq, value: true}
+          - {path: p2.detail_read, op: eq, value: false}
+        effects_world:
+          - {path: page.type, set: product_detail}
+          - {path: page.current_product, set: "2"}
+        effects_bindings: []
+      - variant_id: "3"
+        tool_arg_literals:
+          actions: [{action: left_click, coordinate: product_card_3}]
+        requires_world:
+          - {path: p2.detail_read, op: eq, value: true}
+          - {path: p3.detail_read, op: eq, value: false}
+        effects_world:
+          - {path: page.type, set: product_detail}
+          - {path: page.current_product, set: "3"}
+        effects_bindings: []
+
+
+  # -----------------------------------------------------------------------
+  # Action Schemas — Read product detail (per-product)
+  #
+  # Agent screenshots the product page to read price, features, etc.
+  # Acquires K.product_page_content binding (volatile: invalidated when
+  # page.current_product changes on back-navigation).
+  # -----------------------------------------------------------------------
+
+  - schema_id: read_product_detail
+    action_id_template: "read_p{variant_id}_detail"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: screenshot}]
+    requires_world:
+      - {path: page.type, op: eq, value: product_detail}
+    requires_bindings: []
+    variants:
+      - variant_id: "1"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "1"}
+          - {path: p1.detail_read, op: eq, value: false}
+        effects_world:
+          - {path: p1.detail_read, set: true}
+        effects_bindings: [K.product_page_content]
+      - variant_id: "2"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "2"}
+          - {path: p2.detail_read, op: eq, value: false}
+        effects_world:
+          - {path: p2.detail_read, set: true}
+        effects_bindings: [K.product_page_content]
+      - variant_id: "3"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "3"}
+          - {path: p3.detail_read, op: eq, value: false}
+        effects_world:
+          - {path: p3.detail_read, set: true}
+        effects_bindings: [K.product_page_content]
+
+
+  # -----------------------------------------------------------------------
+  # Action Schemas — Check shipping (per-product)
+  #
+  # Agent enters ZIP code on product detail page to get delivery estimate.
+  # -----------------------------------------------------------------------
+
+  - schema_id: check_product_shipping
+    action_id_template: "check_p{variant_id}_shipping"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions:
+        - {action: left_click, coordinate: delivery_zip_input}
+        - {action: type, text: zip_code}
+        - {action: key, text: Enter}
+    requires_world:
+      - {path: page.type, op: eq, value: product_detail}
+      - {path: task.requires_shipping, op: eq, value: true}
+    requires_bindings:
+      - {binding_id: K.product_page_content, acquired: true}
+    variants:
+      - variant_id: "1"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "1"}
+          - {path: p1.detail_read, op: eq, value: true}
+          - {path: p1.shipping_checked, op: eq, value: false}
+        effects_world:
+          - {path: p1.shipping_checked, set: true}
+        effects_bindings: []
+      - variant_id: "2"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "2"}
+          - {path: p2.detail_read, op: eq, value: true}
+          - {path: p2.shipping_checked, op: eq, value: false}
+        effects_world:
+          - {path: p2.shipping_checked, set: true}
+        effects_bindings: []
+      - variant_id: "3"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "3"}
+          - {path: p3.detail_read, op: eq, value: true}
+          - {path: p3.shipping_checked, op: eq, value: false}
+        effects_world:
+          - {path: p3.shipping_checked, set: true}
+        effects_bindings: []
+
+
+  # -----------------------------------------------------------------------
+  # Action Schemas — Read reviews (per-product)
+  #
+  # Agent scrolls to / clicks into reviews section on product page.
+  # -----------------------------------------------------------------------
+
+  - schema_id: check_product_reviews
+    action_id_template: "check_p{variant_id}_reviews"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions:
+        - {action: left_click, coordinate: reviews_section}
+        - {action: screenshot}
+    requires_world:
+      - {path: page.type, op: eq, value: product_detail}
+      - {path: task.requires_reviews, op: eq, value: true}
+    requires_bindings:
+      - {binding_id: K.product_page_content, acquired: true}
+    variants:
+      - variant_id: "1"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "1"}
+          - {path: p1.detail_read, op: eq, value: true}
+          - {path: p1.reviews_read, op: eq, value: false}
+        effects_world:
+          - {path: p1.reviews_read, set: true}
+        effects_bindings: []
+      - variant_id: "2"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "2"}
+          - {path: p2.detail_read, op: eq, value: true}
+          - {path: p2.reviews_read, op: eq, value: false}
+        effects_world:
+          - {path: p2.reviews_read, set: true}
+        effects_bindings: []
+      - variant_id: "3"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "3"}
+          - {path: p3.detail_read, op: eq, value: true}
+          - {path: p3.reviews_read, op: eq, value: false}
+        effects_world:
+          - {path: p3.reviews_read, set: true}
+        effects_bindings: []
+
+
+  # -----------------------------------------------------------------------
+  # Action Schemas — Check seller info (products 1 and 2 only)
+  # -----------------------------------------------------------------------
+
+  - schema_id: check_product_seller
+    action_id_template: "check_p{variant_id}_seller"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions:
+        - {action: left_click, coordinate: seller_link}
+        - {action: screenshot}
+    requires_world:
+      - {path: page.type, op: eq, value: product_detail}
+    requires_bindings:
+      - {binding_id: K.product_page_content, acquired: true}
+    variants:
+      - variant_id: "1"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "1"}
+          - {path: p1.detail_read, op: eq, value: true}
+          - {path: p1.seller_checked, op: eq, value: false}
+        effects_world:
+          - {path: p1.seller_checked, set: true}
+        effects_bindings: []
+      - variant_id: "2"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "2"}
+          - {path: p2.detail_read, op: eq, value: true}
+          - {path: p2.seller_checked, op: eq, value: false}
+        effects_world:
+          - {path: p2.seller_checked, set: true}
+        effects_bindings: []
+
+
+  # -----------------------------------------------------------------------
+  # Action Schemas — Back to results (per-product)
+  #
+  # Agent clicks back / breadcrumb to return to search results.
+  # page.current_product resets to none, which invalidates
+  # K.product_page_content (volatile binding).
+  # -----------------------------------------------------------------------
+
+  - schema_id: back_to_results
+    action_id_template: "back_to_results_from_p{variant_id}"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: left_click, coordinate: back_button}]
+    requires_world:
+      - {path: page.type, op: eq, value: product_detail}
+    requires_bindings: []
+    variants:
+      - variant_id: "1"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "1"}
+          - {path: p1.detail_read, op: eq, value: true}
+        effects_world:
+          - {path: page.type, set: search_results}
+          - {path: page.current_product, set: none}
+        effects_bindings: []
+      - variant_id: "2"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "2"}
+          - {path: p2.detail_read, op: eq, value: true}
+        effects_world:
+          - {path: page.type, set: search_results}
+          - {path: page.current_product, set: none}
+        effects_bindings: []
+      - variant_id: "3"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "3"}
+          - {path: p3.detail_read, op: eq, value: true}
+        effects_world:
+          - {path: page.type, set: search_results}
+          - {path: page.current_product, set: none}
+        effects_bindings: []
+
+
+  # -----------------------------------------------------------------------
+  # Action Schemas — Read Q&A section (products 1 and 2)
+  # -----------------------------------------------------------------------
+
+  - schema_id: check_product_qa
+    action_id_template: "check_p{variant_id}_qa"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions:
+        - {action: left_click, coordinate: qa_section}
+        - {action: screenshot}
+    requires_world:
+      - {path: page.type, op: eq, value: product_detail}
+      - {path: task.requires_qa, op: eq, value: true}
+    requires_bindings:
+      - {binding_id: K.product_page_content, acquired: true}
+    variants:
+      - variant_id: "1"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "1"}
+          - {path: p1.detail_read, op: eq, value: true}
+          - {path: p1.qa_read, op: eq, value: false}
+        effects_world:
+          - {path: p1.qa_read, set: true}
+        effects_bindings: []
+      - variant_id: "2"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "2"}
+          - {path: p2.detail_read, op: eq, value: true}
+          - {path: p2.qa_read, op: eq, value: false}
+        effects_world:
+          - {path: p2.qa_read, set: true}
+        effects_bindings: []
+
+
+  # -----------------------------------------------------------------------
+  # Action Schemas — Add to cart (products 1 and 2)
+  # -----------------------------------------------------------------------
+
+  - schema_id: add_product_to_cart
+    action_id_template: "add_p{variant_id}_to_cart"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    tool_arg_literals:
+      actions: [{action: left_click, coordinate: add_to_cart_button}]
+    requires_world:
+      - {path: page.type, op: eq, value: product_detail}
+      - {path: task.requires_cart, op: eq, value: true}
+    requires_bindings:
+      - {binding_id: K.product_page_content, acquired: true}
+    variants:
+      - variant_id: "1"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "1"}
+          - {path: p1.detail_read, op: eq, value: true}
+          - {path: p1.added_to_cart, op: eq, value: false}
+        effects_world:
+          - {path: p1.added_to_cart, set: true}
+        effects_bindings: []
+      - variant_id: "2"
+        requires_world:
+          - {path: page.current_product, op: eq, value: "2"}
+          - {path: p2.detail_read, op: eq, value: true}
+          - {path: p2.added_to_cart, op: eq, value: false}
+        effects_world:
+          - {path: p2.added_to_cart, set: true}
+        effects_bindings: []
+
+
+  # -----------------------------------------------------------------------
+  # Action Schemas — Navigate product variants (product 1 only)
+  #
+  # Each variant click is a soft page navigation — the URL/ASIN changes,
+  # price updates, page content refreshes. Agent must screenshot after
+  # each click to read the new price. Sequential: a before b.
+  #
+  # This mirrors real Amazon behavior where clicking storage/color/config
+  # options loads a different product variant with different pricing.
+  # -----------------------------------------------------------------------
+
+  - schema_id: select_product_variant
+    action_id_template: "select_p1_variant_{variant_id}"
+    requestor: assistant
+    tool_name: computer
+    classification: causal
+    requires_world:
+      - {path: page.type, op: eq, value: product_detail}
+      - {path: page.current_product, op: eq, value: "1"}
+      - {path: p1.detail_read, op: eq, value: true}
+      - {path: task.requires_variants, op: eq, value: true}
+    requires_bindings:
+      - {binding_id: K.product_page_content, acquired: true}
+    variants:
+      - variant_id: a
+        tool_arg_literals:
+          actions:
+            - {action: left_click, coordinate: variant_option_a}
+            - {action: screenshot}
+        requires_world:
+          - {path: p1.variant_a_viewed, op: eq, value: false}
+        effects_world:
+          - {path: p1.variant_a_viewed, set: true}
+        effects_bindings: []
+      - variant_id: b
+        tool_arg_literals:
+          actions:
+            - {action: left_click, coordinate: variant_option_b}
+            - {action: screenshot}
+        requires_world:
+          - {path: p1.variant_a_viewed, op: eq, value: true}
+          - {path: p1.variant_b_viewed, op: eq, value: false}
+        effects_world:
+          - {path: p1.variant_b_viewed, set: true}
+        effects_bindings: []

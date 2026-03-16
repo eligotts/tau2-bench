@@ -422,34 +422,28 @@ def check_policy_against_contract(
     contract: GraphContractSpec,
     policy_text: str,
 ) -> list[str]:
-    """Validate that policy.md explicitly exposes the contract-visible tool surface."""
+    """Validate that policy.md teaches domain reasoning without being a tool catalog.
+
+    The policy should NOT list tool names — agent tools are injected via the API with
+    docstrings, and user tools are the user's to discover. The policy should teach
+    domain knowledge: principles, ordering constraints, side-effects, and resolution
+    criteria.
+    """
     issues: list[str] = []
     lowered = policy_text.lower()
 
-    required_tool_names = {binding.source_tool for binding in contract.bindings}
-    required_tool_names.update(action.tool_name for action in contract.actions)
-
-    for tool_name in sorted(required_tool_names):
-        if tool_name.lower() not in lowered:
-            issues.append(
-                f"policy.md does not mention tool '{tool_name}'. Policies may stay high-level, "
-                f"but they must name every contract-visible tool explicitly so the agent prompt "
-                f"matches the runtime surface."
-            )
-
+    # Check that the policy teaches resolution semantics (stop gate discipline).
+    # The policy doesn't need to name the exact tool, but it must teach the agent
+    # to verify resolution and handle both met/unmet outcomes.
     has_resolution_checker = any(
         action.tool_name == "check_resolution_status" for action in contract.actions
     )
     if has_resolution_checker:
-        if "resolved=true" not in lowered and "resolved = true" not in lowered:
+        resolution_terms = ["resolution", "resolved", "criteria", "unmet"]
+        if not any(term in lowered for term in resolution_terms):
             issues.append(
-                "policy.md must explicitly tell the agent that STOP is allowed only when "
-                "'check_resolution_status' returns resolved=true."
-            )
-        if "resolved=false" not in lowered and "resolved = false" not in lowered:
-            issues.append(
-                "policy.md must explicitly tell the agent what to do when "
-                "'check_resolution_status' returns resolved=false."
+                "policy.md must teach the agent about resolution checking: "
+                "how to verify all criteria are met, and what to do when they are not."
             )
 
     return issues

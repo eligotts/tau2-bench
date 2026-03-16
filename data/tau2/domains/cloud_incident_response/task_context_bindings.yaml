@@ -1,0 +1,6844 @@
+version: 1
+domain: cloud_incident_response
+strategy: single_entity_set_with_persona_rotation
+tasks:
+- task_id: app_crashing_cold_d8_000
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing_dashboard_known_d7_001
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_memory_leak_cold_d8_002
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_memory_leak_dashboard_known_d7_003
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_high_latency_cold_d8_004
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_high_latency_dashboard_known_d7_005
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop_cold_d10_006
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop_dashboard_known_d9_007
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable_cold_d8_008
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable_dashboard_known_d7_009
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_degraded_cold_d9_010
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_degraded_dashboard_known_d8_011
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked_cold_d10_012
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked_dashboard_known_d9_013
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted_cold_d10_014
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted_dashboard_known_d9_015
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_replication_lag_cold_d9_016
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_replication_lag_dashboard_known_d8_017
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full_cold_d10_018
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full_dashboard_known_d9_019
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_degraded_vacuum_cold_d9_020
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_degraded_vacuum_dashboard_known_d8_021
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_stale_cold_d8_022
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_stale_dashboard_known_d7_023
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_cold_cold_d7_024
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_cold_dashboard_known_d6_025
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_eviction_storm_cold_d8_026
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_eviction_storm_dashboard_known_d7_027
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_conn_refused_cold_d8_028
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_conn_refused_dashboard_known_d7_029
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_cert_invalid_cold_d7_030
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_cert_invalid_dashboard_known_d6_031
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_token_expired_cold_d7_032
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_token_expired_dashboard_known_d6_033
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_rate_limited_cold_d7_034
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_rate_limited_dashboard_known_d6_035
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_misconfigured_cold_d7_036
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_misconfigured_dashboard_known_d6_037
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_misconfigured_cold_d7_038
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_misconfigured_dashboard_known_d6_039
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_overloaded_cold_d7_040
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_overloaded_dashboard_known_d6_041
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_draining_cold_d7_042
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_draining_dashboard_known_d6_043
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_backend_unhealthy_cold_d7_044
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_backend_unhealthy_dashboard_known_d6_045
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_consumer_dead_cold_d7_046
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_consumer_dead_dashboard_known_d6_047
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_poison_pill_cold_d7_048
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_poison_pill_dashboard_known_d6_049
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_backpressure_cold_d7_050
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_backpressure_dashboard_known_d6_051
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_split_brain_cold_d8_052
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_split_brain_dashboard_known_d7_053
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_consumer_dead_dlq_cold_d8_054
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_consumer_dead_dlq_dashboard_known_d7_055
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: dns_stale_cache_cold_d9_056
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: dns_stale_cache_cold_d10_057
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: dns_stale_cache_dashboard_known_d8_058
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: dns_stale_cache_dashboard_known_d9_059
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: dns_misconfigured_cold_d10_060
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: dns_misconfigured_cold_d11_061
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: dns_misconfigured_dashboard_known_d9_062
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: dns_misconfigured_dashboard_known_d10_063
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: dns_propagating_cold_d7_064
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: dns_propagating_cold_d8_065
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: dns_propagating_dashboard_known_d6_066
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: dns_propagating_dashboard_known_d7_067
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__db_locked_cold_d12_068
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__db_locked_partial_d11_069
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__db_degraded_cold_d11_070
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__db_degraded_partial_d10_071
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__db_corrupted_cold_d14_072
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__db_corrupted_partial_d13_073
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_memory_leak__db_disk_full_cold_d12_074
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_memory_leak__db_disk_full_partial_d11_075
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__db_replication_lag_cold_d11_076
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__db_replication_lag_partial_d10_077
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_high_latency__db_degraded_vacuum_cold_d11_078
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_high_latency__db_degraded_vacuum_partial_d10_079
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__cache_eviction_storm_cold_d10_080
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__cache_eviction_storm_partial_d9_081
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__cache_conn_refused_cold_d12_082
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__cache_conn_refused_partial_d11_083
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_high_latency__cache_cold_cold_d9_084
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_high_latency__cache_cold_partial_d8_085
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__cache_stale_cold_d10_086
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__cache_stale_partial_d9_087
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__lb_overloaded_cold_d10_088
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__lb_overloaded_partial_d9_089
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__queue_backpressure_cold_d9_090
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__queue_backpressure_partial_d8_091
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__queue_split_brain_cold_d10_092
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__queue_split_brain_partial_d9_093
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_memory_leak__queue_consumer_dead_cold_d9_094
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_memory_leak__queue_consumer_dead_partial_d8_095
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__queue_poison_pill_cold_d11_096
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__queue_poison_pill_partial_d10_097
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__auth_cert_invalid_cold_d9_098
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__auth_cert_invalid_partial_d8_099
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__auth_token_expired_cold_d11_100
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__auth_token_expired_partial_d10_101
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__auth_misconfigured_cold_d9_102
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__auth_misconfigured_partial_d8_103
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__dns_stale_cache_cold_d11_104
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__dns_stale_cache_cold_d12_105
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__dns_stale_cache_partial_d10_106
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__dns_stale_cache_partial_d11_107
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__dns_misconfigured_cold_d12_108
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__dns_misconfigured_cold_d13_109
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__dns_misconfigured_partial_d11_110
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__dns_misconfigured_partial_d12_111
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__cache_eviction_storm_cold_d10_112
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__cache_eviction_storm_partial_d9_113
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__cache_conn_refused_cold_d10_114
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__cache_conn_refused_partial_d9_115
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__cache_cold_cold_d9_116
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__cache_cold_partial_d8_117
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_degraded__cache_conn_refused_cold_d9_118
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_degraded__cache_conn_refused_partial_d8_119
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__auth_misconfigured_cold_d11_120
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__auth_misconfigured_partial_d10_121
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__auth_rate_limited_cold_d11_122
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__auth_rate_limited_partial_d10_123
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__auth_cert_invalid_cold_d11_124
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__auth_cert_invalid_partial_d10_125
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_degraded__queue_consumer_dead_dlq_cold_d11_126
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_degraded__queue_consumer_dead_dlq_partial_d10_127
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__queue_split_brain_cold_d12_128
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__queue_split_brain_partial_d11_129
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__queue_backpressure_cold_d11_130
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__queue_backpressure_partial_d10_131
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__lb_overloaded_cold_d11_132
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__lb_overloaded_partial_d10_133
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__lb_draining_cold_d11_134
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__lb_draining_partial_d10_135
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__lb_misconfigured_cold_d11_136
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__lb_misconfigured_partial_d10_137
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__dns_stale_cache_cold_d13_138
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__dns_stale_cache_cold_d14_139
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__dns_stale_cache_partial_d12_140
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__dns_stale_cache_partial_d13_141
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__dns_misconfigured_cold_d14_142
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__dns_misconfigured_cold_d15_143
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__dns_misconfigured_partial_d13_144
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__dns_misconfigured_partial_d14_145
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_stale__auth_cert_invalid_cold_d9_146
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_stale__auth_cert_invalid_partial_d8_147
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_eviction_storm__auth_token_expired_cold_d9_148
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_eviction_storm__auth_token_expired_partial_d8_149
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_conn_refused__auth_misconfigured_cold_d9_150
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_conn_refused__auth_misconfigured_partial_d8_151
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_stale__lb_misconfigured_cold_d9_152
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_stale__lb_misconfigured_partial_d8_153
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_conn_refused__lb_overloaded_cold_d9_154
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_conn_refused__lb_overloaded_partial_d8_155
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_stale__queue_poison_pill_cold_d9_156
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_stale__queue_poison_pill_partial_d8_157
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_eviction_storm__queue_split_brain_cold_d10_158
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_eviction_storm__queue_split_brain_partial_d9_159
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_stale__dns_stale_cache_cold_d11_160
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_stale__dns_stale_cache_cold_d12_161
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_stale__dns_stale_cache_partial_d10_162
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_stale__dns_stale_cache_partial_d11_163
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_cold__dns_misconfigured_cold_d11_164
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_cold__dns_misconfigured_cold_d12_165
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_cold__dns_misconfigured_partial_d10_166
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: cache_cold__dns_misconfigured_partial_d11_167
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_rate_limited__queue_split_brain_cold_d9_168
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_rate_limited__queue_split_brain_partial_d8_169
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_cert_invalid__dns_stale_cache_cold_d10_170
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_cert_invalid__dns_stale_cache_cold_d11_171
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_cert_invalid__dns_stale_cache_partial_d9_172
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_cert_invalid__dns_stale_cache_partial_d10_173
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_misconfigured__dns_misconfigured_cold_d11_174
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_misconfigured__dns_misconfigured_cold_d12_175
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_misconfigured__dns_misconfigured_partial_d10_176
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: auth_misconfigured__dns_misconfigured_partial_d11_177
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_draining__queue_split_brain_cold_d9_178
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_draining__queue_split_brain_partial_d8_179
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_misconfigured__dns_stale_cache_cold_d10_180
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_misconfigured__dns_stale_cache_cold_d11_181
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_misconfigured__dns_stale_cache_partial_d9_182
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_misconfigured__dns_stale_cache_partial_d10_183
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_overloaded__dns_misconfigured_cold_d11_184
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_overloaded__dns_misconfigured_cold_d12_185
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_overloaded__dns_misconfigured_partial_d10_186
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: lb_overloaded__dns_misconfigured_partial_d11_187
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_consumer_dead__dns_stale_cache_cold_d10_188
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_consumer_dead__dns_stale_cache_cold_d11_189
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_consumer_dead__dns_stale_cache_partial_d9_190
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_consumer_dead__dns_stale_cache_partial_d10_191
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_split_brain__dns_misconfigured_cold_d12_192
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_split_brain__dns_misconfigured_cold_d13_193
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_split_brain__dns_misconfigured_partial_d11_194
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_split_brain__dns_misconfigured_partial_d12_195
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_backpressure__dns_stale_cache_cold_d10_196
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_backpressure__dns_stale_cache_cold_d11_197
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_backpressure__dns_stale_cache_partial_d9_198
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: queue_backpressure__dns_stale_cache_partial_d10_199
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__db_locked__cache_eviction_storm_cold_d13_200
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__db_locked__cache_eviction_storm_partial_d12_201
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__auth_cert_invalid__dns_misconfigured_cold_d15_202
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__auth_cert_invalid__dns_misconfigured_cold_d16_203
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__auth_cert_invalid__dns_misconfigured_partial_d14_204
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__auth_cert_invalid__dns_misconfigured_partial_d15_205
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__auth_rate_limited__dns_stale_cache_cold_d13_206
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__auth_rate_limited__dns_stale_cache_partial_d12_207
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__auth_misconfigured__dns_stale_cache_cold_d13_208
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__auth_misconfigured__dns_stale_cache_partial_d12_209
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__queue_split_brain__dns_misconfigured_cold_d16_210
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__queue_split_brain__dns_misconfigured_cold_d17_211
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__queue_split_brain__dns_misconfigured_partial_d15_212
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_locked__queue_split_brain__dns_misconfigured_partial_d16_213
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__queue_consumer_dead_dlq__dns_stale_cache_cold_d14_214
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__queue_consumer_dead_dlq__dns_stale_cache_cold_d15_215
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__queue_consumer_dead_dlq__dns_stale_cache_partial_d13_216
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_corrupted__queue_consumer_dead_dlq__dns_stale_cache_partial_d14_217
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__queue_backpressure__dns_stale_cache_cold_d14_218
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__queue_backpressure__dns_stale_cache_cold_d15_219
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__queue_backpressure__dns_stale_cache_partial_d13_220
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__queue_backpressure__dns_stale_cache_partial_d14_221
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__db_locked__cache_eviction_storm__auth_cert_invalid_cold_d14_222
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__db_locked__cache_eviction_storm__auth_cert_invalid_partial_d13_223
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__db_corrupted__lb_overloaded__queue_backpressure_cold_d13_224
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crashing__db_corrupted__lb_overloaded__queue_backpressure_partial_d12_225
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__cache_conn_refused__auth_misconfigured__dns_misconfigured_cold_d15_226
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__cache_conn_refused__auth_misconfigured__dns_misconfigured_cold_d16_227
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__cache_conn_refused__auth_misconfigured__dns_misconfigured_partial_d14_228
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: db_disk_full__cache_conn_refused__auth_misconfigured__dns_misconfigured_partial_d15_229
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__lb_misconfigured__queue_split_brain__dns_stale_cache_cold_d13_230
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__lb_misconfigured__queue_split_brain__dns_stale_cache_cold_d14_231
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__lb_misconfigured__queue_split_brain__dns_stale_cache_partial_d12_232
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__lb_misconfigured__queue_split_brain__dns_stale_cache_partial_d13_233
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__db_corrupted__auth_cert_invalid__queue_split_brain__dns_misconfigured_cold_d21_234
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__db_corrupted__auth_cert_invalid__queue_split_brain__dns_misconfigured_cold_d22_235
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__db_corrupted__auth_cert_invalid__queue_split_brain__dns_misconfigured_partial_d20_236
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_crash_loop__db_corrupted__auth_cert_invalid__queue_split_brain__dns_misconfigured_partial_d21_237
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__db_disk_full__cache_eviction_storm__auth_misconfigured__lb_overloaded_cold_d13_238
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: app_unreachable__db_disk_full__cache_eviction_storm__auth_misconfigured__lb_overloaded_partial_d12_239
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_clean_cold_d9_240
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_clean_dashboard_known_d8_241
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_cache_stale_cold_d11_242
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_cache_stale_dashboard_known_d10_243
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_cache_eviction_cold_d11_244
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_cache_eviction_dashboard_known_d10_245
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_db_degraded_cold_d12_246
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_db_degraded_dashboard_known_d11_247
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_db_locked_cold_d13_248
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_db_locked_dashboard_known_d12_249
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_db_corrupted_cold_d13_250
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_db_corrupted_dashboard_known_d12_251
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_auth_expired_cold_d10_252
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_auth_expired_dashboard_known_d9_253
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_auth_cert_cold_d10_254
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_auth_cert_dashboard_known_d9_255
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_queue_dead_cold_d10_256
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_queue_dead_dashboard_known_d9_257
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_queue_backpressure_cold_d10_258
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_queue_backpressure_dashboard_known_d9_259
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_dns_stale_cold_d12_260
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_dns_stale_cold_d13_261
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_dns_stale_dashboard_known_d11_262
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_dns_stale_dashboard_known_d12_263
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_dns_misconfigured_cold_d13_264
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_dns_misconfigured_cold_d14_265
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_dns_misconfigured_dashboard_known_d12_266
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crashing_plus_dns_misconfigured_dashboard_known_d13_267
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_clean_cold_d9_268
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_clean_dashboard_known_d8_269
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_cache_stale_cold_d11_270
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_cache_stale_dashboard_known_d10_271
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_cache_eviction_cold_d11_272
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_cache_eviction_dashboard_known_d10_273
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_db_degraded_cold_d12_274
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_db_degraded_dashboard_known_d11_275
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_db_locked_cold_d13_276
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_db_locked_dashboard_known_d12_277
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_db_corrupted_cold_d13_278
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_db_corrupted_dashboard_known_d12_279
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_auth_expired_cold_d10_280
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_auth_expired_dashboard_known_d9_281
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_auth_cert_cold_d10_282
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_auth_cert_dashboard_known_d9_283
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_queue_dead_cold_d10_284
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_queue_dead_dashboard_known_d9_285
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_queue_backpressure_cold_d10_286
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_queue_backpressure_dashboard_known_d9_287
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_dns_stale_cold_d12_288
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_dns_stale_cold_d13_289
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_dns_stale_dashboard_known_d11_290
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_dns_stale_dashboard_known_d12_291
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_dns_misconfigured_cold_d13_292
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_dns_misconfigured_cold_d14_293
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_dns_misconfigured_dashboard_known_d12_294
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_memory_leak_plus_dns_misconfigured_dashboard_known_d13_295
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_clean_cold_d9_296
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_clean_dashboard_known_d8_297
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_cache_stale_cold_d11_298
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_cache_stale_dashboard_known_d10_299
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_cache_eviction_cold_d11_300
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_cache_eviction_dashboard_known_d10_301
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_db_degraded_cold_d12_302
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_db_degraded_dashboard_known_d11_303
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_db_locked_cold_d13_304
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_db_locked_dashboard_known_d12_305
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_db_corrupted_cold_d13_306
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_db_corrupted_dashboard_known_d12_307
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_auth_expired_cold_d10_308
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_auth_expired_dashboard_known_d9_309
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_auth_cert_cold_d10_310
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_auth_cert_dashboard_known_d9_311
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_queue_dead_cold_d10_312
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_queue_dead_dashboard_known_d9_313
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_queue_backpressure_cold_d10_314
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_queue_backpressure_dashboard_known_d9_315
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_dns_stale_cold_d12_316
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_dns_stale_cold_d13_317
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_dns_stale_dashboard_known_d11_318
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_dns_stale_dashboard_known_d12_319
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_dns_misconfigured_cold_d13_320
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_dns_misconfigured_cold_d14_321
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_dns_misconfigured_dashboard_known_d12_322
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_high_latency_plus_dns_misconfigured_dashboard_known_d13_323
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_clean_cold_d11_324
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_clean_dashboard_known_d10_325
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_cache_stale_cold_d13_326
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_cache_stale_dashboard_known_d12_327
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_cache_eviction_cold_d13_328
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_cache_eviction_dashboard_known_d12_329
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_db_degraded_cold_d13_330
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_db_degraded_dashboard_known_d12_331
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_db_locked_cold_d14_332
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_db_locked_dashboard_known_d13_333
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_db_corrupted_cold_d15_334
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_db_corrupted_dashboard_known_d14_335
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_auth_expired_cold_d12_336
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_auth_expired_dashboard_known_d11_337
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_auth_cert_cold_d12_338
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_auth_cert_dashboard_known_d11_339
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_queue_dead_cold_d12_340
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_queue_dead_dashboard_known_d11_341
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_queue_backpressure_cold_d12_342
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_queue_backpressure_dashboard_known_d11_343
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_dns_stale_cold_d14_344
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_dns_stale_cold_d15_345
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_dns_stale_dashboard_known_d13_346
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_dns_stale_dashboard_known_d14_347
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_dns_misconfigured_cold_d15_348
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_dns_misconfigured_cold_d16_349
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_dns_misconfigured_dashboard_known_d14_350
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_crash_loop_plus_dns_misconfigured_dashboard_known_d15_351
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_clean_cold_d9_352
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_clean_dashboard_known_d8_353
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_cache_stale_cold_d11_354
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_cache_stale_dashboard_known_d10_355
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_cache_eviction_cold_d11_356
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_cache_eviction_dashboard_known_d10_357
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_db_degraded_cold_d12_358
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_db_degraded_dashboard_known_d11_359
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_db_locked_cold_d13_360
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_db_locked_dashboard_known_d12_361
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_db_corrupted_cold_d13_362
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_db_corrupted_dashboard_known_d12_363
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_auth_expired_cold_d10_364
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1008
+      name: Jamie Santos
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_auth_expired_dashboard_known_d9_365
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_auth_cert_cold_d10_366
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_auth_cert_dashboard_known_d9_367
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_queue_dead_cold_d10_368
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_queue_dead_dashboard_known_d9_369
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_queue_backpressure_cold_d10_370
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_queue_backpressure_dashboard_known_d9_371
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1004
+      name: Morgan Kim
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_dns_stale_cold_d12_372
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1007
+      name: Drew Nakamura
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_dns_stale_cold_d13_373
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1005
+      name: Casey O'Brien
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_dns_stale_dashboard_known_d11_374
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_dns_stale_dashboard_known_d12_375
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1003
+      name: Jordan Patel
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_dns_misconfigured_cold_d13_376
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Alex Chen
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_dns_misconfigured_cold_d14_377
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_dns_misconfigured_dashboard_known_d12_378
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1006
+      name: Riley Zhang
+      incident_id: INC-1001
+      oncall_role: on-call engineer
+- task_id: canary_unreachable_plus_dns_misconfigured_dashboard_known_d13_379
+  slots:
+    active_incident: INC-1001
+    active_app: app-prod-01
+    active_db: db-prod-01
+    active_cache: cache-prod-01
+    active_auth: auth-prod-01
+    active_lb: lb-prod-01
+    active_queue: queue-prod-01
+    active_dns: dns-prod-01
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1002
+      name: Sam Rivera
+      incident_id: INC-1001
+      oncall_role: on-call engineer

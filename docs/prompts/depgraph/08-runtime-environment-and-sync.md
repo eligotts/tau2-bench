@@ -30,11 +30,13 @@ Requirements:
 2. Include user-guidance behavior aligned with task patterns.
 3. Mention that user should run tools only when instructed (if this is your design choice).
 4. Keep policy consistent with tool capabilities and constraints.
-5. Name every contract-visible tool explicitly so the prompt surface matches the runtime surface.
-6. If any binding is a volatile stage token, explicitly name the reread points where the agent must reacquire it.
-7. If `check_resolution_status` exists, explicitly tell the agent to continue when it returns `resolved=false` and to stop only on `resolved=true`.
-8. Prefer sections like observables, available repair tools, customer-side actions, and stop rules over numbered "first do X, then do Y" trajectories.
-9. If the domain truly needs a detailed troubleshooting manual, keep it as a separate artifact and make sure the benchmark intent still relies on agent reasoning rather than rote prompt following.
+5. **Do NOT list agent tool names in the policy.** Agent tools are injected into the LLM API call with their names, descriptions (from docstrings), and parameter schemas. The agent already knows what tools it has. The policy should teach *when* and *why* to act (domain knowledge, ordering constraints, principles), not *what tools exist*. Duplicating the tool catalog in the policy adds no information and creates maintenance drift.
+6. **Do NOT list user tool names in the policy.** The agent does not need to know the user's toolkit. Describe what information or actions the agent needs from the user in natural language (e.g., "ask the user for a dashboard overview" not "ask the user to run `check_dashboard`"). The user discovers their own tools; the agent asks for outcomes.
+7. If any binding is a volatile stage token, describe the reread points where the agent must reacquire it in domain terms, not tool names.
+8. If `check_resolution_status` exists, tell the agent to ask the user to check whether resolution criteria are met, to continue when unmet, and to stop only when all criteria are confirmed met.
+9. Prefer sections like domain principles, dependency ordering, side-effect warnings, and resolution criteria over numbered "first do X, then do Y" trajectories.
+10. If the domain truly needs a detailed troubleshooting manual, keep it as a separate artifact and make sure the benchmark intent still relies on agent reasoning rather than rote prompt following.
+11. **Write good tool docstrings instead.** The tool docstring is the right place to describe what a tool does, what state it applies to, and what prerequisites it has. The policy teaches domain reasoning; the tool list teaches tool affordances.
 
 Validation:
 

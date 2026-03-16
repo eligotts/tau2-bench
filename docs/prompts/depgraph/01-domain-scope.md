@@ -96,15 +96,55 @@ Design for these properties:
    should usually run on stable world state established by diagnostics, not on repeated
    reuse of a moving observation token.
 
+### Complexity Ladder
+
+Use this ladder to calibrate domain ambition. Each tier builds on the previous one.
+
+**Tier 1 — Baseline** (produces 10-30 tasks, tests tool-following):
+- 2+ bindings from different sources
+- Value-gated branching (different fault values → different repair paths)
+- One resolution gate
+- Expect 5-8 step plans
+
+**Tier 2 — Intermediate** (produces 30-80 tasks, tests multi-step reasoning):
+- 4+ bindings with tiered prerequisites (binding B requires binding A first)
+- Cross-dependencies between user actions (mini-DAG, not flat basket)
+- Early convergence points (mid-graph gates requiring 2+ upstream results)
+- Shared downstream gates (multiple branches fan into shared verification)
+- Expect 7-12 step plans
+
+**Tier 3 — Advanced** (produces 80-200+ tasks, tests causal reasoning):
+- 6+ bindings with discovery trees
+- Cascading sync rules (one fault automatically damages downstream systems)
+- Repair side-effects (fixing system A creates new problems in system B)
+- Resolution gates that require side-effect cleanup
+- Multi-fault seeds (2-3 simultaneous failures with cross-dependencies)
+- Expect 10-18 step plans
+
+**Tier 4 — Expert** (produces 150-400+ tasks, tests deep causal reasoning):
+- All of Tier 3, plus:
+- Sync-rule traps / bouncing state (naive repairs get undone until root cause is addressed)
+- Multi-step repair chains (fault A → intermediate state → fault B → healthy)
+- Cross-system repair prerequisites (fixing cache requires DB healthy first)
+- Seed schemas expanding combinatorial fault/knowledge dimensions
+- Expect 12-20+ step plans
+
+Most domains should target Tier 2-3. Only target Tier 4 when the goal is to challenge
+frontier models. Each tier roughly doubles the number of unique tasks because the
+combinatorial space grows with each new diversity axis.
+
+### Sketching Checklist
+
 When sketching dependency patterns in this step, explicitly note:
 - How many distinct bindings the domain will have and their source tools
 - Which actions branch based on discovered values (value-gated actions)
 - What ordering constraints exist between user-side actions
 - Where early convergence points force cross-lane coordination
 - Which bindings are volatile and where the policy must instruct the agent to reacquire them
-- How the policy will expose tool affordances and hard constraints without hardcoding a single end-to-end solution path
+- How the policy will expose domain constraints without hardcoding a single end-to-end solution path (remember: the policy teaches domain reasoning, not tool catalogs — agent tools are injected via the API with docstrings)
 - Which branch-specific terminal profiles the sampler should use, and why shorter tasks should come from easier starts rather than partial endings
 - Which late-stage shared gates every branch must still clear before terminal completion
+- **Target complexity tier** and which diversity axes the domain will use to reach it
 
 Output sections:
 
