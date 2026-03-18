@@ -1,0 +1,1422 @@
+version: 1
+max_tasks: 10000
+
+goal_capture_paths:
+  - agent.calendar
+  - agent.transport
+  - agent.errand_a.status
+  - agent.errand_b.status
+  - agent.finance
+  - agent.dependent_care
+  - agent.household
+  - user.errand_a
+  - user.errand_b
+  - user.dependent_care
+  - user.home
+  - user.transport
+
+# ══════════════════════════════════════════════
+# TERMINAL PROFILES
+# ══════════════════════════════════════════════
+
+terminal_profiles:
+
+  # Errands completed
+  - profile_id: errands_done
+    description: Both errands completed (via delivery or user pickup).
+    requires_world:
+      - path: agent.errand_a.status
+        op: eq
+        value: completed
+      - path: agent.errand_b.status
+        op: eq
+        value: completed
+
+  # Calendar + finance: reschedule + paid
+  - profile_id: rescheduled_paid
+    description: Calendar rescheduled and bill paid.
+    requires_world:
+      - path: agent.calendar.conflict_status
+        op: eq
+        value: resolved
+      - path: agent.finance.bill_status
+        op: eq
+        value: paid
+
+  # Calendar + finance: reschedule + deferred
+  - profile_id: rescheduled_deferred
+    description: Calendar rescheduled and bill deferred.
+    requires_world:
+      - path: agent.calendar.conflict_status
+        op: eq
+        value: resolved
+      - path: agent.finance.bill_status
+        op: eq
+        value: deferred
+
+  # Calendar + finance: cancelled + paid
+  - profile_id: cancelled_paid
+    description: Meeting cancelled with apology sent and bill paid.
+    requires_world:
+      - path: agent.calendar.conflict_status
+        op: eq
+        value: meeting_cancelled
+      - path: agent.calendar.apology_sent
+        op: eq
+        value: true
+      - path: agent.finance.bill_status
+        op: eq
+        value: paid
+
+  # Calendar + finance: cancelled + deferred
+  - profile_id: cancelled_deferred
+    description: Meeting cancelled with apology sent and bill deferred.
+    requires_world:
+      - path: agent.calendar.conflict_status
+        op: eq
+        value: meeting_cancelled
+      - path: agent.calendar.apology_sent
+        op: eq
+        value: true
+      - path: agent.finance.bill_status
+        op: eq
+        value: deferred
+
+  # Dependent care resolved
+  - profile_id: care_done
+    description: Dependent care pickup completed.
+    requires_world:
+      - path: agent.dependent_care.pickup_status
+        op: eq
+        value: completed
+
+  # Household maintenance resolved
+  - profile_id: household_done
+    description: Household maintenance completed.
+    requires_world:
+      - path: agent.household.maintenance_status
+        op: eq
+        value: completed
+
+  # Errands + care resolved
+  - profile_id: errands_care_done
+    description: Errands completed and dependent care pickup handled.
+    requires_world:
+      - path: agent.errand_a.status
+        op: eq
+        value: completed
+      - path: agent.dependent_care.pickup_status
+        op: eq
+        value: completed
+
+  # Multi-lane: calendar + care + household (reschedule)
+  - profile_id: rescheduled_care_household
+    description: Calendar rescheduled, care handled, household repaired.
+    requires_world:
+      - path: agent.calendar.conflict_status
+        op: eq
+        value: resolved
+      - path: agent.dependent_care.pickup_status
+        op: eq
+        value: completed
+      - path: agent.household.maintenance_status
+        op: eq
+        value: completed
+
+  # Multi-lane: calendar + care + household (cancel)
+  - profile_id: cancelled_care_household
+    description: Meeting cancelled with apology, care handled, household repaired.
+    requires_world:
+      - path: agent.calendar.conflict_status
+        op: eq
+        value: meeting_cancelled
+      - path: agent.calendar.apology_sent
+        op: eq
+        value: true
+      - path: agent.dependent_care.pickup_status
+        op: eq
+        value: completed
+      - path: agent.household.maintenance_status
+        op: eq
+        value: completed
+
+# ══════════════════════════════════════════════
+# SEED SCHEMAS
+# ══════════════════════════════════════════════
+
+seed_schemas:
+
+  # ════════════════════════════════════════════
+  # SCHEMA 1: Transport crisis + errands
+  # Car is broken, both errands need doing.
+  # Deeper chains: reserve → confirm → delivery/pickup.
+  # Money coupling: delivery costs money.
+  # Fate flags: rideshare success/fail, delivery success/fail.
+  # ════════════════════════════════════════════
+
+  - schema_id: transport_errands
+    seed_id_template: 'te_{transport}_{errands}_{fate}_{knowledge}'
+    allowed_terminal_profiles:
+      - errands_done
+    goal_capture_paths: []
+    min_depth: 8
+    max_depth: 20
+    dimensions:
+
+      - dimension_id: transport
+        variants:
+          - variant_id: flat_tire_rs_ok
+            start_world:
+              - path: agent.transport.status
+                set: unavailable
+              - path: agent.transport.car_issue
+                set: flat_tire
+              - path: agent.transport.fix_status
+                set: not_needed
+              - path: agent.transport.rideshare_will_succeed
+                set: true
+          - variant_id: in_shop_rs_ok
+            start_world:
+              - path: agent.transport.status
+                set: unavailable
+              - path: agent.transport.car_issue
+                set: in_shop
+              - path: agent.transport.fix_status
+                set: not_needed
+              - path: agent.transport.rideshare_will_succeed
+                set: true
+          - variant_id: in_shop_rs_fail
+            start_world:
+              - path: agent.transport.status
+                set: unavailable
+              - path: agent.transport.car_issue
+                set: in_shop
+              - path: agent.transport.fix_status
+                set: not_needed
+              - path: agent.transport.rideshare_will_succeed
+                set: false
+          - variant_id: low_fuel_rs_ok
+            start_world:
+              - path: agent.transport.status
+                set: unavailable
+              - path: agent.transport.car_issue
+                set: low_fuel
+              - path: agent.transport.fix_status
+                set: not_needed
+              - path: agent.transport.rideshare_will_succeed
+                set: true
+
+      - dimension_id: errands
+        variants:
+          - variant_id: both_deliver
+            start_world:
+              - path: agent.errand_a.active
+                set: true
+              - path: agent.errand_a.status
+                set: pending
+              - path: agent.errand_a.delivery_available
+                set: true
+              - path: agent.errand_a.item_in_stock
+                set: true
+              - path: agent.errand_b.active
+                set: true
+              - path: agent.errand_b.status
+                set: pending
+              - path: agent.errand_b.delivery_available
+                set: true
+              - path: agent.errand_b.item_in_stock
+                set: true
+          - variant_id: a_deliver_b_pickup
+            start_world:
+              - path: agent.errand_a.active
+                set: true
+              - path: agent.errand_a.status
+                set: pending
+              - path: agent.errand_a.delivery_available
+                set: true
+              - path: agent.errand_a.item_in_stock
+                set: true
+              - path: agent.errand_b.active
+                set: true
+              - path: agent.errand_b.status
+                set: pending
+              - path: agent.errand_b.delivery_available
+                set: false
+              - path: agent.errand_b.item_in_stock
+                set: true
+          - variant_id: both_pickup
+            start_world:
+              - path: agent.errand_a.active
+                set: true
+              - path: agent.errand_a.status
+                set: pending
+              - path: agent.errand_a.delivery_available
+                set: false
+              - path: agent.errand_a.item_in_stock
+                set: true
+              - path: agent.errand_b.active
+                set: true
+              - path: agent.errand_b.status
+                set: pending
+              - path: agent.errand_b.delivery_available
+                set: false
+              - path: agent.errand_b.item_in_stock
+                set: true
+
+      - dimension_id: fate
+        variants:
+          - variant_id: all_succeed
+            start_world:
+              - path: agent.errand_a.delivery_will_succeed
+                set: true
+              - path: agent.errand_b.delivery_will_succeed
+                set: true
+              - path: agent.finance.available_funds
+                set: plenty
+          - variant_id: a_delivery_fails
+            start_world:
+              - path: agent.errand_a.delivery_will_succeed
+                set: false
+              - path: agent.errand_b.delivery_will_succeed
+                set: true
+              - path: agent.finance.available_funds
+                set: plenty
+          - variant_id: tight_budget
+            start_world:
+              - path: agent.errand_a.delivery_will_succeed
+                set: true
+              - path: agent.errand_b.delivery_will_succeed
+                set: true
+              - path: agent.finance.available_funds
+                set: tight
+
+      - dimension_id: knowledge
+        variants:
+          - variant_id: cold
+            start_bindings: []
+          - variant_id: transport_known
+            start_bindings: [transport_situation]
+            start_world:
+              - path: user.transport.car_inspected
+                set: true
+
+  # ════════════════════════════════════════════
+  # SCHEMA 2: Calendar conflict + finance (pay path)
+  # Bill must be paid. May need transfer.
+  # Money coupling: paying bill degrades funds.
+  # ════════════════════════════════════════════
+
+  - schema_id: calendar_finance_pay
+    seed_id_template: 'cfp_{finance}_{knowledge}'
+    allowed_terminal_profiles:
+      - rescheduled_paid
+      - cancelled_paid
+    goal_capture_paths: []
+    min_depth: 3
+    max_depth: 14
+    dimensions:
+
+      - dimension_id: finance
+        variants:
+          - variant_id: has_funds_plenty
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.calendar.apology_needed
+                set: false
+              - path: agent.calendar.apology_sent
+                set: false
+              - path: agent.finance.bill_active
+                set: true
+              - path: agent.finance.sufficient_funds
+                set: true
+              - path: agent.finance.transfer_status
+                set: not_needed
+              - path: agent.finance.bill_status
+                set: unpaid
+              - path: agent.finance.available_funds
+                set: plenty
+          - variant_id: has_funds_tight
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.calendar.apology_needed
+                set: false
+              - path: agent.calendar.apology_sent
+                set: false
+              - path: agent.finance.bill_active
+                set: true
+              - path: agent.finance.sufficient_funds
+                set: true
+              - path: agent.finance.transfer_status
+                set: not_needed
+              - path: agent.finance.bill_status
+                set: unpaid
+              - path: agent.finance.available_funds
+                set: tight
+          - variant_id: needs_transfer
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.calendar.apology_needed
+                set: false
+              - path: agent.calendar.apology_sent
+                set: false
+              - path: agent.finance.bill_active
+                set: true
+              - path: agent.finance.sufficient_funds
+                set: false
+              - path: agent.finance.transfer_status
+                set: not_needed
+              - path: agent.finance.bill_status
+                set: unpaid
+              - path: agent.finance.available_funds
+                set: plenty
+
+      - dimension_id: knowledge
+        variants:
+          - variant_id: cold
+            start_bindings: []
+          - variant_id: calendar_known
+            start_bindings: [calendar_state]
+          - variant_id: balances_known
+            start_bindings: [account_balances]
+          - variant_id: both_known
+            start_bindings: [calendar_state, account_balances]
+
+  # ════════════════════════════════════════════
+  # SCHEMA 3: Calendar conflict + finance (defer path)
+  # No funds to pay, must defer bill.
+  # ════════════════════════════════════════════
+
+  - schema_id: calendar_finance_defer
+    seed_id_template: 'cfd_{knowledge}'
+    allowed_terminal_profiles:
+      - rescheduled_deferred
+      - cancelled_deferred
+    goal_capture_paths: []
+    min_depth: 2
+    max_depth: 10
+    dimensions:
+
+      - dimension_id: knowledge
+        variants:
+          - variant_id: cold
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.calendar.apology_needed
+                set: false
+              - path: agent.calendar.apology_sent
+                set: false
+              - path: agent.finance.bill_active
+                set: true
+              - path: agent.finance.sufficient_funds
+                set: false
+              - path: agent.finance.transfer_status
+                set: not_needed
+              - path: agent.finance.bill_status
+                set: unpaid
+              - path: agent.finance.available_funds
+                set: broke
+            start_bindings: []
+          - variant_id: calendar_known
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.calendar.apology_needed
+                set: false
+              - path: agent.calendar.apology_sent
+                set: false
+              - path: agent.finance.bill_active
+                set: true
+              - path: agent.finance.sufficient_funds
+                set: false
+              - path: agent.finance.transfer_status
+                set: not_needed
+              - path: agent.finance.bill_status
+                set: unpaid
+              - path: agent.finance.available_funds
+                set: broke
+            start_bindings: [calendar_state]
+          - variant_id: budget_known
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.calendar.apology_needed
+                set: false
+              - path: agent.calendar.apology_sent
+                set: false
+              - path: agent.finance.bill_active
+                set: true
+              - path: agent.finance.sufficient_funds
+                set: false
+              - path: agent.finance.transfer_status
+                set: not_needed
+              - path: agent.finance.bill_status
+                set: unpaid
+              - path: agent.finance.available_funds
+                set: broke
+            start_bindings: [budget_status]
+
+  # ════════════════════════════════════════════
+  # SCHEMA 4: Dependent care
+  # Multiple paths: delegate A, delegate B, extended care, user pickup.
+  # Fate flags control delegate responses and extended care availability.
+  # Cross-dependency: user pickup needs transport.
+  # ════════════════════════════════════════════
+
+  - schema_id: dependent_care
+    seed_id_template: 'dc_{care_fate}_{transport}_{knowledge}'
+    allowed_terminal_profiles:
+      - care_done
+    goal_capture_paths: []
+    min_depth: 3
+    max_depth: 18
+    dimensions:
+
+      - dimension_id: care_fate
+        variants:
+          # Delegate A accepts → contact A, check messages, notify facility, check ETA, assign A
+          - variant_id: delegate_a_accepts
+            start_world:
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+              - path: agent.messaging.delegate_a_will_accept
+                set: true
+
+          # Delegate A declines, delegate B accepts → deeper fallback chain
+          - variant_id: delegate_a_fails_b_accepts
+            start_world:
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+              - path: agent.messaging.delegate_a_will_accept
+                set: false
+              - path: agent.messaging.delegate_b_will_accept
+                set: true
+
+          # Both delegates decline, extended care available
+          - variant_id: delegates_fail_extended
+            start_world:
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+              - path: agent.dependent_care.extended_care_available
+                set: true
+              - path: agent.messaging.delegate_a_will_accept
+                set: false
+              - path: agent.messaging.delegate_b_will_accept
+                set: false
+              - path: agent.finance.available_funds
+                set: plenty
+
+          # All fallbacks fail → user must pickup
+          - variant_id: all_fail_user_pickup
+            start_world:
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+              - path: agent.messaging.delegate_a_will_accept
+                set: false
+              - path: agent.messaging.delegate_b_will_accept
+                set: false
+              - path: agent.dependent_care.extended_care_available
+                set: false
+
+          # Skip delegates, user direct pickup
+          - variant_id: user_direct
+            start_world:
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+
+      - dimension_id: transport
+        variants:
+          - variant_id: available
+            start_world:
+              - path: agent.transport.status
+                set: available
+              - path: agent.transport.car_issue
+                set: none
+              - path: agent.transport.fix_status
+                set: not_needed
+          - variant_id: broken_flat
+            start_world:
+              - path: agent.transport.status
+                set: unavailable
+              - path: agent.transport.car_issue
+                set: flat_tire
+              - path: agent.transport.fix_status
+                set: not_needed
+              - path: agent.transport.rideshare_will_succeed
+                set: true
+            min_depth_delta: 3
+            max_depth_delta: 3
+
+      - dimension_id: knowledge
+        variants:
+          - variant_id: cold
+            start_bindings: []
+          - variant_id: delegate_precontacted
+            start_bindings: [delegate_a_response]
+            start_world:
+              - path: agent.dependent_care.delegate_a_contacted
+                set: true
+
+  # ════════════════════════════════════════════
+  # SCHEMA 5: Household maintenance (deeper chain)
+  # reported → quotes → select provider → schedule → access → pay → inspect → verify
+  # ════════════════════════════════════════════
+
+  - schema_id: household
+    seed_id_template: 'hh_{setup}_{knowledge}'
+    allowed_terminal_profiles:
+      - household_done
+    goal_capture_paths: []
+    min_depth: 6
+    max_depth: 14
+    dimensions:
+
+      - dimension_id: setup
+        variants:
+          - variant_id: plenty_funds
+            start_world:
+              - path: agent.household.active
+                set: true
+              - path: agent.household.maintenance_status
+                set: reported
+              - path: agent.household.access_arranged
+                set: false
+              - path: agent.household.provider_selected
+                set: false
+              - path: agent.household.maintenance_cost_paid
+                set: false
+              - path: agent.household.inspection_scheduled
+                set: false
+              - path: agent.finance.available_funds
+                set: plenty
+          - variant_id: tight_funds
+            start_world:
+              - path: agent.household.active
+                set: true
+              - path: agent.household.maintenance_status
+                set: reported
+              - path: agent.household.access_arranged
+                set: false
+              - path: agent.household.provider_selected
+                set: false
+              - path: agent.household.maintenance_cost_paid
+                set: false
+              - path: agent.household.inspection_scheduled
+                set: false
+              - path: agent.finance.available_funds
+                set: tight
+
+      - dimension_id: knowledge
+        variants:
+          - variant_id: cold
+            start_bindings: []
+          - variant_id: maintenance_known
+            start_bindings: [maintenance_info]
+
+  # ════════════════════════════════════════════
+  # SCHEMA 6: Errands + dependent care (multi-lane)
+  # Transport broken, must fix + errands + care.
+  # Cross-dependency: user actions need transport.
+  # Money coupling: delivery and rideshare both cost.
+  # ════════════════════════════════════════════
+
+  - schema_id: errands_and_care
+    seed_id_template: 'ec_{transport}_{care_fate}_{errand_fate}_{knowledge}'
+    allowed_terminal_profiles:
+      - errands_care_done
+    goal_capture_paths: []
+    min_depth: 10
+    max_depth: 22
+    dimensions:
+
+      - dimension_id: transport
+        variants:
+          - variant_id: flat_tire_rs_ok
+            start_world:
+              - path: agent.transport.status
+                set: unavailable
+              - path: agent.transport.car_issue
+                set: flat_tire
+              - path: agent.transport.fix_status
+                set: not_needed
+              - path: agent.transport.rideshare_will_succeed
+                set: true
+              - path: agent.errand_a.active
+                set: true
+              - path: agent.errand_a.status
+                set: pending
+              - path: agent.errand_a.delivery_available
+                set: false
+              - path: agent.errand_a.item_in_stock
+                set: true
+          - variant_id: in_shop_rs_ok
+            start_world:
+              - path: agent.transport.status
+                set: unavailable
+              - path: agent.transport.car_issue
+                set: in_shop
+              - path: agent.transport.fix_status
+                set: not_needed
+              - path: agent.transport.rideshare_will_succeed
+                set: true
+              - path: agent.errand_a.active
+                set: true
+              - path: agent.errand_a.status
+                set: pending
+              - path: agent.errand_a.delivery_available
+                set: false
+              - path: agent.errand_a.item_in_stock
+                set: true
+          - variant_id: in_shop_rs_fail
+            start_world:
+              - path: agent.transport.status
+                set: unavailable
+              - path: agent.transport.car_issue
+                set: in_shop
+              - path: agent.transport.fix_status
+                set: not_needed
+              - path: agent.transport.rideshare_will_succeed
+                set: false
+              - path: agent.errand_a.active
+                set: true
+              - path: agent.errand_a.status
+                set: pending
+              - path: agent.errand_a.delivery_available
+                set: false
+              - path: agent.errand_a.item_in_stock
+                set: true
+
+      - dimension_id: care_fate
+        variants:
+          - variant_id: delegate_a_ok
+            start_world:
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+              - path: agent.messaging.delegate_a_will_accept
+                set: true
+          - variant_id: user_direct
+            start_world:
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+
+      - dimension_id: errand_fate
+        variants:
+          - variant_id: succeed_plenty
+            start_world:
+              - path: agent.errand_a.delivery_will_succeed
+                set: true
+              - path: agent.finance.available_funds
+                set: plenty
+          - variant_id: succeed_tight
+            start_world:
+              - path: agent.errand_a.delivery_will_succeed
+                set: true
+              - path: agent.finance.available_funds
+                set: tight
+
+      - dimension_id: knowledge
+        variants:
+          - variant_id: cold
+            start_bindings: []
+          - variant_id: partial
+            start_bindings: [transport_situation]
+            start_world:
+              - path: user.transport.car_inspected
+                set: true
+
+  # ════════════════════════════════════════════
+  # SCHEMA 7: Calendar + care + household (multi-lane)
+  # Calendar conflict, dependent care, household — all active.
+  # No transport issue. Money coupling via maintenance + extended care.
+  # ════════════════════════════════════════════
+
+  - schema_id: calendar_care_household
+    seed_id_template: 'cch_{care_fate}_{funds}_{knowledge}'
+    allowed_terminal_profiles:
+      - rescheduled_care_household
+      - cancelled_care_household
+    goal_capture_paths: []
+    min_depth: 10
+    max_depth: 22
+    dimensions:
+
+      - dimension_id: care_fate
+        variants:
+          - variant_id: delegate_a_ok
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+              - path: agent.messaging.delegate_a_will_accept
+                set: true
+              - path: agent.household.active
+                set: true
+              - path: agent.household.maintenance_status
+                set: reported
+              - path: agent.household.access_arranged
+                set: false
+              - path: agent.household.provider_selected
+                set: false
+              - path: agent.household.maintenance_cost_paid
+                set: false
+              - path: agent.household.inspection_scheduled
+                set: false
+              - path: agent.transport.status
+                set: available
+              - path: agent.transport.car_issue
+                set: none
+              - path: agent.transport.fix_status
+                set: not_needed
+          - variant_id: user_direct
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+              - path: agent.household.active
+                set: true
+              - path: agent.household.maintenance_status
+                set: reported
+              - path: agent.household.access_arranged
+                set: false
+              - path: agent.household.provider_selected
+                set: false
+              - path: agent.household.maintenance_cost_paid
+                set: false
+              - path: agent.household.inspection_scheduled
+                set: false
+              - path: agent.transport.status
+                set: available
+              - path: agent.transport.car_issue
+                set: none
+              - path: agent.transport.fix_status
+                set: not_needed
+
+      - dimension_id: funds
+        variants:
+          - variant_id: plenty
+            start_world:
+              - path: agent.finance.available_funds
+                set: plenty
+          - variant_id: tight
+            start_world:
+              - path: agent.finance.available_funds
+                set: tight
+
+      - dimension_id: knowledge
+        variants:
+          - variant_id: cold
+            start_bindings: []
+          - variant_id: partial
+            start_bindings: [calendar_state, maintenance_info]
+
+  # ════════════════════════════════════════════
+  # SCHEMA 8: Cancel-only calendar + bill
+  # Reschedule is NOT listed as allowed terminal.
+  # Forces cancel + apology path.
+  # ════════════════════════════════════════════
+
+  - schema_id: cancel_calendar
+    seed_id_template: 'cc_{finance}_{knowledge}'
+    allowed_terminal_profiles:
+      - cancelled_paid
+      - cancelled_deferred
+    goal_capture_paths: []
+    min_depth: 4
+    max_depth: 12
+    dimensions:
+
+      - dimension_id: finance
+        variants:
+          - variant_id: has_funds_plenty
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.calendar.apology_needed
+                set: false
+              - path: agent.calendar.apology_sent
+                set: false
+              - path: agent.finance.bill_active
+                set: true
+              - path: agent.finance.sufficient_funds
+                set: true
+              - path: agent.finance.transfer_status
+                set: not_needed
+              - path: agent.finance.bill_status
+                set: unpaid
+              - path: agent.finance.available_funds
+                set: plenty
+          - variant_id: has_funds_tight
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.calendar.apology_needed
+                set: false
+              - path: agent.calendar.apology_sent
+                set: false
+              - path: agent.finance.bill_active
+                set: true
+              - path: agent.finance.sufficient_funds
+                set: true
+              - path: agent.finance.transfer_status
+                set: not_needed
+              - path: agent.finance.bill_status
+                set: unpaid
+              - path: agent.finance.available_funds
+                set: tight
+          - variant_id: no_funds_defer
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.calendar.apology_needed
+                set: false
+              - path: agent.calendar.apology_sent
+                set: false
+              - path: agent.finance.bill_active
+                set: true
+              - path: agent.finance.sufficient_funds
+                set: false
+              - path: agent.finance.transfer_status
+                set: not_needed
+              - path: agent.finance.bill_status
+                set: unpaid
+              - path: agent.finance.available_funds
+                set: broke
+
+      - dimension_id: knowledge
+        variants:
+          - variant_id: cold
+            start_bindings: []
+          - variant_id: calendar_known
+            start_bindings: [calendar_state]
+          - variant_id: budget_known
+            start_bindings: [budget_status]
+          - variant_id: both_known
+            start_bindings: [calendar_state, budget_status]
+
+  # ════════════════════════════════════════════
+  # SCHEMA 9: Delivery failure + recovery
+  # Errand has delivery available but it WILL FAIL.
+  # Forces: reserve → confirm → try_delivery → fail → recover → pickup.
+  # ════════════════════════════════════════════
+
+  - schema_id: delivery_failure
+    seed_id_template: 'df_{transport}_{errand_config}_{knowledge}'
+    allowed_terminal_profiles:
+      - errands_done
+    goal_capture_paths: []
+    min_depth: 8
+    max_depth: 18
+    dimensions:
+
+      - dimension_id: transport
+        variants:
+          - variant_id: available
+            start_world:
+              - path: agent.transport.status
+                set: available
+              - path: agent.transport.car_issue
+                set: none
+              - path: agent.transport.fix_status
+                set: not_needed
+          - variant_id: flat_tire_rs_ok
+            start_world:
+              - path: agent.transport.status
+                set: unavailable
+              - path: agent.transport.car_issue
+                set: flat_tire
+              - path: agent.transport.fix_status
+                set: not_needed
+              - path: agent.transport.rideshare_will_succeed
+                set: true
+
+      - dimension_id: errand_config
+        variants:
+          # Errand A: delivery available but WILL FAIL. Errand B: pickup only.
+          - variant_id: a_fails_b_pickup
+            start_world:
+              - path: agent.errand_a.active
+                set: true
+              - path: agent.errand_a.status
+                set: pending
+              - path: agent.errand_a.delivery_available
+                set: true
+              - path: agent.errand_a.item_in_stock
+                set: true
+              - path: agent.errand_a.delivery_will_succeed
+                set: false
+              - path: agent.errand_b.active
+                set: true
+              - path: agent.errand_b.status
+                set: pending
+              - path: agent.errand_b.delivery_available
+                set: false
+              - path: agent.errand_b.item_in_stock
+                set: true
+              - path: agent.finance.available_funds
+                set: plenty
+          # Both errands: delivery available but BOTH FAIL
+          - variant_id: both_fail
+            start_world:
+              - path: agent.errand_a.active
+                set: true
+              - path: agent.errand_a.status
+                set: pending
+              - path: agent.errand_a.delivery_available
+                set: true
+              - path: agent.errand_a.item_in_stock
+                set: true
+              - path: agent.errand_a.delivery_will_succeed
+                set: false
+              - path: agent.errand_b.active
+                set: true
+              - path: agent.errand_b.status
+                set: pending
+              - path: agent.errand_b.delivery_available
+                set: true
+              - path: agent.errand_b.item_in_stock
+                set: true
+              - path: agent.errand_b.delivery_will_succeed
+                set: false
+              - path: agent.finance.available_funds
+                set: plenty
+
+      - dimension_id: knowledge
+        variants:
+          - variant_id: cold
+            start_bindings: []
+          - variant_id: errand_known
+            start_bindings: [errand_a_options]
+
+  # ════════════════════════════════════════════
+  # SCHEMA 10: Delegate-forced care (transport broken, rideshare fails)
+  # With rideshare failing and flat tire repair being slow,
+  # delegate path becomes competitive with user pickup.
+  # ════════════════════════════════════════════
+
+  - schema_id: delegate_forced_care
+    seed_id_template: 'dfc_{delegate_fate}_{knowledge}'
+    allowed_terminal_profiles:
+      - care_done
+    goal_capture_paths: []
+    min_depth: 6
+    max_depth: 16
+    dimensions:
+
+      - dimension_id: delegate_fate
+        variants:
+          # Delegate A available, rideshare fails → delegate path is shorter
+          - variant_id: delegate_a_ok_rs_fail
+            start_world:
+              - path: agent.transport.status
+                set: unavailable
+              - path: agent.transport.car_issue
+                set: flat_tire
+              - path: agent.transport.fix_status
+                set: not_needed
+              - path: agent.transport.rideshare_will_succeed
+                set: false
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+              - path: agent.messaging.delegate_a_will_accept
+                set: true
+          # Delegate A declines, delegate B accepts, rideshare fails
+          - variant_id: delegate_b_ok_rs_fail
+            start_world:
+              - path: agent.transport.status
+                set: unavailable
+              - path: agent.transport.car_issue
+                set: flat_tire
+              - path: agent.transport.fix_status
+                set: not_needed
+              - path: agent.transport.rideshare_will_succeed
+                set: false
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+              - path: agent.messaging.delegate_a_will_accept
+                set: false
+              - path: agent.messaging.delegate_b_will_accept
+                set: true
+          # Both delegates fail, extended care available, rideshare fails
+          - variant_id: extended_care_rs_fail
+            start_world:
+              - path: agent.transport.status
+                set: unavailable
+              - path: agent.transport.car_issue
+                set: flat_tire
+              - path: agent.transport.fix_status
+                set: not_needed
+              - path: agent.transport.rideshare_will_succeed
+                set: false
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+              - path: agent.dependent_care.extended_care_available
+                set: true
+              - path: agent.messaging.delegate_a_will_accept
+                set: false
+              - path: agent.messaging.delegate_b_will_accept
+                set: false
+              - path: agent.finance.available_funds
+                set: plenty
+
+      - dimension_id: knowledge
+        variants:
+          - variant_id: cold
+            start_bindings: []
+          - variant_id: transport_known
+            start_bindings: [transport_situation]
+            start_world:
+              - path: user.transport.car_inspected
+                set: true
+
+  # ════════════════════════════════════════════
+  # SCHEMA 11: Cancel + care + household (multi-lane)
+  # Populates the cancelled_care_household terminal profile.
+  # Cancel meeting + apology, delegate care, household maintenance.
+  # ════════════════════════════════════════════
+
+  - schema_id: cancel_care_household
+    seed_id_template: 'cch2_{care_fate}_{funds}_{knowledge}'
+    allowed_terminal_profiles:
+      - cancelled_care_household
+    goal_capture_paths: []
+    min_depth: 10
+    max_depth: 22
+    dimensions:
+
+      - dimension_id: care_fate
+        variants:
+          - variant_id: delegate_a_ok
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.calendar.apology_needed
+                set: false
+              - path: agent.calendar.apology_sent
+                set: false
+              - path: agent.finance.bill_active
+                set: false
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+              - path: agent.messaging.delegate_a_will_accept
+                set: true
+              - path: agent.household.active
+                set: true
+              - path: agent.household.maintenance_status
+                set: reported
+              - path: agent.household.access_arranged
+                set: false
+              - path: agent.household.provider_selected
+                set: false
+              - path: agent.household.maintenance_cost_paid
+                set: false
+              - path: agent.household.inspection_scheduled
+                set: false
+              - path: agent.transport.status
+                set: available
+              - path: agent.transport.car_issue
+                set: none
+              - path: agent.transport.fix_status
+                set: not_needed
+          - variant_id: user_direct
+            start_world:
+              - path: agent.calendar.conflict_status
+                set: has_conflict
+              - path: agent.calendar.active_conflict_meeting_id
+                set: MTG-001
+              - path: agent.calendar.apology_needed
+                set: false
+              - path: agent.calendar.apology_sent
+                set: false
+              - path: agent.finance.bill_active
+                set: false
+              - path: agent.dependent_care.active
+                set: true
+              - path: agent.dependent_care.pickup_status
+                set: unassigned
+              - path: agent.dependent_care.delegate_a_contacted
+                set: false
+              - path: agent.dependent_care.delegate_a_availability
+                set: unknown
+              - path: agent.dependent_care.delegate_b_contacted
+                set: false
+              - path: agent.dependent_care.delegate_b_availability
+                set: unknown
+              - path: agent.dependent_care.extended_care
+                set: not_needed
+              - path: agent.dependent_care.facility_notified
+                set: false
+              - path: agent.dependent_care.pickup_eta_checked
+                set: false
+              - path: agent.household.active
+                set: true
+              - path: agent.household.maintenance_status
+                set: reported
+              - path: agent.household.access_arranged
+                set: false
+              - path: agent.household.provider_selected
+                set: false
+              - path: agent.household.maintenance_cost_paid
+                set: false
+              - path: agent.household.inspection_scheduled
+                set: false
+              - path: agent.transport.status
+                set: available
+              - path: agent.transport.car_issue
+                set: none
+              - path: agent.transport.fix_status
+                set: not_needed
+
+      - dimension_id: funds
+        variants:
+          - variant_id: plenty
+            start_world:
+              - path: agent.finance.available_funds
+                set: plenty
+          - variant_id: tight
+            start_world:
+              - path: agent.finance.available_funds
+                set: tight
+
+      - dimension_id: knowledge
+        variants:
+          - variant_id: cold
+            start_bindings: []
+          - variant_id: partial
+            start_bindings: [calendar_state, maintenance_info]

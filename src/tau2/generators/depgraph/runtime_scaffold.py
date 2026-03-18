@@ -153,10 +153,21 @@ def _env_type_for_path(path: str) -> str:
 
 
 def _leaf_field_name(path: str) -> str:
-    leaf = path.split(".")[-1]
-    if not leaf:
+    """Derive a method-name suffix from a world path.
+
+    For paths with 3+ plain segments (e.g. ``agent.errand_a.status``), include
+    the section as a prefix to avoid ambiguity (``errand_a_status``).  For paths
+    with bracket notation (e.g. ``agent.accounts[active_account].hold_status``)
+    or only 2 segments, use just the leaf since those are already unique.
+    """
+    parts = path.split(".")
+    if not parts or not parts[-1]:
         raise ValueError(f"Cannot derive field name from path '{path}'")
-    return leaf
+    # If 3+ plain segments (no bracket notation), qualify with section name
+    if len(parts) >= 3 and "[" not in path:
+        # e.g. agent.errand_a.status -> errand_a_status
+        return f"{parts[-2]}_{parts[-1]}"
+    return parts[-1]
 
 
 def _assign_persona(task_id: str, personas: list[PersonaSpec]) -> PersonaSpec:

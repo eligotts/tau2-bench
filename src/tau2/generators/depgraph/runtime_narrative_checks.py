@@ -154,7 +154,8 @@ def check_runtime_narratives(
                     f"task '{task.task_id}' authored text leaks tool name '{tool_name}'"
                 )
 
-        for value in _extract_start_binding_values(brief):
+        start_binding_values = _extract_start_binding_values(brief)
+        for value in start_binding_values:
             if value and value not in known_info:
                 issues.append(
                     f"task '{task.task_id}' known_info missing start-binding value '{value}'"
@@ -164,7 +165,10 @@ def check_runtime_narratives(
                     f"task '{task.task_id}' ticket missing start-binding value '{value}'"
                 )
 
+        start_binding_value_set = set(start_binding_values)
         for value in _extract_goal_binding_do_not_disclose(brief):
+            if value in start_binding_value_set:
+                continue
             for field_name, text in field_map.items():
                 if value and value in text:
                     issues.append(
@@ -182,4 +186,3 @@ def check_runtime_narratives(
         )
 
     return issues
-

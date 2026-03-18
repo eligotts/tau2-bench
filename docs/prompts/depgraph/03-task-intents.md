@@ -49,6 +49,7 @@ Requirements:
 6. Every sampled task must end in an explicit terminal profile. Do not use intermediate repair states as ordinary task ends.
 7. `terminal_profiles` define which end states are valid. `goal_capture_paths` define which changed parts of the solved world become emitted `goal_world` and env assertions.
 8. Author start-state variation only through `seed_schemas`. Direct `seeds[]` authoring is removed.
+9. Set `min_depth` against the true shortest reachable plan for each expanded seed variant, not against an intuitive "expected journey". If a `knowledge` variant removes a discovery step, its floor must drop too.
 
 ## Seed Design for Structural Diversity
 
@@ -89,6 +90,43 @@ If the contract has value-gated actions (e.g., `fault_class == "billing"` enable
 
 These seeds produce structurally different tasks, not just shorter/longer versions of one chain.
 
+### Use fate flags as a seed dimension
+
+If the contract has fate-flagged action pairs (success/fail variants gated by `init_only`
+booleans), model the fate flag combinations as a seed schema dimension:
+
+```yaml
+- dimension_id: service_fate
+  variants:
+    - variant_id: all_succeed
+      start_world:
+        - path: agent.rideshare_will_succeed
+          set: true
+        - path: agent.delivery_will_succeed
+          set: true
+    - variant_id: rideshare_fails
+      start_world:
+        - path: agent.rideshare_will_succeed
+          set: false
+        - path: agent.delivery_will_succeed
+          set: true
+    - variant_id: delivery_fails
+      start_world:
+        - path: agent.rideshare_will_succeed
+          set: true
+        - path: agent.delivery_will_succeed
+          set: false
+    - variant_id: both_fail
+      start_world:
+        - path: agent.rideshare_will_succeed
+          set: false
+        - path: agent.delivery_will_succeed
+          set: false
+```
+
+Each variant activates structurally different action paths. Combined with other dimensions
+(knowledge, resource level, active lanes), fate flags are the highest-leverage diversity axis.
+
 ### Vary which bindings are pre-acquired
 
 If the contract has multiple bindings, create seeds where:
@@ -99,6 +137,14 @@ If the contract has multiple bindings, create seeds where:
 This produces tasks that differ in what the agent needs to discover.
 
 When using `seed_schemas`, model these as one dimension instead of cloning whole seeds.
+
+Important: `start_bindings` often shorten the true shortest plan by one or more steps. If a
+schema includes `cold`, `one_known`, and `both_known` variants, either:
+- give the knowledge variants explicit `min_depth_delta` reductions, or
+- keep the schema-level `min_depth` low enough that the shortest known variants still satisfy it.
+
+Otherwise the sampler may emit a witness path at the schema floor while preflight later finds a
+shorter satisfiable plan and rejects the task for `min_plan_length` / `required_actions` mismatch.
 
 ### Prefer real entry states over post-repair milestones
 
@@ -129,6 +175,22 @@ lanes need work:
 - If you add a new shared downstream lane, prefer seeds that vary which subset of that lane's
   blockers is active. This increases both task count and path depth without turning tasks into
   post-repair checkpoints.
+
+### Multi-lane seeds for cross-lane coverage
+
+When the domain has parallel lanes (errands, calendar, care, household), create seed
+schemas that combine 2-3 lanes in a single seed. This is how you populate multi-lane
+terminal profiles (e.g., `errands_care_done`, `cancelled_care_household`).
+
+Each multi-lane schema should set ALL lanes' fields explicitly in `start_world` — both
+the active lanes (with their broken/pending states) and the inactive lanes (with their
+resolved/not-applicable states). If a lane isn't relevant to the seed, set its status to
+the terminal value so the terminal profile's requirements are already met for that lane.
+
+**Common mistake:** Creating a terminal profile that requires 3 lanes to be resolved, but
+no seed schema activates all 3 lanes. If `cancelled_care_household` requires cancelled
+meeting + care completed + household completed, you need a schema that starts with all
+three lanes active.
 
 ### Avoid depth-only variation
 
@@ -191,6 +253,12 @@ Set `max_depth` to `estimated_depth + 4` to give BFS headroom for alternative pa
 If BFS times out on a seed, the depth budget is likely too tight — increase `max_depth`
 before assuming the seed is unsolvable.
 
+After authoring a schema, sanity-check the shortest variants explicitly:
+- `cold` should usually define the upper end of the family
+- `known` variants should often be 1-2 steps shorter
+- if the sampler no longer canonicalizes with a separate re-solve, stale `min_depth` floors
+  become visible immediately in preflight
+
 ### Diversity quantification targets
 
 When evaluating sampled output, use these targets:
@@ -212,6 +280,41 @@ Always verify: for every (seed, terminal_profile) pair in `allowed_terminal_prof
 can the BFS actually reach that profile? If a profile has extra requirements beyond
 "all systems healthy," ensure those requirements are achievable for all seeds that target
 that profile.
+
+### Initialize all fields referenced by terminal profiles and action preconditions
+
+**Critical bug pattern:** A terminal profile requires `apology_sent=true`. The action
+`send_apology` requires `apology_sent=false` as a precondition. But the seed never
+initializes `apology_sent`, so its value is `None`. `None != false`, so the precondition
+fails, and the terminal profile is unreachable.
+
+**Rule:** Every field that appears in a terminal profile's `requires_world` or in any
+action's `requires_world` with an explicit value check MUST be initialized in seed
+`start_world` if that seed needs to traverse actions involving that field. The BFS treats
+uninitialized fields as `None`, which doesn't match `false`, `0`, `"not_needed"`, or any
+other default-looking value.
+
+When in doubt, initialize boolean fields to `false`, enum fields to their "not started"
+value, and status fields to their initial state.
+
+### Schema fertility and post-hoc balancing
+
+Some seed schemas are naturally more fertile than others. A schema with 30 seeds and deep
+BFS trees (care delegation with multiple fate flags) may produce 300+ tasks, while a
+schema with 4 seeds and short linear paths (cancel meeting + pay bill) produces only 8.
+
+If the sampler processes seeds sequentially, fertile schemas consume the `max_tasks` budget
+before sparse schemas are reached. Two mitigations:
+
+1. **Set `max_tasks` high enough** to exhaust all seeds (not just the first few schemas).
+   Run once with a very high cap to see the natural ceiling, then decide.
+2. **Post-hoc per-schema capping**: After sampling all tasks, cap each schema to N tasks
+   to produce a balanced evaluation set. Use `cap_per_schema()` from the sampler module.
+   This preserves the shortest/best tasks from each schema while preventing any single
+   schema from dominating.
+
+Target: no schema should contribute more than 25% of the final task set unless the domain
+has very few schemas.
 
 ### BFS performance with cascading
 

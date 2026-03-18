@@ -1,0 +1,144 @@
+version: 1
+rules:
+  # Errand completion (user confirms pickup or delivery auto-completes)
+  - goal_path: user.errand_a.confirmed_complete
+    goal_value: true
+    check_field: errand_a.confirmed_complete
+    check_op: eq
+    expected: true
+    unmet_reason: Errand A has not been confirmed complete yet.
+
+  - goal_path: user.errand_b.confirmed_complete
+    goal_value: true
+    check_field: errand_b.confirmed_complete
+    check_op: eq
+    expected: true
+    unmet_reason: Errand B has not been confirmed complete yet.
+
+  # Dependent care (user or delegate pickup)
+  - goal_path: user.dependent_care.dependent_picked_up
+    goal_value: true
+    check_field: dependent_care.dependent_picked_up
+    check_op: eq
+    expected: true
+    unmet_reason: Dependent has not been picked up yet.
+
+  - goal_path: user.dependent_care.delegate_confirmed
+    goal_value: true
+    check_field: dependent_care.delegate_confirmed
+    check_op: eq
+    expected: true
+    unmet_reason: Delegate pickup has not been confirmed yet.
+
+  - goal_path: agent.dependent_care.pickup_status
+    goal_value: completed
+    check_field: dependent_care.pickup_completed
+    check_op: eq
+    expected: true
+    unmet_reason: Dependent care pickup has not been completed yet.
+
+  # Household maintenance
+  - goal_path: user.home.repair_verified
+    goal_value: true
+    check_field: home.repair_verified
+    check_op: eq
+    expected: true
+    unmet_reason: Household repair has not been verified yet.
+
+  # Transport resolution
+  - goal_path: user.transport.repair_checked
+    goal_value: true
+    check_field: transport.repair_checked
+    check_op: eq
+    expected: true
+    unmet_reason: Car repair status has not been checked yet.
+
+  - goal_path: user.transport.public_transit_confirmed
+    goal_value: true
+    check_field: transport.public_transit_confirmed
+    check_op: eq
+    expected: true
+    unmet_reason: Public transit route has not been confirmed yet.
+
+  # --- Agent-side goals (exposed via check_resolution_status) ---
+
+  # Calendar resolution
+  - goal_path: agent.calendar.conflict_status
+    goal_value: resolved
+    check_field: calendar.conflict_resolved
+    check_op: eq
+    expected: true
+    unmet_reason: Calendar conflict has not been resolved yet.
+
+  - goal_path: agent.calendar.conflict_status
+    goal_value: meeting_cancelled
+    check_field: calendar.meeting_cancelled
+    check_op: eq
+    expected: true
+    unmet_reason: Meeting has not been cancelled yet.
+
+  - goal_path: agent.calendar.apology_sent
+    goal_value: true
+    check_field: calendar.apology_sent
+    check_op: eq
+    expected: true
+    unmet_reason: Apology message has not been sent yet.
+
+  # Errand completion (agent-side)
+  - goal_path: agent.errand_a.status
+    goal_value: completed
+    check_field: errand_a.completed
+    check_op: eq
+    expected: true
+    unmet_reason: Errand A has not been completed yet.
+
+  - goal_path: agent.errand_b.status
+    goal_value: completed
+    check_field: errand_b.completed
+    check_op: eq
+    expected: true
+    unmet_reason: Errand B has not been completed yet.
+
+  # Finance resolution
+  - goal_path: agent.finance.bill_status
+    goal_value: paid
+    check_field: finance.bill_paid
+    check_op: eq
+    expected: true
+    unmet_reason: Bill has not been paid yet.
+
+  - goal_path: agent.finance.bill_status
+    goal_value: deferred
+    check_field: finance.bill_deferred
+    check_op: eq
+    expected: true
+    unmet_reason: Bill has not been deferred yet.
+
+  - goal_path: agent.finance.transfer_status
+    goal_value: completed
+    check_field: finance.transfer_completed
+    check_op: eq
+    expected: true
+    unmet_reason: Fund transfer has not been completed yet.
+
+  # Transport resolution (agent-side)
+  - goal_path: agent.transport.status
+    goal_value: booked
+    check_field: transport.rideshare_booked
+    check_op: eq
+    expected: true
+    unmet_reason: Rideshare has not been booked yet.
+
+  - goal_path: agent.transport.rideshare_result
+    goal_value: booked
+    check_field: transport.rideshare_booked
+    check_op: eq
+    expected: true
+    unmet_reason: Rideshare has not been booked yet.
+
+  - goal_path: agent.transport.fix_status
+    goal_value: roadside_called
+    check_field: transport.roadside_called
+    check_op: eq
+    expected: true
+    unmet_reason: Roadside assistance has not been called yet.

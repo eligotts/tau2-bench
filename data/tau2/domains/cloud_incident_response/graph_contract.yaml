@@ -33,8 +33,10 @@ projection_fields:
   - agent.db[active_db].vacuum_state
   # Cache (1 field)
   - agent.cache[active_cache].cache_health
-  # Auth (1 field)
+  # Auth (3 fields)
   - agent.auth[active_auth].auth_health
+  - agent.auth[active_auth].token_pool
+  - agent.auth[active_auth].cert_state
   # LB (1 field)
   - agent.lb[active_lb].lb_health
   # Queue (3 fields)
@@ -60,7 +62,6 @@ bindings:
   - binding_id: K.dashboard_overview
     source_tool: check_dashboard
     extraction_path: result.summary
-    world_path: agent.incident[active_incident].status
 
   # Tier 2: requires dashboard_checked
   - binding_id: K.error_pattern
@@ -254,6 +255,9 @@ actions:
     effects_world:
       - path: agent.incident[active_incident].triage_state
         set: ran
+    tool_arg_bindings:
+      diagnostic_signal: K.error_pattern
+      dashboard_summary: K.dashboard_overview
     tool_arg_literals:
       signal_source: app_logs
 
@@ -275,6 +279,9 @@ actions:
     effects_world:
       - path: agent.incident[active_incident].triage_state
         set: ran
+    tool_arg_bindings:
+      diagnostic_signal: K.db_diagnostic
+      dashboard_summary: K.dashboard_overview
     tool_arg_literals:
       signal_source: db_diagnostic
 
@@ -296,6 +303,9 @@ actions:
     effects_world:
       - path: agent.incident[active_incident].triage_state
         set: ran
+    tool_arg_bindings:
+      diagnostic_signal: K.cache_stats
+      dashboard_summary: K.dashboard_overview
     tool_arg_literals:
       signal_source: cache_metrics
 
@@ -317,6 +327,9 @@ actions:
     effects_world:
       - path: agent.incident[active_incident].triage_state
         set: ran
+    tool_arg_bindings:
+      diagnostic_signal: K.auth_audit
+      dashboard_summary: K.dashboard_overview
     tool_arg_literals:
       signal_source: auth_audit
 
@@ -338,6 +351,9 @@ actions:
     effects_world:
       - path: agent.incident[active_incident].triage_state
         set: ran
+    tool_arg_bindings:
+      diagnostic_signal: K.network_topology
+      dashboard_summary: K.dashboard_overview
     tool_arg_literals:
       signal_source: lb_topology
 
@@ -359,6 +375,9 @@ actions:
     effects_world:
       - path: agent.incident[active_incident].triage_state
         set: ran
+    tool_arg_bindings:
+      diagnostic_signal: K.queue_depth
+      dashboard_summary: K.dashboard_overview
     tool_arg_literals:
       signal_source: queue_depth
 
@@ -380,6 +399,9 @@ actions:
     effects_world:
       - path: agent.incident[active_incident].triage_state
         set: ran
+    tool_arg_bindings:
+      diagnostic_signal: K.network_topology
+      dashboard_summary: K.dashboard_overview
     tool_arg_literals:
       signal_source: dns_topology
 
@@ -625,6 +647,12 @@ actions:
         value: ran
       - path: agent.auth[active_auth].auth_health
         value: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        op: neq
+        value: valid
+      - path: agent.auth[active_auth].cert_state
+        op: neq
+        value: renewed
     effects_world:
       - path: agent.auth[active_auth].auth_health
         set: healthy
@@ -638,6 +666,9 @@ actions:
         value: ran
       - path: agent.auth[active_auth].auth_health
         value: token_expired
+      - path: agent.auth[active_auth].token_pool
+        op: neq
+        value: valid
     effects_world:
       - path: agent.auth[active_auth].auth_health
         set: healthy
@@ -875,6 +906,8 @@ actions:
     tool_name: send_comms
     classification: causal
     requires_world:
+      - path: agent.incident[active_incident].triage_state
+        value: ran
       - path: agent.incident[active_incident].comms_state
         value: internal_sent
     effects_world:

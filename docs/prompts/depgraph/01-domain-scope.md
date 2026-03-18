@@ -36,9 +36,11 @@ Requirements:
    - distinguish true resolution states from useful intermediate milestones
    - note which fields prove the issue is actually done from both agent-state and user-observable perspectives
 18. Define persona strategy for later runtime sampling:
-   - 2-5 persona archetypes
+   - 3-5 persona archetypes representing **genuinely different people** — vary life situation,
+     role, knowledge level, and communication style, not just mood or urgency of the same person
    - behavioral axes (for example: technical comfort, urgency, verbosity, compliance)
    - note which archetypes are better for easy vs hard tasks
+   - personas should feel like different users of the same system, not variations of one user
 19. Keep this file instance-agnostic:
    - no concrete task IDs
    - no concrete required action sequences
@@ -133,6 +135,89 @@ Most domains should target Tier 2-3. Only target Tier 4 when the goal is to chal
 frontier models. Each tier roughly doubles the number of unique tasks because the
 combinatorial space grows with each new diversity axis.
 
+### Depth Through Intermediate Steps (Critical)
+
+The single most common mistake in domain design is making actions too coarse-grained.
+If "do errand" is one action, you get depth-3 tasks. If it's reserve → confirm
+reservation → arrange delivery/pickup → confirm completion, you get depth-8+ tasks
+with meaningful intermediate decision points.
+
+**Expand every conceptual operation into its real-world sub-steps:**
+
+- **Errands/purchases**: check availability → reserve item → confirm reservation →
+  arrange delivery OR pickup → confirm receipt. Each sub-step is a separate action
+  with its own preconditions.
+- **Delegation**: contact delegate → check response → check ETA → notify facility →
+  assign delegate. Don't collapse "delegate the task" into one action.
+- **Service requests**: request quotes → review quotes → select provider → schedule
+  visit → arrange access → verify completion.
+- **Payments/finances**: check balance → transfer if needed → make payment → verify
+  payment. Each payment degrades available funds.
+
+The depth comes from realistic granularity, not from artificial padding. Each sub-step
+should represent a real decision point where the agent could fail or choose wrong.
+
+### Fate Flags and Conditional Failure (Critical)
+
+Real-world actions can fail. Model this with **fate flags** — `init_only` boolean fields
+that determine whether an action succeeds or fails. The agent doesn't know the fate flag
+value; it must attempt the action and handle the outcome.
+
+**How fate flags work:**
+- A field like `rideshare_will_succeed` is set in the seed's `start_world` and tagged
+  `init_only` (never changed by any action).
+- Two action variants exist: `book_rideshare_success` (requires `rideshare_will_succeed=true`,
+  sets `rideshare_result=booked`) and `book_rideshare_fail` (requires
+  `rideshare_will_succeed=false`, sets `rideshare_result=no_drivers`).
+- The BFS explores both variants depending on the seed's fate flag value, producing
+  structurally different tasks from the same topology.
+
+**Fate flags create fallback cascades:**
+- Rideshare fails → must route public transit → user confirms transit
+- Delivery fails → must recover to pickup mode → user picks up in person
+- Primary delegate unavailable → try secondary delegate → secondary fails → try
+  extended care → extended care unavailable → user must handle it directly
+- Each fallback is a multi-step chain with its own preconditions and confirmations
+
+**Design at least 2-3 fate-flagged actions per domain.** Each fate flag doubles the
+structural branching for seeds that include it. A domain with 3 fate flags and 2 values
+each creates 8 structurally different paths through the same topology.
+
+### Cross-Lane Resource Coupling (Critical)
+
+Independent parallel lanes (errands, calendar, care, household) produce tasks where
+the agent just does each lane sequentially with no interaction between them. This tests
+parallelism but not resource reasoning.
+
+**Add a shared degradable resource that couples lanes:**
+- A `available_funds` field with values like `plenty → tight → broke`
+- Each paid service (delivery, transport, extended care, bill payment) consumes funds,
+  degrading the level
+- When funds run out, paid options become unavailable and the agent must switch to free
+  alternatives (user pickup instead of delivery, user transport instead of rideshare)
+- This creates genuine cross-lane tradeoffs: paying for errand delivery may leave
+  insufficient funds for extended dependent care
+
+**Implementation pattern for degradable resources:**
+- Each cost action needs variants per resource level:
+  `pay_bill_plenty` (plenty→tight) and `pay_bill_tight` (tight→broke)
+- This is necessary because graph contract effects must be concrete values, not
+  arithmetic expressions
+- Actions requiring resources gate on the current level:
+  `arrange_delivery` requires `available_funds != broke`
+
+### Obligation-Creating Actions
+
+Some actions should create NEW obligations that the agent must then handle. This
+prevents the agent from taking actions without considering consequences.
+
+- Cancelling a meeting → creates `apology_needed=true` → agent must send apology
+- Arranging delivery → creates payment obligation → agent must pay
+- Delegating a task → creates notification obligation → agent must notify facility
+
+Design these as explicit world state transitions: the action sets a flag, and a
+downstream action (or terminal profile) requires that flag to be resolved.
+
 ### Sketching Checklist
 
 When sketching dependency patterns in this step, explicitly note:
@@ -142,9 +227,11 @@ When sketching dependency patterns in this step, explicitly note:
 - Where early convergence points force cross-lane coordination
 - Which bindings are volatile and where the policy must instruct the agent to reacquire them
 - How the policy will expose domain constraints without hardcoding a single end-to-end solution path (remember: the policy teaches domain reasoning, not tool catalogs — agent tools are injected via the API with docstrings)
+- The policy must clearly reflect the `requestor` split: if some tools are user-operated and others are assistant-operated, the policy language must not imply all actions go through the user (e.g., "guide the engineer through diagnostics" vs "you perform repairs directly")
 - Which branch-specific terminal profiles the sampler should use, and why shorter tasks should come from easier starts rather than partial endings
 - Which late-stage shared gates every branch must still clear before terminal completion
 - **Target complexity tier** and which diversity axes the domain will use to reach it
+- **Persona diversity**: personas should represent genuinely different people who use this system (different life situations, roles, knowledge levels), not just different moods of the same archetype
 
 Output sections:
 

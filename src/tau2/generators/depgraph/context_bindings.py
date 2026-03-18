@@ -173,6 +173,61 @@ def generate_cloud_ir_context_bindings(
     )
 
 
+def generate_daily_planner_context_bindings(
+    *,
+    sampled: TaskSpecsDoc,
+    contract: GraphContractSpec,
+    db_json_path: str | Path,
+    domain: str = "daily_planner",
+) -> TaskContextBindingsDoc:
+    """Generate deterministic context bindings for daily planner.
+
+    Single-user domain: one context slot (active_user), persona rotation via hash.
+    """
+    expected_slots = {"active_user"}
+    contract_slots = {slot.slot_id for slot in contract.context_slots}
+    if contract_slots != expected_slots:
+        raise ValueError(
+            "Daily planner context binding generator expects context slots "
+            f"{sorted(expected_slots)}, got {sorted(contract_slots)}"
+        )
+
+    user_names = [
+        "Alex Rivera", "Sam Okafor", "Jordan Patel", "Morgan Chen",
+        "Casey Williams", "Riley Nakamura", "Drew Santos", "Jamie Kim",
+    ]
+
+    task_entries: list[TaskContextBindingSpec] = []
+    for task in sampled.tasks:
+        idx = _stable_index(task.task_id, len(user_names))
+        name = user_names[idx]
+        user_id = f"U{idx + 1001}"
+
+        task_entries.append(
+            TaskContextBindingSpec(
+                task_id=task.task_id,
+                slots={"active_user": user_id},
+                initialization_actions=[
+                    EnvFunctionCallSpec(
+                        env_type="user",
+                        func_name="set_user_context",
+                        arguments={
+                            "user_id": user_id,
+                            "name": name,
+                        },
+                    )
+                ],
+            )
+        )
+
+    return TaskContextBindingsDoc(
+        version=1,
+        domain=domain,
+        strategy="single_user_with_persona_rotation",
+        tasks=task_entries,
+    )
+
+
 def generate_ev_context_bindings(
     *,
     sampled: TaskSpecsDoc,

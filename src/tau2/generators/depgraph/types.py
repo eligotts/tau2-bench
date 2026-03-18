@@ -88,7 +88,11 @@ class SyncEffectSpec(BaseModel):
 
 
 class BindingSourceSpec(BaseModel):
-    """How an assistant binding is acquired from user-observable state."""
+    """How a binding value is extracted from a tool's return type.
+
+    source_tool can reference either a user tool or an assistant tool,
+    whichever naturally provides the information in the domain.
+    """
 
     binding_id: str
     source_tool: str

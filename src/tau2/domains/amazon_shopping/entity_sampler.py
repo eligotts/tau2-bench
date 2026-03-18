@@ -191,15 +191,27 @@ def _make_shipping(rng: random.Random, zip_code: str, prime: bool) -> ShippingOp
         )
 
 
+_CATEGORY_VARIANT_TYPES: dict[str, list[str]] = {
+    "Electronics": ["color", "storage", "style"],
+    "Home & Kitchen": ["color", "size", "style"],
+    "Sports & Outdoors": ["color", "size"],
+    "Clothing": ["color", "size"],
+    "Toys & Games": ["color", "style"],
+    "Health & Household": ["size", "style"],
+    "Office Products": ["color", "style"],
+}
+
+
 def _make_variants(rng: random.Random, product_cat: dict) -> ProductVariant:
-    vtype = rng.choice(["color", "size", "storage", "style"])
+    category = product_cat.get("cat", "")
+    allowed = _CATEGORY_VARIANT_TYPES.get(category, ["color", "size", "style"])
+    vtype = rng.choice(allowed)
     if vtype == "color":
         opts = rng.sample(_COLOR_OPTIONS, k=min(4, len(_COLOR_OPTIONS)))
         deltas = [0] * len(opts)
     elif vtype == "size":
         opts = rng.choice([
             ["Small", "Medium", "Large", "X-Large"],
-            ["32GB", "64GB", "128GB", "256GB"],
             ["6-inch", "8-inch", "10-inch"],
         ])
         deltas = [i * rng.choice([500, 1000, 2000, 5000]) for i in range(len(opts))]
@@ -243,8 +255,12 @@ def _make_qa_pairs(rng: random.Random, product: dict, count: int) -> list[QAPair
     pairs = []
     brand = product.get("brand", "the manufacturer")
     feature = rng.choice(product.get("features", ["the product"]))
+    # Sample without replacement to avoid duplicate questions
+    available = list(_QA_TEMPLATES)
+    rng.shuffle(available)
+    count = min(count, len(available))
     for i in range(count):
-        q_tpl, a_tpl = rng.choice(_QA_TEMPLATES)
+        q_tpl, a_tpl = available[i]
         q = q_tpl.format(
             compat=rng.choice(_COMPAT_OPTIONS),
             feature=feature,
@@ -376,8 +392,13 @@ def sample_entities(task_id: str, start_world: dict[str, Any]) -> TaskEntitySet:
         )
         products.append(p)
 
-    # Sort by price for consistent search results
-    products.sort(key=lambda p: p.price_cents)
+    # Sort by price for consistent search results, but keep the first product
+    # (which may have variants/reviews/qa) pinned at index 0 so that tasks
+    # referencing "product 1" always find those features at the expected index.
+    if len(products) > 1:
+        first = products[0]
+        rest = sorted(products[1:], key=lambda p: p.price_cents)
+        products = [first] + rest
 
     # Generate deals for deal-hunt tasks
     deals = []

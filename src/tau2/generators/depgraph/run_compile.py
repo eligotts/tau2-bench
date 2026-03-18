@@ -62,6 +62,11 @@ def main() -> int:
         action="store_true",
         help="Also prove each required action is indispensable via action-ablation search",
     )
+    parser.add_argument(
+        "--skip-bfs",
+        action="store_true",
+        help="Skip per-task BFS solvability check (tasks correct by construction from sampler)",
+    )
     args = parser.parse_args()
 
     contract = load_graph_contract(args.graph_contract)
@@ -129,6 +134,7 @@ def main() -> int:
         terminal_profiles=terminal_profiles,
         require_terminal_profile=require_terminal_profile,
         check_required_action_necessity=args.strict_required_action_necessity,
+        skip_bfs=args.skip_bfs,
     )
     if result.errors:
         print("[FAIL] Compile checks")

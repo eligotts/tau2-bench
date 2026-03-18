@@ -13,7 +13,7 @@ version: 2
 # - Filter/sort actions that invalidate cached results (force re-read)
 # - Variant clicks are real navigation (page updates with new price/ASIN)
 # - Tool signatures match production: computer(actions=[...], user_description)
-# - Two bindings: K.results_layout (page controls) and K.product_page_content (product info)
+# - No bindings: coordinate-based browser interactions don't require extracted values as tool params
 
 # ---------------------------------------------------------------------------
 # Projection Fields
@@ -89,36 +89,12 @@ projection_fields:
 
 
 # ---------------------------------------------------------------------------
-# Bindings (knowledge the agent acquires mid-task)
+# Bindings — none for this domain
 # ---------------------------------------------------------------------------
+# Coordinate-based browser interactions don't require extracted values as
+# tool parameters. Action ordering is fully enforced by requires_world guards.
 
-bindings:
-  # K.results_layout: agent has screenshotted the search results page and
-  # knows what interactive controls exist (filter sidebar, sort dropdown,
-  # product cards). Gates filter/sort actions.
-  - binding_id: K.results_layout
-    source_tool: computer
-    extraction_path: result.interactive_elements
-    world_path: search.executed
-    observability_all_of:
-      - op: eq
-        path: page.type
-        value: search_results
-    observability_any_of: []
-
-  # K.product_page_content: agent has read the product detail page and
-  # knows the product info (price, features, shipping section, reviews
-  # link, seller link, variant selectors). Gates per-product sub-actions.
-  # Volatile: invalidated when page.current_product changes.
-  - binding_id: K.product_page_content
-    source_tool: computer
-    extraction_path: result.product_data
-    world_path: page.current_product
-    observability_all_of:
-      - op: eq
-        path: page.type
-        value: product_detail
-    observability_any_of: []
+bindings: []
 
 
 # ---------------------------------------------------------------------------
@@ -306,21 +282,6 @@ actions:
 # Actions — Knowledge acquisition on results page
 # ---------------------------------------------------------------------------
 
-  # ── Screenshot results page to learn layout (filter panel, sort, etc.) ──
-  - action_id: screenshot_results_page
-    requestor: assistant
-    tool_name: computer
-    classification: knowledge-only
-    tool_arg_literals:
-      actions: [{action: screenshot}]
-    requires_world:
-      - {path: page.type, op: eq, value: search_results}
-    requires_bindings:
-      - {binding_id: K.results_layout, acquired: false}
-    effects_world: []
-    effects_bindings: [K.results_layout]
-    tool_arg_bindings: {}
-
   # ── Read search results (screenshot to extract product list) ──
   - action_id: read_results_text
     requestor: assistant
@@ -406,7 +367,7 @@ actions:
 
 
 # ---------------------------------------------------------------------------
-# Action Schemas — Filters and sort (all gate on K.results_layout)
+# Action Schemas — Filters and sort
 #
 # Each filter/sort action resets extract.results_read to false, forcing
 # the agent to re-read results after filtering (product list changed).
@@ -422,8 +383,7 @@ action_schemas:
     requires_world:
       - {path: page.type, op: eq, value: search_results}
       - {path: task.requires_filters, op: eq, value: true}
-    requires_bindings:
-      - {binding_id: K.results_layout, acquired: true}
+    requires_bindings: []
     variants:
       - variant_id: condition_new
         tool_arg_literals:
@@ -466,8 +426,7 @@ action_schemas:
     requires_world:
       - {path: page.type, op: eq, value: search_results}
       - {path: task.requires_filters, op: eq, value: true}
-    requires_bindings:
-      - {binding_id: K.results_layout, acquired: true}
+    requires_bindings: []
     variants:
       - variant_id: price_asc
         tool_arg_literals:
@@ -542,8 +501,6 @@ action_schemas:
   # Action Schemas — Read product detail (per-product)
   #
   # Agent screenshots the product page to read price, features, etc.
-  # Acquires K.product_page_content binding (volatile: invalidated when
-  # page.current_product changes on back-navigation).
   # -----------------------------------------------------------------------
 
   - schema_id: read_product_detail
@@ -563,21 +520,21 @@ action_schemas:
           - {path: p1.detail_read, op: eq, value: false}
         effects_world:
           - {path: p1.detail_read, set: true}
-        effects_bindings: [K.product_page_content]
+        effects_bindings: []
       - variant_id: "2"
         requires_world:
           - {path: page.current_product, op: eq, value: "2"}
           - {path: p2.detail_read, op: eq, value: false}
         effects_world:
           - {path: p2.detail_read, set: true}
-        effects_bindings: [K.product_page_content]
+        effects_bindings: []
       - variant_id: "3"
         requires_world:
           - {path: page.current_product, op: eq, value: "3"}
           - {path: p3.detail_read, op: eq, value: false}
         effects_world:
           - {path: p3.detail_read, set: true}
-        effects_bindings: [K.product_page_content]
+        effects_bindings: []
 
 
   # -----------------------------------------------------------------------
@@ -599,8 +556,7 @@ action_schemas:
     requires_world:
       - {path: page.type, op: eq, value: product_detail}
       - {path: task.requires_shipping, op: eq, value: true}
-    requires_bindings:
-      - {binding_id: K.product_page_content, acquired: true}
+    requires_bindings: []
     variants:
       - variant_id: "1"
         requires_world:
@@ -646,8 +602,7 @@ action_schemas:
     requires_world:
       - {path: page.type, op: eq, value: product_detail}
       - {path: task.requires_reviews, op: eq, value: true}
-    requires_bindings:
-      - {binding_id: K.product_page_content, acquired: true}
+    requires_bindings: []
     variants:
       - variant_id: "1"
         requires_world:
@@ -690,8 +645,7 @@ action_schemas:
         - {action: screenshot}
     requires_world:
       - {path: page.type, op: eq, value: product_detail}
-    requires_bindings:
-      - {binding_id: K.product_page_content, acquired: true}
+    requires_bindings: []
     variants:
       - variant_id: "1"
         requires_world:
@@ -715,8 +669,7 @@ action_schemas:
   # Action Schemas — Back to results (per-product)
   #
   # Agent clicks back / breadcrumb to return to search results.
-  # page.current_product resets to none, which invalidates
-  # K.product_page_content (volatile binding).
+  # page.current_product resets to none.
   # -----------------------------------------------------------------------
 
   - schema_id: back_to_results
@@ -772,8 +725,7 @@ action_schemas:
     requires_world:
       - {path: page.type, op: eq, value: product_detail}
       - {path: task.requires_qa, op: eq, value: true}
-    requires_bindings:
-      - {binding_id: K.product_page_content, acquired: true}
+    requires_bindings: []
     variants:
       - variant_id: "1"
         requires_world:
@@ -807,8 +759,7 @@ action_schemas:
     requires_world:
       - {path: page.type, op: eq, value: product_detail}
       - {path: task.requires_cart, op: eq, value: true}
-    requires_bindings:
-      - {binding_id: K.product_page_content, acquired: true}
+    requires_bindings: []
     variants:
       - variant_id: "1"
         requires_world:
@@ -849,8 +800,7 @@ action_schemas:
       - {path: page.current_product, op: eq, value: "1"}
       - {path: p1.detail_read, op: eq, value: true}
       - {path: task.requires_variants, op: eq, value: true}
-    requires_bindings:
-      - {binding_id: K.product_page_content, acquired: true}
+    requires_bindings: []
     variants:
       - variant_id: a
         tool_arg_literals:

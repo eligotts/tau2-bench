@@ -1,5 +1,5 @@
 version: 1
-max_tasks: 50000
+max_tasks: 2000
 
 # Capture all non-config state in goal_world. Task config (task.*) is in
 # start_world only — it gates actions but isn't part of the goal.
@@ -290,7 +290,7 @@ seed_schemas:
     allowed_terminal_profiles:
       - submitted_comparison
     min_depth: 12
-    max_depth: 14
+    max_depth: 16
 
     start_world:
       - {path: page.type, set: none}
@@ -370,6 +370,15 @@ seed_schemas:
               - {path: task.requires_variants, set: false}
             min_depth_delta: 4
             max_depth_delta: 3
+
+          - variant_id: full_with_variants
+            description: Full comparison with shipping, reviews, and variant checking.
+            start_world:
+              - {path: task.requires_shipping, set: true}
+              - {path: task.requires_reviews, set: true}
+              - {path: task.requires_variants, set: true}
+            min_depth_delta: 5
+            max_depth_delta: 4
 
       - dimension_id: search_method
         variants:
@@ -514,7 +523,7 @@ seed_schemas:
   # ═══════════════════════════════════════════════════════════════════════
 
   - schema_id: deal_hunt_tasks
-    seed_id_template: "deals_{depth_tier}"
+    seed_id_template: "deals_{depth_tier}_{sub_actions}"
     allowed_terminal_profiles:
       - submitted_from_deals
     min_depth: 5
@@ -569,29 +578,55 @@ seed_schemas:
             description: Read deal listings only, no product detail.
             start_world:
               - {path: task.requires_detail, set: false}
-              - {path: task.requires_shipping, set: false}
-              - {path: task.requires_reviews, set: false}
               - {path: task.num_products, set: 0}
 
           - variant_id: with_detail
             description: Click into a deal product and read detail.
             start_world:
               - {path: task.requires_detail, set: true}
-              - {path: task.requires_shipping, set: false}
-              - {path: task.requires_reviews, set: false}
               - {path: task.num_products, set: 1}
             min_depth_delta: 3
             max_depth_delta: 2
 
-          - variant_id: with_shipping
-            description: Click deal product, check shipping info.
+          - variant_id: with_compare
+            description: Browse deals, then compare two deal products.
             start_world:
               - {path: task.requires_detail, set: true}
+              - {path: task.num_products, set: 3}
+            min_depth_delta: 6
+            max_depth_delta: 5
+
+      - dimension_id: sub_actions
+        variants:
+          - variant_id: minimal
+            description: No extra sub-actions.
+            start_world:
+              - {path: task.requires_shipping, set: false}
+              - {path: task.requires_reviews, set: false}
+
+          - variant_id: with_reviews
+            description: Read product reviews.
+            start_world:
+              - {path: task.requires_shipping, set: false}
+              - {path: task.requires_reviews, set: true}
+            min_depth_delta: 1
+            max_depth_delta: 1
+
+          - variant_id: with_shipping
+            description: Check shipping info.
+            start_world:
               - {path: task.requires_shipping, set: true}
               - {path: task.requires_reviews, set: false}
-              - {path: task.num_products, set: 1}
-            min_depth_delta: 4
-            max_depth_delta: 3
+            min_depth_delta: 1
+            max_depth_delta: 1
+
+          - variant_id: full
+            description: Reviews and shipping.
+            start_world:
+              - {path: task.requires_shipping, set: true}
+              - {path: task.requires_reviews, set: true}
+            min_depth_delta: 2
+            max_depth_delta: 2
 
 
   # ═══════════════════════════════════════════════════════════════════════
@@ -649,7 +684,6 @@ seed_schemas:
       - {path: task.requires_detail, set: true}
       - {path: task.requires_qa, set: true}
       - {path: task.requires_cart, set: false}
-      - {path: task.requires_variants, set: false}
       - {path: task.num_products, set: 1}
 
     dimensions:
@@ -660,12 +694,14 @@ seed_schemas:
             start_world:
               - {path: task.requires_shipping, set: false}
               - {path: task.requires_reviews, set: false}
+              - {path: task.requires_variants, set: false}
 
           - variant_id: qa_and_reviews
             description: Q&A plus reviews for thorough product investigation.
             start_world:
               - {path: task.requires_shipping, set: false}
               - {path: task.requires_reviews, set: true}
+              - {path: task.requires_variants, set: false}
             min_depth_delta: 1
             max_depth_delta: 1
 
@@ -674,8 +710,18 @@ seed_schemas:
             start_world:
               - {path: task.requires_shipping, set: true}
               - {path: task.requires_reviews, set: true}
+              - {path: task.requires_variants, set: false}
             min_depth_delta: 2
             max_depth_delta: 2
+
+          - variant_id: full_with_variants
+            description: Q&A, reviews, shipping, and variant checking.
+            start_world:
+              - {path: task.requires_shipping, set: true}
+              - {path: task.requires_reviews, set: true}
+              - {path: task.requires_variants, set: true}
+            min_depth_delta: 3
+            max_depth_delta: 3
 
       - dimension_id: search_method
         variants:
@@ -704,7 +750,7 @@ seed_schemas:
     allowed_terminal_profiles:
       - submitted_with_cart
     min_depth: 10
-    max_depth: 14
+    max_depth: 17
 
     start_world:
       - {path: page.type, set: none}

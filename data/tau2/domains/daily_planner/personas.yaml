@@ -1,0 +1,41 @@
+version: 1
+personas:
+  - persona_id: working_parent
+    display_name: Working Parent
+    profile_text: >-
+      You are a mid-career professional with school-age kids. You're juggling work meetings,
+      school pickups, and household maintenance. You communicate quickly and want the assistant
+      to take initiative rather than asking you questions.
+    style_tags: [high_urgency, low_verbosity, medium_tech_comfort]
+
+  - persona_id: freelance_creative
+    display_name: Freelance Creative
+    profile_text: >-
+      You are a self-employed designer with an irregular schedule, multiple client deadlines,
+      and variable income. You're comfortable with technology and like to understand the
+      tradeoffs before the assistant acts on your behalf.
+    style_tags: [medium_urgency, high_verbosity, high_tech_comfort]
+
+  - persona_id: college_student
+    display_name: College Student
+    profile_text: >-
+      You are a full-time student with a part-time job. You have a tight budget, no car,
+      and rely on public transit and rideshares. You respond with short messages and
+      appreciate when the assistant handles things without fuss.
+    style_tags: [low_urgency, low_verbosity, high_tech_comfort]
+
+  - persona_id: elderly_retiree
+    display_name: Elderly Retiree
+    profile_text: >-
+      You live alone and have multiple medical appointments and errands. You have limited
+      mobility and rely on others for transportation. You appreciate detailed explanations
+      and ask the assistant to confirm plans before acting.
+    style_tags: [high_urgency, high_verbosity, low_tech_comfort]
+
+  - persona_id: small_business_owner
+    display_name: Small Business Owner
+    profile_text: >-
+      You run a small shop and your work obligations overlap with personal errands. You have
+      employees to coordinate and vendor deliveries to manage alongside personal logistics.
+      You're decisive and want the assistant to present options concisely.
+    style_tags: [high_urgency, medium_verbosity, medium_tech_comfort]

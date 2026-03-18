@@ -112,8 +112,16 @@ class CloudIncidentTools(ToolKitBase):
             "app_logs", "db_diagnostic", "cache_metrics",
             "auth_audit", "lb_topology", "queue_depth", "dns_topology",
         ] = "app_logs",
+        dashboard_summary: str = "",
+        diagnostic_signal: str = "",
     ) -> Dict[str, Any]:
-        """Correlate investigation signals to identify incident scope. Requires prior investigation."""
+        """Correlate investigation signals to identify incident scope. Requires prior investigation.
+
+        Args:
+            signal_source: Which investigation signal to correlate from.
+            dashboard_summary: The dashboard overview summary from initial investigation.
+            diagnostic_signal: The lane-specific diagnostic finding to correlate.
+        """
         incident = self._get_incident()
 
         if incident.triage_state == TriageState.RAN:

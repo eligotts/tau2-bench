@@ -11,11 +11,11 @@ Each domain has its own folder with the following structure:
 
 - `data_model.py`: Defines the data models for the domain. 
     - This implements the `DB` class, which is a base class for all domain databases.
-- `user_data_model.py`: Defines the data models for the user data for the domain. (Optional)
+- `user_data_model.py`: Defines the data models for the user data for the domain.
     - This implements the `DB` class, which is a base class for all domain user databases.
 - `tools.py`: Defines the tools for the domain. 
     - Implements `ToolKitBase` class, which is a base class for all domain toolkits. 
-- `user_tools.py`: Defines the user tools for the domain. (Optional)
+- `user_tools.py`: Defines the user tools for the domain.
     - Implements `ToolKitBase` class, which is a base class for all domain toolkits. 
 - `environment.py`: Defines the environment for the domain. 
     - Implements `get_environment()` functions that returns an `Environment` instance for the domain.
@@ -32,7 +32,13 @@ Common runtime files:
 - optional split file (for example `split_tasks.json` or `split_tasks.depgraph.json`)
 - `policy.md`
 - `db.json`
-- `user_db.json` (optional)
+- `user_db.json`
+
+For depgraph-authored domains, `user_data_model.py`, `user_tools.py`, and
+`user_db.json` are part of the required package shape. The user DB should be a
+clean baseline state with an empty stop-gate configuration; task-specific user
+state must come from runtime init actions, not from mutating the checked-in seed
+file per task.
 
 Depgraph-authored domains additionally keep their authoring artifacts in the same data
 directory, for example:

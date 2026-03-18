@@ -128,6 +128,7 @@ def preflight_and_compile(
     terminal_profiles: list[TerminalProfileSpec] | dict[str, TerminalProfileSpec] | None = None,
     require_terminal_profile: bool = False,
     check_required_action_necessity: bool = False,
+    skip_bfs: bool = False,
 ) -> CompileResult:
     """Run preflight checks and compile passing tasks."""
     result = CompileResult()
@@ -138,24 +139,25 @@ def preflight_and_compile(
             max((task.min_plan_length for task in task_doc.tasks), default=0),
         )
     for task in task_doc.tasks:
-        report = run_task_preflight(
-            contract,
-            task,
-            max_depth=effective_max_depth,
-            terminal_profiles=terminal_profiles,
-            require_terminal_profile=require_terminal_profile,
-            check_required_action_necessity=check_required_action_necessity,
-        )
-        if not report.passed:
-            result.skipped.append(task.task_id)
-            preflight_reason = "; ".join(report.issues) if report.issues else (
-                f"SAT_full={report.sat_full.sat}, "
-                f"required_action_checks={report.required_action_unsat}"
+        if not skip_bfs:
+            report = run_task_preflight(
+                contract,
+                task,
+                max_depth=effective_max_depth,
+                terminal_profiles=terminal_profiles,
+                require_terminal_profile=require_terminal_profile,
+                check_required_action_necessity=check_required_action_necessity,
             )
-            result.errors.append(
-                f"{task.task_id}: preflight failed - {preflight_reason}"
-            )
-            continue
+            if not report.passed:
+                result.skipped.append(task.task_id)
+                preflight_reason = "; ".join(report.issues) if report.issues else (
+                    f"SAT_full={report.sat_full.sat}, "
+                    f"required_action_checks={report.required_action_unsat}"
+                )
+                result.errors.append(
+                    f"{task.task_id}: preflight failed - {preflight_reason}"
+                )
+                continue
         runtime_issues = check_task_runtime_fields(task)
         if runtime_issues:
             if require_runtime:

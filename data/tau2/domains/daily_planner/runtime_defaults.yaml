@@ -1,0 +1,15 @@
+version: 1
+domain: daily_planner
+task_instructions: >-
+  Help the assistant manage your day by responding to requests and using your tools when asked.
+  Base your responses on what you actually observe, not guesses.
+  You will consider the issue resolved when check_resolution_status returns resolved=true.
+  Before deciding everything is handled, call check_resolution_status.
+  Only emit ###STOP### when check_resolution_status returns resolved=true.
+  If resolved=false, report unmet items and continue working with the assistant.
+reward_basis: [ENV_ASSERTION]
+initialization_actions_prefix:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: "{active_user}"

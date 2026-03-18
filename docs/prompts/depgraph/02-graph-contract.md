@@ -30,38 +30,106 @@ Requirements:
    - `effects_bindings` includes produced binding ids.
 5. Include `bindings` entries for every produced/required binding id.
 6. Bindings are invalidated automatically when their `world_path` changes value; do not assume monotonic binding knowledge.
-7. Include only causal user fields in world predicates/effects (`user.*` projected causal paths).
-8. Exclude projection-only user fields from causal contracts.
-9. Ensure each binding `extraction_path` is syntactically valid and schema-consistent where typed return schemas exist.
-10. For every concrete action in contract, implement matching runtime tool callable now:
+7. **Every binding MUST have at least one `tool_arg_bindings` consumer.** A binding that is only
+   referenced in `requires_bindings` but never mapped through `tool_arg_bindings` to a
+   downstream tool parameter is an **unenforceable ordering constraint** — it shapes the
+   solver's plans but is invisible at runtime. The agent can skip the discovery step because
+   no downstream tool requires the discovered value as a parameter.
+   - `requires_world` preconditions are enforced at runtime by tool guards (DB state checks).
+   - `requires_bindings` preconditions have NO runtime enforcement mechanism UNLESS the
+     binding value flows through `tool_arg_bindings` into a required tool parameter.
+   - The tool parameter is the enforcement: the agent literally cannot call the downstream
+     tool without having first discovered the value.
+   - Example: `check_calendar` produces binding `calendar_state` with extraction_path
+     `result.conflict_meeting_id`. Downstream `cancel_meeting` has
+     `tool_arg_bindings: {meeting_id: calendar_state}`. The agent must call `check_calendar`
+     to get the meeting ID before it can call `cancel_meeting(meeting_id=...)`.
+   - Anti-pattern: binding used only in `requires_bindings` with empty `tool_arg_bindings: {}`
+     on all consuming actions. This binding is a ghost — the solver enforces it, runtime does not.
+8. Include only causal user fields in world predicates/effects (`user.*` projected causal paths).
+9. Exclude projection-only user fields from causal contracts.
+10. Ensure each binding `extraction_path` is syntactically valid and schema-consistent where typed return schemas exist. The extracted value must be something the downstream tool needs as an **input parameter** (e.g. an ID, a name, a measured quantity) — not a status flag or boolean that mirrors world state. If the extraction_path only captures a status enum, the binding will have no natural `tool_arg_bindings` consumer.
+11. For every concrete action in contract, implement matching runtime tool callable now:
    - `requestor=assistant` -> callable in `tools.py`
    - `requestor=user` -> callable in `user_tools.py`
-11. Ensure binding-gated actions expose concrete tool parameters matching `tool_arg_bindings` keys.
-12. If one conceptual tool has a finite enum/route/mode input, prefer one runtime tool plus an
+12. Ensure binding-gated actions expose concrete tool parameters matching `tool_arg_bindings` keys.
+13. If one conceptual tool has a finite enum/route/mode input, prefer one runtime tool plus an
     `action_schemas` entry that expands into concrete actions, instead of hand-authoring several
     near-duplicate actions that differ only by literal tool args.
     Annotate that runtime tool parameter as `Literal[...]` or an `Enum`, not plain `str`, so the
     agent-visible tool schema exposes the valid values.
-13. If a binding has `world_path` and that path is rewritten by actions or `sync_rules`, treat it as volatile:
+14. If a binding has `world_path` and that path is rewritten by actions or `sync_rules`, treat it as volatile:
    - only the immediate observation-driven tool, or clearly mutually-exclusive stage-specific tools, may map it through `tool_arg_bindings`
    - the longer repair chain should run from stable world predicates established by prior actions
-14. Define `sync_rules` in the contract for every runtime sync behavior:
+14a. If two or more alternative actions legitimately need the same value as a real tool
+   argument across multiple stages, that value probably should not remain a volatile binding.
+   Promote it into stable world state and gate the alternatives with normal `requires_world`
+   predicates instead of fanning one volatile binding across same-stage alternatives.
+14b. **`world_path` selection rule.** A binding's `world_path` should be a field whose value
+   the binding semantically tracks — i.e., if the field changes, the binding's extracted
+   value is genuinely stale. Do not bind to a field that changes as a *side-effect* of the
+   consuming action (e.g. binding a dashboard summary to `incident.status` when triage
+   changes status). If the binding captures a static observation that never goes stale,
+   omit `world_path` entirely.
+15. Define `sync_rules` in the contract for every runtime sync behavior:
    - unconditional projections via `{path, from_path}`
    - conditional bridges/derived updates via `requires_world` + `{path, set}`
    - no hidden sync behavior outside the declared rules
-15. Implement `sync_tools()` now to mirror the declared `sync_rules` exactly, both for the initial start world and after every tool call.
-16. If using strict checker-based STOP:
+16. Implement `sync_tools()` now to mirror the declared `sync_rules` exactly, both for the initial start world and after every tool call.
+17. If using strict checker-based STOP:
    - include a user `stutter-only` action for `check_resolution_status`
    - implement matching user tool callable now
    - keep checker tool non-causal (no world/binding effects).
-17. Runtime guard behavior must mirror contract preconditions:
-   - unmet preconditions return explicit error/no-op message
+18. Runtime guard behavior must mirror contract preconditions:
+   - unmet `requires_world` preconditions return explicit error/no-op message
+   - unmet `requires_bindings` preconditions are enforced structurally via `tool_arg_bindings`
+     (the agent cannot supply a parameter it hasn't discovered)
    - no hidden state mutation on guard failure (`stutter_on_fail` semantics).
-18. Keep naming explicit:
+18a. **Guard completeness rule.** Every `if` branch in a tool that leads to an early
+   return (noop, error, or guard failure) must check ONLY fields declared in that
+   action's `requires_world`. If a tool reads a sub-field (e.g. `auth.token_pool`)
+   as a guard, that sub-field must be: (a) a projection field, AND (b) listed in
+   the action's `requires_world` with the value that enables the tool to proceed.
+   A tool guard on a field invisible to the contract creates unsolvable tasks: the
+   contract says the action can fire, the scaffold initializes only contracted fields,
+   but the tool silently refuses because a hidden default blocks it. The automated
+   guard completeness check (`check_tool_guard_completeness`) catches this class of
+   bug — run it as part of preflight.
+18b. **Default-value trap.** When adding a sub-field guard to the contract, check
+   the data model's default value for that field. If the default IS the guard's
+   noop/skip value (e.g. `token_pool` defaults to `VALID` and the tool noops on
+   `VALID`), the scaffold must explicitly initialize the field away from its default
+   for every task that needs the action to fire. Declare the field in
+   `requires_world` with a `neq` predicate excluding the noop value, so the
+   sampler/compiler knows to set a non-default value in `start_world`.
+19. Keep naming explicit:
    - `action_id` is stable semantic unit
    - `tool_name` is executable callable
    - `action_schemas` are authoring sugar only; after expansion, concrete `action_id`s still need clear semantic names
    - avoid implicit aliasing; if aliasing is unavoidable, document it in contract comments.
+20. Implement **init setter** methods on both toolkits for every projection field that tasks
+    may set during initialization or assert at evaluation time:
+    - `set_<name>(value)` — assign a value to the DB field. Use typed enum constructors for
+      enum fields (e.g. `ErrandStatus(value)`), direct assignment for booleans/strings.
+    - `assert_<name>(expected) -> bool` — compare current DB field value against expected,
+      return boolean. Use `.value` for enum comparisons.
+    - These are NOT `@is_tool` decorated — they are internal helpers called only by the
+      runtime initialization and assertion machinery.
+    - **Naming convention**: for paths with 3+ plain segments (e.g. `agent.errand_a.status`),
+      include the section: `set_errand_a_status`, `assert_errand_a_status`. For bracket
+      notation paths (e.g. `agent.accounts[active_account].hold_status`), use only the leaf:
+      `set_hold_status`. This avoids ambiguity when multiple DB sections share field names.
+    - Place assistant-env-type setters/assertions in `tools.py`, user-env-type in `user_tools.py`.
+    - Do not limit this to the obvious headline fields. Expanded sampled tasks can require
+      setters/assertions for stable IDs, availability booleans, reservation-hold fields,
+      cost-paid flags, confirmation flags, and other fields that only appear once the full
+      seed schema is expanded.
+21. Implement `set_user_context` on `user_tools.py` accepting all parameters generated by
+    context bindings (typically `user_id` and `name`).
+22. When `stop_gate_map.yaml` maps agent-side goal paths to user-observable check_fields,
+    `user_tools.py` must read agent DB state. Implement `bind_agent_db(agent_db)` and
+    `_get_agent_derived(field)` to translate agent state into boolean check values. Call
+    `bind_agent_db` from the environment constructor.
 
 ## Graph Topology Requirements
 
@@ -118,6 +186,115 @@ enum-typed runtime tool plus an `action_schemas` expansion.
 
 Why: If the only multi-prerequisite action is the final gate, all reasoning about
 coordination is deferred to the end. Early convergence forces ongoing coordination.
+
+## Action Granularity and Splitting
+
+### Expand conceptual operations into sub-steps
+
+The most impactful decision in contract authoring is action granularity. Every real-world
+operation has intermediate steps that create meaningful decision points. If your contract
+has actions like "complete_errand" or "handle_care", the resulting tasks will be shallow
+(depth 3-5) and test nothing beyond basic tool-following.
+
+**Split every coarse action into its constituent steps:**
+
+| Coarse action | Split into |
+|---------------|------------|
+| "do errand" | reserve_item → confirm_reservation → arrange_delivery → confirm_receipt |
+| "delegate task" | contact_delegate → check_response → check_eta → notify_facility → assign_delegate |
+| "get maintenance" | request_quotes → select_provider → schedule_visit → arrange_access → verify_completion |
+| "arrange transport" | diagnose_issue → call_roadside → check_repair → confirm_fixed |
+
+Each sub-step has its own `requires_world` preconditions that enforce ordering. The agent
+must complete each step before proceeding, creating realistic multi-step reasoning chains.
+
+### Fate-flag action splitting
+
+When an action can succeed or fail (rideshare booking, delivery attempt, delegate contact),
+model both outcomes as separate actions gated by an `init_only` fate flag:
+
+```yaml
+# Fate flag in projection_fields (init_only — never changed by actions)
+- agent.transport.rideshare_will_succeed  # bool
+
+# Success variant
+- action_id: book_rideshare_success
+  requires_world:
+    - path: agent.transport.rideshare_will_succeed
+      value: true
+  effects_world:
+    - path: agent.transport.rideshare_result
+      set: booked
+
+# Failure variant
+- action_id: book_rideshare_fail
+  requires_world:
+    - path: agent.transport.rideshare_will_succeed
+      value: false
+  effects_world:
+    - path: agent.transport.rideshare_result
+      set: no_drivers
+```
+
+The BFS selects exactly one variant per seed (determined by the fate flag value in
+`start_world`). Different seeds with different fate flag values produce structurally
+different task paths.
+
+**Design at least 2-3 fate-flagged action pairs per domain.** Each creates a binary
+branch point. Combined with different seed configurations, N fate flags create up to 2^N
+structural path variants.
+
+### Fallback-gated actions
+
+When an action can fail, the fallback action should be gated on the failure having
+occurred. This prevents the BFS from short-circuiting directly to the fallback:
+
+```yaml
+# Pickup only available AFTER delivery was attempted and failed
+- action_id: arrange_pickup_after_delivery_fail
+  requires_world:
+    - path: agent.errand.delivery_result
+      value: unavailable  # must have tried delivery first
+
+# Pickup available when delivery was never an option
+- action_id: arrange_pickup_no_delivery
+  requires_world:
+    - path: agent.errand.delivery_available
+      value: false  # delivery was never possible
+```
+
+Without this gating, BFS will always pick the shorter path (direct pickup) and never
+exercise the delivery→failure→recovery chain.
+
+### Degradable resource variants
+
+When a shared resource degrades with use (money, capacity, quota), each consuming action
+needs variants per resource level since effects must be concrete values:
+
+```yaml
+- action_id: pay_bill_plenty
+  requires_world:
+    - path: agent.finance.available_funds
+      value: plenty
+  effects_world:
+    - path: agent.finance.bill_status
+      set: paid
+    - path: agent.finance.available_funds
+      set: tight  # plenty → tight
+
+- action_id: pay_bill_tight
+  requires_world:
+    - path: agent.finance.available_funds
+      value: tight
+  effects_world:
+    - path: agent.finance.bill_status
+      set: paid
+    - path: agent.finance.available_funds
+      set: broke  # tight → broke
+```
+
+Actions requiring the resource gate on the current level. When the resource is exhausted,
+the agent must switch to free alternatives.
 
 ## Difficulty Engineering
 

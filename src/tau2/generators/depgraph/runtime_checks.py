@@ -306,13 +306,18 @@ def check_contract_against_environment(
             )
 
     for source in contract.bindings:
-        if source.source_tool not in user_tools:
+        all_tools = user_tools | assistant_tools
+        if source.source_tool not in all_tools:
             issues.append(
-                f"Binding source for '{source.binding_id}' references missing user tool "
-                f"'{source.source_tool}'"
+                f"Binding source for '{source.binding_id}' references missing tool "
+                f"'{source.source_tool}' (not found in user or assistant toolkit)"
             )
             continue
-        source_func = getattr(environment.user_tools, source.source_tool, None)
+        # Look up the source function from whichever toolkit owns it
+        if source.source_tool in user_tools:
+            source_func = getattr(environment.user_tools, source.source_tool, None)
+        else:
+            source_func = getattr(environment.tools, source.source_tool, None)
         tokens, parse_error = _parse_extraction_path(source.extraction_path)
         if parse_error is not None:
             issues.append(
@@ -334,7 +339,26 @@ def check_contract_against_environment(
             issues.append(
                 f"Binding source for '{source.binding_id}' extraction_path "
                 f"'{source.extraction_path}' does not match return schema of "
-                f"user tool '{source.source_tool}'"
+                f"tool '{source.source_tool}'"
+            )
+
+    # Check that every binding has at least one tool_arg_bindings consumer.
+    # Bindings without consumers are unenforceable at runtime — requires_bindings
+    # is a solver-only constraint with no runtime mechanism unless the binding
+    # value flows through tool_arg_bindings into a required tool parameter.
+    for source in contract.bindings:
+        all_consumers = [
+            action
+            for action in contract.actions
+            if action.classification != "knowledge-only"
+            and source.binding_id in action.tool_arg_bindings.values()
+        ]
+        if not all_consumers:
+            issues.append(
+                f"Binding '{source.binding_id}' has no tool_arg_bindings consumer. "
+                f"It is only used in requires_bindings, which has no runtime enforcement. "
+                f"Add tool_arg_bindings on at least one downstream action so the agent "
+                f"must discover the value before calling the tool."
             )
 
     for source in contract.bindings:
@@ -359,13 +383,26 @@ def check_contract_against_environment(
             stage_consumers.setdefault(stage_key, []).append(action.action_id)
 
         if len(generic_consumers) > 1:
-            issues.append(
-                f"Volatile binding '{source.binding_id}' (world_path '{source.world_path}') "
-                f"is mapped into tool args by multiple generic actions "
-                f"{sorted(generic_consumers)}. Capture stable operational context in world "
-                f"state or make later consumers stage-specific via requires_world on "
-                f"'{source.world_path}'."
+            # Check if the generic consumers are all mutually exclusive
+            # (e.g. triage variants that each require a different broken system).
+            generic_actions = [
+                action
+                for action in consumers
+                if action.action_id in generic_consumers
+            ]
+            all_mutex = all(
+                _actions_are_mutually_exclusive(generic_actions[i], generic_actions[j])
+                for i in range(len(generic_actions))
+                for j in range(i + 1, len(generic_actions))
             )
+            if not all_mutex:
+                issues.append(
+                    f"Volatile binding '{source.binding_id}' (world_path '{source.world_path}') "
+                    f"is mapped into tool args by multiple generic actions "
+                    f"{sorted(generic_consumers)}. Capture stable operational context in world "
+                    f"state or make later consumers stage-specific via requires_world on "
+                    f"'{source.world_path}'."
+                )
         for stage_key, action_ids in sorted(stage_consumers.items()):
             stage_actions = [
                 action
@@ -401,13 +438,17 @@ def check_contract_against_environment(
                 )
 
     if strict_full_coverage:
+        # Stutter-allowlisted tools are permitted but not contracted via actions
+        contracted_assistant_tools |= set(contract.assistant_stutter_allowlist or [])
         missing_assistant = sorted(assistant_tools - contracted_assistant_tools)
         if missing_assistant:
             issues.append(
                 "Unclassified assistant tools (missing in action contracts): "
                 + ", ".join(missing_assistant)
             )
-        covered_user_tools = contracted_user_tools | {s.source_tool for s in contract.bindings}
+        # Binding source_tools can be in either toolkit; only count user-side ones here
+        binding_user_sources = {s.source_tool for s in contract.bindings if s.source_tool in user_tools}
+        covered_user_tools = contracted_user_tools | binding_user_sources
         missing_user = sorted(user_tools - covered_user_tools)
         if missing_user:
             issues.append(
@@ -625,3 +666,299 @@ def check_stop_gate_runtime(
 
     stop_gate_map = load_stop_gate_map(stop_gate_map_path)
     return validate_stop_gates(task_doc, stop_gate_map)
+
+
+# ---------------------------------------------------------------------------
+# Guard completeness: verify contract preconditions are sufficient for tools
+# ---------------------------------------------------------------------------
+
+
+def _leaf_field_name(path: str) -> str:
+    """Derive a set_/assert_ method suffix from a world path.
+
+    Mirrors the logic in runtime_scaffold._leaf_field_name so that the same
+    path-to-setter mapping is used here and in task compilation.
+    """
+    parts = path.split(".")
+    if not parts or not parts[-1]:
+        raise ValueError(f"Cannot derive field name from path '{path}'")
+    if len(parts) >= 3 and "[" not in path:
+        return f"{parts[-2]}_{parts[-1]}"
+    return parts[-1]
+
+
+def _env_type_for_path(path: str) -> str:
+    if path.startswith("agent."):
+        return "assistant"
+    if path.startswith("user."):
+        return "user"
+    raise ValueError(f"Unsupported world path prefix: '{path}'")
+
+
+def _resolve_setter(toolkit: Any, path: str) -> tuple[Any | None, str | None]:
+    """Find the set_* method for a world path, trying multiple naming conventions."""
+    tried: list[str] = []
+    leaf_field = _leaf_field_name(path)
+    leaf_only = path.rsplit(".", 1)[-1]
+    parts = path.split(".")
+
+    # Build candidate names in priority order:
+    candidates = [leaf_field]
+    if leaf_only != leaf_field:
+        candidates.append(leaf_only)
+    # Try parent_leaf pattern: agent.auth[active_auth].cert_state → auth_cert_state
+    if len(parts) >= 3:
+        parent = parts[-2].split("[")[0]  # strip slot ref
+        qualified = f"{parent}_{leaf_only}"
+        if qualified not in candidates:
+            candidates.append(qualified)
+
+    for name in candidates:
+        setter_name = f"set_{name}"
+        tried.append(setter_name)
+        setter = getattr(toolkit, setter_name, None)
+        if setter is not None and callable(setter):
+            return setter, None
+
+    return None, f"setter not found (tried: {', '.join(tried)})"
+
+
+def _apply_predicate_to_env(
+    environment: Environment,
+    predicate_path: str,
+    predicate_value: Any,
+) -> str | None:
+    """Set a single world predicate on the environment via set_* helpers.
+
+    Returns an error string if the setter is not found, else None.
+    """
+    env_type = _env_type_for_path(predicate_path)
+    toolkit = environment.tools if env_type == "assistant" else environment.user_tools
+    if toolkit is None:
+        return f"{env_type} toolkit unavailable"
+    setter, err = _resolve_setter(toolkit, predicate_path)
+    if err is not None:
+        return f"{err} on {env_type} toolkit"
+    try:
+        setter(str(predicate_value) if not isinstance(predicate_value, bool) else predicate_value)
+    except Exception as exc:
+        return f"setter raised {type(exc).__name__}: {exc}"
+    return None
+
+
+def _enum_values_for_path(environment: Environment, path: str) -> set[str]:
+    """Extract all valid enum values for a world path by inspecting Pydantic model annotations."""
+    env_type = _env_type_for_path(path)
+    toolkit = environment.tools if env_type == "assistant" else environment.user_tools
+    if toolkit is None or not hasattr(toolkit, "db"):
+        return set()
+
+    parts = path.split(".")
+    leaf = parts[-1] if parts else ""
+    if not leaf:
+        return set()
+
+    # Scan all DB sub-models for the leaf field and return its enum values.
+    db_cls = type(toolkit.db)
+    for field_name, fi in db_cls.model_fields.items():
+        ann = fi.annotation
+        ann = _unwrap_optional(ann)
+        origin = get_origin(ann)
+        if origin is list:
+            inner_args = get_args(ann)
+            if inner_args:
+                ann = inner_args[0]
+        if isinstance(ann, type) and hasattr(ann, "model_fields") and leaf in ann.model_fields:
+            leaf_ann = ann.model_fields[leaf].annotation
+            leaf_ann = _unwrap_optional(leaf_ann)
+            if isinstance(leaf_ann, type) and issubclass(leaf_ann, Enum):
+                return {str(m.value) for m in leaf_ann}
+    return set()
+
+
+def _satisfy_neq_predicate(
+    environment: Environment,
+    contract: GraphContractSpec,
+    path: str,
+    excluded_value: Any,
+) -> str | None:
+    """Ensure a world field does NOT equal excluded_value.
+
+    If the default already satisfies neq, do nothing. Otherwise, find an
+    alternative value from the contract's action effects and set it.
+    """
+    env_type = _env_type_for_path(path)
+    toolkit = environment.tools if env_type == "assistant" else environment.user_tools
+    if toolkit is None:
+        return f"{env_type} toolkit unavailable"
+
+    # Check current value via assert_*.
+    assert_name = f"assert_{_leaf_field_name(path)}"
+    asserter = getattr(toolkit, assert_name, None)
+    # Fallback to leaf-only.
+    if asserter is None:
+        leaf_only = path.rsplit(".", 1)[-1]
+        assert_name = f"assert_{leaf_only}"
+        asserter = getattr(toolkit, assert_name, None)
+
+    if asserter is not None and callable(asserter):
+        try:
+            is_excluded = asserter(
+                str(excluded_value) if not isinstance(excluded_value, bool) else excluded_value
+            )
+        except Exception:
+            is_excluded = False
+        if not is_excluded:
+            return None  # Default already satisfies neq, nothing to do.
+
+    # Default IS the excluded value. Find an alternative from the contract.
+    alternatives: set[str] = set()
+    for action in contract.actions:
+        for pred in action.requires_world:
+            if pred.path == path and pred.op == "eq":
+                alternatives.add(str(pred.value))
+        for effect in action.effects_world:
+            if effect.path == path:
+                alternatives.add(str(effect.set))
+    for rule in contract.sync_rules:
+        for effect in rule.effects_world:
+            if effect.path == path and effect.set is not None:
+                alternatives.add(str(effect.set))
+
+    alternatives.discard(str(excluded_value))
+
+    # If the contract has no alternatives, try enum values from the Pydantic model field.
+    if not alternatives:
+        enum_values = _enum_values_for_path(environment, path)
+        alternatives.update(enum_values)
+        alternatives.discard(str(excluded_value))
+
+    if not alternatives:
+        return (
+            f"neq predicate on '{path}' excludes default '{excluded_value}' "
+            f"but no alternative value found in contract"
+        )
+
+    # Pick the first alternative alphabetically for determinism.
+    alt = sorted(alternatives)[0]
+    return _apply_predicate_to_env(environment, path, alt)
+
+
+def check_tool_guard_completeness(
+    contract: GraphContractSpec,
+    environment_constructor: Callable[[], Environment],
+) -> list[str]:
+    """Verify that contract requires_world preconditions are sufficient for tools.
+
+    For every causal action in the contract, this check:
+    1. Creates a fresh environment (all defaults from db.json / user_db.json).
+    2. Sets exactly the requires_world predicates declared in the contract.
+    3. Calls the tool directly (bypassing sync_tools to avoid cascading effects).
+    4. Checks whether the tool returns success.
+
+    If the tool returns noop or error despite all declared preconditions being
+    met, the tool has a guard on a field not declared in requires_world — a
+    contract/tool mismatch that can produce unsolvable tasks.
+    """
+    issues: list[str] = []
+
+    for action in contract.actions:
+        if action.classification != "causal":
+            continue
+
+        # Build a fresh environment per action to avoid cross-contamination.
+        environment = environment_constructor()
+
+        # Apply every requires_world predicate via set_* helpers.
+        setup_errors: list[str] = []
+        for predicate in action.requires_world:
+            if predicate.op == "eq":
+                err = _apply_predicate_to_env(
+                    environment, predicate.path, predicate.value,
+                )
+            elif predicate.op == "neq":
+                # neq predicates say the field must NOT equal this value.
+                # If the default already satisfies neq, leave it alone.
+                # Otherwise, pick a different value from the projection
+                # field's known values to satisfy the constraint.
+                err = _satisfy_neq_predicate(
+                    environment, contract, predicate.path, predicate.value,
+                )
+            else:
+                continue  # gt/lt/gte/lte — skip, uncommon
+            if err is not None:
+                setup_errors.append(
+                    f"Action '{action.action_id}': cannot set "
+                    f"'{predicate.path}={predicate.value}': {err}"
+                )
+
+        if setup_errors:
+            issues.extend(setup_errors)
+            continue
+
+        # Resolve the tool callable.
+        if action.requestor == "assistant":
+            toolkit = environment.tools
+        else:
+            toolkit = environment.user_tools
+        if toolkit is None:
+            continue
+        tool_func = getattr(toolkit, action.tool_name, None)
+        if tool_func is None or not callable(tool_func):
+            continue  # Already caught by check_contract_against_environment
+
+        # Build call arguments from tool_arg_literals (the only args we can
+        # supply without runtime bindings). For binding-gated args, we pass
+        # a placeholder string — the tool guard we care about fires BEFORE
+        # parameter validation in well-structured tools.
+        call_kwargs: dict[str, Any] = dict(action.tool_arg_literals)
+        try:
+            sig = inspect.signature(tool_func)
+        except (TypeError, ValueError):
+            sig = None
+        if sig is not None:
+            for param_name, param in sig.parameters.items():
+                if param_name == "self":
+                    continue
+                if param_name in call_kwargs:
+                    continue
+                if param.default is not inspect.Parameter.empty:
+                    continue  # Has a default, no need to supply
+                # Required param not in literals — supply a placeholder.
+                call_kwargs[param_name] = "__guard_check_placeholder__"
+
+        # Call the tool.
+        try:
+            result = tool_func(**call_kwargs)
+        except Exception as exc:
+            issues.append(
+                f"Action '{action.action_id}' tool '{action.tool_name}' raised "
+                f"{type(exc).__name__} when all contract preconditions were met: {exc}"
+            )
+            continue
+
+        # Interpret the result.
+        if not isinstance(result, dict):
+            continue  # Non-dict returns are opaque; skip.
+
+        status = result.get("status", "")
+        if status in ("noop", "error"):
+            message = result.get("message", "(no message)")
+            issues.append(
+                f"Action '{action.action_id}' tool '{action.tool_name}' returned "
+                f"{{status: {status!r}, message: {message!r}}} when all contract "
+                f"preconditions ({_format_predicates(action.requires_world)}) were "
+                f"satisfied. The tool has a guard on a field not declared in "
+                f"requires_world — add the missing field to the contract's "
+                f"requires_world and projection_fields."
+            )
+
+    return issues
+
+
+def _format_predicates(predicates: list[Any]) -> str:
+    """Format requires_world predicates for human-readable error messages."""
+    parts = []
+    for p in predicates:
+        parts.append(f"{p.path}={p.value!r}")
+    return ", ".join(parts) if parts else "(none)"

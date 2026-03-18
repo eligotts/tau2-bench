@@ -45,6 +45,7 @@ Hard constraints:
 13. Re-run `/Users/eligottlieb/Documents/tau2-bench/docs/prompts/depgraph/CHECKLIST.md` after each major phase.
 14. (tau2 only) Treat `policy.md` as domain reasoning guidance, not a tool catalog or solve script. Agent tools are injected via the API with docstrings — the policy should teach *when* and *why* to act (principles, ordering, side-effects, resolution criteria), not *what tools exist*. Do not list agent or user tool names in the policy.
 15. Declare valid task endings explicitly in `sampling_request.yaml` terminal profiles. Make tasks shorter by changing start states, not by stopping at intermediate fixable stages under a full-resolution policy.
+16. (tau2 only) Persist both baseline seed files: `db.json` and `user_db.json`. The user DB is required package state, not optional glue. Keep it clean-base and encode task-specific user state only through runtime init actions.
 
 Output format:
 

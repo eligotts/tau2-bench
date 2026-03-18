@@ -81,8 +81,10 @@ Use this checklist in addition to step-specific prompts.
 
 ### Complexity Depth
 8. Long-horizon paths use `min_depth >= 4` unless domain constraints justify shorter chains.
-9. Sampling seed depth budgets account for cascading sync expansion, repair side-effect cleanup, and multi-step repair chains — not just raw fault count.
-10. `max_depth` is set to `estimated_depth + 4` to give BFS headroom for alternative paths.
+9. Seed-schema `min_depth` floors are consistent with the true shortest plan for each expanded
+   variant, especially `start_bindings` / partial-knowledge variants that can remove discovery steps.
+10. Sampling seed depth budgets account for cascading sync expansion, repair side-effect cleanup, and multi-step repair chains — not just raw fault count.
+11. `max_depth` is set to `estimated_depth + 4` to give BFS headroom for alternative paths.
 
 ### Difficulty Engineering (Tier 3+ domains)
 11. Cascading sync rules multiply tasks from single-fault seeds (one fault → multi-system task).
@@ -100,6 +102,9 @@ Use this checklist in addition to step-specific prompts.
     richer branch combinations, or `start_bindings` variations over starts with sync stages already advanced.
 21. Bigger graphs should come from meaningful branching or shared-gate lanes, not from many copied actions that only rename the same tool call.
 22. The captured `goal_world` covers intended changed causal paths only; env assertions check only `goal_world` (the start→end diff), not unchanged `start_world` paths.
+23. Both baseline seed files exist and load: `db.json` and `user_db.json`. `user_db.json` includes an empty stop-gate container and represents clean-base user state, not task-specific setup.
+24. Every field that can appear in generated runtime init actions or env assertions has matching deterministic helper coverage on the correct toolkit (`set_<...>` / `assert_<...>`), including fields introduced by stable replacements for formerly volatile values.
+25. Tool guard completeness passes without ad hoc gaps: no missing setters for availability flags, cost-paid flags, reservation holds, confirmation flags, or other fields that only show up after full seed expansion.
 
 ## 6. Fail-Closed Commands
 

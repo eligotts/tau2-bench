@@ -27,6 +27,10 @@ Requirements:
 4. Define top-level DB model extending `DB`.
 5. Keep schema minimal and causal-first (no conversational knowledge fields).
 6. Use finite enums for gate-critical fields whenever feasible (avoid free-text state drift).
+7. If you promote a previously transient observation into stable agent world state (for example a
+   conflict meeting ID, active ticket ID, reservation code, or currently selected object), that
+   field becomes part of the generated runtime surface: expect `set_<...>` init actions and
+   possibly `assert_<...>` env assertions for it.
 
 Validation:
 
@@ -114,8 +118,11 @@ Requirements:
 1. Seed records must support tool arguments used in runtime specs.
 2. Initial values should represent baseline clean world, not task-broken states.
 3. Include IDs and references needed for task init/actions.
-4. Include baseline empty stop-gate config in `user_db.json` (for example `stop_gate.criteria: []`).
-5. Seeds should be clean-base defaults; all task breakage should come from runtime init actions.
+4. `user_db.json` is required for tau2-path domains. Do not rely on in-code defaults alone.
+5. Include baseline empty stop-gate config in `user_db.json` (for example `stop_gate.criteria: []`).
+6. Seeds should be clean-base defaults; all task breakage should come from runtime init actions.
+7. Clean-base files must still include every structural field used by the runtime models, even if
+   task-specific values are later injected through init actions.
 
 Validation:
 

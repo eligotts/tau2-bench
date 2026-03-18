@@ -26,6 +26,7 @@ from tau2.generators.depgraph.runtime_checks import (
     check_start_bindings_visibility,
     check_stop_gate_runtime,
     check_task_runtime_fields,
+    check_tool_guard_completeness,
 )
 from tau2.registry import registry
 
@@ -78,6 +79,11 @@ def main() -> int:
         action="store_true",
         help="Also prove each required action is indispensable via action-ablation search",
     )
+    parser.add_argument(
+        "--skip-bfs",
+        action="store_true",
+        help="Skip per-task BFS solvability check (tasks correct by construction from sampler)",
+    )
     args = parser.parse_args()
 
     contract = load_graph_contract(args.graph_contract)
@@ -98,6 +104,8 @@ def main() -> int:
             strict_full_coverage=args.strict_tool_coverage,
         )
         runtime_issues = check_runtime_against_environment(task_doc, env_constructor)
+        guard_issues = check_tool_guard_completeness(contract, env_constructor)
+
         if contract_issues:
             overall_ok = False
             print("[FAIL] Contract/runtime alignment")
@@ -108,9 +116,15 @@ def main() -> int:
             print("[FAIL] Runtime task alignment")
             for issue in runtime_issues:
                 print(f"  - {issue}")
+        if guard_issues:
+            overall_ok = False
+            print("[FAIL] Tool guard completeness")
+            for issue in guard_issues:
+                print(f"  - {issue}")
         else:
-            if not contract_issues:
-                print("[PASS] Contract/runtime alignment")
+            print("[PASS] Tool guard completeness")
+        if not contract_issues and not runtime_issues:
+            print("[PASS] Contract/runtime alignment")
 
     if args.stop_gate_map:
         stop_gate_issues = check_stop_gate_runtime(task_doc, args.stop_gate_map)
@@ -168,45 +182,56 @@ def main() -> int:
         require_terminal_profile = True
         print("[PASS] Terminal-profile alignment config loaded")
 
+    skip_bfs = args.skip_bfs
     for task in task_doc.tasks:
-        report = run_task_preflight(
-            contract,
-            task,
-            max_depth=max_depth,
-            terminal_profiles=terminal_profiles,
-            require_terminal_profile=require_terminal_profile,
-            check_required_action_necessity=args.strict_required_action_necessity,
-        )
+        if not skip_bfs:
+            report = run_task_preflight(
+                contract,
+                task,
+                max_depth=max_depth,
+                terminal_profiles=terminal_profiles,
+                require_terminal_profile=require_terminal_profile,
+                check_required_action_necessity=args.strict_required_action_necessity,
+            )
         runtime_field_issues = check_task_runtime_fields(task)
 
-        status = "PASS" if (report.passed and not runtime_field_issues) else "FAIL"
-        print(f"[{status}] {task.task_id}")
-        print(f"  SAT_full: {report.sat_full.sat}")
-        print(
-            f"  Search stats: explored={report.sat_full.explored_states}, "
-            f"pruned={report.sat_full.pruned_states}"
-        )
-        if report.sat_full.plan:
-            print(f"  Plan: {' -> '.join(report.sat_full.plan)}")
-        print(f"  Required actions in SAT_full plan: {report.plan_contains_required_actions}")
-        print(f"  Min plan length check: {report.min_plan_length_ok}")
+        if skip_bfs:
+            status = "PASS" if not runtime_field_issues else "FAIL"
+            print(f"[{status}] {task.task_id}  (BFS skipped)")
+        else:
+            status = "PASS" if (report.passed and not runtime_field_issues) else "FAIL"
+            print(f"[{status}] {task.task_id}")
+            print(f"  SAT_full: {report.sat_full.sat}")
+            print(
+                f"  Search stats: explored={report.sat_full.explored_states}, "
+                f"pruned={report.sat_full.pruned_states}"
+            )
+            if report.sat_full.plan:
+                print(f"  Plan: {' -> '.join(report.sat_full.plan)}")
+            print(f"  Required actions in SAT_full plan: {report.plan_contains_required_actions}")
+            print(f"  Min plan length check: {report.min_plan_length_ok}")
 
-        if report.required_action_unsat:
-            print("  Required-action ablations (expect True):")
-            for action_id, ok in report.required_action_unsat.items():
-                print(f"    - {action_id}: {ok}")
+            if report.required_action_unsat:
+                print("  Required-action ablations (expect True):")
+                for action_id, ok in report.required_action_unsat.items():
+                    print(f"    - {action_id}: {ok}")
 
-        if report.issues:
-            print("  Issues:")
-            for issue in report.issues:
-                print(f"    - {issue}")
+            if report.issues:
+                print("  Issues:")
+                for issue in report.issues:
+                    print(f"    - {issue}")
+
         if runtime_field_issues:
             print("  Runtime field issues:")
             for issue in runtime_field_issues:
                 print(f"    - {issue}")
 
-        if not report.passed or runtime_field_issues:
-            overall_ok = False
+        if skip_bfs:
+            if runtime_field_issues:
+                overall_ok = False
+        else:
+            if not report.passed or runtime_field_issues:
+                overall_ok = False
 
     return 0 if overall_ok else 1
 

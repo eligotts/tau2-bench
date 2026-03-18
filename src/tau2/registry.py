@@ -92,6 +92,15 @@ from tau2.domains.cloud_incident_response.environment import (
 from tau2.domains.cloud_incident_response.environment import (
     get_tasks_split as cloud_incident_response_domain_get_tasks_split,
 )
+from tau2.domains.daily_planner.environment import (
+    get_environment as daily_planner_domain_get_environment,
+)
+from tau2.domains.daily_planner.environment import (
+    get_tasks as daily_planner_domain_get_tasks,
+)
+from tau2.domains.daily_planner.environment import (
+    get_tasks_split as daily_planner_domain_get_tasks_split,
+)
 from tau2.domains.travel_agency.environment import (
     get_environment as travel_agency_domain_get_environment,
 )
@@ -369,6 +378,15 @@ try:
         cloud_incident_response_domain_get_tasks,
         "cloud_incident_response",
         get_task_splits=cloud_incident_response_domain_get_tasks_split,
+    )
+
+    registry.register_domain(
+        daily_planner_domain_get_environment, "daily_planner"
+    )
+    registry.register_tasks(
+        daily_planner_domain_get_tasks,
+        "daily_planner",
+        get_task_splits=daily_planner_domain_get_tasks_split,
     )
 
     registry.register_domain(vet_clinic_domain_get_environment, "vet_clinic")

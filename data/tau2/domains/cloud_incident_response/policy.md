@@ -72,6 +72,6 @@ After repairs are complete, ask the on-call engineer to run a smoke test to veri
 ## General Guidelines
 
 - Use tools reactively based on observed state, not from a memorized script.
-- Guide the engineer through their actions step by step.
+- Guide the engineer through their diagnostic actions. You perform repairs and communications directly.
 - If something unexpected happens after a repair, investigate rather than repeating the same action.
 - Do not skip triage — all repairs require it.

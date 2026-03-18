@@ -82,18 +82,24 @@ def sample_task_intents(
     No solver calls needed: BFS traces are correct-by-construction proofs of SAT.
     """
     sampled: list[SampledTask] = []
-    seen_signatures: set[tuple] = set()
     binding_sources_by_id = index_binding_sources(contract.bindings)
     volatile_binding_ids = compute_volatile_binding_ids(contract)
     terminal_profiles_by_id = terminal_profile_map(request.terminal_profiles)
     task_counter = 0
+    # Fair share per seed: spread the budget evenly so late seeds aren't starved.
+    n_seeds = len(request.seeds)
+    per_seed_budget = max(1, request.max_tasks // n_seeds) if n_seeds > 0 else request.max_tasks
 
     for seed in request.seeds:
+        seed_count = 0
         goal_capture_paths = request.goal_capture_paths_for_seed(seed)
         allowed_terminal_profiles = [
             terminal_profiles_by_id[profile_id]
             for profile_id in seed.allowed_terminal_profiles
         ]
+        # Per-seed dedup by (goal_world, terminal_profile). First BFS hit
+        # wins (shortest path to that goal from this seed's start state).
+        seen_goals: set[tuple] = set()
         start_world, seed_issues = materialize_world(
             seed.start_world,
             sync_rules=contract.sync_rules,
@@ -107,11 +113,8 @@ def sample_task_intents(
         visited: set[tuple[tuple[tuple[str, Any], ...], frozenset[str]]] = {
             (world_state_key(root.world), root.bindings)
         }
-        # Dedup by (goal_world, terminal_profile) — first BFS hit wins
-        # (shortest path to that goal).
-        seen_goals: set[tuple] = set()
 
-        while queue:
+        while queue and seed_count < per_seed_budget:
             node = queue.popleft()
             if len(node.plan) >= seed.max_depth:
                 continue
@@ -174,14 +177,6 @@ def sample_task_intents(
                     volatile_binding_ids=volatile_binding_ids,
                 )
                 required_actions = _ordered_unique(plan)
-                signature = (
-                    _goal_key(goal_world),
-                    tuple(goal_bindings),
-                    tuple(required_actions),
-                    matched_terminal_profile.profile_id,
-                )
-                if signature in seen_signatures:
-                    continue
 
                 task_id = f"{seed.seed_id}_d{plan_depth}_{task_counter:03d}"
                 task_counter += 1
@@ -217,12 +212,53 @@ def sample_task_intents(
                     sat_result=bfs_sat,
                 )
                 if report.passed:
-                    seen_signatures.add(signature)
                     sampled.append(SampledTask(task=candidate, report=report))
+                    seed_count += 1
                     if len(sampled) >= request.max_tasks:
                         return sampled
+                    if seed_count >= per_seed_budget:
+                        break  # move to next seed
 
     return sampled
+
+
+def cap_per_schema(
+    sampled: list[SampledTask],
+    request: SamplingRequestDoc,
+    max_per_schema: int,
+) -> list[SampledTask]:
+    """Subsample tasks so no single schema dominates.
+
+    Maps each task back to its source schema via seed_id prefix matching,
+    then keeps up to *max_per_schema* tasks per schema (preserving BFS
+    order, i.e. shortest-first).
+    """
+    # Build prefix → schema_id mapping from seed templates.
+    prefix_map: dict[str, str] = {}
+    for schema in request.seed_schemas:
+        # Template like 'dc_{care_fate}_{transport}_{knowledge}'
+        # Prefix is everything before the first '{'.
+        prefix = schema.seed_id_template.split("{")[0]
+        prefix_map[prefix] = schema.schema_id
+
+    # Sort prefixes longest-first so 'cch2_' matches before 'cch_'.
+    sorted_prefixes = sorted(prefix_map, key=len, reverse=True)
+
+    schema_counts: dict[str, int] = {}
+    result: list[SampledTask] = []
+    for entry in sampled:
+        # Strip _d{depth}_{counter} suffix to get seed_id.
+        seed_id = entry.task.task_id.rsplit("_d", 1)[0]
+        schema_id = "unknown"
+        for prefix in sorted_prefixes:
+            if seed_id.startswith(prefix):
+                schema_id = prefix_map[prefix]
+                break
+        count = schema_counts.get(schema_id, 0)
+        if count < max_per_schema:
+            result.append(entry)
+            schema_counts[schema_id] = count + 1
+    return result
 
 
 def sampled_to_task_specs(sampled: list[SampledTask]) -> TaskSpecsDoc:

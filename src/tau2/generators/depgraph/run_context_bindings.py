@@ -7,6 +7,7 @@ import argparse
 from tau2.generators.depgraph.context_bindings import (
     dump_task_context_bindings,
     generate_cloud_ir_context_bindings,
+    generate_daily_planner_context_bindings,
     generate_ev_context_bindings,
 )
 from tau2.generators.depgraph.loaders import load_graph_contract, load_task_specs
@@ -35,6 +36,13 @@ def main() -> int:
         )
     elif args.domain == "cloud_incident_response":
         doc = generate_cloud_ir_context_bindings(
+            sampled=sampled,
+            contract=contract,
+            db_json_path=args.db_json,
+            domain=args.domain,
+        )
+    elif args.domain == "daily_planner":
+        doc = generate_daily_planner_context_bindings(
             sampled=sampled,
             contract=contract,
             db_json_path=args.db_json,
