@@ -11,7 +11,6 @@ import yaml
 from pydantic import BaseModel, Field, model_validator
 
 from tau2.generators.depgraph.context_bindings import TaskContextBindingsDoc
-from tau2.generators.depgraph.goal_capture import explicit_start_world_map
 from tau2.generators.depgraph.semantics import materialize_world
 from tau2.generators.depgraph.stop_gate import StopGateMapDoc
 from tau2.generators.depgraph.types import (
@@ -152,22 +151,7 @@ def _env_type_for_path(path: str) -> str:
     )
 
 
-def _leaf_field_name(path: str) -> str:
-    """Derive a method-name suffix from a world path.
-
-    For paths with 3+ plain segments (e.g. ``agent.errand_a.status``), include
-    the section as a prefix to avoid ambiguity (``errand_a_status``).  For paths
-    with bracket notation (e.g. ``agent.accounts[active_account].hold_status``)
-    or only 2 segments, use just the leaf since those are already unique.
-    """
-    parts = path.split(".")
-    if not parts or not parts[-1]:
-        raise ValueError(f"Cannot derive field name from path '{path}'")
-    # If 3+ plain segments (no bracket notation), qualify with section name
-    if len(parts) >= 3 and "[" not in path:
-        # e.g. agent.errand_a.status -> errand_a_status
-        return f"{parts[-2]}_{parts[-1]}"
-    return parts[-1]
+from tau2.generators.depgraph.semantics import leaf_field_name as _leaf_field_name
 
 
 def _assign_persona(task_id: str, personas: list[PersonaSpec]) -> PersonaSpec:
@@ -235,10 +219,8 @@ def _build_goal_env_assertions(task: TaskIntent) -> list[EnvAssertionSpec]:
                 f"Task '{task.task_id}' has unsupported goal op '{goal.op}' for runtime scaffold"
             )
 
-    # Use goal_world as the sole source of truth for assertions.
-    # goal_world is the diff of start_world vs end_world under goal_capture_paths —
-    # it contains only fields the plan actually changed. This avoids penalizing
-    # the agent for reasonable actions beyond the minimal plan.
+    # goal_world comes from the terminal profile's requires_world predicates.
+    # These are the conditions that define task completion.
     assertion_values: dict[str, Any] = {}
     for path, goal in goal_by_path.items():
         assertion_values[path] = goal.value
@@ -273,9 +255,9 @@ def _build_action_expectations(
             )
 
         arguments: dict[str, Any] = {}
-        for param_name, literal_value in sorted(action.tool_arg_literals.items()):
+        for param_name, literal_value in sorted(action.resolved_arg_literals.items()):
             arguments[param_name] = literal_value
-        for param_name, binding_id in sorted(action.tool_arg_bindings.items()):
+        for param_name, binding_id in sorted(action.resolved_arg_bindings.items()):
             if binding_id in start_binding_values:
                 arguments[param_name] = start_binding_values[binding_id]
 
@@ -287,7 +269,7 @@ def _build_action_expectations(
             ActionExpectationSpec(
                 action_id=action.action_id,
                 requestor=action.requestor,
-                name=action.tool_name,
+                name=action.resolved_tool_name or action.action_id,
                 arguments=arguments,
                 compare_args=[],
             )
@@ -359,6 +341,24 @@ def _build_runtime_task(
     )
 
 
+def _undisclosed_binding_values(
+    task: TaskIntent,
+    contract: GraphContractSpec,
+) -> list[str]:
+    """Return latent binding values present in start_world but not pre-acquired."""
+    start_world = _start_world_map(task, contract)
+    disclosed_bindings = set(task.start_bindings)
+    values: list[str] = []
+    for binding in contract.bindings:
+        if binding.binding_id in disclosed_bindings:
+            continue
+        value = start_world.get(binding.world_path)
+        if value is None:
+            continue
+        values.append(str(value))
+    return sorted(set(values))
+
+
 def _goal_cues_for_task(
     task: TaskIntent,
     stop_gate_map: StopGateMapDoc | None,
@@ -412,74 +412,40 @@ def _build_narrative_brief(
             }
         )
 
-    # Goal-binding values must be discovered mid-conversation via tool calls.
-    # Collect them so the brief can warn the author and the narrative check
-    # can hard-fail if they leak into authored text.
-    goal_binding_do_not_disclose: list[str] = []
-    for binding_id in sorted(task.goal_bindings):
-        binding = binding_by_id.get(binding_id)
-        if binding is None or binding.world_path is None:
-            continue
-        value = start_world.get(binding.world_path)
-        if value is not None:
-            goal_binding_do_not_disclose.append(str(value))
+    # Concise start state — only fields that distinguish this task from a
+    # clean/default world. Excludes view projections (derived, not authored).
+    _NEUTRAL_VALUES = frozenset({
+        "healthy", "clean", "correct", "normal", "running", "empty", "none",
+        "not_run", "not_done", "not_verified", "not_checked", "not_tailed",
+        "cleared", "valid", "off", "synced", "current", "reachable", "up",
+        "fresh", "established", "ready", "inactive", "not_ready", "pending",
+        "not_needed", "not_reseated", "unconfirmed",
+        False,
+    })
+    notable_start_state = [
+        f"{path} = {value!r}"
+        for path, value in sorted(start_world.items())
+        if value not in _NEUTRAL_VALUES and not path.startswith("user.view.")
+    ]
+
+    # Merge goal_state_summary + completion_cues into one "resolved_when" section.
+    resolved_when = _goal_cues_for_task(task, stop_gate_map)
+    if not resolved_when:
+        # Fallback: use goal_world predicates directly
+        resolved_when = [
+            {"goal": f"{path} == {value!r}"}
+            for path, value in sorted(goal_world.items())
+        ]
 
     return {
         "task_id": task.task_id,
-        "author_surface": {
-            "editable_fields": [
-                "runtime.reason_for_call",
-                "runtime.known_info",
-                "runtime.ticket",
-            ],
-            "required_non_empty": True,
-            "placeholder": _AUTHOR_PLACEHOLDER,
-        },
+        "terminal_profile": task.terminal_profile_id,
         "entity_context": entity_identity or {},
-        "start_state_summary": {
-            "world": [f"{path} = {value!r}" for path, value in sorted(start_world.items())],
-            "bindings": start_bindings,
-        },
-        "goal_state_summary": {
-            "world": [f"{path} == {value!r}" for path, value in sorted(goal_world.items())],
-            "bindings": sorted(task.goal_bindings),
-        },
-        "goal_binding_do_not_disclose": goal_binding_do_not_disclose,
-        "required_action_chain": list(task.required_actions),
-        "required_precedence": [
-            {"before": before, "after": after}
-            for before, after in task.required_precedence
-        ],
-        "completion_cues": _goal_cues_for_task(task, stop_gate_map),
-        "authoring_guidance": {
-            "entity_ids_are_plumbing": (
-                "Entity slot IDs in entity_context (account_id, station_id, session_id) "
-                "are invisible plumbing — set by initialization_actions, resolved from "
-                "context by tools. They must NEVER appear in authored text. Only the "
-                "customer name is user-facing. Bindings (error codes, plan names) in "
-                "start_state_summary.bindings ARE user-observable and should be included."
-            ),
-            "reason_for_call": (
-                "First person, conversational. Describe what the user is experiencing "
-                "and what they want fixed. Include frustration or urgency cues. "
-                "Never mention internal paths, tool names, or solution steps."
-            ),
-            "known_info": (
-                "Second person. Start with 'You are [name]' using ONLY the name from "
-                "entity_context. Add situational context the user would naturally know "
-                "(location, what they observe, what they were doing). Include concrete "
-                "start-binding values (e.g. error codes) when present — these are "
-                "user-observable facts, not plumbing."
-            ),
-            "ticket": (
-                "Third person, agent-facing case summary. Start with the problem, then "
-                "customer name. End with 'They will consider the issue resolved when...' "
-                "describing a concrete observable outcome. Read completion_cues to "
-                "understand what resolved means, but write it as natural language — the "
-                "ticket gives the agent direction, not a mechanical checklist. Be specific "
-                "enough that the agent knows what kind of task this is."
-            ),
-        },
+        "start_bindings": start_bindings,
+        "undisclosed_binding_values": _undisclosed_binding_values(task, contract),
+        "notable_start_state": notable_start_state,
+        "resolved_when": resolved_when,
+        "required_actions": list(task.required_actions),
     }
 
 

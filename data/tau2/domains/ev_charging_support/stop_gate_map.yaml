@@ -1,106 +1,15 @@
 version: 1
 rules:
-  - goal_path: agent.accounts[active_account].hold_status
-    goal_value: cleared
-    check_field: hold_status
-    check_op: eq
-    expected: cleared
-    unmet_reason: Backend hold is not cleared yet.
-
-  - goal_path: agent.accounts[active_account].payment_token_status
-    goal_value: valid
-    check_field: payment_token_status
-    check_op: eq
-    expected: valid
-    unmet_reason: Payment token is not valid yet.
-
-  - goal_path: agent.accounts[active_account].fraud_lock_state
-    goal_value: "off"
-    check_field: fraud_lock_state
-    check_op: eq
-    expected: "off"
-    unmet_reason: Fraud lock is still active.
-
-  - goal_path: agent.stations[active_station].diagnostics_state
-    goal_value: ran
-    check_field: diagnostics_state
-    check_op: eq
-    expected: ran
-    unmet_reason: Backend diagnostics have not run yet.
-
-  - goal_path: agent.stations[active_station].firmware_state
-    goal_value: current
-    check_field: firmware_state
-    check_op: eq
-    expected: current
-    unmet_reason: Station firmware is not current yet.
-
-  - goal_path: agent.stations[active_station].clock_sync_state
-    goal_value: synced
-    check_field: clock_sync_state
-    check_op: eq
-    expected: synced
-    unmet_reason: Station clock is not synchronized yet.
-
-  - goal_path: agent.network_paths[active_station].backend_link_state
-    goal_value: up
-    check_field: backend_link_state
-    check_op: eq
-    expected: up
-    unmet_reason: Backend link is still down.
-
-  - goal_path: agent.network_paths[active_station].cert_state
-    goal_value: fresh
-    check_field: cert_state
-    check_op: eq
-    expected: fresh
-    unmet_reason: Station certificate is still stale.
-
-  - goal_path: agent.network_paths[active_station].handshake_state
-    goal_value: established
-    check_field: handshake_state
-    check_op: eq
-    expected: established
-    unmet_reason: Station handshake with the backend is not established yet.
-
-  - goal_path: agent.sessions[active_session].session_auth_state
-    goal_value: valid
-    check_field: session_auth_state
-    check_op: eq
-    expected: valid
-    unmet_reason: Session authorization is not valid yet.
-
-  - goal_path: agent.sessions[active_session].profile_state
-    goal_value: ready
-    check_field: profile_state
-    check_op: eq
-    expected: ready
-    unmet_reason: Charging profile is not ready yet.
-
-  - goal_path: agent.sessions[active_session].vehicle_auth_state
-    goal_value: validated
-    check_field: vehicle_auth_state
-    check_op: eq
-    expected: validated
-    unmet_reason: Vehicle authorization is not validated yet.
-
-  - goal_path: agent.sessions[active_session].retry_state
-    goal_value: ready
-    check_field: retry_state
-    check_op: eq
-    expected: ready
-    unmet_reason: Retry path is not ready yet.
-
-  - goal_path: agent.sessions[active_session].last_fault_code
-    goal_value: NONE
-    check_field: fault_code
-    check_op: eq
-    expected: NONE
-    unmet_reason: Station still reports an unresolved fault code.
-
   - goal_path: agent.sessions[active_session].charge_state
     goal_value: active
     check_field: charge_status
     check_op: eq
     expected: active
     unmet_reason: Charging is not active yet.
+
+  - goal_path: user.physical.test_charge_state
+    goal_value: run
+    check_field: test_charge_state
+    check_op: eq
+    expected: run
+    unmet_reason: Test charge has not been run yet.

@@ -620,6 +620,70 @@ class EVChargingSupportTools(ToolKitBase):
         self._get_session().error_class = ErrorClass(value)
 
     # ------------------------------------------------------------------
+    # Getters (used by runtime_sync to project flat world from typed DB)
+    # ------------------------------------------------------------------
+
+    def get_hold_status(self) -> str:
+        return self._get_account().hold_status.value
+
+    def get_payment_token_status(self) -> str:
+        return self._get_account().payment_token_status.value
+
+    def get_fraud_lock_state(self) -> str:
+        return self._get_account().fraud_lock_state.value
+
+    def get_reachability_state(self) -> str:
+        return self._get_station().reachability_state.value
+
+    def get_firmware_state(self) -> str:
+        return self._get_station().firmware_state.value
+
+    def get_clock_sync_state(self) -> str:
+        return self._get_station().clock_sync_state.value
+
+    def get_diagnostics_state(self) -> str:
+        return self._get_station().diagnostics_state.value
+
+    def get_backend_link_state(self) -> str:
+        return self._get_network_path().backend_link_state.value
+
+    def get_cert_state(self) -> str:
+        return self._get_network_path().cert_state.value
+
+    def get_handshake_state(self) -> str:
+        return self._get_network_path().handshake_state.value
+
+    def get_profile_state(self) -> str:
+        return self._get_session().profile_state.value
+
+    def get_session_auth_state(self) -> str:
+        return self._get_session().session_auth_state.value
+
+    def get_allowlist_sync_state(self) -> str:
+        return self._get_session().allowlist_sync_state.value
+
+    def get_tariff_profile_state(self) -> str:
+        return self._get_session().tariff_profile_state.value
+
+    def get_reservation_lock_state(self) -> str:
+        return self._get_session().reservation_lock_state.value
+
+    def get_vehicle_auth_state(self) -> str:
+        return self._get_session().vehicle_auth_state.value
+
+    def get_retry_state(self) -> str:
+        return self._get_session().retry_state.value
+
+    def get_charge_state(self) -> str:
+        return self._get_session().charge_state.value
+
+    def get_last_fault_code(self) -> str:
+        return self._get_session().last_fault_code
+
+    def get_error_class(self) -> str:
+        return self._get_session().error_class.value
+
+    # ------------------------------------------------------------------
     # Assertion helpers (runtime env assertions)
     # ------------------------------------------------------------------
 

@@ -1,17 +1,11 @@
 """Environment for the daily planner domain."""
 
+from pathlib import Path
 from typing import Optional
 
-from tau2.domains.daily_planner.data_model import (
-    DailyPlannerDB,
-    ErrandStatus,
-    ExtendedCareStatus,
-    MaintenanceStatus,
-    PickupStatus,
-    PublicTransitStatus,
-    TransportFixStatus,
-    TransportStatus,
-)
+import yaml
+
+from tau2.domains.daily_planner.data_model import DailyPlannerDB
 from tau2.domains.daily_planner.tools import DailyPlannerTools
 from tau2.domains.daily_planner.user_data_model import DailyPlannerUserDB
 from tau2.domains.daily_planner.user_tools import DailyPlannerUserTools
@@ -21,7 +15,11 @@ from tau2.domains.daily_planner.utils import (
 )
 from tau2.environment.environment import Environment
 from tau2.data_model.tasks import Task
+from tau2.generators.depgraph.runtime_sync import ToolKitFieldAccessor, run_contract_sync
+from tau2.generators.depgraph.types import GraphContractSpec
 from tau2.utils import load_file
+
+_CONTRACT_PATH = Path(__file__).resolve().parents[4] / "data" / "tau2" / "domains" / "daily_planner" / "graph_contract.yaml"
 
 
 class DailyPlannerEnvironment(Environment):
@@ -32,6 +30,12 @@ class DailyPlannerEnvironment(Environment):
         policy: Optional[str] = None,
         solo_mode: bool = False,
     ):
+        # Load contract sync rules before super().__init__ (which calls sync_tools)
+        with open(_CONTRACT_PATH) as f:
+            contract = GraphContractSpec.model_validate(yaml.safe_load(f))
+        self._sync_rules = contract.sync_rules
+        self._projection_fields = contract.projection_fields
+
         super().__init__(
             domain_name="daily_planner",
             tools=tools,
@@ -44,62 +48,13 @@ class DailyPlannerEnvironment(Environment):
             self.user_tools.bind_agent_db(self.tools.db)
 
     def sync_tools(self) -> None:
-        """Synchronize state between agent and user DBs.
-
-        Mirrors the sync_rules declared in graph_contract.yaml.
-        """
-        db = self.tools.db
-        udb = self.user_tools.db
-
-        # ── Transport sync ──
-
-        # User checks repair progress → fix transitions to in_progress
-        if udb.transport.repair_checked and db.transport.fix_status == TransportFixStatus.ROADSIDE_CALLED:
-            db.transport.fix_status = TransportFixStatus.REPAIR_IN_PROGRESS
-
-        # User confirms public transit → status becomes booked
-        if (
-            udb.transport.public_transit_confirmed
-            and db.transport.public_transit_status == PublicTransitStatus.ROUTED
-        ):
-            db.transport.public_transit_status = PublicTransitStatus.CONFIRMED
-            db.transport.status = TransportStatus.BOOKED
-
-        # ── Errand completion sync ──
-
-        # User pickup confirmation → errand completed
-        if udb.errand_a.confirmed_complete and db.errand_a.status == ErrandStatus.USER_PICKUP_READY:
-            db.errand_a.status = ErrandStatus.COMPLETED
-
-        if udb.errand_b.confirmed_complete and db.errand_b.status == ErrandStatus.USER_PICKUP_READY:
-            db.errand_b.status = ErrandStatus.COMPLETED
-
-        # Delivery ordered → completed (delivery service handles it)
-        if db.errand_a.status == ErrandStatus.DELIVERY_ORDERED:
-            db.errand_a.status = ErrandStatus.COMPLETED
-
-        if db.errand_b.status == ErrandStatus.DELIVERY_ORDERED:
-            db.errand_b.status = ErrandStatus.COMPLETED
-
-        # ── Dependent care completion sync ──
-
-        if udb.dependent_care.dependent_picked_up and db.dependent_care.pickup_status == PickupStatus.USER_ASSIGNED:
-            db.dependent_care.pickup_status = PickupStatus.COMPLETED
-
-        if udb.dependent_care.delegate_confirmed and db.dependent_care.pickup_status == PickupStatus.DELEGATE_ASSIGNED:
-            db.dependent_care.pickup_status = PickupStatus.COMPLETED
-
-        # Extended care confirmed → pickup handled
-        if (
-            db.dependent_care.extended_care == ExtendedCareStatus.CONFIRMED
-            and db.dependent_care.pickup_status == PickupStatus.UNASSIGNED
-        ):
-            db.dependent_care.pickup_status = PickupStatus.COMPLETED
-
-        # ── Household completion sync ──
-
-        if udb.home.repair_verified and db.household.maintenance_status == MaintenanceStatus.SCHEDULED:
-            db.household.maintenance_status = MaintenanceStatus.COMPLETED
+        """Run contract sync rules against live state."""
+        run_contract_sync(
+            sync_rules=self._sync_rules,
+            projection_fields=self._projection_fields,
+            agent_accessor=ToolKitFieldAccessor(self.tools),
+            user_accessor=ToolKitFieldAccessor(self.user_tools),
+        )
 
 
 def get_environment(

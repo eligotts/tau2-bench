@@ -3,7 +3,8 @@
 ## Instruction
 
 Refine the environment authored in Step 02.
-Do not allow `sync_tools()` semantics to drift from contract effects/gates.
+Sync rules in the graph contract are the single source of truth.
+`sync_tools()` must delegate to `run_contract_sync()` from the `runtime_sync` module.
 
 Inputs:
 
@@ -61,24 +62,42 @@ Create:
 Requirements:
 
 1. Define `<Domain>Environment(Environment)` with `sync_tools()`.
-2. `sync_tools()` must implement only the declared `sync_rules` from `graph_contract.yaml`.
-3. Keep sync logic declarative in shape:
-   - unconditional projections copy from one projected path to another
-   - conditional sync logic is expressed as explicit prereqs + literal effects
-   - no hidden sync-only cascades that are absent from the contract
-   - if runtime recomputes a sync-owned field in both positive and fallback directions
-     (for example `inactive` by default, `active` when prereqs hold), the contract must
-     declare both outcomes explicitly; do not hide the fallback in a runtime-only `else`
-4. Default/fallback sync rules are allowed when a later rule in the same pass overrides them:
-   - write the fallback rule first
-   - write the stricter activating rule later
-   - make sure the end-of-pass world is stable and idempotent
-5. `sync_tools()` must project every stop-gate observable field needed by `check_resolution_status`.
-6. Implement `get_environment(...)` that loads DB/user DB + policy and returns environment.
-7. Implement `get_tasks(...)` and optional task split loader using current task file.
-8. Keep loader compatible with tau2 `Task` model.
-9. Keep `sync_tools()` idempotent: repeated calls without intervening tool actions should not create new deltas.
-10. `sync_tools()` must produce the same derived state when run against the initial start world as it does after later tool calls; do not rely on post-init-only fixes.
+2. `sync_tools()` must call `run_contract_sync()` from `tau2.generators.depgraph.runtime_sync`. This is the single source of truth for sync logic. Do not reimplement contract sync rules as hand-written Python in the environment.
+3. To wire `run_contract_sync()`:
+   - Load the graph contract's `sync_rules` and `projection_fields` (typically at environment construction time or from a module-level constant).
+   - Create `ToolKitFieldAccessor` instances wrapping the assistant and user toolkits.
+   - Call `run_contract_sync(sync_rules, projection_fields, agent_accessor, user_accessor)`.
+4. Toolkits must expose `get_<field>()` methods alongside their existing `set_<field>()` methods. The `ToolKitFieldAccessor` adapter reads via `get_<field>()` and writes via `set_<field>()`.
+5. View projections (`display_*` fields, formatted summaries) stay as adapter Python code in the environment or toolkit. These are presentation logic, not contract sync rules.
+6. `sync_tools()` must project every stop-gate observable field needed by `check_resolution_status`.
+7. Implement `get_environment(...)` that loads DB/user DB + policy and returns environment.
+8. Implement `get_tasks(...)` and optional task split loader using current task file.
+9. Keep loader compatible with tau2 `Task` model.
+10. `sync_tools()` must be idempotent: repeated calls without intervening tool actions should not create new deltas.
+11. `sync_tools()` must produce the same derived state when run against the initial start world as it does after later tool calls; do not rely on post-init-only fixes.
+
+Example `sync_tools()` wiring:
+
+```python
+from tau2.generators.depgraph.runtime_sync import run_contract_sync, ToolKitFieldAccessor
+
+class MyEnvironment(Environment):
+    def __init__(self, ...):
+        # Load sync_rules and projection_fields from graph contract
+        self._sync_rules = contract.sync_rules
+        self._projection_fields = contract.projection_fields
+
+    def sync_tools(self):
+        agent_accessor = ToolKitFieldAccessor(self.tools)
+        user_accessor = ToolKitFieldAccessor(self.user_tools)
+        run_contract_sync(
+            self._sync_rules,
+            self._projection_fields,
+            agent_accessor,
+            user_accessor,
+        )
+        # View projections (display_* fields) can follow here as plain Python
+```
 
 Validation:
 

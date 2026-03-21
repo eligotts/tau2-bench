@@ -1,5 +1,9 @@
 # Tau2 Dependency-Graph Domain Plan
 
+> **Status (2026-03-19):** This document captures the original architecture design.
+> The implementation has evolved — see inline `[CURRENT]` notes for deviations.
+> For the operational authoring guide, see `docs/prompts/depgraph/`.
+
 This document captures the current target architecture for building tau2-compatible domains with graph-based solvability guarantees.
 
 ## 1. Goals
@@ -53,6 +57,7 @@ Each action is represented by a contract, not just executable code:
 - `tool_name` (real runtime callable name)
 - `requires: set[Fact]`
 - `requires_absent: set[Fact]` (negative preconditions)
+  `[CURRENT: The implementation uses requires_world with op=neq instead of requires_absent. See types.py WorldPredicateSpec.]`
 - `produces: set[Fact]`
 - `apply(S, args) -> S'`
 - `stutter_on_fail: bool` (true in most cases)
@@ -69,6 +74,7 @@ Practical policy:
 
 - Assistant tools should normally be `causal` or `knowledge-only`.
 - Assistant `stutter-only` tools are exceptional and must be allowlisted.
+  `[CURRENT: assistant_stutter_allowlist was removed. Stutter-only classification is enforced directly.]`
 
 A fan-out edge is eligible only when:
 
@@ -117,6 +123,8 @@ Conversation micro-steps (assistant asks, user responds) are still outside the c
 
 ### 5.1 FactSource specifications
 
+`[CURRENT: FactSourceSpec was replaced by BindingSourceSpec. Bindings now require a world_path field for invalidation tracking.]`
+
 To avoid magical knowledge edges, each user-supplied fact needs one or more explicit `FactSource` declarations:
 
 - `fact_id` (for example `K.iccid_known`)
@@ -160,6 +168,7 @@ A task is authored as:
 - Goal facts / goal predicate
 - Optional required dependency steps (for necessity checks)
 - Optional trace precedence metadata (descriptive only)
+  `[CURRENT: required_precedence was removed entirely. The BFS plan is the sole ordering record.]`
 
 tau2 output remains the existing `Task` schema.
 
@@ -221,6 +230,7 @@ This design maps directly to tau2 runtime pieces:
 - `env_assertions` <- goal predicate compiled into assertion calls
 - `evaluation_criteria.actions` <- optional behavioral checks (use sparingly)
 - `sync_tools()` <- must be mirrored in transition effects (especially `user.causal -> agent` bridges)
+  `[CURRENT: sync_tools() now calls run_contract_sync() from runtime_sync.py — the contract YAML sync rules are the single source of truth. No manual reimplementation needed.]`
 
 Detailed primitive-by-primitive mapping and implementation checklist:
 

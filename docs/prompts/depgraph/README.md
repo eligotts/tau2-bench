@@ -11,19 +11,20 @@ State vocabulary for all prompts/templates in this folder:
 - projected world paths (for example `agent.lines[active_line].status`)
 - `user.*` projected causal paths for user-side state
 - binding ids (assistant-known values) produced by explicit tool-backed `knowledge-only` actions
+- every binding declares a `world_path` that tracks its canonical value in the projected world
 
 ## Two Adapter Paths
 
 The depgraph pipeline supports two adapter paths that share the same graph contract,
 sampler, and preflight but diverge at the "last mile" compilation:
 
-### tau2 path (Steps 00 → 01 → 02 → 03 → 04–09)
+### tau2 path (Steps 00 -> 01 -> 02 -> 03 -> 04-09)
 
 Full user-simulator environment. Produces tau2 `Task` JSON with `initialization_actions`,
 `env_assertions`, `action_expectations`, personas, sync rules, and stop-gate checking.
 Use for domains with human-in-the-loop simulation (support agents, collaborative tasks).
 
-### verifiers path (Steps 00 → 01 → 02v → 03 → 04v)
+### verifiers path (Steps 00 -> 01 -> 02v -> 03 -> 04v)
 
 Agent-only `StatefulToolEnv`. Produces `DepgraphTaskConfig` objects with `start_world`,
 `goal_world`, tool functions, and system/task prompts. Goal checking via `DepgraphRubric`
@@ -79,9 +80,13 @@ Use this split to avoid ambiguity and accidental over-automation:
 
 ### Hard rules (both paths)
 
-- Do not manually edit generated structure (`required_actions`, `required_precedence`, sampled start/goal intent) except via upstream source files and reruns.
-- Terminal end states must be declared in `sampling_request.yaml` via `terminal_profiles`; do not create shorter tasks by stopping in intermediate repair states.
+- Do not manually edit generated structure (`required_actions`) except via upstream source files and reruns.
+- Terminal profiles define the goal. The emitted `goal_world` is the terminal profile's `requires_world` predicates. There is no diff capture and no separate goal capture paths.
+- Tasks are deduped by `(seed_id, terminal_profile_id)`. Different BFS paths from the same seed to the same terminal profile collapse to one task (first/shortest hit wins).
+- Every binding must declare a `world_path` that tracks its canonical value in the projected world. Bindings invalidate when their `world_path` changes.
+- Sync rules declared in the graph contract are the single source of truth. At runtime, `environment.sync_tools()` calls `run_contract_sync()` from the `runtime_sync` module.
 - If the domain needs many related starts, prefer `seed_schemas` in `sampling_request.yaml` over hand-maintained concrete seed lists.
+- If the domain needs many related terminal profiles, use `terminal_schemas` in `sampling_request.yaml` to expand profile families combinatorially.
 - (tau2 only) Semantic enrichment happens in runtime fields only.
 
 ## Order of use

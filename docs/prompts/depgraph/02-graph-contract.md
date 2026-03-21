@@ -70,17 +70,22 @@ Requirements:
    value is genuinely stale. Do not bind to a field that changes as a *side-effect* of the
    consuming action (e.g. binding a dashboard summary to `incident.status` when triage
    changes status). If the binding captures a static observation that never goes stale,
-   omit `world_path` entirely.
-15. Define `sync_rules` in the contract for every runtime sync behavior:
+   anchor it to the most representative projected field.
+15. Every binding MUST declare a `world_path` in `projection_fields`. This is how the
+   kernel tracks invalidation. There are no unanchored bindings.
+16. Define `sync_rules` in the contract for every runtime sync behavior:
    - unconditional projections via `{path, from_path}`
    - conditional bridges/derived updates via `requires_world` + `{path, set}`
    - no hidden sync behavior outside the declared rules
-16. Implement `sync_tools()` now to mirror the declared `sync_rules` exactly, both for the initial start world and after every tool call.
-17. If using strict checker-based STOP:
+17. `sync_tools()` calls `run_contract_sync()` from `runtime_sync` — the contract sync
+   rules are the single source of truth. View projections (display_* fields) stay as
+   adapter Python in `_project_view()`. Add `get_<field>()` methods to toolkits alongside
+   `set_<field>()` for the sync runner.
+18. If using strict checker-based STOP:
    - include a user `stutter-only` action for `check_resolution_status`
    - implement matching user tool callable now
    - keep checker tool non-causal (no world/binding effects).
-18. Runtime guard behavior must mirror contract preconditions:
+19. Runtime guard behavior must mirror contract preconditions:
    - unmet `requires_world` preconditions return explicit error/no-op message
    - unmet `requires_bindings` preconditions are enforced structurally via `tool_arg_bindings`
      (the agent cannot supply a parameter it hasn't discovered)

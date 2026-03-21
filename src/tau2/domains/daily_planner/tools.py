@@ -17,6 +17,7 @@ from tau2.domains.daily_planner.data_model import (
     FundsReservedFor,
     MaintenanceStatus,
     PickupStatus,
+    PlanningState,
     PublicTransitStatus,
     QuoteCount,
     ReservationHold,
@@ -53,13 +54,10 @@ class AccountBalancesResult(BaseModel):
 
 
 class ErrandStatusResult(BaseModel):
-    errand_type: str
     item_id: str
     status: str
     delivery_available: bool
     item_in_stock: bool
-    deadline: str
-    location: str
 
 
 class ReservationStatusResult(BaseModel):
@@ -137,6 +135,12 @@ class DailyPlannerTools(ToolKitBase):
     def set_calendar_active_conflict_meeting_id(self, value: str) -> None:
         """Initialization helper for task loading."""
         self.db.calendar.active_conflict_meeting_id = value
+
+    @is_tool(ToolType.WRITE)
+    def review_priorities(self) -> dict:
+        """Review the day's priorities based on calendar and budget situation."""
+        self.db.planning.priorities_set = True
+        return {"status": "success", "message": "Day priorities reviewed and set."}
 
     @is_tool(ToolType.WRITE)
     def reschedule_meeting(self, meeting_id: str, new_time: str) -> str:
@@ -310,13 +314,10 @@ class DailyPlannerTools(ToolKitBase):
         """
         errand = self.db.errand_a if errand_id == "errand_a" else self.db.errand_b
         return ErrandStatusResult(
-            errand_type=errand.errand_type,
             item_id=errand.item_id or f"ITEM-{errand_id.upper()}",
             status=errand.status.value,
             delivery_available=errand.delivery_available,
             item_in_stock=errand.item_in_stock,
-            deadline=errand.deadline,
-            location=errand.location,
         )
 
     @is_tool(ToolType.READ)
@@ -465,12 +466,8 @@ class DailyPlannerTools(ToolKitBase):
         return f"Transferred ${amount:.2f}. New checking balance: ${self.db.finance.checking_balance:.2f}"
 
     @is_tool(ToolType.WRITE)
-    def pay_bill(self, bill_id: str) -> str:
-        """Pay a pending bill from the checking account.
-
-        Args:
-            bill_id: The ID of the bill to pay.
-        """
+    def pay_bill(self) -> str:
+        """Pay the outstanding bill from the checking account."""
         if not self.db.finance.bill_active:
             return "Error: No active bill."
         if not self.db.finance.sufficient_funds:
@@ -479,28 +476,22 @@ class DailyPlannerTools(ToolKitBase):
             return f"Error: Bill is {self.db.finance.bill_status.value}."
         self.db.finance.bill_status = BillStatus.PAID
         self.db.finance.checking_balance -= self.db.finance.bill_amount
-        # Paying bill may reduce available funds
         if self.db.finance.available_funds == AvailableFunds.PLENTY:
             self.db.finance.available_funds = AvailableFunds.TIGHT
         elif self.db.finance.available_funds == AvailableFunds.TIGHT:
             self.db.finance.available_funds = AvailableFunds.BROKE
         self.db.finance.budget_check_needed = True
-        return f"Bill {bill_id} paid."
+        return "Bill paid successfully."
 
     @is_tool(ToolType.WRITE)
-    def defer_bill(self, bill_id: str, new_date: str) -> str:
-        """Defer a bill payment to a later date.
-
-        Args:
-            bill_id: The ID of the bill to defer.
-            new_date: New due date for the bill.
-        """
+    def defer_bill(self) -> str:
+        """Defer the outstanding bill payment to a later date."""
         if not self.db.finance.bill_active:
             return "Error: No active bill."
         if self.db.finance.bill_status != BillStatus.UNPAID:
             return f"Error: Bill is {self.db.finance.bill_status.value}."
         self.db.finance.bill_status = BillStatus.DEFERRED
-        return f"Bill {bill_id} deferred to {new_date}."
+        return "Bill deferred."
 
     # ── Dependent Care ──
 
@@ -661,17 +652,17 @@ class DailyPlannerTools(ToolKitBase):
         """Check the status of a household maintenance request."""
         return MaintenanceStatusResult(
             status=self.db.household.maintenance_status.value,
-            issue_type=self.db.household.issue_type,
-            technician_eta=self.db.household.technician_eta,
+            issue_type=self.db.household.issue_type or "general repair",
+            technician_eta=self.db.household.technician_eta or "not scheduled",
             requires_user_home=self.db.household.requires_user_home,
         )
 
     @is_tool(ToolType.WRITE)
-    def request_maintenance_quotes(self, issue_type: str) -> str:
-        """Request quotes from maintenance providers.
+    def request_maintenance_quotes(self, issue_description: str = "") -> str:
+        """Request quotes from maintenance providers for the reported issue.
 
         Args:
-            issue_type: The type of maintenance issue reported.
+            issue_description: Description of the maintenance issue from the initial status check.
         """
         if not self.db.household.active:
             return "Error: No active maintenance request."
@@ -757,6 +748,13 @@ class DailyPlannerTools(ToolKitBase):
 
     def set_calendar_apology_sent(self, value: bool) -> None:
         self.db.calendar.apology_sent = value
+
+    def set_calendar_schedule_clear(self, value: bool) -> None:
+        self.db.calendar.schedule_clear = value
+
+    # Planning
+    def set_planning_priorities_set(self, value: bool) -> None:
+        self.db.planning.priorities_set = value
 
     # Errand A
     def set_errand_a_active(self, value: bool) -> None:
@@ -906,6 +904,182 @@ class DailyPlannerTools(ToolKitBase):
     def set_errand_b_delivery_result(self, value: str) -> None:
         self.db.errand_b.delivery_result = DeliveryResult(value)
 
+    # ── Getters (used by runtime_sync to project flat world from typed DB) ──
+
+    # Calendar
+    def get_calendar_conflict_status(self) -> str:
+        return self.db.calendar.conflict_status.value
+
+    def get_calendar_apology_needed(self) -> bool:
+        return self.db.calendar.apology_needed
+
+    def get_calendar_apology_sent(self) -> bool:
+        return self.db.calendar.apology_sent
+
+    def get_calendar_active_conflict_meeting_id(self) -> str:
+        return self.db.calendar.active_conflict_meeting_id
+
+    def get_calendar_schedule_clear(self) -> bool:
+        return self.db.calendar.schedule_clear
+
+    # Planning
+    def get_planning_priorities_set(self) -> bool:
+        return self.db.planning.priorities_set
+
+    # Transport
+    def get_transport_status(self) -> str:
+        return self.db.transport.status.value
+
+    def get_transport_car_issue(self) -> str:
+        return self.db.transport.car_issue.value
+
+    def get_transport_fix_status(self) -> str:
+        return self.db.transport.fix_status.value
+
+    def get_transport_rideshare_result(self) -> str:
+        return self.db.transport.rideshare_result.value
+
+    def get_transport_public_transit_status(self) -> str:
+        return self.db.transport.public_transit_status.value
+
+    def get_transport_transport_cost_paid(self) -> bool:
+        return self.db.transport.transport_cost_paid
+
+    def get_transport_rideshare_will_succeed(self) -> bool:
+        return self.db.transport.rideshare_will_succeed
+
+    # Errand A
+    def get_errand_a_active(self) -> bool:
+        return self.db.errand_a.active
+
+    def get_errand_a_status(self) -> str:
+        return self.db.errand_a.status.value
+
+    def get_errand_a_delivery_available(self) -> bool:
+        return self.db.errand_a.delivery_available
+
+    def get_errand_a_item_in_stock(self) -> bool:
+        return self.db.errand_a.item_in_stock
+
+    def get_errand_a_reservation_hold(self) -> str:
+        return self.db.errand_a.reservation_hold.value
+
+    def get_errand_a_delivery_result(self) -> str:
+        return self.db.errand_a.delivery_result.value
+
+    def get_errand_a_delivery_will_succeed(self) -> bool:
+        return self.db.errand_a.delivery_will_succeed
+
+    # Errand B
+    def get_errand_b_active(self) -> bool:
+        return self.db.errand_b.active
+
+    def get_errand_b_status(self) -> str:
+        return self.db.errand_b.status.value
+
+    def get_errand_b_delivery_available(self) -> bool:
+        return self.db.errand_b.delivery_available
+
+    def get_errand_b_item_in_stock(self) -> bool:
+        return self.db.errand_b.item_in_stock
+
+    def get_errand_b_reservation_hold(self) -> str:
+        return self.db.errand_b.reservation_hold.value
+
+    def get_errand_b_delivery_result(self) -> str:
+        return self.db.errand_b.delivery_result.value
+
+    def get_errand_b_delivery_will_succeed(self) -> bool:
+        return self.db.errand_b.delivery_will_succeed
+
+    # Finance
+    def get_finance_bill_active(self) -> bool:
+        return self.db.finance.bill_active
+
+    def get_finance_sufficient_funds(self) -> bool:
+        return self.db.finance.sufficient_funds
+
+    def get_finance_transfer_status(self) -> str:
+        return self.db.finance.transfer_status.value
+
+    def get_finance_bill_status(self) -> str:
+        return self.db.finance.bill_status.value
+
+    def get_finance_available_funds(self) -> str:
+        return self.db.finance.available_funds.value
+
+    def get_finance_funds_reserved_for(self) -> str:
+        return self.db.finance.funds_reserved_for.value
+
+    def get_finance_budget_check_needed(self) -> bool:
+        return self.db.finance.budget_check_needed
+
+    # Dependent care
+    def get_dependent_care_active(self) -> bool:
+        return self.db.dependent_care.active
+
+    def get_dependent_care_pickup_status(self) -> str:
+        return self.db.dependent_care.pickup_status.value
+
+    def get_dependent_care_delegate_a_contacted(self) -> bool:
+        return self.db.dependent_care.delegate_a_contacted
+
+    def get_dependent_care_delegate_a_availability(self) -> str:
+        return self.db.dependent_care.delegate_a_availability.value
+
+    def get_dependent_care_delegate_b_contacted(self) -> bool:
+        return self.db.dependent_care.delegate_b_contacted
+
+    def get_dependent_care_delegate_b_availability(self) -> str:
+        return self.db.dependent_care.delegate_b_availability.value
+
+    def get_dependent_care_extended_care(self) -> str:
+        return self.db.dependent_care.extended_care.value
+
+    def get_dependent_care_facility_notified(self) -> bool:
+        return self.db.dependent_care.facility_notified
+
+    def get_dependent_care_extended_care_cost_paid(self) -> bool:
+        return self.db.dependent_care.extended_care_cost_paid
+
+    def get_dependent_care_care_arrangement_confirmed(self) -> bool:
+        return self.db.dependent_care.care_arrangement_confirmed
+
+    def get_dependent_care_pickup_eta_checked(self) -> bool:
+        return self.db.dependent_care.pickup_eta_checked
+
+    def get_dependent_care_extended_care_available(self) -> bool:
+        return self.db.dependent_care.extended_care_available
+
+    # Messaging
+    def get_messaging_delegate_a_will_accept(self) -> bool:
+        return self.db.messaging.delegate_a_will_accept
+
+    def get_messaging_delegate_b_will_accept(self) -> bool:
+        return self.db.messaging.delegate_b_will_accept
+
+    # Household
+    def get_household_active(self) -> bool:
+        return self.db.household.active
+
+    def get_household_maintenance_status(self) -> str:
+        return self.db.household.maintenance_status.value
+
+    def get_household_access_arranged(self) -> bool:
+        return self.db.household.access_arranged
+
+    def get_household_quote_count(self) -> str:
+        return self.db.household.quote_count.value
+
+    def get_household_provider_selected(self) -> bool:
+        return self.db.household.provider_selected
+
+    def get_household_maintenance_cost_paid(self) -> bool:
+        return self.db.household.maintenance_cost_paid
+
+    def get_household_inspection_scheduled(self) -> bool:
+        return self.db.household.inspection_scheduled
+
     # ── Env assertions (called by runtime env_assertions) ──
 
     # Calendar
@@ -917,6 +1091,13 @@ class DailyPlannerTools(ToolKitBase):
 
     def assert_calendar_apology_sent(self, expected: bool) -> bool:
         return self.db.calendar.apology_sent == expected
+
+    def assert_calendar_schedule_clear(self, expected: bool) -> bool:
+        return self.db.calendar.schedule_clear == expected
+
+    # Planning
+    def assert_planning_priorities_set(self, expected: bool) -> bool:
+        return self.db.planning.priorities_set == expected
 
     # Errand
     def assert_errand_a_status(self, expected: str) -> bool:
@@ -931,6 +1112,9 @@ class DailyPlannerTools(ToolKitBase):
 
     def assert_finance_bill_status(self, expected: str) -> bool:
         return self.db.finance.bill_status.value == expected
+
+    def assert_finance_payment_confirmed(self, expected: bool) -> bool:
+        return self.db.finance.payment_confirmed == expected
 
     def assert_finance_budget_check_needed(self, expected: bool) -> bool:
         return self.db.finance.budget_check_needed == expected

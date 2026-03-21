@@ -34,9 +34,10 @@ class UserHomeState(BaseModelNoExtra):
 
 
 class StopCriterion(BaseModelNoExtra):
-    field: str
+    check_field: str
     op: str = "eq"
-    value: str | bool | int | float
+    expected: str | bool | int | float
+    unmet_reason: str = ""
 
 
 class StopGateState(BaseModelNoExtra):

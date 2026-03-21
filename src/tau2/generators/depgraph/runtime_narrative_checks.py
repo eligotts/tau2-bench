@@ -59,12 +59,15 @@ def _contains_internal_path(text: str) -> bool:
 
 
 def _extract_start_binding_values(brief: dict[str, Any]) -> list[str]:
-    summary = brief.get("start_state_summary")
-    if not isinstance(summary, dict):
-        return []
-    bindings = summary.get("bindings")
+    # New brief format: start_bindings at top level
+    bindings = brief.get("start_bindings")
     if not isinstance(bindings, list):
-        return []
+        # Fallback: old format with start_state_summary.bindings
+        summary = brief.get("start_state_summary")
+        if isinstance(summary, dict):
+            bindings = summary.get("bindings", [])
+        else:
+            return []
     values: list[str] = []
     for binding in bindings:
         if not isinstance(binding, dict):
@@ -76,15 +79,15 @@ def _extract_start_binding_values(brief: dict[str, Any]) -> list[str]:
     return values
 
 
-def _extract_goal_binding_do_not_disclose(brief: dict[str, Any]) -> list[str]:
-    values = brief.get("goal_binding_do_not_disclose")
+def _extract_undisclosed_binding_values(brief: dict[str, Any]) -> list[str]:
+    values = brief.get("undisclosed_binding_values")
     if not isinstance(values, list):
         return []
     return [str(v) for v in values if v is not None]
 
 
 def _extract_required_actions(brief: dict[str, Any]) -> list[str]:
-    chain = brief.get("required_action_chain")
+    chain = brief.get("required_actions") or brief.get("required_action_chain")
     if not isinstance(chain, list):
         return []
     actions: list[str] = []
@@ -166,14 +169,14 @@ def check_runtime_narratives(
                 )
 
         start_binding_value_set = set(start_binding_values)
-        for value in _extract_goal_binding_do_not_disclose(brief):
+        for value in _extract_undisclosed_binding_values(brief):
             if value in start_binding_value_set:
                 continue
             for field_name, text in field_map.items():
                 if value and value in text:
                     issues.append(
-                        f"task '{task.task_id}' runtime.{field_name} leaks goal-binding "
-                        f"value '{value}' — this must be discovered mid-conversation, "
+                        f"task '{task.task_id}' runtime.{field_name} leaks undisclosed binding "
+                        f"value '{value}' — this must be acquired during task execution, "
                         f"not pre-disclosed"
                     )
 

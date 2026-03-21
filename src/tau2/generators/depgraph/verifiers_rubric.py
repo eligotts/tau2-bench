@@ -1,6 +1,6 @@
 """Rubric for scoring depgraph tasks in verifiers environments.
 
-Checks goal_world predicates and goal_bindings against the DB state
+Checks goal_world predicates against the DB state
 at episode end. This is the verifiers equivalent of tau2's env_assertions.
 """
 
@@ -46,13 +46,9 @@ class DepgraphRubric(vf.Rubric):
             return 0.0
 
         db = state.get("db", {})
-        bindings = state.get("bindings", set())
-
         reward, details = check_goal(
             db=db,
-            bindings=bindings,
             goal_world=config.goal_world,
-            goal_bindings=config.goal_bindings,
         )
 
         # Store details in state for debugging / logging

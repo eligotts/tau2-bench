@@ -56,13 +56,17 @@ Judge the domain against these exact categories:
 2. `volatile_binding_discipline`
    - Are volatile bindings only used for immediate observation-driven transitions?
    - Is any moving observation value threaded through a long repair chain?
+   - Does every binding have a `world_path` that correctly tracks its canonical value?
 3. `sync_rule_fidelity`
-   - Is every derived/runtime-visible behavior declared in `sync_rules` and mirrored in `sync_tools()`?
-   - Does init-time sync match post-tool sync?
+   - Is every derived/runtime-visible behavior declared in `sync_rules` in the graph contract?
+   - Does `environment.sync_tools()` call `run_contract_sync()` from the `runtime_sync` module?
+   - Is the contract the single source of truth for sync logic (no dual implementation)?
+   - Do view projections (`display_*` fields) stay as adapter Python code, separate from contract sync rules?
 4. `branch_specific_consistency`
    - Do policy, contract, sync logic, and stop-gates agree for each branch/family?
    - Are billing-only tasks free of hardware-only prerequisites unless intentionally modeled?
-5. `terminal_end_state_discipline`
+5. `terminal_profile_goal_alignment`
+   - Does each task's `goal_world` match its terminal profile's `requires_world` predicates exactly?
    - Do sampled tasks end in explicit terminal profiles rather than intermediate repair states?
    - Do shorter tasks come from easier starts rather than partial endings?
    - Do sampled tasks reflect the minimal terminal-reaching plan, rather than duplicate variants
@@ -80,7 +84,7 @@ Judge the domain against these exact categories:
    - Would an agent following the policy for domain reasoning plus its injected tool definitions for tool affordances know how to complete the representative tasks?
    - Do `reason_for_call`, `known_info`, and `ticket` stay at the user-observable case surface, or do they leak latent blocker inventories / internal path labels that pre-solve the task?
 9. `difficulty_engineering` (for domains targeting strong agents)
-   - Does the policy avoid being an answer key? (No direct fault→fix mappings that an LLM
+   - Does the policy avoid being an answer key? (No direct fault->fix mappings that an LLM
      can pattern-match without reasoning.)
    - Do cascading sync rules or repair side-effects create non-obvious work the agent must
      discover? What percentage of tasks require reasoning beyond "read fault, apply fix"?
@@ -89,6 +93,9 @@ Judge the domain against these exact categories:
    - Do resolution gates require side-effect cleanup, or is collateral damage "free"?
    - Are terminal profile requirements achievable for ALL seeds targeting that profile?
      (Check for unreachable preconditions like DNS verification for non-DNS seeds.)
+10. `dedup_integrity`
+    - Are tasks properly deduped by `(seed_id, terminal_profile_id)`?
+    - Are there near-duplicate tasks that should have collapsed?
 
 ### Required output
 

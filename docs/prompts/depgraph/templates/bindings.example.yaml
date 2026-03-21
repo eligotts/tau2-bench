@@ -3,6 +3,9 @@ bindings:
   - binding_id: iccid
     source_tool: get_sim_info
     extraction_path: result.iccid
+    # world_path is required — links this binding to the canonical world predicate
+    # so the runtime can invalidate the binding when the predicate changes.
+    world_path: agent.lines[active_line].iccid_observed
     observability_all_of:
       - op: eq
         path: user.physical.phone_powered_on

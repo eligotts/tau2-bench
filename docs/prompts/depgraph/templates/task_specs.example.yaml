@@ -11,26 +11,17 @@ tasks:
       - path: user.physical.phone_restarted
         set: false
     start_bindings: []
+    # goal_world predicates come from the terminal profile's requires_world.
     goal_world:
       - op: eq
         path: agent.lines[active_line].data_status
         value: active
-    goal_capture_paths:
-      - agent.lines[active_line]
-      - user.physical
-    goal_bindings: []
     terminal_profile_id: fully_resolved
     required_actions:
       - acquire_iccid
       - restart_phone
       - reprovision_esim
       - run_data_test
-    # Keep structural fields from sampler output unchanged.
-    # Optional trace-order metadata (not enforced by SAT preflight).
-    required_precedence:
-      - [acquire_iccid, reprovision_esim]
-      - [restart_phone, reprovision_esim]
-      - [reprovision_esim, run_data_test]
     min_plan_length: 4
     runtime:
       domain: telecom

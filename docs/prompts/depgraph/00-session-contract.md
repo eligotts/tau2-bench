@@ -6,10 +6,10 @@ Use this at the start of any depgraph authoring run.
 
 Before starting, determine which adapter path this domain targets:
 
-- **tau2 path** — Full user-simulator environment with agent + user roles, personas, sync
+- **tau2 path** -- Full user-simulator environment with agent + user roles, personas, sync
   rules, stop-gate checker, and runtime narrative enrichment. Use when the domain needs a
   human-in-the-loop simulation (support agents, collaborative tasks).
-- **verifiers path** — Agent-only `StatefulToolEnv` with no user simulator. Tools get a
+- **verifiers path** -- Agent-only `StatefulToolEnv` with no user simulator. Tools get a
   `db` dict injected via `state["db"]`. Goal checking via rubric at episode end. Use when
   the domain is pure tool-use (browser automation, API interaction, code editing).
 
@@ -22,7 +22,7 @@ Both paths share the same graph contract, sampler, and preflight. They diverge a
 | 01 | `01-domain-scope.md` | `01-domain-scope.md` |
 | 02 | `02-graph-contract.md` | `02v-graph-contract-verifiers.md` |
 | 03 | `03-task-intents.md` | `03-task-intents.md` |
-| 04+ | `04` → `05` → `06` → `07` → `08` → `09` | `04v-verifiers-compile-and-verify.md` |
+| 04+ | `04` -> `05` -> `06` -> `07` -> `08` -> `09` | `04v-verifiers-compile-and-verify.md` |
 
 ## Instruction
 
@@ -36,16 +36,19 @@ Hard constraints:
 4. Edit only one minimal file per step.
 5. After each step, run verification and report pass/fail with exact command.
 6. Prefer explicit v2 transition contracts (`requires_world/requires_bindings/effects_world/effects_bindings`) over implicit logic.
-7. (tau2 only) Treat derived/runtime-only state as contract-owned `sync_rules`; `environment.sync_tools()` must mirror those rules exactly at init time and after every tool call.
+7. (tau2 only) Sync rules declared in `graph_contract.yaml` are the single source of truth. `environment.sync_tools()` must call `run_contract_sync()` from the `runtime_sync` module to execute them. View projections (`display_*` fields) stay as adapter Python code.
 8. Assume bindings can invalidate whenever their `world_path` changes. Do not thread volatile bindings through long repair chains; use them only for immediate observation-driven steps or clearly mutually-exclusive stage transitions.
 9. Fail closed: never emit compiled tasks when preflight, policy/contract alignment, or runtime alignment checks fail.
 10. Do not manually author task journeys; structural intents must come from sampler fan-out.
 11. Preserve creativity by constraining semantics/contracts, not narrative style/domain theme.
-12. Do not mutate generated structural fields (`required_actions`, `required_precedence`) by hand.
+12. Do not mutate generated structural fields (`required_actions`) by hand.
 13. Re-run `/Users/eligottlieb/Documents/tau2-bench/docs/prompts/depgraph/CHECKLIST.md` after each major phase.
-14. (tau2 only) Treat `policy.md` as domain reasoning guidance, not a tool catalog or solve script. Agent tools are injected via the API with docstrings — the policy should teach *when* and *why* to act (principles, ordering, side-effects, resolution criteria), not *what tools exist*. Do not list agent or user tool names in the policy.
+14. (tau2 only) Treat `policy.md` as domain reasoning guidance, not a tool catalog or solve script. Agent tools are injected via the API with docstrings -- the policy should teach *when* and *why* to act (principles, ordering, side-effects, resolution criteria), not *what tools exist*. Do not list agent or user tool names in the policy.
 15. Declare valid task endings explicitly in `sampling_request.yaml` terminal profiles. Make tasks shorter by changing start states, not by stopping at intermediate fixable stages under a full-resolution policy.
 16. (tau2 only) Persist both baseline seed files: `db.json` and `user_db.json`. The user DB is required package state, not optional glue. Keep it clean-base and encode task-specific user state only through runtime init actions.
+17. Terminal profile = the goal. `goal_world` is populated from the matched terminal profile's `requires_world` predicates. There is no diff capture.
+18. Tasks are deduped by `(seed_id, terminal_profile_id)`. Different BFS paths to the same terminal profile from the same seed collapse to one task.
+19. Every binding must declare a `world_path` in `projection_fields`.
 
 Output format:
 

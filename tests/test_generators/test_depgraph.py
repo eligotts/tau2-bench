@@ -2,6 +2,8 @@ import types
 import unittest
 from typing import Literal
 
+from pydantic import ValidationError
+
 from tau2.generators.depgraph.compiler import preflight_and_compile
 from tau2.generators.depgraph.preflight import run_task_preflight
 from tau2.generators.depgraph.runtime_checks import (
@@ -288,19 +290,12 @@ class TestDepgraphPreflight(unittest.TestCase):
             goal_world=[
                 WorldPredicateSpec(op="eq", path="agent.data_active", value=True),
             ],
-            goal_bindings=["iccid"],
             required_actions=[
                 "power_on_phone",
                 "acquire_iccid",
                 "restart_phone",
                 "reprovision",
                 "run_data_test",
-            ],
-            required_precedence=[
-                ("power_on_phone", "acquire_iccid"),
-                ("acquire_iccid", "reprovision"),
-                ("restart_phone", "reprovision"),
-                ("reprovision", "run_data_test"),
             ],
             min_plan_length=5,
         )
@@ -314,6 +309,7 @@ class TestDepgraphPreflight(unittest.TestCase):
         contract = GraphContractSpec(
             projection_fields=[
                 "agent.line_exists",
+                "agent.iccid_value",
                 "agent.profile_ready",
                 "user.phone_powered_on",
             ],
@@ -322,6 +318,7 @@ class TestDepgraphPreflight(unittest.TestCase):
                     binding_id="iccid",
                     source_tool="get_sim_info",
                     extraction_path="result.iccid",
+                    world_path="agent.iccid_value",
                     observability_all_of=[
                         WorldPredicateSpec(op="eq", path="user.phone_powered_on", value=True),
                     ],
@@ -371,8 +368,9 @@ class TestDepgraphPreflight(unittest.TestCase):
         self.assertFalse(report.passed)
         self.assertFalse(report.sat_full.sat)
 
-    def test_goal_contradiction_fails(self):
-        """Same goal path with two different target values is a contradiction."""
+    def test_goal_contradiction_fails_sat(self):
+        """Same goal path with two different target values is unsatisfiable
+        (contradictory goals cannot both be reached)."""
         contract = _make_simple_contract()
         task = TaskIntent(
             task_id="bad_goal",
@@ -384,7 +382,6 @@ class TestDepgraphPreflight(unittest.TestCase):
         )
         report = run_task_preflight(contract, task, max_depth=2)
         self.assertFalse(report.passed)
-        self.assertTrue(any("Goal contradiction" in issue for issue in report.issues))
 
     def test_sync_rules_materialize_start_world(self):
         contract = GraphContractSpec(
@@ -497,7 +494,7 @@ class TestDepgraphPreflight(unittest.TestCase):
             ["acquire_fault_code", "advance_fault", "acquire_fault_code", "resolve_fault"],
         )
 
-    def test_volatile_goal_binding_fails_preflight(self):
+    def test_terminality_is_world_only_after_binding_consumption(self):
         contract = GraphContractSpec(
             projection_fields=["agent.visible_code", "agent.profile_ready"],
             bindings=[
@@ -536,24 +533,119 @@ class TestDepgraphPreflight(unittest.TestCase):
             ],
         )
         task = TaskIntent(
-            task_id="volatile_goal_binding",
+            task_id="world_only_terminal",
             start_world=[
                 WorldEffectSpec(path="agent.visible_code", set="START"),
             ],
             goal_world=[
                 WorldPredicateSpec(op="eq", path="agent.profile_ready", value=True),
             ],
-            goal_bindings=["visible_code"],
             required_actions=["acquire_visible_code", "advance_visible_code"],
             min_plan_length=2,
         )
 
         report = run_task_preflight(contract, task, max_depth=4)
 
-        self.assertFalse(report.passed)
-        self.assertTrue(
-            any("volatile and should not be a terminal task goal" in issue for issue in report.issues)
+        self.assertTrue(report.passed)
+        self.assertEqual(report.sat_full.end_bindings, frozenset())
+
+    def test_terminal_profile_requires_world_predicates(self):
+        with self.assertRaises(ValidationError):
+            TerminalProfileSpec(profile_id="invalid_terminal")
+
+    def test_terminal_profile_rejects_binding_requirements(self):
+        with self.assertRaises(ValidationError):
+            TerminalProfileSpec(
+                profile_id="invalid_terminal",
+                requires_world=[
+                    WorldPredicateSpec(op="eq", path="agent.done", value=True),
+                ],
+                requires_bindings=[
+                    BindingPredicateSpec(binding_id="iccid", acquired=True),
+                ],
+            )
+
+    def test_task_intent_silently_drops_goal_bindings(self):
+        """goal_bindings is a legacy field that is silently stripped."""
+        task = TaskIntent(
+            task_id="legacy_task",
+            goal_world=[
+                WorldPredicateSpec(op="eq", path="agent.done", value=True),
+            ],
+            goal_bindings=["iccid"],
         )
+        # Field should not exist on the model
+        self.assertFalse(hasattr(task, "goal_bindings"))
+
+    def test_terminal_profile_is_checked_world_only(self):
+        contract = GraphContractSpec(
+            projection_fields=["agent.visible_code", "agent.profile_ready"],
+            bindings=[
+                BindingSourceSpec(
+                    binding_id="visible_code",
+                    source_tool="check_station_screen",
+                    extraction_path="result.code",
+                    world_path="agent.visible_code",
+                )
+            ],
+            actions=[
+                ActionContract(
+                    action_id="acquire_visible_code",
+                    requestor="user",
+                    tool_name="check_station_screen",
+                    classification="knowledge-only",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="visible_code", acquired=False),
+                    ],
+                    effects_bindings=["visible_code"],
+                ),
+                ActionContract(
+                    action_id="advance_visible_code",
+                    requestor="assistant",
+                    tool_name="advance_visible_code",
+                    classification="causal",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="visible_code", acquired=True),
+                    ],
+                    effects_world=[
+                        WorldEffectSpec(path="agent.visible_code", set="NEXT"),
+                        WorldEffectSpec(path="agent.profile_ready", set=True),
+                    ],
+                    tool_arg_bindings={"visible_code": "visible_code"},
+                ),
+            ],
+        )
+        task = TaskIntent(
+            task_id="world_only_terminal_profile",
+            start_world=[
+                WorldEffectSpec(path="agent.visible_code", set="START"),
+            ],
+            goal_world=[
+                WorldPredicateSpec(op="eq", path="agent.profile_ready", value=True),
+            ],
+            goal_capture_paths=["agent.profile_ready"],
+            terminal_profile_id="profile_ready",
+            required_actions=["acquire_visible_code", "advance_visible_code"],
+            min_plan_length=2,
+        )
+
+        report = run_task_preflight(
+            contract,
+            task,
+            max_depth=4,
+            terminal_profiles=[
+                TerminalProfileSpec(
+                    profile_id="profile_ready",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.profile_ready", value=True),
+                    ],
+                )
+            ],
+            require_terminal_profile=True,
+        )
+
+        self.assertTrue(report.passed)
+        self.assertEqual(report.sat_full.end_bindings, frozenset())
 
 
 class TestDepgraphSampler(unittest.TestCase):
@@ -611,9 +703,6 @@ class TestDepgraphSampler(unittest.TestCase):
         sampled = sample_task_intents(contract, request)
         self.assertGreaterEqual(len(sampled), 1)
         self.assertEqual(sampled[0].task.min_plan_length, 3)
-        self.assertEqual(
-            sampled[0].task.required_precedence, [("a1", "a2"), ("a2", "a3")]
-        )
 
     def test_sampler_propagates_start_bindings(self):
         contract = _make_chain_contract()
@@ -641,7 +730,40 @@ class TestDepgraphSampler(unittest.TestCase):
             self.assertEqual(entry.task.start_bindings, ["iccid"])
             self.assertNotIn("acquire_iccid", entry.task.required_actions)
 
-    def test_sampler_drops_volatile_goal_bindings(self):
+    def test_sampler_emits_world_only_terminal_tasks(self):
+        contract = _make_chain_contract()
+        request = SamplingRequestDoc(
+            max_tasks=5,
+            goal_capture_paths=["agent", "user"],
+            terminal_profiles=[
+                TerminalProfileSpec(
+                    profile_id="data_active",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.data_active", value=True),
+                    ],
+                )
+            ],
+            seed_schemas=_single_seed_schema(
+                seed_id="with_binding_goal",
+                start_world=[
+                    WorldEffectSpec(path="agent.line_exists", set=True),
+                ],
+                allowed_terminal_profiles=["data_active"],
+                min_depth=5,
+                max_depth=6,
+            ),
+        )
+
+        sampled = sample_task_intents(contract, request)
+
+        self.assertEqual(len(sampled), 1)
+        self.assertEqual(
+            sampled[0].task.terminal_profile_id,
+            "data_active",
+        )
+        self.assertNotIn("goal_bindings", sampled[0].task.model_dump())
+
+    def test_sampler_allows_world_only_terminal_profiles_after_binding_consumption(self):
         contract = GraphContractSpec(
             projection_fields=["agent.visible_code", "agent.profile_ready"],
             bindings=[
@@ -683,7 +805,12 @@ class TestDepgraphSampler(unittest.TestCase):
             max_tasks=5,
             goal_capture_paths=["agent"],
             terminal_profiles=[
-                _make_terminal_profile("profile_ready", "agent.profile_ready", True)
+                TerminalProfileSpec(
+                    profile_id="profile_ready",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.profile_ready", value=True),
+                    ],
+                )
             ],
             seed_schemas=_single_seed_schema(
                 seed_id="volatile_seed",
@@ -697,7 +824,6 @@ class TestDepgraphSampler(unittest.TestCase):
         sampled = sample_task_intents(contract, request)
 
         self.assertEqual(len(sampled), 1)
-        self.assertEqual(sampled[0].task.goal_bindings, [])
         self.assertEqual(sampled[0].task.terminal_profile_id, "profile_ready")
 
     def test_sampler_skips_nonterminal_intermediate_states(self):
@@ -722,15 +848,7 @@ class TestDepgraphSampler(unittest.TestCase):
 
     def test_sampler_canonicalizes_away_optional_extra_discovery(self):
         contract = GraphContractSpec(
-            projection_fields=["agent.a", "agent.b", "agent.note_value"],
-            bindings=[
-                BindingSourceSpec(
-                    binding_id="note",
-                    source_tool="read_note",
-                    extraction_path="result.note",
-                    world_path="agent.note_value",
-                )
-            ],
+            projection_fields=["agent.a", "agent.b", "agent.note_open"],
             actions=[
                 ActionContract(
                     action_id="do_a",
@@ -740,14 +858,11 @@ class TestDepgraphSampler(unittest.TestCase):
                     effects_world=[WorldEffectSpec(path="agent.a", set=True)],
                 ),
                 ActionContract(
-                    action_id="acquire_note",
+                    action_id="open_note",
                     requestor="user",
-                    tool_name="read_note",
-                    classification="knowledge-only",
-                    requires_bindings=[
-                        BindingPredicateSpec(binding_id="note", acquired=False),
-                    ],
-                    effects_bindings=["note"],
+                    tool_name="open_note",
+                    classification="causal",
+                    effects_world=[WorldEffectSpec(path="agent.note_open", set=True)],
                 ),
                 ActionContract(
                     action_id="do_b",
@@ -763,11 +878,10 @@ class TestDepgraphSampler(unittest.TestCase):
         )
         request = SamplingRequestDoc(
             max_tasks=5,
-            goal_capture_paths=["agent"],
+            goal_capture_paths=["agent.b"],
             terminal_profiles=[_make_terminal_profile("resolved", "agent.b", True)],
             seed_schemas=_single_seed_schema(
                 seed_id="seed",
-                start_world=[WorldEffectSpec(path="agent.note_value", set="KNOWN")],
                 allowed_terminal_profiles=["resolved"],
                 min_depth=1,
                 max_depth=3,
@@ -778,10 +892,11 @@ class TestDepgraphSampler(unittest.TestCase):
 
         self.assertEqual(len(sampled), 1)
         self.assertEqual(sampled[0].task.required_actions, ["do_a", "do_b"])
-        self.assertEqual(sampled[0].task.goal_bindings, [])
         self.assertEqual(sampled[0].task.min_plan_length, 2)
 
-    def test_sampler_can_emit_multiple_tasks_from_one_seed_via_goal_capture(self):
+    def test_sampler_emits_multiple_tasks_from_one_seed_via_terminal_profiles(self):
+        """Different terminal profiles on the same seed produce distinct tasks
+        (sampler deduplicates by (seed_id, terminal_profile_id))."""
         contract = GraphContractSpec(
             projection_fields=["agent.a", "agent.b", "agent.done"],
             actions=[
@@ -833,8 +948,22 @@ class TestDepgraphSampler(unittest.TestCase):
         )
         request = SamplingRequestDoc(
             max_tasks=10,
-            goal_capture_paths=["agent"],
-            terminal_profiles=[_make_terminal_profile("resolved", "agent.done", True)],
+            terminal_profiles=[
+                TerminalProfileSpec(
+                    profile_id="resolved_via_a",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.a", value=True),
+                        WorldPredicateSpec(op="eq", path="agent.done", value=True),
+                    ],
+                ),
+                TerminalProfileSpec(
+                    profile_id="resolved_via_b",
+                    requires_world=[
+                        WorldPredicateSpec(op="eq", path="agent.b", value=True),
+                        WorldPredicateSpec(op="eq", path="agent.done", value=True),
+                    ],
+                ),
+            ],
             seed_schemas=_single_seed_schema(
                 seed_id="multi",
                 start_world=[
@@ -842,7 +971,7 @@ class TestDepgraphSampler(unittest.TestCase):
                     WorldEffectSpec(path="agent.b", set=False),
                     WorldEffectSpec(path="agent.done", set=False),
                 ],
-                allowed_terminal_profiles=["resolved"],
+                allowed_terminal_profiles=["resolved_via_a", "resolved_via_b"],
                 min_depth=2,
                 max_depth=2,
             ),
@@ -929,7 +1058,6 @@ class TestDepgraphSampler(unittest.TestCase):
         self.assertEqual(request.seeds[1].start_bindings, ["screen_fault_code"])
         self.assertEqual(request.seeds[1].min_depth, 1)
         self.assertEqual(request.seeds[1].max_depth, 3)
-        self.assertEqual(request.seeds[1].goal_capture_paths, ["agent"])
 
     def test_sampling_request_rejects_direct_seed_authoring(self):
         with self.assertRaisesRegex(ValueError, "direct 'seeds' authoring has been removed"):
@@ -1298,12 +1426,28 @@ class TestRuntimeAlignment(unittest.TestCase):
         from tau2.domains.tech_support.environment import get_environment
 
         contract = GraphContractSpec(
-            projection_fields=[],
+            projection_fields=["agent.connection_status"],
             bindings=[
                 BindingSourceSpec(
                     binding_id="connection_status",
                     source_tool="check_my_connection",
                     extraction_path="result..connection_status",
+                    world_path="agent.connection_status",
+                )
+            ],
+            actions=[
+                ActionContract(
+                    action_id="repair_connection",
+                    requestor="assistant",
+                    tool_name="run_remote_diagnostic",
+                    classification="causal",
+                    requires_bindings=[
+                        BindingPredicateSpec(
+                            binding_id="connection_status",
+                            acquired=True,
+                        ),
+                    ],
+                    tool_arg_bindings={"device_id": "connection_status"},
                 )
             ],
         )
@@ -1368,14 +1512,6 @@ class TestRuntimeAlignment(unittest.TestCase):
         """
         contract = GraphContractSpec(
             projection_fields=["agent.done"],
-            bindings=[
-                BindingSourceSpec(
-                    binding_id="screen_fault_code",
-                    source_tool="check_station_screen",
-                    extraction_path="result.fault_code",
-                    world_path="agent.done",
-                )
-            ],
             actions=[
                 ActionContract(
                     action_id="diagnose",
@@ -1567,7 +1703,7 @@ class TestStartBindingsVisibility(unittest.TestCase):
 
     def test_sync_derived_start_binding_value_present_in_both_passes(self):
         contract = GraphContractSpec(
-            projection_fields=["user.screen_iccid", "agent.iccid_value"],
+            projection_fields=["user.screen_iccid", "agent.iccid_value", "agent.done"],
             bindings=[
                 BindingSourceSpec(
                     binding_id="iccid",
@@ -1590,7 +1726,21 @@ class TestStartBindingsVisibility(unittest.TestCase):
                     ],
                 )
             ],
-            actions=[],
+            actions=[
+                ActionContract(
+                    action_id="consume_iccid",
+                    requestor="assistant",
+                    tool_name="consume_iccid",
+                    classification="causal",
+                    requires_bindings=[
+                        BindingPredicateSpec(binding_id="iccid", acquired=True),
+                    ],
+                    effects_world=[
+                        WorldEffectSpec(path="agent.done", set=True),
+                    ],
+                    tool_arg_bindings={"iccid": "iccid"},
+                )
+            ],
         )
         task = TaskIntent(
             task_id="t_sync_binding",
@@ -1611,35 +1761,14 @@ class TestStartBindingsVisibility(unittest.TestCase):
         issues = check_start_bindings_visibility(task_doc, contract)
         self.assertEqual(issues, [])
 
-    def test_missing_world_path_flagged(self):
-        """Binding without world_path can't resolve concrete value."""
-        contract = GraphContractSpec(
-            projection_fields=["agent.done"],
-            bindings=[
-                BindingSourceSpec(
-                    binding_id="some_fact",
-                    source_tool="get_info",
-                    extraction_path="result.value",
-                )
-            ],
-            actions=[],
-        )
-        task = TaskIntent(
-            task_id="t1",
-            start_world=[],
-            start_bindings=["some_fact"],
-            goal_world=[],
-            runtime=RuntimeTaskSpec(
-                domain="test",
-                reason_for_call="Fix it.",
-                task_instructions=_VALID_TASK_INSTRUCTIONS,
-                ticket="Ticket text.",
-            ),
-        )
-        task_doc = TaskSpecsDoc(tasks=[task])
-        issues = check_start_bindings_visibility(task_doc, contract)
-        self.assertEqual(len(issues), 1)
-        self.assertIn("no world_path", issues[0])
+    def test_missing_world_path_is_rejected(self):
+        """world_path is required — every binding must anchor to a projected world field."""
+        with self.assertRaises(Exception):
+            BindingSourceSpec(
+                binding_id="some_fact",
+                source_tool="get_info",
+                extraction_path="result.value",
+            )
 
 
 class TestDepgraphSemantics(unittest.TestCase):

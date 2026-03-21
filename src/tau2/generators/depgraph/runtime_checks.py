@@ -137,10 +137,16 @@ def _check_call_args(func: Callable[..., Any], args: dict[str, Any]) -> list[str
 
 
 def _binding_is_volatile(contract: GraphContractSpec, world_path: str | None) -> bool:
-    """A binding is volatile when normal action or sync effects can rewrite its world_path."""
+    """A binding is volatile when non-knowledge actions or sync effects can rewrite its world_path.
+
+    Knowledge-only actions that write to their own binding's world_path are excluded —
+    this is the standard acquisition pattern (monotonic set-once).
+    """
     if world_path is None:
         return False
     for action in contract.actions:
+        if action.classification == "knowledge-only":
+            continue
         for effect in action.effects_world:
             if effect.path == world_path:
                 return True
@@ -199,6 +205,56 @@ def _resolve_runtime_callable(
     return func, None
 
 
+
+def check_projection_method_coverage(
+    contract: GraphContractSpec,
+    environment_constructor: Callable[[], "Environment"],
+) -> list[str]:
+    """Verify sync-rule paths have matching get_/set_ methods for the contract sync runner.
+
+    This catches compound naming mismatches early (e.g., toolkit has `set_test_charge_state`
+    but sync runner needs `set_physical_test_charge_state` for `user.physical.test_charge_state`).
+    """
+    from tau2.generators.depgraph.semantics import leaf_field_name
+
+    issues: list[str] = []
+    env = environment_constructor()
+    assistant_toolkit = env.tools
+    user_toolkit = env.user_tools
+
+    # Paths involved in sync rules (these must be readable/writable by the sync runner)
+    sync_paths: set[str] = set()
+    for rule in contract.sync_rules:
+        for pred in rule.requires_world:
+            sync_paths.add(pred.path)
+        for effect in rule.effects_world:
+            sync_paths.add(effect.path)
+            if effect.from_path:
+                sync_paths.add(effect.from_path)
+
+    for path in sync_paths:
+        if ".view." in path:
+            continue
+        field_name = leaf_field_name(path)
+        if path.startswith("agent."):
+            toolkit = assistant_toolkit
+            side = "assistant"
+        elif path.startswith("user."):
+            toolkit = user_toolkit
+            side = "user"
+        else:
+            continue
+        if toolkit is None:
+            continue
+
+        if not hasattr(toolkit, f"get_{field_name}"):
+            issues.append(f"[{side}] missing 'get_{field_name}' for sync path '{path}'")
+        if not hasattr(toolkit, f"set_{field_name}"):
+            issues.append(f"[{side}] missing 'set_{field_name}' for sync path '{path}'")
+
+    return issues
+
+
 def check_contract_against_environment(
     contract: GraphContractSpec,
     environment_constructor: Callable[[], Environment],
@@ -218,23 +274,27 @@ def check_contract_against_environment(
     contracted_user_tools: set[str] = set()
     tool_funcs: dict[tuple[str, str], Callable[..., Any]] = {}
     for action in contract.actions:
+        tool_name = action.resolved_tool_name
+        if tool_name is None:
+            continue  # Browser-only action, skip tau2 validation
+
         if action.requestor == "assistant":
             toolkit = environment.tools
         else:
             toolkit = environment.user_tools
 
         if action.requestor == "assistant":
-            contracted_assistant_tools.add(action.tool_name)
-            if action.tool_name not in assistant_tools:
+            contracted_assistant_tools.add(tool_name)
+            if tool_name not in assistant_tools:
                 issues.append(
-                    f"Action '{action.action_id}' references unknown assistant tool '{action.tool_name}'"
+                    f"Action '{action.action_id}' references unknown assistant tool '{tool_name}'"
                 )
                 continue
         else:
-            contracted_user_tools.add(action.tool_name)
-            if action.tool_name not in user_tools:
+            contracted_user_tools.add(tool_name)
+            if tool_name not in user_tools:
                 issues.append(
-                    f"Action '{action.action_id}' references unknown user tool '{action.tool_name}'"
+                    f"Action '{action.action_id}' references unknown user tool '{tool_name}'"
                 )
                 continue
 
@@ -245,14 +305,14 @@ def check_contract_against_environment(
             )
             continue
 
-        tool_func = getattr(toolkit, action.tool_name, None)
+        tool_func = getattr(toolkit, tool_name, None)
         if tool_func is None or not callable(tool_func):
             issues.append(
-                f"Action '{action.action_id}' tool '{action.tool_name}' is not callable on "
+                f"Action '{action.action_id}' tool '{tool_name}' is not callable on "
                 f"{action.requestor} toolkit"
             )
             continue
-        tool_funcs[(action.requestor, action.tool_name)] = tool_func
+        tool_funcs[(action.requestor, tool_name)] = tool_func
 
         try:
             sig = inspect.signature(tool_func)
@@ -265,7 +325,7 @@ def check_contract_against_environment(
             for p in params
             if p.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY)
         }
-        contracted_param_names = set(action.tool_arg_bindings) | set(action.tool_arg_literals)
+        contracted_param_names = set(action.resolved_arg_bindings) | set(action.resolved_arg_literals)
         unknown_param_bindings = sorted(contracted_param_names - named_params)
         if unknown_param_bindings and not has_var_kw:
             issues.append(
@@ -275,9 +335,12 @@ def check_contract_against_environment(
 
     literal_args_by_tool: dict[tuple[str, str, str], set[Any]] = {}
     for action in contract.actions:
-        for param_name, literal_value in action.tool_arg_literals.items():
+        tool_name = action.resolved_tool_name
+        if tool_name is None:
+            continue
+        for param_name, literal_value in action.resolved_arg_literals.items():
             literal_args_by_tool.setdefault(
-                (action.requestor, action.tool_name, param_name), set()
+                (action.requestor, tool_name, param_name), set()
             ).add(literal_value)
 
     for (requestor, tool_name, param_name), literal_values in sorted(literal_args_by_tool.items()):
@@ -342,22 +405,22 @@ def check_contract_against_environment(
                 f"tool '{source.source_tool}'"
             )
 
-    # Check that every binding has at least one tool_arg_bindings consumer.
+    # Check that every binding has at least one arg_bindings consumer.
     # Bindings without consumers are unenforceable at runtime — requires_bindings
     # is a solver-only constraint with no runtime mechanism unless the binding
-    # value flows through tool_arg_bindings into a required tool parameter.
+    # value flows through tool_call.arg_bindings into a required tool parameter.
     for source in contract.bindings:
         all_consumers = [
             action
             for action in contract.actions
             if action.classification != "knowledge-only"
-            and source.binding_id in action.tool_arg_bindings.values()
+            and source.binding_id in action.resolved_arg_bindings.values()
         ]
         if not all_consumers:
             issues.append(
-                f"Binding '{source.binding_id}' has no tool_arg_bindings consumer. "
+                f"Binding '{source.binding_id}' has no tool_call.arg_bindings consumer. "
                 f"It is only used in requires_bindings, which has no runtime enforcement. "
-                f"Add tool_arg_bindings on at least one downstream action so the agent "
+                f"Add arg_bindings on at least one downstream action so the agent "
                 f"must discover the value before calling the tool."
             )
 
@@ -368,7 +431,7 @@ def check_contract_against_environment(
             action
             for action in contract.actions
             if action.classification != "knowledge-only"
-            and source.binding_id in action.tool_arg_bindings.values()
+            and source.binding_id in action.resolved_arg_bindings.values()
         ]
         if len(consumers) <= 1:
             continue
@@ -438,8 +501,6 @@ def check_contract_against_environment(
                 )
 
     if strict_full_coverage:
-        # Stutter-allowlisted tools are permitted but not contracted via actions
-        contracted_assistant_tools |= set(contract.assistant_stutter_allowlist or [])
         missing_assistant = sorted(assistant_tools - contracted_assistant_tools)
         if missing_assistant:
             issues.append(
@@ -477,7 +538,7 @@ def check_policy_against_contract(
     # The policy doesn't need to name the exact tool, but it must teach the agent
     # to verify resolution and handle both met/unmet outcomes.
     has_resolution_checker = any(
-        action.tool_name == "check_resolution_status" for action in contract.actions
+        action.resolved_tool_name == "check_resolution_status" for action in contract.actions
     )
     if has_resolution_checker:
         resolution_terms = ["resolution", "resolved", "criteria", "unmet"]
@@ -673,18 +734,7 @@ def check_stop_gate_runtime(
 # ---------------------------------------------------------------------------
 
 
-def _leaf_field_name(path: str) -> str:
-    """Derive a set_/assert_ method suffix from a world path.
-
-    Mirrors the logic in runtime_scaffold._leaf_field_name so that the same
-    path-to-setter mapping is used here and in task compilation.
-    """
-    parts = path.split(".")
-    if not parts or not parts[-1]:
-        raise ValueError(f"Cannot derive field name from path '{path}'")
-    if len(parts) >= 3 and "[" not in path:
-        return f"{parts[-2]}_{parts[-1]}"
-    return parts[-1]
+from tau2.generators.depgraph.semantics import leaf_field_name as _leaf_field_name
 
 
 def _env_type_for_path(path: str) -> str:
@@ -903,15 +953,18 @@ def check_tool_guard_completeness(
             toolkit = environment.user_tools
         if toolkit is None:
             continue
-        tool_func = getattr(toolkit, action.tool_name, None)
+        tool_name = action.resolved_tool_name
+        if tool_name is None:
+            continue  # Browser-only action, skip
+        tool_func = getattr(toolkit, tool_name, None)
         if tool_func is None or not callable(tool_func):
             continue  # Already caught by check_contract_against_environment
 
-        # Build call arguments from tool_arg_literals (the only args we can
+        # Build call arguments from arg_literals (the only args we can
         # supply without runtime bindings). For binding-gated args, we pass
         # a placeholder string — the tool guard we care about fires BEFORE
         # parameter validation in well-structured tools.
-        call_kwargs: dict[str, Any] = dict(action.tool_arg_literals)
+        call_kwargs: dict[str, Any] = dict(action.resolved_arg_literals)
         try:
             sig = inspect.signature(tool_func)
         except (TypeError, ValueError):
@@ -932,7 +985,7 @@ def check_tool_guard_completeness(
             result = tool_func(**call_kwargs)
         except Exception as exc:
             issues.append(
-                f"Action '{action.action_id}' tool '{action.tool_name}' raised "
+                f"Action '{action.action_id}' tool '{tool_name}' raised "
                 f"{type(exc).__name__} when all contract preconditions were met: {exc}"
             )
             continue
@@ -945,7 +998,7 @@ def check_tool_guard_completeness(
         if status in ("noop", "error"):
             message = result.get("message", "(no message)")
             issues.append(
-                f"Action '{action.action_id}' tool '{action.tool_name}' returned "
+                f"Action '{action.action_id}' tool '{tool_name}' returned "
                 f"{{status: {status!r}, message: {message!r}}} when all contract "
                 f"preconditions ({_format_predicates(action.requires_world)}) were "
                 f"satisfied. The tool has a guard on a field not declared in "

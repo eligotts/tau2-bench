@@ -48,7 +48,6 @@ def find_plan(
     start_world_effects: list[WorldEffectSpec],
     start_bindings: list[str],
     goal_world: list[WorldPredicateSpec],
-    goal_bindings: list[str],
     *,
     binding_sources: Optional[list[BindingSourceSpec]] = None,
     sync_rules: Optional[list[SyncRuleSpec]] = None,
@@ -76,12 +75,8 @@ def find_plan(
             issues=start_world_issues,
         )
     start_bindings_set = frozenset(start_bindings)
-    goal_bindings_set = set(goal_bindings)
-
-    def goal_satisfied(world: dict[str, Any], bindings: frozenset[str]) -> bool:
+    def goal_satisfied(world: dict[str, Any]) -> bool:
         if not all(predicate_holds(predicate, world) for predicate in goal_world):
-            return False
-        if not goal_bindings_set.issubset(bindings):
             return False
         return True
 
@@ -90,7 +85,7 @@ def find_plan(
         bindings=start_bindings_set,
         plan=[],
     )
-    if goal_satisfied(start_node.world, start_node.bindings):
+    if goal_satisfied(start_node.world):
         return SearchResult(
             sat=True,
             plan=[],
@@ -139,7 +134,7 @@ def find_plan(
             visited.add(state_key)
 
             next_plan = node.plan + [action.action_id]
-            if goal_satisfied(next_world, next_bindings):
+            if goal_satisfied(next_world):
                 return SearchResult(
                     sat=True,
                     plan=next_plan,

@@ -1,4 +1,4 @@
-"""Dependency-graph task preflight scaffolding."""
+"""Dependency-graph task sampling and compilation."""
 
 from tau2.generators.depgraph.compiler import CompileResult, preflight_and_compile
 from tau2.generators.depgraph.context_bindings import (
@@ -54,7 +54,7 @@ try:
         compile_for_verifiers,
     )
 except ImportError:
-    pass  # verifiers package not installed; adapter not available
+    pass
 from tau2.generators.depgraph.solver import SearchResult, find_plan
 from tau2.generators.depgraph.types import (
     ActionContract,
@@ -62,11 +62,10 @@ from tau2.generators.depgraph.types import (
     ActionSchemaVariantSpec,
     ActionExpectationSpec,
     BindingPredicateSpec,
+    BindingSourceSpec,
     EnvAssertionSpec,
     EnvFunctionCallSpec,
-    FactSourceSpec,
     GraphContractSpec,
-    InvariantSpec,
     RuntimeTaskSpec,
     SamplingRequestDoc,
     SamplingSeedSpec,
@@ -75,63 +74,5 @@ from tau2.generators.depgraph.types import (
     TaskIntent,
     TaskSpecsDoc,
     TerminalProfileSpec,
+    TerminalSchemaSpec,
 )
-
-__all__ = [
-    "ActionContract",
-    "ActionSchemaSpec",
-    "ActionSchemaVariantSpec",
-    "ActionExpectationSpec",
-    "BindingPredicateSpec",
-    "CompileResult",
-    "TaskContextBindingSpec",
-    "TaskContextBindingsDoc",
-    "EnvAssertionSpec",
-    "EnvFunctionCallSpec",
-    "FactSourceSpec",
-    "GraphContractSpec",
-    "InvariantSpec",
-    "RuntimeTaskSpec",
-    "ReviewSourcePaths",
-    "SampledTask",
-    "SamplingRequestDoc",
-    "SamplingSeedSpec",
-    "SyncEffectSpec",
-    "SyncRuleSpec",
-    "SearchResult",
-    "TaskIntent",
-    "TaskPreflightReport",
-    "TaskSpecsDoc",
-    "TerminalProfileSpec",
-    "build_review_bundle_markdown",
-    "check_contract_against_environment",
-    "check_runtime_narratives",
-    "check_runtime_author_surface",
-    "check_runtime_against_environment",
-    "check_start_bindings_visibility",
-    "check_task_runtime_fields",
-    "dump_task_context_bindings",
-    "find_plan",
-    "generate_ev_context_bindings",
-    "generate_runtime_scaffold",
-    "infer_review_source_paths",
-    "infer_task_family",
-    "load_graph_contract",
-    "load_narrative_briefs",
-    "load_persona_pool",
-    "load_runtime_defaults",
-    "load_sampling_request",
-    "load_task_context_bindings",
-    "load_task_specs",
-    "preflight_and_compile",
-    "run_task_preflight",
-    "select_representative_tasks",
-    "sample_task_intents",
-    "DepgraphTaskConfig",
-    "DepgraphToolEnv",
-    "DepgraphRubric",
-    "VerifiersCompileResult",
-    "check_goal",
-    "compile_task_config",
-    "compile_for_verifiers",
-]

@@ -20,12 +20,10 @@ uv run python -m tau2.generators.depgraph.run_sampler \
 2. `terminal_profiles[]`:
    - `profile_id`
    - `requires_world`
-3. `goal_capture_paths` (global path-prefix list, or override per seed)
-4. `seed_schemas[]`:
+3. `seed_schemas[]`:
    - `schema_id`
    - `seed_id_template`
    - `allowed_terminal_profiles`
-   - optional `goal_capture_paths` override
    - `min_depth`
    - `max_depth`
    - `dimensions[]`
@@ -37,6 +35,17 @@ uv run python -m tau2.generators.depgraph.run_sampler \
        - optional `min_depth_delta`
        - optional `max_depth_delta`
 
+Optional: `terminal_schemas[]` for combinatorial terminal profile expansion:
+   - `schema_id`
+   - `profile_id_template`
+   - optional `description_template`
+   - optional `requires_world` (shared predicates for all expanded profiles)
+   - `dimensions[]`
+     - `dimension_id`
+     - `variants[]`
+       - `variant_id`
+       - `requires_world`
+
 Requirements:
 
 1. At least one seed should require a `knowledge-only` action (binding dependency).
@@ -47,9 +56,65 @@ Requirements:
    - no concrete customer/account IDs in sampled intents
    - bind concrete entities later in runtime enrichment.
 6. Every sampled task must end in an explicit terminal profile. Do not use intermediate repair states as ordinary task ends.
-7. `terminal_profiles` define which end states are valid. `goal_capture_paths` define which changed parts of the solved world become emitted `goal_world` and env assertions.
+7. `goal_world` is populated directly from the matched terminal profile's `requires_world` predicates. There is no diff capture.
 8. Author start-state variation only through `seed_schemas`. Direct `seeds[]` authoring is removed.
 9. Set `min_depth` against the true shortest reachable plan for each expanded seed variant, not against an intuitive "expected journey". If a `knowledge` variant removes a discovery step, its floor must drop too.
+
+## Goal Model
+
+The goal model is terminal-profile-driven:
+
+- `terminal_profiles` declare which committed world states are valid task ends.
+- When BFS reaches a state satisfying a terminal profile's `requires_world`, the profile's predicates become the task's `goal_world`.
+- There is no separate goal capture mechanism. The terminal profile IS the goal definition.
+- Bindings must be consumed by downstream actions before terminality. Terminal profiles are world-only (no binding requirements).
+
+## Deduplication
+
+Tasks are deduped by `(seed_id, terminal_profile_id)`:
+
+- Different BFS paths from the same seed to the same terminal profile collapse to one task.
+- The first (shortest) BFS path wins.
+- This means each seed can produce at most one task per allowed terminal profile.
+
+## Terminal Schemas
+
+When the domain has combinatorial terminal profiles (e.g., multi-lane domains where each
+lane can end in one of several states), use `terminal_schemas` instead of hand-listing
+every combination:
+
+```yaml
+terminal_schemas:
+  - schema_id: multi_lane
+    profile_id_template: "{lane_a}_{lane_b}"
+    requires_world:
+      - path: agent.common_status
+        value: done
+    dimensions:
+      - dimension_id: lane_a
+        variants:
+          - variant_id: completed
+            requires_world:
+              - path: agent.lane_a.status
+                value: completed
+          - variant_id: cancelled
+            requires_world:
+              - path: agent.lane_a.status
+                value: cancelled
+      - dimension_id: lane_b
+        variants:
+          - variant_id: completed
+            requires_world:
+              - path: agent.lane_b.status
+                value: completed
+          - variant_id: skipped
+            requires_world:
+              - path: agent.lane_b.status
+                value: skipped
+```
+
+Expanded profiles are merged with any directly-authored `terminal_profiles`. Use
+`terminal_schemas` when profile count grows past 4-5 and follows a clear dimensional pattern.
 
 ## Seed Design for Structural Diversity
 
@@ -84,9 +149,9 @@ The generated concrete seeds should still look like plausible incoming cases.
 If the contract has value-gated actions (e.g., `fault_class == "billing"` enables one path,
 `fault_class == "network"` enables a different path), create separate seeds for each branch:
 
-- Seed A: `start_world` includes `fault_class = billing` → activates billing recovery path
-- Seed B: `start_world` includes `fault_class = network` → activates network recovery path
-- Seed C: `start_world` includes both faults broken → activates both paths
+- Seed A: `start_world` includes `fault_class = billing` -> activates billing recovery path
+- Seed B: `start_world` includes `fault_class = network` -> activates network recovery path
+- Seed C: `start_world` includes both faults broken -> activates both paths
 
 These seeds produce structurally different tasks, not just shorter/longer versions of one chain.
 
@@ -174,7 +239,7 @@ lanes need work:
   requiring interleaved work)
 - If you add a new shared downstream lane, prefer seeds that vary which subset of that lane's
   blockers is active. This increases both task count and path depth without turning tasks into
-  post-repair checkpoints.
+  post-repair checkpoint starts.
 
 ### Multi-lane seeds for cross-lane coverage
 
@@ -182,7 +247,7 @@ When the domain has parallel lanes (errands, calendar, care, household), create 
 schemas that combine 2-3 lanes in a single seed. This is how you populate multi-lane
 terminal profiles (e.g., `errands_care_done`, `cancelled_care_household`).
 
-Each multi-lane schema should set ALL lanes' fields explicitly in `start_world` — both
+Each multi-lane schema should set ALL lanes' fields explicitly in `start_world` -- both
 the active lanes (with their broken/pending states) and the inactive lanes (with their
 resolved/not-applicable states). If a lane isn't relevant to the seed, set its status to
 the terminal value so the terminal profile's requirements are already met for that lane.
@@ -208,11 +273,11 @@ concrete seeds that still differ in branch structure, blocker mix, or known info
 
 ### Leverage cascading sync rules in seed design
 
-If the graph contract has cascading sync rules (e.g., `db_unhealthy → cache_stale`),
+If the graph contract has cascading sync rules (e.g., `db_unhealthy -> cache_stale`),
 single-fault seeds automatically become multi-system tasks. This means:
 
 - **Remove redundant multi-fault seeds.** If `db_corrupted` automatically cascades to
-  `cache_stale`, don't also create a `db_corrupted + cache_stale` seed — it's redundant.
+  `cache_stale`, don't also create a `db_corrupted + cache_stale` seed -- it's redundant.
   Instead, create `db_corrupted + cache_eviction_storm` (a DIFFERENT cache fault that the
   sync rule wouldn't produce).
 - **Single-fault seeds are now your highest-value seeds** because cascading turns them into
@@ -222,7 +287,7 @@ single-fault seeds automatically become multi-system tasks. This means:
 
 ### Side-effect seeds
 
-If the graph contract has repair side-effects (e.g., `failover_db → dlq_has_messages`),
+If the graph contract has repair side-effects (e.g., `failover_db -> dlq_has_messages`),
 account for the extra work in depth estimates. A single `db_corrupted` seed may need
 depth 12+ (investigation + triage + failover + DLQ replay + cache repair from cascade +
 comms + smoke test) even though it looks like a "single fault."
@@ -235,7 +300,7 @@ what the raw fault count suggests. Use this formula to estimate `min_depth` for 
 ```
 base_depth = (investigation actions) + (triage) + (comms)
 per_fault_depth = sum of repair chain length for each fault
-cascade_depth = number of systems damaged by cascading rules × avg repair steps
+cascade_depth = number of systems damaged by cascading rules x avg repair steps
 side_effect_depth = number of side-effects that require cleanup
 verification_depth = smoke test + any DNS/network verification steps
 
@@ -250,7 +315,7 @@ estimated_depth = base_depth + per_fault_depth + cascade_depth + side_effect_dep
 - Complex cascading + traps: `min_depth` 15-20
 
 Set `max_depth` to `estimated_depth + 4` to give BFS headroom for alternative paths.
-If BFS times out on a seed, the depth budget is likely too tight — increase `max_depth`
+If BFS times out on a seed, the depth budget is likely too tight -- increase `max_depth`
 before assuming the seed is unsolvable.
 
 After authoring a schema, sanity-check the shortest variants explicitly:
@@ -265,7 +330,7 @@ When evaluating sampled output, use these targets:
 - **60%+ unique action sets** (distinct `required_actions` ignoring order)
 - **3+ distinct plan topologies** (different DAG shapes, not just depth variation)
 - **All terminal profiles represented** (at least 2 tasks per profile)
-- **Depth spread** — tasks should span at least a 2:1 ratio (e.g., 6-step to 14-step)
+- **Depth spread** -- tasks should span at least a 2:1 ratio (e.g., 6-step to 14-step)
 - **No single action appearing in >80% of tasks** (unless it's universal like triage/comms)
 
 ### Terminal profile reachability
@@ -297,6 +362,21 @@ other default-looking value.
 When in doubt, initialize boolean fields to `false`, enum fields to their "not started"
 value, and status fields to their initial state.
 
+**Companion field rule:** When a seed sets a status field to a fault value (e.g.,
+`auth_health=cert_invalid`), check the repair action's guard conditions. If the repair
+guards on a detail field (`cert_state != valid`), the seed MUST also set that detail field
+to a broken value (`cert_state=expired`). Otherwise the repair action will noop or error
+because the detail field defaults to its "healthy" value.
+
+This applies across ALL seed schemas — if the same fault appears as a primary fault in
+one schema and a secondary fault in another (e.g., `two_fault_cases`, `cascading_cases`),
+the companion field must be set in every variant. Search the entire sampling_request for
+the fault value and fix all occurrences, not just the first schema you find.
+
+Also verify the companion value is a valid enum member. Check the data model's enum
+definition before using a value (e.g., `TokenPool` has `valid/refreshed/invalid`, not
+`expired`).
+
 ### Schema fertility and post-hoc balancing
 
 Some seed schemas are naturally more fertile than others. A schema with 30 seeds and deep
@@ -324,7 +404,7 @@ investigation actions can fire, more triage options exist). Monitor per-seed BFS
 - < 100ms/seed: excellent
 - 100ms-1s/seed: acceptable
 - 1-5s/seed: borderline, check for optional binding explosion
-- > 5s/seed: investigate — likely optional investigation actions or too many triage variants
+- > 5s/seed: investigate -- likely optional investigation actions or too many triage variants
 
 The main BFS explosion risk is **optional knowledge-only actions** that can fire for any
 seed. Gate investigation actions on the relevant system being unhealthy AND on
@@ -333,20 +413,21 @@ seed. Gate investigation actions on the relevant system being unhealthy AND on
 ## Terminal Profiles
 
 Terminal profiles define the states that count as legitimate task endings.
+They are world-only: terminal profiles declare `requires_world` predicates
+but not binding requirements. If the domain needs knowledge acquisition
+before terminality, model it through a final consuming action whose
+`effects_world` satisfies the terminal profile.
 
 - Put terminality in `terminal_profiles`, not in ad hoc depth cutoffs.
 - A seed may only emit tasks whose end state matches one of its `allowed_terminal_profiles`.
-- `terminal_profiles` are validity rules, not task identity by themselves. The emitted
-  `goal_world` should be captured from the reached solved state under `goal_capture_paths`.
+- The terminal profile's `requires_world` predicates become the task's `goal_world` directly.
 - Shorter tasks should come from seeds that start closer to resolution, not from stopping in
   the middle of an otherwise-fixable repair chain.
-- Sampled tasks should be canonicalized to the minimal terminal-reaching plan for the
-  captured `goal_world`. Optional extra reads or unused binding acquisitions should not
-  create separate task variants.
-- Keep the capture surface causal rather than exhaustive. Do not capture `user.view.*`,
-  stop-gate bookkeeping, or other sync/display projections just because they changed.
+- Sampled tasks should be canonicalized to the minimal terminal-reaching plan.
+  Optional extra reads or unused binding acquisitions should not create separate task variants.
 - Fail closed on frame drift: if a sampled terminal plan changes authored start-state paths
-  outside the captured `goal_world`, reject it instead of rewarding incidental side effects.
+  outside the terminal profile's `requires_world`, that is acceptable incidental state change
+  (not penalized, not rewarded).
 - If the domain needs milestone tasks, model them explicitly as milestone profiles with a
   matching prompt/tool surface. Do not reuse a full-resolution policy and then stop halfway.
 
@@ -354,14 +435,14 @@ Acceptance checks:
 
 1. `task_specs.sampled.yaml` is generated.
 2. Every sampled task has non-empty `required_actions`.
-3. Every sampled task has non-empty `goal_world` (bindings alone are not sufficient — goals must be verifiable DB state).
+3. Every sampled task has non-empty `goal_world` (populated from terminal profile).
 4. No sampled task has contradictory world goals.
 5. Sample includes at least one assistant-heavy and one user-heavy chain where possible for the domain.
 6. **Structural diversity check**: count distinct `required_actions` sets (ignoring order)
    across all sampled tasks. At least 60% of tasks should have a unique action set, not
    just a prefix/suffix of another task's set.
 7. Every sampled task has a non-empty `terminal_profile_id`.
-8. Sampling does not emit duplicate tasks that differ only by optional extra discovery actions.
+8. Sampling does not emit duplicate tasks: dedup is by `(seed_id, terminal_profile_id)`.
 9. Cheap seed expansion prefers new early entry states or binding-known variants over
    post-repair checkpoint starts.
 10. If the domain has many near-copy starts, they are authored as `seed_schemas` rather than

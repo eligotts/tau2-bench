@@ -161,8 +161,8 @@ def validate_task_specs_runtime(domain_name: str) -> list[str]:
             issues.append(f"Task '{task.task_id}' missing runtime block")
         if not task.terminal_profile_id:
             issues.append(f"Task '{task.task_id}' missing terminal_profile_id")
-        if not task.goal_capture_paths:
-            issues.append(f"Task '{task.task_id}' missing goal_capture_paths")
+        if not task.goal_world:
+            issues.append(f"Task '{task.task_id}' missing goal_world")
     return issues
 
 

@@ -16,7 +16,7 @@ tasks:
       account_id: A3001
       station_id: ST3001
       session_id: S3001
-- task_id: billing_allowlist_only_screen_known_d14_000
+- task_id: billing_allowlist_only_screen_known_d14_001
   slots:
     active_account: A1001
     active_station: ST1001
@@ -30,21 +30,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: billing_allowlist_only_app_known_d14_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_allowlist_reservation_base_d17_000
+- task_id: billing_allowlist_only_app_known_d14_002
   slots:
     active_account: A1001
     active_station: ST1001
@@ -58,7 +44,21 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: billing_allowlist_reservation_screen_known_d16_000
+- task_id: billing_allowlist_reservation_base_d17_003
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: billing_allowlist_reservation_screen_known_d16_004
   slots:
     active_account: A3001
     active_station: ST3001
@@ -72,7 +72,7 @@ tasks:
       account_id: A3001
       station_id: ST3001
       session_id: S3001
-- task_id: billing_allowlist_reservation_app_known_d16_000
+- task_id: billing_allowlist_reservation_app_known_d16_005
   slots:
     active_account: A1001
     active_station: ST1001
@@ -86,21 +86,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: billing_allowlist_tariff_base_d17_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_allowlist_tariff_screen_known_d16_000
+- task_id: billing_allowlist_tariff_base_d17_006
   slots:
     active_account: A1001
     active_station: ST1001
@@ -114,21 +100,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: billing_allowlist_tariff_app_known_d16_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_auth_stack_full_base_d17_000
+- task_id: billing_allowlist_tariff_screen_known_d16_007
   slots:
     active_account: A2001
     active_station: ST2001
@@ -142,21 +114,7 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: billing_auth_stack_full_screen_known_d16_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_auth_stack_full_app_known_d16_000
+- task_id: billing_allowlist_tariff_app_known_d16_008
   slots:
     active_account: A2001
     active_station: ST2001
@@ -170,7 +128,7 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: billing_entitlement_stack_only_base_d19_000
+- task_id: billing_auth_stack_full_base_d17_009
   slots:
     active_account: A3001
     active_station: ST3001
@@ -184,7 +142,105 @@ tasks:
       account_id: A3001
       station_id: ST3001
       session_id: S3001
-- task_id: billing_entitlement_stack_only_screen_known_d18_000
+- task_id: billing_auth_stack_full_screen_known_d16_010
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: billing_auth_stack_full_app_known_d16_011
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: billing_entitlement_stack_only_base_d19_012
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: billing_entitlement_stack_only_screen_known_d18_013
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: billing_entitlement_stack_only_app_known_d18_014
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: billing_fraud_and_auth_base_d15_015
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: billing_fraud_and_auth_screen_known_d14_016
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: billing_fraud_and_auth_app_known_d14_017
   slots:
     active_account: A1001
     active_station: ST1001
@@ -198,49 +254,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: billing_entitlement_stack_only_app_known_d18_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: billing_fraud_and_auth_base_d15_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_fraud_and_auth_screen_known_d14_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_fraud_and_auth_app_known_d14_000
+- task_id: billing_hold_and_auth_base_d15_018
   slots:
     active_account: A1001
     active_station: ST1001
@@ -254,21 +268,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: billing_hold_and_auth_base_d15_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: billing_hold_and_auth_screen_known_d14_000
+- task_id: billing_hold_and_auth_screen_known_d14_019
   slots:
     active_account: A3001
     active_station: ST3001
@@ -282,133 +282,7 @@ tasks:
       account_id: A3001
       station_id: ST3001
       session_id: S3001
-- task_id: billing_hold_and_auth_app_known_d14_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: billing_hold_and_fraud_auth_base_d16_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_hold_and_fraud_auth_screen_known_d15_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_hold_and_fraud_auth_app_known_d15_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: billing_hold_and_payment_auth_base_d16_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_hold_and_payment_auth_screen_known_d15_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: billing_hold_and_payment_auth_app_known_d15_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_payment_and_auth_base_d15_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: billing_payment_and_auth_screen_known_d14_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_payment_and_auth_app_known_d14_000
+- task_id: billing_hold_and_auth_app_known_d14_020
   slots:
     active_account: A1001
     active_station: ST1001
@@ -422,63 +296,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: billing_payment_and_fraud_auth_base_d16_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_payment_and_fraud_auth_screen_known_d15_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: billing_payment_and_fraud_auth_app_known_d15_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_reservation_only_base_d15_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_reservation_only_screen_known_d14_000
+- task_id: billing_hold_and_fraud_auth_base_d16_021
   slots:
     active_account: A1001
     active_station: ST1001
@@ -492,7 +310,63 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: billing_reservation_only_app_known_d14_000
+- task_id: billing_hold_and_fraud_auth_screen_known_d15_022
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: billing_hold_and_fraud_auth_app_known_d15_023
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: billing_hold_and_payment_auth_base_d16_024
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: billing_hold_and_payment_auth_screen_known_d15_025
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: billing_hold_and_payment_auth_app_known_d15_026
   slots:
     active_account: A1001
     active_station: ST1001
@@ -506,7 +380,21 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: billing_tariff_only_base_d15_000
+- task_id: billing_payment_and_auth_base_d15_027
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: billing_payment_and_auth_screen_known_d14_028
   slots:
     active_account: A1001
     active_station: ST1001
@@ -520,7 +408,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: billing_tariff_only_screen_known_d14_000
+- task_id: billing_payment_and_auth_app_known_d14_029
   slots:
     active_account: A1001
     active_station: ST1001
@@ -534,35 +422,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: billing_tariff_only_app_known_d14_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: billing_tariff_reservation_base_d17_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: billing_tariff_reservation_screen_known_d16_000
+- task_id: billing_payment_and_fraud_auth_base_d16_030
   slots:
     active_account: A1001
     active_station: ST1001
@@ -576,35 +436,21 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: billing_tariff_reservation_app_known_d16_000
+- task_id: billing_payment_and_fraud_auth_screen_known_d15_031
   slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
   initialization_actions:
   - env_type: user
     func_name: set_user_context
     arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_allowlist_only_base_d18_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_allowlist_only_screen_known_d17_000
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: billing_payment_and_fraud_auth_app_known_d15_032
   slots:
     active_account: A1001
     active_station: ST1001
@@ -618,7 +464,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: connectivity_allowlist_only_app_known_d17_000
+- task_id: billing_reservation_only_base_d15_033
   slots:
     active_account: A2001
     active_station: ST2001
@@ -632,49 +478,7 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: connectivity_cert_clock_auth_base_d19_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_cert_clock_auth_screen_known_d18_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_cert_clock_auth_app_known_d18_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_cert_handshake_auth_base_d19_000
+- task_id: billing_reservation_only_screen_known_d14_034
   slots:
     active_account: A1001
     active_station: ST1001
@@ -688,7 +492,21 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: connectivity_cert_handshake_auth_screen_known_d18_000
+- task_id: billing_reservation_only_app_known_d14_035
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: billing_tariff_only_base_d15_036
   slots:
     active_account: A1001
     active_station: ST1001
@@ -702,7 +520,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: connectivity_cert_handshake_auth_app_known_d18_000
+- task_id: billing_tariff_only_screen_known_d14_037
   slots:
     active_account: A3001
     active_station: ST3001
@@ -716,35 +534,7 @@ tasks:
       account_id: A3001
       station_id: ST3001
       session_id: S3001
-- task_id: connectivity_cert_only_base_d18_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_cert_only_screen_known_d17_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_cert_only_app_known_d17_000
+- task_id: billing_tariff_only_app_known_d14_038
   slots:
     active_account: A2001
     active_station: ST2001
@@ -758,21 +548,7 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: connectivity_clock_handshake_auth_base_d19_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: connectivity_clock_handshake_auth_screen_known_d18_000
+- task_id: billing_tariff_reservation_base_d17_039
   slots:
     active_account: A3001
     active_station: ST3001
@@ -786,91 +562,7 @@ tasks:
       account_id: A3001
       station_id: ST3001
       session_id: S3001
-- task_id: connectivity_clock_handshake_auth_app_known_d18_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: connectivity_clock_only_base_d18_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_clock_only_screen_known_d17_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_clock_only_app_known_d17_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: connectivity_entitlement_stack_only_base_d22_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_entitlement_stack_only_screen_known_d21_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_entitlement_stack_only_app_known_d21_000
+- task_id: billing_tariff_reservation_screen_known_d16_040
   slots:
     active_account: A1001
     active_station: ST1001
@@ -884,7 +576,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: connectivity_handshake_only_base_d18_000
+- task_id: billing_tariff_reservation_app_known_d16_041
   slots:
     active_account: A2001
     active_station: ST2001
@@ -898,7 +590,21 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: connectivity_handshake_only_screen_known_d17_000
+- task_id: connectivity_allowlist_only_base_d18_042
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: connectivity_allowlist_only_screen_known_d17_043
   slots:
     active_account: A1001
     active_station: ST1001
@@ -912,7 +618,35 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: connectivity_handshake_only_app_known_d17_000
+- task_id: connectivity_allowlist_only_app_known_d17_044
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: connectivity_cert_clock_auth_base_d19_045
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: connectivity_cert_clock_auth_screen_known_d18_046
   slots:
     active_account: A1001
     active_station: ST1001
@@ -926,7 +660,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: connectivity_link_handshake_auth_base_d19_000
+- task_id: connectivity_cert_clock_auth_app_known_d18_047
   slots:
     active_account: A2001
     active_station: ST2001
@@ -940,7 +674,49 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: connectivity_link_handshake_auth_screen_known_d18_000
+- task_id: connectivity_cert_handshake_auth_base_d19_048
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: connectivity_cert_handshake_auth_screen_known_d18_049
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: connectivity_cert_handshake_auth_app_known_d18_050
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: connectivity_cert_only_base_d18_051
   slots:
     active_account: A2001
     active_station: ST2001
@@ -954,7 +730,21 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: connectivity_link_handshake_auth_app_known_d18_000
+- task_id: connectivity_cert_only_screen_known_d17_052
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: connectivity_cert_only_app_known_d17_053
   slots:
     active_account: A2001
     active_station: ST2001
@@ -968,35 +758,7 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: connectivity_link_only_base_d18_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: connectivity_link_only_screen_known_d17_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: connectivity_link_only_app_known_d17_000
+- task_id: connectivity_clock_handshake_auth_base_d19_054
   slots:
     active_account: A1001
     active_station: ST1001
@@ -1010,21 +772,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: connectivity_reservation_only_base_d18_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_reservation_only_screen_known_d17_000
+- task_id: connectivity_clock_handshake_auth_screen_known_d18_055
   slots:
     active_account: A2001
     active_station: ST2001
@@ -1038,49 +786,7 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: connectivity_reservation_only_app_known_d17_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: connectivity_secure_transport_full_base_d21_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: connectivity_secure_transport_full_screen_known_d20_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: connectivity_secure_transport_full_app_known_d20_000
+- task_id: connectivity_clock_handshake_auth_app_known_d18_056
   slots:
     active_account: A1001
     active_station: ST1001
@@ -1094,7 +800,63 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: connectivity_tariff_only_base_d18_000
+- task_id: connectivity_clock_only_base_d18_057
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: connectivity_clock_only_screen_known_d17_058
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: connectivity_clock_only_app_known_d17_059
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: connectivity_entitlement_stack_only_base_d22_060
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: connectivity_entitlement_stack_only_screen_known_d21_061
   slots:
     active_account: A1001
     active_station: ST1001
@@ -1108,7 +870,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: connectivity_tariff_only_screen_known_d17_000
+- task_id: connectivity_entitlement_stack_only_app_known_d21_062
   slots:
     active_account: A1001
     active_station: ST1001
@@ -1122,49 +884,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: connectivity_tariff_only_app_known_d17_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: full_system_all_lanes_base_d25_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: full_system_all_lanes_screen_known_d24_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: full_system_all_lanes_app_known_d24_000
+- task_id: connectivity_handshake_only_base_d18_063
   slots:
     active_account: A1001
     active_station: ST1001
@@ -1178,7 +898,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: full_system_allowlist_only_base_d18_000
+- task_id: connectivity_handshake_only_screen_known_d17_064
   slots:
     active_account: A1001
     active_station: ST1001
@@ -1192,7 +912,21 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: full_system_allowlist_only_screen_known_d17_000
+- task_id: connectivity_handshake_only_app_known_d17_065
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: connectivity_link_handshake_auth_base_d19_066
   slots:
     active_account: A2001
     active_station: ST2001
@@ -1206,7 +940,7 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: full_system_allowlist_only_app_known_d17_000
+- task_id: connectivity_link_handshake_auth_screen_known_d18_067
   slots:
     active_account: A1001
     active_station: ST1001
@@ -1220,35 +954,7 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: full_system_billing_entitlement_base_d23_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: full_system_billing_entitlement_screen_known_d22_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: full_system_billing_entitlement_app_known_d22_000
+- task_id: connectivity_link_handshake_auth_app_known_d18_068
   slots:
     active_account: A1001
     active_station: ST1001
@@ -1262,7 +968,49 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: full_system_billing_firmware_base_d20_000
+- task_id: connectivity_link_only_base_d18_069
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: connectivity_link_only_screen_known_d17_070
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: connectivity_link_only_app_known_d17_071
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: connectivity_reservation_only_base_d18_072
   slots:
     active_account: A2001
     active_station: ST2001
@@ -1276,35 +1024,7 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: full_system_billing_firmware_screen_known_d19_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: full_system_billing_firmware_app_known_d19_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: full_system_billing_firmware_fraud_base_d20_000
+- task_id: connectivity_reservation_only_screen_known_d17_073
   slots:
     active_account: A2001
     active_station: ST2001
@@ -1318,35 +1038,7 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: full_system_billing_firmware_fraud_screen_known_d19_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: full_system_billing_firmware_fraud_app_known_d19_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: full_system_billing_transport_base_d23_000
+- task_id: connectivity_reservation_only_app_known_d17_074
   slots:
     active_account: A2001
     active_station: ST2001
@@ -1360,21 +1052,7 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: full_system_billing_transport_screen_known_d22_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: full_system_billing_transport_app_known_d22_000
+- task_id: connectivity_secure_transport_full_base_d21_075
   slots:
     active_account: A1001
     active_station: ST1001
@@ -1388,35 +1066,21 @@ tasks:
       account_id: A1001
       station_id: ST1001
       session_id: S1001
-- task_id: full_system_cert_clock_firmware_base_d20_000
+- task_id: connectivity_secure_transport_full_screen_known_d20_076
   slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
   initialization_actions:
   - env_type: user
     func_name: set_user_context
     arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: full_system_cert_clock_firmware_screen_known_d19_000
-  slots:
-    active_account: A2001
-    active_station: ST2001
-    active_session: S2001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U2001
-      name: Avery Chen
-      account_id: A2001
-      station_id: ST2001
-      session_id: S2001
-- task_id: full_system_cert_clock_firmware_app_known_d19_000
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: connectivity_secure_transport_full_app_known_d20_077
   slots:
     active_account: A3001
     active_station: ST3001
@@ -1430,7 +1094,21 @@ tasks:
       account_id: A3001
       station_id: ST3001
       session_id: S3001
-- task_id: full_system_link_handshake_firmware_base_d20_000
+- task_id: connectivity_tariff_only_base_d18_078
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: connectivity_tariff_only_screen_known_d17_079
   slots:
     active_account: A2001
     active_station: ST2001
@@ -1444,7 +1122,35 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: full_system_link_handshake_firmware_screen_known_d19_000
+- task_id: connectivity_tariff_only_app_known_d17_080
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: full_system_all_lanes_base_d25_081
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: full_system_all_lanes_screen_known_d24_082
   slots:
     active_account: A2001
     active_station: ST2001
@@ -1458,49 +1164,7 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: full_system_link_handshake_firmware_app_known_d19_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: full_system_transport_entitlement_base_d25_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: full_system_transport_entitlement_screen_known_d24_000
-  slots:
-    active_account: A3001
-    active_station: ST3001
-    active_session: S3001
-  initialization_actions:
-  - env_type: user
-    func_name: set_user_context
-    arguments:
-      user_id: U3001
-      name: Sam Rivera
-      account_id: A3001
-      station_id: ST3001
-      session_id: S3001
-- task_id: full_system_transport_entitlement_app_known_d24_000
+- task_id: full_system_all_lanes_app_known_d24_083
   slots:
     active_account: A2001
     active_station: ST2001
@@ -1514,7 +1178,21 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: full_system_transport_firmware_base_d22_000
+- task_id: full_system_allowlist_only_base_d18_084
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: full_system_allowlist_only_screen_known_d17_085
   slots:
     active_account: A3001
     active_station: ST3001
@@ -1528,7 +1206,49 @@ tasks:
       account_id: A3001
       station_id: ST3001
       session_id: S3001
-- task_id: full_system_transport_firmware_screen_known_d21_000
+- task_id: full_system_allowlist_only_app_known_d17_086
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: full_system_billing_entitlement_base_d23_087
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: full_system_billing_entitlement_screen_known_d22_088
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: full_system_billing_entitlement_app_known_d22_089
   slots:
     active_account: A2001
     active_station: ST2001
@@ -1542,7 +1262,287 @@ tasks:
       account_id: A2001
       station_id: ST2001
       session_id: S2001
-- task_id: full_system_transport_firmware_app_known_d21_000
+- task_id: full_system_billing_firmware_base_d20_090
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: full_system_billing_firmware_screen_known_d19_091
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: full_system_billing_firmware_app_known_d19_092
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: full_system_billing_firmware_fraud_base_d20_093
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: full_system_billing_firmware_fraud_screen_known_d19_094
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: full_system_billing_firmware_fraud_app_known_d19_095
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: full_system_billing_transport_base_d23_096
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: full_system_billing_transport_screen_known_d22_097
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: full_system_billing_transport_app_known_d22_098
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: full_system_cert_clock_firmware_base_d20_099
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: full_system_cert_clock_firmware_screen_known_d19_100
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: full_system_cert_clock_firmware_app_known_d19_101
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: full_system_link_handshake_firmware_base_d20_102
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: full_system_link_handshake_firmware_screen_known_d19_103
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: full_system_link_handshake_firmware_app_known_d19_104
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: full_system_transport_entitlement_base_d25_105
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: full_system_transport_entitlement_screen_known_d24_106
+  slots:
+    active_account: A3001
+    active_station: ST3001
+    active_session: S3001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U3001
+      name: Sam Rivera
+      account_id: A3001
+      station_id: ST3001
+      session_id: S3001
+- task_id: full_system_transport_entitlement_app_known_d24_107
+  slots:
+    active_account: A2001
+    active_station: ST2001
+    active_session: S2001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U2001
+      name: Avery Chen
+      account_id: A2001
+      station_id: ST2001
+      session_id: S2001
+- task_id: full_system_transport_firmware_base_d22_108
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: full_system_transport_firmware_screen_known_d21_109
+  slots:
+    active_account: A1001
+    active_station: ST1001
+    active_session: S1001
+  initialization_actions:
+  - env_type: user
+    func_name: set_user_context
+    arguments:
+      user_id: U1001
+      name: Jordan Lee
+      account_id: A1001
+      station_id: ST1001
+      session_id: S1001
+- task_id: full_system_transport_firmware_app_known_d21_110
   slots:
     active_account: A3001
     active_station: ST3001

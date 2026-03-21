@@ -48,11 +48,9 @@ def _compile_one(task: TaskIntent) -> Task:
     goal_world_text = ", ".join(
         f"{goal.path} == {goal.value!r}" for goal in task.goal_world
     )
-    goal_bindings_text = ", ".join(task.goal_bindings)
     ticket = runtime.ticket or (
         f"{runtime.reason_for_call}\n"
-        f"Goal world: {goal_world_text or '(none)'}\n"
-        f"Goal bindings: {goal_bindings_text or '(none)'}"
+        f"Goal world: {goal_world_text or '(none)'}"
     )
     user_instructions = StructuredUserInstructions(
         domain=runtime.domain,
@@ -184,9 +182,19 @@ def preflight_and_compile(
     return result
 
 
-def dump_tasks_json(tasks: list[Task], out_path: str | Path) -> None:
-    """Write compiled tasks to json file."""
+def dump_tasks_json(tasks: list[Task], out_path: str | Path, *, shuffle: bool = True) -> None:
+    """Write compiled tasks to json file.
+
+    Tasks are deterministically shuffled by default so that running a subset
+    (e.g., first N tasks) gives good diversity across profiles and seed schemas.
+    """
+    import hashlib
+
+    output_tasks = list(tasks)
+    if shuffle:
+        output_tasks.sort(key=lambda t: hashlib.sha256(t.id.encode()).hexdigest())
+
     path = Path(out_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = [task.model_dump(mode="json") for task in tasks]
+    payload = [task.model_dump(mode="json") for task in output_tasks]
     path.write_text(json.dumps(payload, indent=2))

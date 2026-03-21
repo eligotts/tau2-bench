@@ -1,20 +1,6 @@
 version: 1
 max_tasks: 10000
 
-goal_capture_paths:
-  - agent.calendar
-  - agent.transport
-  - agent.errand_a.status
-  - agent.errand_b.status
-  - agent.finance
-  - agent.dependent_care
-  - agent.household
-  - user.errand_a
-  - user.errand_b
-  - user.dependent_care
-  - user.home
-  - user.transport
-
 # ══════════════════════════════════════════════
 # TERMINAL PROFILES
 # ══════════════════════════════════════════════
@@ -42,6 +28,9 @@ terminal_profiles:
       - path: agent.finance.bill_status
         op: eq
         value: paid
+      - path: agent.finance.payment_confirmed
+        op: eq
+        value: true
 
   # Calendar + finance: reschedule + deferred
   - profile_id: rescheduled_deferred
@@ -53,6 +42,9 @@ terminal_profiles:
       - path: agent.finance.bill_status
         op: eq
         value: deferred
+      - path: agent.finance.payment_confirmed
+        op: eq
+        value: true
 
   # Calendar + finance: cancelled + paid
   - profile_id: cancelled_paid
@@ -67,6 +59,9 @@ terminal_profiles:
       - path: agent.finance.bill_status
         op: eq
         value: paid
+      - path: agent.finance.payment_confirmed
+        op: eq
+        value: true
 
   # Calendar + finance: cancelled + deferred
   - profile_id: cancelled_deferred
@@ -81,6 +76,9 @@ terminal_profiles:
       - path: agent.finance.bill_status
         op: eq
         value: deferred
+      - path: agent.finance.payment_confirmed
+        op: eq
+        value: true
 
   # Dependent care resolved
   - profile_id: care_done
@@ -158,7 +156,6 @@ seed_schemas:
     seed_id_template: 'te_{transport}_{errands}_{fate}_{knowledge}'
     allowed_terminal_profiles:
       - errands_done
-    goal_capture_paths: []
     min_depth: 8
     max_depth: 20
     dimensions:
@@ -311,7 +308,6 @@ seed_schemas:
     allowed_terminal_profiles:
       - rescheduled_paid
       - cancelled_paid
-    goal_capture_paths: []
     min_depth: 3
     max_depth: 14
     dimensions:
@@ -400,7 +396,6 @@ seed_schemas:
     allowed_terminal_profiles:
       - rescheduled_deferred
       - cancelled_deferred
-    goal_capture_paths: []
     min_depth: 2
     max_depth: 10
     dimensions:
@@ -482,7 +477,6 @@ seed_schemas:
     seed_id_template: 'dc_{care_fate}_{transport}_{knowledge}'
     allowed_terminal_profiles:
       - care_done
-    goal_capture_paths: []
     min_depth: 3
     max_depth: 18
     dimensions:
@@ -661,7 +655,6 @@ seed_schemas:
     seed_id_template: 'hh_{setup}_{knowledge}'
     allowed_terminal_profiles:
       - household_done
-    goal_capture_paths: []
     min_depth: 6
     max_depth: 14
     dimensions:
@@ -719,7 +712,6 @@ seed_schemas:
     seed_id_template: 'ec_{transport}_{care_fate}_{errand_fate}_{knowledge}'
     allowed_terminal_profiles:
       - errands_care_done
-    goal_capture_paths: []
     min_depth: 10
     max_depth: 22
     dimensions:
@@ -862,7 +854,6 @@ seed_schemas:
     allowed_terminal_profiles:
       - rescheduled_care_household
       - cancelled_care_household
-    goal_capture_paths: []
     min_depth: 10
     max_depth: 22
     dimensions:
@@ -985,7 +976,6 @@ seed_schemas:
     allowed_terminal_profiles:
       - cancelled_paid
       - cancelled_deferred
-    goal_capture_paths: []
     min_depth: 4
     max_depth: 12
     dimensions:
@@ -1074,7 +1064,6 @@ seed_schemas:
     seed_id_template: 'df_{transport}_{errand_config}_{knowledge}'
     allowed_terminal_profiles:
       - errands_done
-    goal_capture_paths: []
     min_depth: 8
     max_depth: 18
     dimensions:
@@ -1168,7 +1157,6 @@ seed_schemas:
     seed_id_template: 'dfc_{delegate_fate}_{knowledge}'
     allowed_terminal_profiles:
       - care_done
-    goal_capture_paths: []
     min_depth: 6
     max_depth: 16
     dimensions:
@@ -1297,7 +1285,6 @@ seed_schemas:
     seed_id_template: 'cch2_{care_fate}_{funds}_{knowledge}'
     allowed_terminal_profiles:
       - cancelled_care_household
-    goal_capture_paths: []
     min_depth: 10
     max_depth: 22
     dimensions:

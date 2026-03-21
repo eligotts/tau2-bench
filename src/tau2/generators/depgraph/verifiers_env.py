@@ -46,7 +46,6 @@ class DepgraphTaskConfig:
     start_world: dict[str, Any]
     start_bindings: set[str]
     goal_world: list[WorldPredicateSpec]
-    goal_bindings: list[str]
     system_prompt: str = ""
     task_prompt: str = ""
 
@@ -156,7 +155,6 @@ def compile_task_config(
         start_world=start_world,
         start_bindings=set(task.start_bindings),
         goal_world=list(task.goal_world),
-        goal_bindings=list(task.goal_bindings),
         system_prompt=system_prompt,
         task_prompt=task_prompt,
     )
@@ -164,16 +162,14 @@ def compile_task_config(
 
 def check_goal(
     db: dict[str, Any],
-    bindings: set[str],
     goal_world: list[WorldPredicateSpec],
-    goal_bindings: list[str],
 ) -> tuple[float, dict[str, Any]]:
     """Check goal predicates against current DB state.
 
     Returns (reward, details) where reward is the fraction of satisfied
     predicates and details maps each predicate to pass/fail.
     """
-    total = len(goal_world) + len(goal_bindings)
+    total = len(goal_world)
     if total == 0:
         return 1.0, {}
 
@@ -183,13 +179,6 @@ def check_goal(
     for pred in goal_world:
         key = f"{pred.path} {pred.op} {pred.value!r}"
         ok = predicate_holds(pred, db)
-        details[key] = ok
-        if ok:
-            passed += 1
-
-    for binding_id in goal_bindings:
-        key = f"binding:{binding_id}"
-        ok = binding_id in bindings
         details[key] = ok
         if ok:
             passed += 1

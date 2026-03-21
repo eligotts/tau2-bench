@@ -113,7 +113,7 @@ def _binding_consumers(contract: GraphContractSpec, binding_id: str) -> list[Act
     return [
         action
         for action in contract.actions
-        if binding_id in action.tool_arg_bindings.values()
+        if binding_id in action.resolved_arg_bindings.values()
     ]
 
 
@@ -175,11 +175,9 @@ def _summarize_task(
         f"#### `{task.task_id}`",
         f"- `min_plan_length`: {task.min_plan_length}",
         f"- `start_bindings`: {task.start_bindings or '[]'}",
-        f"- `goal_capture_paths`: {task.goal_capture_paths or '[]'}",
-        f"- `goal_bindings`: {task.goal_bindings or '[]'}",
+        f"- `goal_world` ({len(task.goal_world)} predicates)",
         f"- `terminal_profile_id`: {task.terminal_profile_id!r}",
         f"- `required_actions` ({len(task.required_actions)}): {task.required_actions or '[]'}",
-        f"- `required_precedence` count: {len(task.required_precedence)}",
         f"- `SAT_full`: {report.sat_full.sat}",
     ]
     if plan:
@@ -208,7 +206,6 @@ def build_review_bundle_markdown(
     avg_plan_length = mean(plan_lengths) if plan_lengths else 0.0
     avg_action_count = mean(action_counts) if action_counts else 0.0
     start_binding_tasks = sum(1 for task in task_doc.tasks if task.start_bindings)
-    goal_binding_tasks = sum(1 for task in task_doc.tasks if task.goal_bindings)
     terminal_profile_counts = Counter(
         task.terminal_profile_id or "<missing>" for task in task_doc.tasks
     )
@@ -301,7 +298,6 @@ def build_review_bundle_markdown(
             f"- tasks: {task_count}",
             f"- families: {len(family_counts)}",
             f"- tasks with `start_bindings`: {start_binding_tasks}",
-            f"- tasks with `goal_bindings`: {goal_binding_tasks}",
             f"- task counts by `terminal_profile_id`: {dict(sorted(terminal_profile_counts.items()))}",
             f"- `min_plan_length` stats: min={min(plan_lengths, default=0)}, "
             f"avg={avg_plan_length:.2f}, "

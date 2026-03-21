@@ -11,6 +11,7 @@ Use this checklist in addition to step-specific prompts.
 5. Volatile bindings are only mapped into immediate observation-driven tools or clearly mutually-exclusive stage-specific tools.
 6. If several actions differ only by a finite literal tool arg, author them as one `action_schemas` entry with variant expansion instead of hand-copying near-duplicates.
 7. If a contract action uses a finite literal tool arg, the runtime tool signature exposes that param with `Literal[...]` or an `Enum`; do not hide finite values behind plain `str`.
+8. Every binding declares a `world_path` in `projection_fields` that tracks its canonical value.
 
 ## 2. Structural Provenance
 
@@ -20,18 +21,17 @@ Use this checklist in addition to step-specific prompts.
    - `start_world`
    - `start_bindings`
    - `goal_world`
-   - `goal_capture_paths`
-   - `goal_bindings`
    - `terminal_profile_id`
    - `required_actions`
-   - `required_precedence`
-4. Runtime authoring only edits:
+4. `goal_world` is populated from the matched terminal profile's `requires_world` predicates. There is no separate goal capture mechanism.
+5. Tasks are deduped by `(seed_id, terminal_profile_id)`.
+6. Runtime authoring only edits:
    - `runtime.reason_for_call`
    - `runtime.known_info`
    - `runtime.ticket`
-5. Runtime author-surface check passes (`run_runtime_surface_check`).
-6. Runtime narrative check passes (`run_runtime_narrative_check`).
-7. Agent-visible runtime text does not leak latent blocker inventories, internal branch/lane names, or predicted later-stage failures beyond user-observable start-binding facts.
+7. Runtime author-surface check passes (`run_runtime_surface_check`).
+8. Runtime narrative check passes (`run_runtime_narrative_check`).
+9. Agent-visible runtime text does not leak latent blocker inventories, internal branch/lane names, or predicted later-stage failures beyond user-observable start-binding facts.
 
 ## 3. Stop-Gate Discipline
 
@@ -51,8 +51,8 @@ Use this checklist in addition to step-specific prompts.
 1. `sampling_request.yaml` declares explicit `terminal_profiles`.
 2. Every sampling seed declares `allowed_terminal_profiles`.
 3. Every sampled/runtime task has a non-empty `terminal_profile_id`.
-4. Every sampled/runtime terminal task has non-empty `goal_capture_paths`.
-5. `terminal_profiles` validate legitimate solved states; `goal_capture_paths` define emitted task identity and env assertions.
+4. Terminal profiles are world-only (`requires_world` predicates). Knowledge dependence is modeled through a final consuming action.
+5. `goal_world` equals the matched terminal profile's `requires_world` predicates.
 6. Shorter tasks come from easier `start_world` seeds, not from intermediate partial-repair end states.
 7. Milestone tasks are only allowed when they use an explicit milestone terminal profile plus a matching prompt/tool surface.
 
@@ -61,10 +61,11 @@ Use this checklist in addition to step-specific prompts.
 1. Every contract tool exists in the proper toolkit (`tools.py` or `user_tools.py`).
 2. Every runtime init/assert callable exists and has valid argument shape.
 3. Binding-source extraction paths are typed and schema-checkable where possible.
-4. `sync_tools()` mirrors contract causal bridges and projects stop-gate observable fields.
-5. `sync_tools()` behavior is fully declared in `sync_rules`; there is no extra hidden sync logic.
-6. Any goal/world path produced only through sync is represented in `projection_fields` and stop-gate mappings if user-observable.
-7. If runtime recomputes a sync-owned field in both fallback and activated states, the contract declares both states explicitly in `sync_rules`; there is no runtime-only `else` branch for that field.
+4. `sync_tools()` calls `run_contract_sync()` from `runtime_sync` -- the contract sync rules are the single source of truth.
+5. View projections (`display_*` fields) stay as adapter Python code, separate from contract sync rules.
+6. Toolkits expose `get_<field>()` methods alongside `set_<field>()` methods for the sync runner.
+7. Any goal/world path produced only through sync is represented in `projection_fields` and stop-gate mappings if user-observable.
+8. If runtime recomputes a sync-owned field in both fallback and activated states, the contract declares both states explicitly in `sync_rules`; there is no runtime-only `else` branch for that field.
 
 ## 5. Quality and Diversity
 
@@ -83,28 +84,28 @@ Use this checklist in addition to step-specific prompts.
 8. Long-horizon paths use `min_depth >= 4` unless domain constraints justify shorter chains.
 9. Seed-schema `min_depth` floors are consistent with the true shortest plan for each expanded
    variant, especially `start_bindings` / partial-knowledge variants that can remove discovery steps.
-10. Sampling seed depth budgets account for cascading sync expansion, repair side-effect cleanup, and multi-step repair chains — not just raw fault count.
+10. Sampling seed depth budgets account for cascading sync expansion, repair side-effect cleanup, and multi-step repair chains -- not just raw fault count.
 11. `max_depth` is set to `estimated_depth + 4` to give BFS headroom for alternative paths.
 
 ### Difficulty Engineering (Tier 3+ domains)
-11. Cascading sync rules multiply tasks from single-fault seeds (one fault → multi-system task).
-12. Repair side-effects are paired with resolution gates that require cleanup.
-13. Cross-system prerequisites force repair ordering reasoning (e.g., cache warming requires DB healthy).
-14. Multi-fault seeds combine systems that do NOT cascade into each other (avoids redundancy with cascading rules).
-15. If sync-rule traps are used, they are limited to 1-2 per domain and BFS-verified solvable.
+12. Cascading sync rules multiply tasks from single-fault seeds (one fault -> multi-system task).
+13. Repair side-effects are paired with resolution gates that require cleanup.
+14. Cross-system prerequisites force repair ordering reasoning (e.g., cache warming requires DB healthy).
+15. Multi-fault seeds combine systems that do NOT cascade into each other (avoids redundancy with cascading rules).
+16. If sync-rule traps are used, they are limited to 1-2 per domain and BFS-verified solvable.
 
 ### Sampling Hygiene
-16. Persona pool exists (`personas.yaml`) with at least 2 distinct `persona_id` values.
-17. Runtime persona assignments come from the pool and are reasonably distributed across tasks.
-18. If repeated binding reacquisition is expected, correctness is driven by `ENV_ASSERTION`/stop-gate, not `ACTION` alone.
-19. Sampled tasks are canonical minimal terminal plans, not variants that differ only by optional extra reads.
-20. Cheap seed additions do not mostly come from post-repair checkpoint starts. Prefer early broken states,
+17. Persona pool exists (`personas.yaml`) with at least 2 distinct `persona_id` values.
+18. Runtime persona assignments come from the pool and are reasonably distributed across tasks.
+19. If repeated binding reacquisition is expected, correctness is driven by `ENV_ASSERTION`/stop-gate, not `ACTION` alone.
+20. Sampled tasks are canonical minimal terminal plans, not variants that differ only by optional extra reads.
+21. Cheap seed additions do not mostly come from post-repair checkpoint starts. Prefer early broken states,
     richer branch combinations, or `start_bindings` variations over starts with sync stages already advanced.
-21. Bigger graphs should come from meaningful branching or shared-gate lanes, not from many copied actions that only rename the same tool call.
-22. The captured `goal_world` covers intended changed causal paths only; env assertions check only `goal_world` (the start→end diff), not unchanged `start_world` paths.
-23. Both baseline seed files exist and load: `db.json` and `user_db.json`. `user_db.json` includes an empty stop-gate container and represents clean-base user state, not task-specific setup.
-24. Every field that can appear in generated runtime init actions or env assertions has matching deterministic helper coverage on the correct toolkit (`set_<...>` / `assert_<...>`), including fields introduced by stable replacements for formerly volatile values.
-25. Tool guard completeness passes without ad hoc gaps: no missing setters for availability flags, cost-paid flags, reservation holds, confirmation flags, or other fields that only show up after full seed expansion.
+22. Bigger graphs should come from meaningful branching or shared-gate lanes, not from many copied actions that only rename the same tool call.
+23. The `goal_world` comes from the terminal profile's `requires_world`; env assertions check those predicates.
+24. Both baseline seed files exist and load: `db.json` and `user_db.json`. `user_db.json` includes an empty stop-gate container and represents clean-base user state, not task-specific setup.
+25. Every field that can appear in generated runtime init actions or env assertions has matching deterministic helper coverage on the correct toolkit (`set_<...>` / `assert_<...>` / `get_<...>`), including fields introduced by stable replacements for formerly volatile values.
+26. Tool guard completeness passes without ad hoc gaps: no missing setters for availability flags, cost-paid flags, reservation holds, confirmation flags, or other fields that only show up after full seed expansion.
 
 ## 6. Fail-Closed Commands
 

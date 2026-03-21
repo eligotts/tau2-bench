@@ -244,9 +244,7 @@ db = dict(config.start_world)
 for pred in config.goal_world:
     db[pred.path] = pred.value
 
-bindings = set()  # Add any goal_bindings if present
-
-reward, details = check_goal(db, bindings, config.goal_world, config.goal_bindings)
+reward, details = check_goal(db, config.goal_world)
 print(f"Reward: {reward}")
 for k, v in details.items():
     print(f"  {k}: {'PASS' if v else 'FAIL'}")

@@ -32,7 +32,7 @@ The graph contract (`graph_contract.yaml`) uses **identical primitives** on both
 
 - `ActionContract` with `requires_world`, `effects_world`, `requires_bindings`, `effects_bindings`
 - `BindingSourceSpec` for knowledge acquisition
-- `TerminalProfileSpec` for valid end states
+- `TerminalProfileSpec` for valid end states over world state only
 - BFS solver, preflight, and sampler all work unchanged
 - `SamplingRequestDoc` and `SeedSchemaSpec` for fan-out
 
@@ -51,8 +51,10 @@ runnable environments — differs between tau2 and verifiers.
    - `effects_world`, `effects_bindings`
 4. All actions use `requestor: assistant` — there is no user requestor in agent-only domains.
 5. Include `bindings` entries for every produced/required binding id.
-6. Bindings are invalidated automatically when their `world_path` changes value.
-7. If one conceptual tool has a finite enum/route/mode input, prefer one runtime tool plus an
+6. Every binding must declare a canonical `world_path` listed in `projection_fields`.
+7. Every binding must flow into at least one downstream non-knowledge action via `tool_arg_bindings`.
+8. Bindings are invalidated automatically when their `world_path` changes value.
+9. If one conceptual tool has a finite enum/route/mode input, prefer one runtime tool plus an
    `action_schemas` entry that expands into concrete actions, instead of hand-authoring
    near-duplicate actions that differ only by literal tool args.
 

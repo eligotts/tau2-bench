@@ -17,6 +17,21 @@ from tau2.generators.depgraph.types import (
 _MAX_SYNC_ITERATIONS = 32
 
 
+def leaf_field_name(path: str) -> str:
+    """Derive a set_/get_/assert_ method suffix from a projected world path.
+
+    Bracket-indexed paths (``agent.sessions[x].charge_state``) → ``charge_state``.
+    Plain 3+ segment paths (``user.errand_a.confirmed_complete``) → ``errand_a_confirmed_complete``.
+    Short paths (``agent.status``) → ``status``.
+    """
+    parts = path.split(".")
+    if not parts or not parts[-1]:
+        raise ValueError(f"Cannot derive field name from path '{path}'")
+    if len(parts) >= 3 and "[" not in path:
+        return f"{parts[-2]}_{parts[-1]}"
+    return parts[-1]
+
+
 def _normalize_value(value: Any) -> Any:
     if isinstance(value, (str, int, float, bool, type(None))):
         return value
@@ -140,7 +155,7 @@ def _knowledge_source_ok(
         sources = binding_sources_by_id.get(binding_id, [])
         if not sources:
             return False
-        tool_scoped_sources = [source for source in sources if source.source_tool == action.tool_name]
+        tool_scoped_sources = [source for source in sources if source.source_tool == action.resolved_tool_name]
         candidates = tool_scoped_sources if tool_scoped_sources else sources
         if not any(binding_source_satisfiable(source, world) for source in candidates):
             return False

@@ -1,5 +1,11 @@
 # Wide Browse Domain — Build Plan
 
+> **Status (2026-03-19):** This is a design plan for a future multi-domain browser benchmark.
+> It has NOT been implemented yet. The amazon_shopping domain (which IS implemented) uses
+> a simpler model — see `data/tau2/domains/amazon_shopping/graph_contract.yaml`.
+> Some concepts here (goal_capture_paths, semantic slots) were superseded by the current
+> kernel design. See `docs/prompts/depgraph/` for current authoring patterns.
+
 > Verifiers-path domain modeling browser automation tasks.
 > Source traces: `/Users/eligottlieb/Downloads/verified_trace_threads_inline_20260311_1626/`
 
@@ -309,6 +315,7 @@ seed_schemas:
     seed_id_template: "{task_family}_{error}_{complexity}"
     allowed_terminal_profiles: [complete_submission, partial_submission]
     goal_capture_paths:
+      # [CURRENT: goal_capture_paths no longer exists. Terminal profiles define the goal directly.]
       - results.submitted
       - content.items_extracted
       - error.recovered

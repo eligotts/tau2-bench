@@ -265,7 +265,10 @@ class BFSStepper:
         self._next_node_id += 1
         return nid
 
-    def _check_terminal(self, world: dict[str, Any]) -> TerminalProfileSpec | None:
+    def _check_terminal(
+        self,
+        world: dict[str, Any],
+    ) -> TerminalProfileSpec | None:
         for profile in self._allowed_terminal_profiles:
             if world_matches_terminal_profile(world, profile):
                 return profile

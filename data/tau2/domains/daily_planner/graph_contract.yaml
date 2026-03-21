@@ -11,6 +11,10 @@ projection_fields:
   - agent.calendar.apology_needed           # bool
   - agent.calendar.apology_sent             # bool
   - agent.calendar.active_conflict_meeting_id  # stable meeting identifier for the current conflict
+  - agent.calendar.schedule_clear              # bool — set when calendar conflict is resolved or absent
+
+  # Planning lane (1)
+  - agent.planning.priorities_set              # bool — set after reviewing calendar + budget
 
   # Transport lane (7)
   - agent.transport.status                  # available / unavailable / booked
@@ -47,6 +51,7 @@ projection_fields:
   - agent.finance.available_funds           # plenty / tight / broke
   - agent.finance.funds_reserved_for        # none / transport / errand / care
   - agent.finance.budget_check_needed       # bool
+  - agent.finance.payment_confirmed        # bool
 
   # Dependent care lane (12)
   - agent.dependent_care.active             # bool
@@ -157,7 +162,7 @@ bindings:
   - binding_id: delegate_eta
     source_tool: check_delegate_eta
     extraction_path: result.eta_minutes
-    world_path: null
+    world_path: agent.dependent_care.pickup_eta_checked
     observability_all_of: []
     observability_any_of:
       - path: agent.dependent_care.delegate_a_availability
@@ -308,9 +313,7 @@ actions:
     requires_bindings:
       - binding_id: delegate_eta
         acquired: false
-    effects_world:
-      - path: agent.dependent_care.pickup_eta_checked
-        set: true
+    effects_world: []
     effects_bindings: [delegate_eta]
     tool_arg_bindings: {}
 
@@ -343,6 +346,27 @@ actions:
     tool_arg_bindings: {}
 
   # ══════════════════════════════════════════════
+  # PLANNING GATE
+  # ══════════════════════════════════════════════
+
+  - action_id: review_priorities
+    requestor: assistant
+    tool_name: review_priorities
+    classification: causal
+    requires_world: []
+    requires_bindings:
+      - binding_id: calendar_state
+        acquired: true
+      - binding_id: budget_status
+        acquired: true
+    effects_world:
+      - path: agent.planning.priorities_set
+        set: true
+    effects_bindings: []
+    tool_arg_bindings: {}
+    tool_arg_literals: {}
+
+  # ══════════════════════════════════════════════
   # CALENDAR ACTIONS
   # ══════════════════════════════════════════════
 
@@ -353,6 +377,9 @@ actions:
     requires_world:
       - path: agent.calendar.conflict_status
         value: has_conflict
+      - path: agent.planning.priorities_set
+        op: eq
+        value: true
     requires_bindings:
       - binding_id: calendar_state
         acquired: true
@@ -370,6 +397,9 @@ actions:
     requires_world:
       - path: agent.calendar.conflict_status
         value: has_conflict
+      - path: agent.planning.priorities_set
+        op: eq
+        value: true
     requires_bindings:
       - binding_id: calendar_state
         acquired: true
@@ -596,6 +626,12 @@ actions:
         value: pending
       - path: agent.errand_a.item_in_stock
         value: true
+      - path: agent.planning.priorities_set
+        op: eq
+        value: true
+      - path: agent.calendar.schedule_clear
+        op: eq
+        value: true
     requires_bindings:
       - binding_id: errand_a_options
         acquired: true
@@ -805,6 +841,12 @@ actions:
       - path: agent.errand_b.status
         value: pending
       - path: agent.errand_b.item_in_stock
+        value: true
+      - path: agent.planning.priorities_set
+        op: eq
+        value: true
+      - path: agent.calendar.schedule_clear
+        op: eq
         value: true
     requires_bindings:
       - binding_id: errand_b_options
@@ -1061,8 +1103,13 @@ actions:
         value: unpaid
       - path: agent.finance.available_funds
         value: plenty
+      - path: agent.planning.priorities_set
+        op: eq
+        value: true
     requires_bindings:
       - binding_id: account_balances
+        acquired: true
+      - binding_id: budget_status
         acquired: true
     effects_world:
       - path: agent.finance.bill_status
@@ -1088,8 +1135,13 @@ actions:
         value: unpaid
       - path: agent.finance.available_funds
         value: tight
+      - path: agent.planning.priorities_set
+        op: eq
+        value: true
     requires_bindings:
       - binding_id: account_balances
+        acquired: true
+      - binding_id: budget_status
         acquired: true
     effects_world:
       - path: agent.finance.bill_status
@@ -1110,12 +1162,34 @@ actions:
         value: true
       - path: agent.finance.bill_status
         value: unpaid
+      - path: agent.planning.priorities_set
+        op: eq
+        value: true
     requires_bindings: []
     effects_world:
       - path: agent.finance.bill_status
         set: deferred
     effects_bindings: []
     tool_arg_bindings: {}
+
+  - action_id: user_confirm_payment
+    requestor: user
+    tool_name: confirm_payment
+    classification: causal
+    requires_world:
+      - path: agent.finance.bill_status
+        op: neq
+        value: unpaid
+      - path: agent.finance.bill_status
+        op: neq
+        value: inactive
+    requires_bindings: []
+    effects_world:
+      - path: agent.finance.payment_confirmed
+        set: true
+    effects_bindings: []
+    tool_arg_bindings: {}
+    tool_arg_literals: {}
 
   # ══════════════════════════════════════════════
   # DEPENDENT CARE ACTIONS
@@ -1130,6 +1204,12 @@ actions:
         value: true
       - path: agent.dependent_care.pickup_status
         value: unassigned
+      - path: agent.planning.priorities_set
+        op: eq
+        value: true
+      - path: agent.calendar.schedule_clear
+        op: eq
+        value: true
     requires_bindings: []
     effects_world:
       - path: agent.dependent_care.pickup_status
@@ -1148,6 +1228,12 @@ actions:
       - path: agent.dependent_care.delegate_a_contacted
         value: false
       - path: agent.messaging.delegate_a_will_accept
+        value: true
+      - path: agent.planning.priorities_set
+        op: eq
+        value: true
+      - path: agent.calendar.schedule_clear
+        op: eq
         value: true
     requires_bindings: []
     effects_world:
@@ -1170,6 +1256,12 @@ actions:
         value: false
       - path: agent.messaging.delegate_a_will_accept
         value: false
+      - path: agent.planning.priorities_set
+        op: eq
+        value: true
+      - path: agent.calendar.schedule_clear
+        op: eq
+        value: true
     requires_bindings: []
     effects_world:
       - path: agent.dependent_care.delegate_a_contacted
@@ -1244,8 +1336,6 @@ actions:
       - path: agent.dependent_care.delegate_a_availability
         value: available
       - path: agent.dependent_care.facility_notified
-        value: true
-      - path: agent.dependent_care.pickup_eta_checked
         value: true
     requires_bindings:
       - binding_id: delegate_a_response
@@ -1469,7 +1559,7 @@ actions:
         set: multiple
     effects_bindings: []
     tool_arg_bindings:
-      issue_type: maintenance_info
+      issue_description: maintenance_info
 
   - action_id: select_maintenance_provider
     requestor: assistant
@@ -1497,6 +1587,12 @@ actions:
     requires_world:
       - path: agent.household.maintenance_status
         value: provider_selected
+      - path: agent.planning.priorities_set
+        op: eq
+        value: true
+      - path: agent.calendar.schedule_clear
+        op: eq
+        value: true
     requires_bindings: []
     effects_world:
       - path: agent.household.maintenance_status
@@ -1639,6 +1735,19 @@ actions:
 action_schemas: []
 
 sync_rules:
+  # ══════════════════════════════════════════════
+  # CALENDAR SCHEDULE CLEAR SYNC
+  # ══════════════════════════════════════════════
+
+  - rule_id: sync_calendar_clears_schedule
+    requires_world:
+      - path: agent.calendar.conflict_status
+        op: neq
+        value: has_conflict
+    effects_world:
+      - path: agent.calendar.schedule_clear
+        set: true
+
   # ══════════════════════════════════════════════
   # TRANSPORT SYNC
   # ══════════════════════════════════════════════

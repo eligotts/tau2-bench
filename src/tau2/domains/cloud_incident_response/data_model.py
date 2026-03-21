@@ -237,6 +237,7 @@ class Incident(BaseModelNoExtra):
     comms_state: CommsState = CommsState.NONE
     postmortem_state: PostmortemState = PostmortemState.NOT_STARTED
     triage_state: TriageState = TriageState.NOT_RUN
+    primary_verified: bool = False
 
 
 class AppService(BaseModelNoExtra):

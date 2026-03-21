@@ -150,6 +150,7 @@ class CalendarState(BaseModelNoExtra):
     apology_needed: bool = False
     apology_sent: bool = False
     active_conflict_meeting_id: str = "none"
+    schedule_clear: bool = False
     # Runtime detail fields (not projected for solver)
     meetings: list[dict] = Field(default_factory=list)
 
@@ -200,6 +201,7 @@ class FinanceState(BaseModelNoExtra):
     available_funds: AvailableFunds = AvailableFunds.PLENTY
     funds_reserved_for: FundsReservedFor = FundsReservedFor.NONE
     budget_check_needed: bool = False
+    payment_confirmed: bool = False
     # Runtime detail fields
     checking_balance: float = 0.0
     savings_balance: float = 0.0
@@ -249,6 +251,10 @@ class MessagingState(BaseModelNoExtra):
     delegate_b_will_accept: bool = False
 
 
+class PlanningState(BaseModelNoExtra):
+    priorities_set: bool = False
+
+
 class DailyPlannerDB(DB):
     calendar: CalendarState = Field(default_factory=CalendarState)
     transport: TransportState = Field(default_factory=TransportState)
@@ -258,3 +264,4 @@ class DailyPlannerDB(DB):
     dependent_care: DependentCareState = Field(default_factory=DependentCareState)
     household: HouseholdState = Field(default_factory=HouseholdState)
     messaging: MessagingState = Field(default_factory=MessagingState)
+    planning: PlanningState = Field(default_factory=PlanningState)

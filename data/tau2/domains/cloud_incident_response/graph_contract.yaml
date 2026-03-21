@@ -18,7 +18,7 @@ context_slots:
   - slot_id: active_dns
     entity_type: DnsRecord
 
-# 24 projection fields — no view sync fields (removed to reduce BFS state space)
+# 25 projection fields — no view sync fields (removed to reduce BFS state space)
 projection_fields:
   # Incident management (4 fields)
   - agent.incident[active_incident].status
@@ -49,10 +49,11 @@ projection_fields:
   # User investigation (2 fields)
   - user.observability.dashboard_checked
   - user.observability.logs_tailed
-  # User verification (3 fields)
+  # User verification (4 fields)
   - user.actions.smoke_test_state
   - user.actions.dns_flushed_locally
   - user.actions.connectivity_verified
+  - agent.incident[active_incident].primary_verified
 
 # ================================================================
 # Bindings — 9 knowledge gates (tiered investigation tree)
@@ -62,6 +63,7 @@ bindings:
   - binding_id: K.dashboard_overview
     source_tool: check_dashboard
     extraction_path: result.summary
+    world_path: user.observability.dashboard_checked
 
   # Tier 2: requires dashboard_checked
   - binding_id: K.error_pattern
@@ -104,10 +106,19 @@ bindings:
       - path: user.observability.dashboard_checked
         value: checked
 
-  # System-specific topology binding
-  - binding_id: K.network_topology
+  # System-specific topology bindings (split by subsystem)
+  - binding_id: K.lb_topology
     source_tool: check_network_topology
-    extraction_path: result.topology
+    extraction_path: result.lb_status
+    world_path: agent.lb[active_lb].lb_health
+    observability_all_of:
+      - path: user.observability.dashboard_checked
+        value: checked
+
+  - binding_id: K.dns_topology
+    source_tool: check_network_topology
+    extraction_path: result.dns_status
+    world_path: agent.dns[active_dns].resolution_state
     observability_all_of:
       - path: user.observability.dashboard_checked
         value: checked
@@ -140,9 +151,6 @@ actions:
         value: not_run
       - path: user.observability.dashboard_checked
         value: checked
-      - path: agent.app[active_app].app_health
-        op: neq
-        value: healthy
     effects_world:
       - path: user.observability.logs_tailed
         set: tailed
@@ -216,7 +224,7 @@ actions:
       - path: agent.lb[active_lb].lb_health
         op: neq
         value: healthy
-    effects_bindings: [K.network_topology]
+    effects_bindings: [K.lb_topology]
 
   - action_id: user_check_dns_topology
     requestor: user
@@ -230,7 +238,7 @@ actions:
       - path: agent.dns[active_dns].resolution_state
         op: neq
         value: correct
-    effects_bindings: [K.network_topology]
+    effects_bindings: [K.dns_topology]
 
   # ---- Triage (7 system-gated variants) ----
   # Each requires triage_state=not_run + its system broken + specific bindings.
@@ -338,7 +346,7 @@ actions:
     tool_name: correlate_and_triage
     classification: causal
     requires_bindings:
-      - binding_id: K.network_topology
+      - binding_id: K.lb_topology
         acquired: true
       - binding_id: K.dashboard_overview
         acquired: true
@@ -352,7 +360,7 @@ actions:
       - path: agent.incident[active_incident].triage_state
         set: ran
     tool_arg_bindings:
-      diagnostic_signal: K.network_topology
+      diagnostic_signal: K.lb_topology
       dashboard_summary: K.dashboard_overview
     tool_arg_literals:
       signal_source: lb_topology
@@ -386,7 +394,7 @@ actions:
     tool_name: correlate_and_triage
     classification: causal
     requires_bindings:
-      - binding_id: K.network_topology
+      - binding_id: K.dns_topology
         acquired: true
       - binding_id: K.dashboard_overview
         acquired: true
@@ -400,7 +408,7 @@ actions:
       - path: agent.incident[active_incident].triage_state
         set: ran
     tool_arg_bindings:
-      diagnostic_signal: K.network_topology
+      diagnostic_signal: K.dns_topology
       dashboard_summary: K.dashboard_overview
     tool_arg_literals:
       signal_source: dns_topology
@@ -884,6 +892,24 @@ actions:
       - path: agent.dns[active_dns].resolution_state
         set: propagating
 
+  # ---- Post-repair verification (1 action) ----
+
+  - action_id: user_verify_primary_repair
+    requestor: user
+    tool_name: run_smoke_test
+    classification: causal
+    requires_world:
+      - path: agent.incident[active_incident].triage_state
+        op: eq
+        value: ran
+    requires_bindings: []
+    effects_world:
+      - path: agent.incident[active_incident].primary_verified
+        set: true
+    effects_bindings: []
+    tool_arg_bindings: {}
+    tool_arg_literals: {}
+
   # ---- Incident management (2 causal actions) ----
 
   - action_id: assistant_send_internal_comms
@@ -895,6 +921,9 @@ actions:
         value: ran
       - path: agent.incident[active_incident].comms_state
         value: none
+      - path: agent.incident[active_incident].primary_verified
+        op: eq
+        value: true
     effects_world:
       - path: agent.incident[active_incident].comms_state
         set: internal_sent
@@ -949,8 +978,6 @@ actions:
         value: healthy
       - path: agent.dns[active_dns].resolution_state
         value: correct
-      - path: user.actions.dns_flushed_locally
-        value: done
     effects_world:
       - path: user.actions.connectivity_verified
         set: verified

@@ -6,12 +6,9 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
-from tau2.generators.depgraph.goal_capture import capture_goal_world
 from tau2.generators.depgraph.preflight import (
     TaskPreflightReport,
-    compute_volatile_binding_ids,
     run_task_preflight,
-    stable_goal_bindings,
     terminal_profile_map,
     world_matches_terminal_profile,
 )
@@ -28,7 +25,6 @@ from tau2.generators.depgraph.types import (
     SamplingRequestDoc,
     TaskIntent,
     TaskSpecsDoc,
-    WorldPredicateSpec,
 )
 
 
@@ -58,18 +54,6 @@ def _ordered_unique(items: list[str]) -> list[str]:
     return out
 
 
-def _plan_precedence(plan: list[str]) -> list[tuple[str, str]]:
-    edges: list[tuple[str, str]] = []
-    for idx in range(len(plan) - 1):
-        edge = (plan[idx], plan[idx + 1])
-        if edge not in edges:
-            edges.append(edge)
-    return edges
-
-
-def _goal_key(goal_world: list[WorldPredicateSpec]) -> tuple:
-    return tuple(sorted((g.path, g.op, repr(g.value)) for g in goal_world))
-
 
 def sample_task_intents(
     contract: GraphContractSpec,
@@ -77,29 +61,27 @@ def sample_task_intents(
 ) -> list[SampledTask]:
     """Generate candidate task intents by BFS fan-out.
 
-    Deduplicates by goal_world signature during BFS — different terminal states
-    that collapse to the same goal are kept only once (first/shortest BFS hit).
-    No solver calls needed: BFS traces are correct-by-construction proofs of SAT.
+    Task identity is (seed_id, terminal_profile_id). Different BFS paths
+    from the same seed to the same terminal profile collapse to one task
+    (first/shortest hit wins). goal_world is populated directly from the
+    matched terminal profile's requires_world predicates.
     """
     sampled: list[SampledTask] = []
     binding_sources_by_id = index_binding_sources(contract.bindings)
-    volatile_binding_ids = compute_volatile_binding_ids(contract)
     terminal_profiles_by_id = terminal_profile_map(request.terminal_profiles)
     task_counter = 0
-    # Fair share per seed: spread the budget evenly so late seeds aren't starved.
     n_seeds = len(request.seeds)
     per_seed_budget = max(1, request.max_tasks // n_seeds) if n_seeds > 0 else request.max_tasks
 
     for seed in request.seeds:
         seed_count = 0
-        goal_capture_paths = request.goal_capture_paths_for_seed(seed)
         allowed_terminal_profiles = [
             terminal_profiles_by_id[profile_id]
             for profile_id in seed.allowed_terminal_profiles
         ]
-        # Per-seed dedup by (goal_world, terminal_profile). First BFS hit
-        # wins (shortest path to that goal from this seed's start state).
-        seen_goals: set[tuple] = set()
+        # Dedup by (seed_id, terminal_profile_id). First BFS hit wins.
+        seen_profiles: set[str] = set()
+
         start_world, seed_issues = materialize_world(
             seed.start_world,
             sync_rules=contract.sync_rules,
@@ -145,58 +127,41 @@ def sample_task_intents(
                     ),
                     None,
                 )
-                if matched_terminal_profile is None:
+
+                depth = len(next_plan)
+                if matched_terminal_profile is None or depth < seed.min_depth:
+                    # Not terminal, or terminal but too shallow — keep exploring.
                     queue.append(
                         _Node(world=next_world, bindings=next_bindings, plan=next_plan)
                     )
-
-                depth = len(next_plan)
-                if depth < seed.min_depth or matched_terminal_profile is None:
                     continue
 
-                goal_world = capture_goal_world(
-                    start_world=start_world,
-                    end_world=next_world,
-                    capture_paths=goal_capture_paths,
-                    projected_paths=contract.projection_fields,
-                )
-                if not goal_world:
+                # Dedup: same seed + same terminal profile = same task.
+                if matched_terminal_profile.profile_id in seen_profiles:
                     continue
+                seen_profiles.add(matched_terminal_profile.profile_id)
 
-                # Dedup: same goal_world + terminal profile = same task.
-                gk = (_goal_key(goal_world), matched_terminal_profile.profile_id)
-                if gk in seen_goals:
-                    continue
-                seen_goals.add(gk)
+                # goal_world comes directly from terminal profile predicates.
+                goal_world = list(matched_terminal_profile.requires_world)
 
-                plan = next_plan
-                plan_depth = depth
-                goal_bindings = stable_goal_bindings(
-                    contract,
-                    sorted(set(next_bindings) - set(start_bindings)),
-                    volatile_binding_ids=volatile_binding_ids,
-                )
-                required_actions = _ordered_unique(plan)
-
-                task_id = f"{seed.seed_id}_d{plan_depth}_{task_counter:03d}"
+                required_actions = _ordered_unique(next_plan)
+                task_id = f"{seed.seed_id}_d{depth}_{task_counter:03d}"
                 task_counter += 1
+
                 candidate = TaskIntent(
                     task_id=task_id,
                     start_world=seed.start_world,
                     start_bindings=seed.start_bindings,
                     goal_world=goal_world,
-                    goal_capture_paths=goal_capture_paths,
-                    goal_bindings=goal_bindings,
                     terminal_profile_id=matched_terminal_profile.profile_id,
                     required_actions=required_actions,
-                    required_precedence=_plan_precedence(plan),
-                    min_plan_length=plan_depth,
+                    min_plan_length=depth,
                     runtime=None,
                 )
                 # BFS trace is the proof of SAT — pass directly to preflight.
                 bfs_sat = SearchResult(
                     sat=True,
-                    plan=plan,
+                    plan=next_plan,
                     explored_states=0,
                     end_world=dict(next_world),
                     end_bindings=frozenset(next_bindings),
@@ -217,7 +182,7 @@ def sample_task_intents(
                     if len(sampled) >= request.max_tasks:
                         return sampled
                     if seed_count >= per_seed_budget:
-                        break  # move to next seed
+                        break
 
     return sampled
 
@@ -233,21 +198,16 @@ def cap_per_schema(
     then keeps up to *max_per_schema* tasks per schema (preserving BFS
     order, i.e. shortest-first).
     """
-    # Build prefix → schema_id mapping from seed templates.
     prefix_map: dict[str, str] = {}
     for schema in request.seed_schemas:
-        # Template like 'dc_{care_fate}_{transport}_{knowledge}'
-        # Prefix is everything before the first '{'.
         prefix = schema.seed_id_template.split("{")[0]
         prefix_map[prefix] = schema.schema_id
 
-    # Sort prefixes longest-first so 'cch2_' matches before 'cch_'.
     sorted_prefixes = sorted(prefix_map, key=len, reverse=True)
 
     schema_counts: dict[str, int] = {}
     result: list[SampledTask] = []
     for entry in sampled:
-        # Strip _d{depth}_{counter} suffix to get seed_id.
         seed_id = entry.task.task_id.rsplit("_d", 1)[0]
         schema_id = "unknown"
         for prefix in sorted_prefixes:

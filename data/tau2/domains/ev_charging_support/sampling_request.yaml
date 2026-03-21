@@ -1,258 +1,39 @@
 version: 1
 max_tasks: 120
-goal_capture_paths:
-- agent.accounts[active_account]
-- agent.stations[active_station].diagnostics_state
-- agent.sessions[active_session]
-- user.physical.vehicle_ready_state
-- user.physical.app_refresh_state
-- user.physical.app_login_state
-- user.physical.connector_latch_state
-- user.physical.test_charge_state
 terminal_profiles:
 - profile_id: billing_resolved
-  description: Billing branch fully resolved, retry lane cleared, and charging is
-    active.
+  description: Billing branch resolved — charging active, user verified.
   requires_world:
   - path: agent.sessions[active_session].error_class
     op: eq
     value: billing
-  - path: agent.accounts[active_account].hold_status
-    op: eq
-    value: cleared
-  - path: agent.accounts[active_account].payment_token_status
-    op: eq
-    value: valid
-  - path: agent.accounts[active_account].fraud_lock_state
-    op: eq
-    value: 'off'
-  - path: agent.stations[active_station].reachability_state
-    op: eq
-    value: reachable
-  - path: agent.stations[active_station].firmware_state
-    op: eq
-    value: current
-  - path: agent.stations[active_station].clock_sync_state
-    op: eq
-    value: synced
-  - path: agent.stations[active_station].diagnostics_state
-    op: eq
-    value: ran
-  - path: agent.network_paths[active_station].backend_link_state
-    op: eq
-    value: up
-  - path: agent.network_paths[active_station].cert_state
-    op: eq
-    value: fresh
-  - path: agent.network_paths[active_station].handshake_state
-    op: eq
-    value: established
-  - path: agent.sessions[active_session].session_auth_state
-    op: eq
-    value: valid
-  - path: agent.sessions[active_session].allowlist_sync_state
-    op: eq
-    value: synced
-  - path: agent.sessions[active_session].tariff_profile_state
-    op: eq
-    value: ready
-  - path: agent.sessions[active_session].reservation_lock_state
-    op: eq
-    value: cleared
-  - path: agent.sessions[active_session].profile_state
-    op: eq
-    value: ready
-  - path: agent.sessions[active_session].vehicle_auth_state
-    op: eq
-    value: validated
-  - path: agent.sessions[active_session].retry_state
-    op: eq
-    value: ready
   - path: agent.sessions[active_session].charge_state
     op: eq
     value: active
-  - path: agent.sessions[active_session].last_fault_code
-    op: eq
-    value: NONE
-  - path: user.physical.vehicle_ready_state
-    op: eq
-    value: ready
-  - path: user.physical.app_refresh_state
-    op: eq
-    value: refreshed
-  - path: user.physical.connector_latch_state
-    op: eq
-    value: confirmed
   - path: user.physical.test_charge_state
     op: eq
     value: run
 - profile_id: connectivity_resolved
-  description: Connectivity branch fully resolved, secure transport healthy, and charging
-    is active.
+  description: Connectivity branch resolved — charging active, user verified.
   requires_world:
   - path: agent.sessions[active_session].error_class
     op: eq
     value: connectivity
-  - path: agent.accounts[active_account].hold_status
-    op: eq
-    value: cleared
-  - path: agent.accounts[active_account].payment_token_status
-    op: eq
-    value: valid
-  - path: agent.accounts[active_account].fraud_lock_state
-    op: eq
-    value: 'off'
-  - path: agent.stations[active_station].reachability_state
-    op: eq
-    value: reachable
-  - path: agent.stations[active_station].firmware_state
-    op: eq
-    value: current
-  - path: agent.stations[active_station].clock_sync_state
-    op: eq
-    value: synced
-  - path: agent.stations[active_station].diagnostics_state
-    op: eq
-    value: ran
-  - path: agent.network_paths[active_station].backend_link_state
-    op: eq
-    value: up
-  - path: agent.network_paths[active_station].cert_state
-    op: eq
-    value: fresh
-  - path: agent.network_paths[active_station].handshake_state
-    op: eq
-    value: established
-  - path: agent.sessions[active_session].session_auth_state
-    op: eq
-    value: valid
-  - path: agent.sessions[active_session].allowlist_sync_state
-    op: eq
-    value: synced
-  - path: agent.sessions[active_session].tariff_profile_state
-    op: eq
-    value: ready
-  - path: agent.sessions[active_session].reservation_lock_state
-    op: eq
-    value: cleared
-  - path: agent.sessions[active_session].profile_state
-    op: eq
-    value: ready
-  - path: agent.sessions[active_session].vehicle_auth_state
-    op: eq
-    value: validated
-  - path: agent.sessions[active_session].retry_state
-    op: eq
-    value: ready
   - path: agent.sessions[active_session].charge_state
     op: eq
     value: active
-  - path: agent.sessions[active_session].last_fault_code
-    op: eq
-    value: NONE
-  - path: user.physical.cable_inspection_state
-    op: eq
-    value: checked_ok
-  - path: user.physical.connector_reseat_state
-    op: eq
-    value: reseated
-  - path: user.physical.station_power_cycle_state
-    op: eq
-    value: done
-  - path: user.physical.vehicle_ready_state
-    op: eq
-    value: ready
-  - path: user.physical.app_refresh_state
-    op: eq
-    value: refreshed
-  - path: user.physical.connector_latch_state
-    op: eq
-    value: confirmed
   - path: user.physical.test_charge_state
     op: eq
     value: run
 - profile_id: full_system_resolved
-  description: Full-system branch fully resolved across billing, transport, and final
-    readiness gates.
+  description: Full-system branch resolved — charging active, user verified.
   requires_world:
   - path: agent.sessions[active_session].error_class
     op: eq
     value: full_system
-  - path: agent.accounts[active_account].hold_status
-    op: eq
-    value: cleared
-  - path: agent.accounts[active_account].payment_token_status
-    op: eq
-    value: valid
-  - path: agent.accounts[active_account].fraud_lock_state
-    op: eq
-    value: 'off'
-  - path: agent.stations[active_station].reachability_state
-    op: eq
-    value: reachable
-  - path: agent.stations[active_station].firmware_state
-    op: eq
-    value: current
-  - path: agent.stations[active_station].clock_sync_state
-    op: eq
-    value: synced
-  - path: agent.stations[active_station].diagnostics_state
-    op: eq
-    value: ran
-  - path: agent.network_paths[active_station].backend_link_state
-    op: eq
-    value: up
-  - path: agent.network_paths[active_station].cert_state
-    op: eq
-    value: fresh
-  - path: agent.network_paths[active_station].handshake_state
-    op: eq
-    value: established
-  - path: agent.sessions[active_session].session_auth_state
-    op: eq
-    value: valid
-  - path: agent.sessions[active_session].allowlist_sync_state
-    op: eq
-    value: synced
-  - path: agent.sessions[active_session].tariff_profile_state
-    op: eq
-    value: ready
-  - path: agent.sessions[active_session].reservation_lock_state
-    op: eq
-    value: cleared
-  - path: agent.sessions[active_session].profile_state
-    op: eq
-    value: ready
-  - path: agent.sessions[active_session].vehicle_auth_state
-    op: eq
-    value: validated
-  - path: agent.sessions[active_session].retry_state
-    op: eq
-    value: ready
   - path: agent.sessions[active_session].charge_state
     op: eq
     value: active
-  - path: agent.sessions[active_session].last_fault_code
-    op: eq
-    value: NONE
-  - path: user.physical.cable_inspection_state
-    op: eq
-    value: checked_ok
-  - path: user.physical.connector_reseat_state
-    op: eq
-    value: reseated
-  - path: user.physical.station_power_cycle_state
-    op: eq
-    value: done
-  - path: user.physical.vehicle_ready_state
-    op: eq
-    value: ready
-  - path: user.physical.app_refresh_state
-    op: eq
-    value: refreshed
-  - path: user.physical.connector_latch_state
-    op: eq
-    value: confirmed
   - path: user.physical.test_charge_state
     op: eq
     value: run
@@ -261,7 +42,6 @@ seed_schemas:
   seed_id_template: '{case}_{knowledge}'
   allowed_terminal_profiles:
   - billing_resolved
-  goal_capture_paths: []
   min_depth: 11
   max_depth: 20
   dimensions:
@@ -1124,19 +904,6 @@ seed_schemas:
   seed_id_template: '{case}_{knowledge}'
   allowed_terminal_profiles:
   - connectivity_resolved
-  goal_capture_paths: &id001
-  - agent.accounts[active_account]
-  - agent.stations[active_station]
-  - agent.network_paths[active_station]
-  - agent.sessions[active_session]
-  - user.physical.cable_inspection_state
-  - user.physical.connector_reseat_state
-  - user.physical.station_power_cycle_state
-  - user.physical.vehicle_ready_state
-  - user.physical.app_refresh_state
-  - user.physical.app_login_state
-  - user.physical.connector_latch_state
-  - user.physical.test_charge_state
   min_depth: 13
   max_depth: 20
   dimensions:
@@ -1939,7 +1706,6 @@ seed_schemas:
   seed_id_template: '{case}_{knowledge}'
   allowed_terminal_profiles:
   - full_system_resolved
-  goal_capture_paths: *id001
   min_depth: 13
   max_depth: 24
   dimensions:

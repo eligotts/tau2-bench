@@ -10,7 +10,6 @@ from textual.theme import Theme
 from textual.timer import Timer
 from textual.widgets import Footer, Static
 
-from tau2.generators.depgraph.goal_capture import capture_goal_world
 from tau2.generators.depgraph.types import GraphContractSpec, SamplingRequestDoc
 
 from .stepper import BFSStepper, BFSStepResult
@@ -303,29 +302,13 @@ class BFSExplorerApp(App):
             graph.focus_bfs_source(self._current_node.parent_id)
 
     def _try_collect_goal(self, result: BFSStepResult) -> None:
-        """Dedup and collect a terminal node, matching the real sampler's signature logic."""
+        """Dedup and collect a terminal node using (seed_id, terminal_profile_id)."""
         if result.terminal_match is None:
             return
 
-        root = self.stepper.get_node(0)
-        if root is None:
-            return
-
         seed = self.stepper.current_seed
-        goal_capture_paths = self.request.goal_capture_paths_for_seed(seed) if seed else []
-        projected_paths = list(self.stepper.contract.projection_fields)
-
-        captured = capture_goal_world(
-            start_world=root.world,
-            end_world=result.world,
-            capture_paths=goal_capture_paths,
-            projected_paths=projected_paths,
-        )
-
-        # Signature: (captured_goal, required_actions, profile_id)
-        goal_part = tuple(sorted((p.path, repr(p.value)) for p in captured))
-        required_actions = tuple(dict.fromkeys(result.plan))  # ordered unique
-        sig = (goal_part, required_actions, result.terminal_match.profile_id)
+        seed_id = seed.seed_id if seed else ""
+        sig = (seed_id, result.terminal_match.profile_id)
 
         if sig not in self._seen_goal_sigs:
             self._seen_goal_sigs.add(sig)
@@ -430,17 +413,10 @@ class BFSExplorerApp(App):
         root = self.stepper.get_node(0)
         start_world = root.world if root else {}
 
-        # Get goal capture paths
-        seed = self.stepper.current_seed
-        goal_capture_paths = self.request.goal_capture_paths_for_seed(seed) if seed else []
-        projected_paths = list(self.stepper.contract.projection_fields)
-
         self.push_screen(
             GoalSummary(
                 self._goal_nodes,
                 start_world=start_world,
-                goal_capture_paths=goal_capture_paths,
-                projected_paths=projected_paths,
             ),
             on_goal_selected,
         )

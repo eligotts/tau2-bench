@@ -19,7 +19,6 @@ from textual.widgets import (
 from textual.widgets.option_list import Option
 from textual.widgets.tree import TreeNode
 
-from tau2.generators.depgraph.goal_capture import capture_goal_world, path_matches_capture
 from tau2.generators.depgraph.types import TerminalProfileSpec
 
 from .stepper import ActionProbe, BFSStepResult
@@ -410,14 +409,10 @@ class GoalSummary(ModalScreen[int | None]):
         self,
         goal_nodes: list[BFSStepResult],
         start_world: dict[str, Any],
-        goal_capture_paths: list[str],
-        projected_paths: list[str],
     ) -> None:
         super().__init__()
         self.goal_nodes = goal_nodes
         self.start_world = start_world
-        self.goal_capture_paths = goal_capture_paths
-        self.projected_paths = projected_paths
 
     def compose(self) -> ComposeResult:
         with Container(id="goal-modal"):
@@ -506,30 +501,25 @@ class GoalSummary(ModalScreen[int | None]):
         if not has_diff:
             text.append("  (no changes)\n", style="dim #5c6370")
 
-        # Goal capture / env assertions
-        text.append("\nEnv Assertions (goal capture)\n", style="bold #e2c07c")
-        if self.goal_capture_paths:
-            captured = capture_goal_world(
-                start_world=self.start_world,
-                end_world=node.world,
-                capture_paths=self.goal_capture_paths,
-                projected_paths=self.projected_paths,
-            )
-            if captured:
-                for pred in captured:
-                    path = pred.path
-                    leaf = path.rsplit(".", 1)[-1] if "." in path else path
-                    env_type = "assistant" if path.startswith("agent.") else "user"
-                    text.append(f"  [{env_type}] ", style="dim #61afef")
-                    text.append(f"assert_{leaf}", style="bold #98c379")
-                    text.append(f"(expected=", style="#a89984")
-                    text.append(f"{_format_value(pred.value)}", style="bold #e5c07b")
-                    text.append(")\n", style="#a89984")
-                    text.append(f"    {path}\n", style="dim #5c6370")
-            else:
-                text.append("  (no captured changes)\n", style="dim #5c6370")
+        # Terminal profile predicates (= env assertions)
+        text.append("\nTerminal Profile Predicates\n", style="bold #e2c07c")
+        if node.terminal_match:
+            for pred in node.terminal_match.requires_world:
+                path = pred.path
+                leaf = path.rsplit(".", 1)[-1] if "." in path else path
+                env_type = "assistant" if path.startswith("agent.") else "user"
+                actual = node.world.get(path)
+                satisfied = actual == pred.value
+                icon = "✓" if satisfied else "✗"
+                style = "#98c379" if satisfied else "#e06c75"
+                text.append(f"  {icon} [{env_type}] ", style=style)
+                text.append(f"assert_{leaf}", style=f"bold {style}")
+                text.append(f"(expected=", style="#a89984")
+                text.append(f"{_format_value(pred.value)}", style="bold #e5c07b")
+                text.append(")\n", style="#a89984")
+                text.append(f"    {path}\n", style="dim #5c6370")
         else:
-            text.append("  (no goal_capture_paths configured)\n", style="dim #d19a66")
+            text.append("  (no terminal profile matched)\n", style="dim #d19a66")
 
         # Bindings at goal
         text.append("\nBindings at Goal\n", style="bold #e2c07c")

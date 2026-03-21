@@ -150,5 +150,3 @@ actions:
     tool_arg_bindings: {}
 
 sync_rules: []
-
-assistant_stutter_allowlist: []

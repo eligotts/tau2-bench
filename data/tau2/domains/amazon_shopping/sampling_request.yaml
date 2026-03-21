@@ -1,29 +1,12 @@
 version: 1
 max_tasks: 2000
 
-# Capture all non-config state in goal_world. Task config (task.*) is in
-# start_world only — it gates actions but isn't part of the goal.
-goal_capture_paths:
-  # page.* is excluded: page.type and page.current_product are non-monotonic
-  # (skipped in rubric via SKIP_GOAL_PATHS). Including them in goal_capture
-  # only inflates unique goal count without producing meaningfully different
-  # tasks — the rubric checks what the agent accomplished, not which page
-  # it ended on.
-  - search
-  - filter
-  - sort
-  - extract
-  - p1
-  - p2
-  - p3
-  - category
-  - deals
-  - cart
-  - results
-
-
 # ---------------------------------------------------------------------------
 # Terminal Profiles
+#
+# Each profile defines what "done" means. goal_world is populated directly
+# from the matched profile's requires_world predicates. Dedup by
+# (seed_id, terminal_profile_id).
 # ---------------------------------------------------------------------------
 
 terminal_profiles:

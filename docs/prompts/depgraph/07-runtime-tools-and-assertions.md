@@ -31,6 +31,12 @@ Requirements:
 1. Implement assistant action tools referenced by contract actions where `requestor=assistant`.
 2. Verify/refine init setter functions (`set_*`) authored in Step 02 — ensure all runtime init actions resolve.
 3. Verify/refine env assertion functions (`assert_*`) authored in Step 02 — ensure all runtime env assertions resolve with bool returns.
+3a. Add `get_*` methods alongside every `set_*` — these are required by the contract sync runner.
+3b. **Compound naming**: For paths with 3+ segments and no brackets (e.g., `user.physical.test_charge_state`),
+   the scaffold generates `set_physical_test_charge_state`. If your method uses the short name (`set_test_charge_state`),
+   add an alias: `set_physical_test_charge_state = set_test_charge_state`. Same for `get_*` and `assert_*`.
+   This is required for every user-side path under `user.actions.*`, `user.observability.*`, `user.physical.*`,
+   and agent-side paths under `agent.{section}.*` (non-bracket, 3+ segments like `agent.finance.bill_status`).
 4. Use `ToolKitBase` and `@is_tool` for LLM-visible tools.
 5. For actions with `requires_bindings`, enforce binding usage at runtime via concrete tool params and guards.
 6. If contract actions use finite literal tool args for a runtime tool param (for example via
@@ -42,8 +48,33 @@ Requirements:
    - immediate observation-driven steps may validate the current bound value
    - the longer repair chain should run from stable world state established by earlier tools
    - do not require the agent to keep replaying a moving screen code through every repair call
-9. **Docstring rule**: Tool docstrings become the `description` field in the OpenAI function-calling schema sent to the agent LLM. They must NOT reference entity type names (e.g. "station", "account", "session") because the agent will interpret these as information it needs to gather from the user. All entity resolution is context-scoped (via `set_user_context`), so the agent never needs entity identifiers. Use neutral phrasing like "Run backend diagnostics for the current charging session" instead of "Run backend diagnostics for the active station context."
-10. **Guard audit rule.** For every tool method, enumerate every `if` condition that
+9. **Effect fidelity rule**: Every tool that implements a contract action MUST produce the
+   declared `effects_world` state changes in its Python code. If the contract says an action
+   sets `payment_confirmed = true`, the tool method must write that field to the DB. Returning
+   a success message without writing the field is a silent bug — the pipeline validates
+   structural alignment but cannot verify runtime behavior. After implementing a tool, walk
+   through each `effects_world` entry in the contract and confirm the code writes it.
+10. **Parameter discoverability rule**: Every required parameter on a tool must be obtainable
+   by the agent through a prior tool call, a binding value, or user-provided information.
+   If no tool returns a value that can fill the parameter, and the user doesn't know it,
+   the agent will get stuck. Common violation: `pay_bill(bill_id)` where no tool returns
+   bill IDs. Fix: remove undiscoverable parameters, or add a read tool that surfaces them.
+11. **No empty placeholder fields rule**: Tool return models must not include fields that are
+   always empty. If a field like `location` or `errand_type` is never populated, remove it
+   from the return model. The agent interprets empty strings as missing data it should be
+   finding, which causes information-seeking loops instead of forward progress.
+12. **Return message rule**: Tool return messages are the agent's primary feedback channel.
+   When a tool creates side-effects that require follow-up actions, the return message MUST
+   hint at the next step. Example: `failover_to_replica` creates DLQ messages → return
+   "Failover complete. Warning: in-flight transactions lost — you MUST replay the dead
+   letter queue before the incident can be resolved." Vague messages like "check the queue"
+   are insufficient — the agent needs actionable direction.
+13. **Read tool completeness rule**: User-facing read tools (dashboard, diagnostics, etc.)
+   must surface ALL state that the agent needs to make decisions. If a field can be the root
+   cause of failures (e.g., `deploy_version=canary`), it must appear in the relevant read
+   tool's return value. The agent cannot act on information it cannot observe.
+14. **Docstring rule**: Tool docstrings become the `description` field in the OpenAI function-calling schema sent to the agent LLM. They must NOT reference entity type names (e.g. "station", "account", "session") because the agent will interpret these as information it needs to gather from the user. All entity resolution is context-scoped (via `set_user_context`), so the agent never needs entity identifiers. Use neutral phrasing like "Run backend diagnostics for the current charging session" instead of "Run backend diagnostics for the active station context."
+15. **Guard audit rule.** For every tool method, enumerate every `if` condition that
    gates an early return (noop, error). For each guarded field, verify: (a) the
    field is in `projection_fields`, and (b) the field appears in the corresponding
    action's `requires_world` with the enabling value. If a tool must check a
@@ -91,16 +122,14 @@ Requirements:
 5. Implement strict stop-gate callables:
    - init helper `set_stop_gate(criteria=[...])`
    - read tool `check_resolution_status()` that evaluates all criteria and returns `{resolved, unmet}`.
-   - `criteria` come from the user-observable subset of terminal `goal_world`, not necessarily every terminal predicate.
+   - `criteria` come from the user-observable subset of the terminal profile's `requires_world` predicates, mapped through `stop_gate_map.yaml`.
 6. `check_resolution_status()` must be deterministic and side-effect free (stutter-only semantics).
 7. Keep `check_resolution_status()` minimal:
    - `unmet` should use human-readable unmet reasons from stop-gate rules
    - do not return a broad structured `observed` snapshot or raw internal field/value dumps
    - the checker is for stop confirmation, not for giving the agent a rich progress oracle
-8. Expect runtime env assertions to enforce both:
-   - captured changed end-state values from `goal_world`
-   - unchanged authored `start_world` paths outside that captured goal
-   The stop gate remains a user-observable subset only; it is not the full frame checker.
+8. Env assertions check the terminal profile's `requires_world` predicates (= `goal_world`).
+   These are the minimal leaf conditions that define task completion.
 9. User-tool deterministic helpers matter too. If generated init/assert actions touch `user.*`
    state (for example confirmation flags), implement the matching `set_<...>` / `assert_<...>`
    callables on `user_tools.py`.

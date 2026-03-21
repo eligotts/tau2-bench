@@ -1,19 +1,8 @@
 version: 1
 max_tasks: 500
-goal_capture_paths:
-- agent.incident[active_incident]
-- agent.app[active_app]
-- agent.db[active_db]
-- agent.cache[active_cache]
-- agent.auth[active_auth]
-- agent.lb[active_lb]
-- agent.queue[active_queue]
-- agent.dns[active_dns]
-- user.observability
-- user.actions
 terminal_profiles:
 - profile_id: single_app_resolved
-  description: Single app fault fully resolved (including cascade damage).
+  description: Single app fault fully resolved.
   requires_world:
   - path: agent.incident[active_incident].scope
     op: eq
@@ -21,41 +10,11 @@ terminal_profiles:
   - path: agent.incident[active_incident].status
     op: eq
     value: resolved
-  - path: agent.incident[active_incident].triage_state
-    op: eq
-    value: ran
-  - path: agent.incident[active_incident].comms_state
-    op: eq
-    value: all_sent
-  - path: agent.app[active_app].app_health
-    op: eq
-    value: healthy
-  - path: agent.db[active_db].db_health
-    op: eq
-    value: healthy
-  - path: agent.db[active_db].vacuum_state
-    op: eq
-    value: clean
-  - path: agent.cache[active_cache].cache_health
-    op: eq
-    value: healthy
-  - path: agent.auth[active_auth].auth_health
-    op: eq
-    value: healthy
-  - path: agent.lb[active_lb].lb_health
-    op: eq
-    value: healthy
-  - path: agent.queue[active_queue].queue_health
-    op: eq
-    value: healthy
-  - path: agent.dns[active_dns].resolution_state
-    op: eq
-    value: correct
   - path: user.actions.smoke_test_state
     op: eq
     value: passed
 - profile_id: single_infra_resolved
-  description: Single infrastructure fault fully resolved (including cascade damage).
+  description: Single infrastructure fault fully resolved.
   requires_world:
   - path: agent.incident[active_incident].scope
     op: eq
@@ -63,36 +22,6 @@ terminal_profiles:
   - path: agent.incident[active_incident].status
     op: eq
     value: resolved
-  - path: agent.incident[active_incident].triage_state
-    op: eq
-    value: ran
-  - path: agent.incident[active_incident].comms_state
-    op: eq
-    value: all_sent
-  - path: agent.app[active_app].app_health
-    op: eq
-    value: healthy
-  - path: agent.db[active_db].db_health
-    op: eq
-    value: healthy
-  - path: agent.db[active_db].vacuum_state
-    op: eq
-    value: clean
-  - path: agent.cache[active_cache].cache_health
-    op: eq
-    value: healthy
-  - path: agent.auth[active_auth].auth_health
-    op: eq
-    value: healthy
-  - path: agent.lb[active_lb].lb_health
-    op: eq
-    value: healthy
-  - path: agent.queue[active_queue].queue_health
-    op: eq
-    value: healthy
-  - path: agent.dns[active_dns].resolution_state
-    op: eq
-    value: correct
   - path: user.actions.smoke_test_state
     op: eq
     value: passed
@@ -105,36 +34,6 @@ terminal_profiles:
   - path: agent.incident[active_incident].status
     op: eq
     value: resolved
-  - path: agent.incident[active_incident].triage_state
-    op: eq
-    value: ran
-  - path: agent.incident[active_incident].comms_state
-    op: eq
-    value: all_sent
-  - path: agent.app[active_app].app_health
-    op: eq
-    value: healthy
-  - path: agent.db[active_db].db_health
-    op: eq
-    value: healthy
-  - path: agent.db[active_db].vacuum_state
-    op: eq
-    value: clean
-  - path: agent.cache[active_cache].cache_health
-    op: eq
-    value: healthy
-  - path: agent.auth[active_auth].auth_health
-    op: eq
-    value: healthy
-  - path: agent.lb[active_lb].lb_health
-    op: eq
-    value: healthy
-  - path: agent.queue[active_queue].queue_health
-    op: eq
-    value: healthy
-  - path: agent.dns[active_dns].resolution_state
-    op: eq
-    value: correct
   - path: user.actions.smoke_test_state
     op: eq
     value: passed
@@ -147,36 +46,6 @@ terminal_profiles:
   - path: agent.incident[active_incident].status
     op: eq
     value: resolved
-  - path: agent.incident[active_incident].triage_state
-    op: eq
-    value: ran
-  - path: agent.incident[active_incident].comms_state
-    op: eq
-    value: all_sent
-  - path: agent.app[active_app].app_health
-    op: eq
-    value: healthy
-  - path: agent.db[active_db].db_health
-    op: eq
-    value: healthy
-  - path: agent.db[active_db].vacuum_state
-    op: eq
-    value: clean
-  - path: agent.cache[active_cache].cache_health
-    op: eq
-    value: healthy
-  - path: agent.auth[active_auth].auth_health
-    op: eq
-    value: healthy
-  - path: agent.lb[active_lb].lb_health
-    op: eq
-    value: healthy
-  - path: agent.queue[active_queue].queue_health
-    op: eq
-    value: healthy
-  - path: agent.dns[active_dns].resolution_state
-    op: eq
-    value: correct
   - path: user.actions.smoke_test_state
     op: eq
     value: passed
@@ -186,7 +55,6 @@ seed_schemas:
   allowed_terminal_profiles:
   - single_app_resolved
   - single_infra_resolved
-  goal_capture_paths: []
   min_depth: 7
   max_depth: 16
   dimensions:
@@ -814,6 +682,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -854,6 +724,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: token_expired
+      - path: agent.auth[active_auth].token_pool
+        set: invalid
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -1464,7 +1336,6 @@ seed_schemas:
   seed_id_template: '{case}_{knowledge}'
   allowed_terminal_profiles:
   - multi_system_resolved
-  goal_capture_paths: []
   min_depth: 9
   max_depth: 20
   dimensions:
@@ -2172,6 +2043,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -2212,6 +2085,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: token_expired
+      - path: agent.auth[active_auth].token_pool
+        set: invalid
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -2612,6 +2487,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -2972,6 +2849,8 @@ seed_schemas:
         set: stale
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -3012,6 +2891,8 @@ seed_schemas:
         set: eviction_storm
       - path: agent.auth[active_auth].auth_health
         set: token_expired
+      - path: agent.auth[active_auth].token_pool
+        set: invalid
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -3372,6 +3253,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: misconfigured
       - path: agent.queue[active_queue].queue_health
@@ -3452,6 +3335,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: token_expired
+      - path: agent.auth[active_auth].token_pool
+        set: invalid
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -3532,6 +3417,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -3932,7 +3819,6 @@ seed_schemas:
   seed_id_template: '{case}_{knowledge}'
   allowed_terminal_profiles:
   - cascading_resolved
-  goal_capture_paths: []
   min_depth: 13
   max_depth: 24
   dimensions:
@@ -4240,6 +4126,8 @@ seed_schemas:
         set: eviction_storm
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -4320,6 +4208,8 @@ seed_schemas:
         set: cold
       - path: agent.auth[active_auth].auth_health
         set: token_expired
+      - path: agent.auth[active_auth].token_pool
+        set: invalid
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -4360,6 +4250,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -4640,6 +4532,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: misconfigured
       - path: agent.queue[active_queue].queue_health
@@ -4680,6 +4574,8 @@ seed_schemas:
         set: eviction_storm
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -4840,6 +4736,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -4921,7 +4819,6 @@ seed_schemas:
   allowed_terminal_profiles:
   - single_app_resolved
   - multi_system_resolved
-  goal_capture_paths: []
   min_depth: 8
   max_depth: 18
   dimensions:
@@ -5199,6 +5096,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: token_expired
+      - path: agent.auth[active_auth].token_pool
+        set: invalid
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -5241,6 +5140,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -5701,6 +5602,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: token_expired
+      - path: agent.auth[active_auth].token_pool
+        set: invalid
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -5743,6 +5646,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -6203,6 +6108,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: token_expired
+      - path: agent.auth[active_auth].token_pool
+        set: invalid
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -6245,6 +6152,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -6705,6 +6614,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: token_expired
+      - path: agent.auth[active_auth].token_pool
+        set: invalid
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -6747,6 +6658,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -7207,6 +7120,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: token_expired
+      - path: agent.auth[active_auth].token_pool
+        set: invalid
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health
@@ -7249,6 +7164,8 @@ seed_schemas:
         set: healthy
       - path: agent.auth[active_auth].auth_health
         set: cert_invalid
+      - path: agent.auth[active_auth].cert_state
+        set: expired
       - path: agent.lb[active_lb].lb_health
         set: healthy
       - path: agent.queue[active_queue].queue_health

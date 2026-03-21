@@ -55,9 +55,7 @@ def _compare_non_runtime_fields(scaffold: TaskIntent, authored: TaskIntent) -> l
         "start_world",
         "start_bindings",
         "goal_world",
-        "goal_bindings",
         "required_actions",
-        "required_precedence",
         "min_plan_length",
     ):
         if getattr(scaffold, field_name) != getattr(authored, field_name):

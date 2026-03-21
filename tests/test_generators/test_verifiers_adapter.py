@@ -15,7 +15,6 @@ from datasets import Dataset
 
 from tau2.generators.depgraph.types import (
     ActionContract,
-    BindingSourceSpec,
     GraphContractSpec,
     SamplingRequestDoc,
     TaskIntent,
@@ -81,16 +80,6 @@ def _make_contract() -> GraphContractSpec:
     return GraphContractSpec(
         version=2,
         projection_fields=["counter"],
-        bindings=[
-            BindingSourceSpec(
-                binding_id="K.counter_value",
-                source_tool="read_counter",
-                extraction_path="result.value",
-                world_path="counter",
-                observability_all_of=[],
-                observability_any_of=[],
-            ),
-        ],
         actions=[
             ActionContract(
                 action_id="do_increment",
@@ -116,14 +105,6 @@ def _make_contract() -> GraphContractSpec:
                     WorldEffectSpec(path="counter", set=2),
                 ],
             ),
-            ActionContract(
-                action_id="do_read",
-                requestor="assistant",
-                tool_name="read_counter",
-                classification="knowledge-only",
-                requires_world=[],
-                effects_bindings=["K.counter_value"],
-            ),
         ],
     )
 
@@ -135,7 +116,6 @@ def _make_task_intent() -> TaskIntent:
         start_world=[WorldEffectSpec(path="counter", set=0)],
         start_bindings=[],
         goal_world=[WorldPredicateSpec(path="counter", value=2)],
-        goal_bindings=[],
         goal_capture_paths=["counter"],
         terminal_profile_id="counter_doubled",
         required_actions=["do_increment", "do_double"],
@@ -180,37 +160,38 @@ class TestCompileTaskConfig:
 class TestCheckGoal:
     def test_all_satisfied(self):
         db = {"counter": 2}
-        bindings: set[str] = set()
         goal_world = [WorldPredicateSpec(path="counter", value=2)]
-        reward, details = check_goal(db, bindings, goal_world, [])
+        reward, details = check_goal(db, goal_world)
         assert reward == 1.0
         assert all(details.values())
 
     def test_none_satisfied(self):
         db = {"counter": 0}
-        bindings: set[str] = set()
         goal_world = [WorldPredicateSpec(path="counter", value=2)]
-        reward, details = check_goal(db, bindings, goal_world, [])
+        reward, details = check_goal(db, goal_world)
         assert reward == 0.0
 
     def test_partial(self):
-        db = {"counter": 2}
-        bindings: set[str] = set()
-        goal_world = [WorldPredicateSpec(path="counter", value=2)]
-        goal_bindings = ["K.counter_value"]
-        reward, details = check_goal(db, bindings, goal_world, goal_bindings)
-        assert reward == 0.5  # world pred passes, binding missing
+        db = {"counter": 2, "doubled": False}
+        goal_world = [
+            WorldPredicateSpec(path="counter", value=2),
+            WorldPredicateSpec(path="doubled", value=True),
+        ]
+        reward, details = check_goal(db, goal_world)
+        assert reward == 0.5
+        assert list(details.values()) == [True, False]
 
-    def test_with_bindings(self):
-        db = {"counter": 2}
-        bindings = {"K.counter_value"}
-        goal_world = [WorldPredicateSpec(path="counter", value=2)]
-        goal_bindings = ["K.counter_value"]
-        reward, details = check_goal(db, bindings, goal_world, goal_bindings)
+    def test_multiple_world_goals(self):
+        db = {"counter": 2, "doubled": True}
+        goal_world = [
+            WorldPredicateSpec(path="counter", value=2),
+            WorldPredicateSpec(path="doubled", value=True),
+        ]
+        reward, details = check_goal(db, goal_world)
         assert reward == 1.0
 
     def test_empty_goals(self):
-        reward, details = check_goal({}, set(), [], [])
+        reward, details = check_goal({}, [])
         assert reward == 1.0
 
 
@@ -224,7 +205,6 @@ class TestDepgraphToolEnv:
             start_world={"counter": 0},
             start_bindings=set(),
             goal_world=[],
-            goal_bindings=[],
         )
         env = DepgraphToolEnv(
             tool_functions=TOOL_FUNCTIONS,
@@ -244,7 +224,6 @@ class TestDepgraphToolEnv:
             start_world={"counter": 0},
             start_bindings=set(),
             goal_world=[],
-            goal_bindings=[],
         )
         env = DepgraphToolEnv(
             tool_functions=TOOL_FUNCTIONS,

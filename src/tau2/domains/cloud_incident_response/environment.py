@@ -1,27 +1,12 @@
 from pathlib import Path
 from typing import Optional
 
+import yaml
+
 from tau2.data_model.tasks import Task
-from tau2.domains.cloud_incident_response.data_model import (
-    AppStatus,
-    AuthStatus,
-    CacheStatus,
-    CloudIncidentDB,
-    CommsState,
-    DbStatus,
-    DnsResolution,
-    DnsTtlState,
-    IncidentStatus,
-    LbStatus,
-    QueueStatus,
-    VacuumState,
-)
+from tau2.domains.cloud_incident_response.data_model import CloudIncidentDB
 from tau2.domains.cloud_incident_response.tools import CloudIncidentTools
-from tau2.domains.cloud_incident_response.user_data_model import (
-    CloudIncidentUserDB,
-    DnsFlushedLocally,
-    SmokeTestState,
-)
+from tau2.domains.cloud_incident_response.user_data_model import CloudIncidentUserDB
 from tau2.domains.cloud_incident_response.user_tools import CloudIncidentUserTools
 from tau2.domains.cloud_incident_response.utils import (
     CLOUD_INCIDENT_DB_PATH,
@@ -30,7 +15,11 @@ from tau2.domains.cloud_incident_response.utils import (
     CLOUD_INCIDENT_USER_DB_PATH,
 )
 from tau2.environment.environment import Environment
+from tau2.generators.depgraph.runtime_sync import ToolKitFieldAccessor, run_contract_sync
+from tau2.generators.depgraph.types import GraphContractSpec
 from tau2.utils import load_file
+
+_CONTRACT_PATH = Path(__file__).resolve().parents[4] / "data" / "tau2" / "domains" / "cloud_incident_response" / "graph_contract.yaml"
 
 
 class CloudIncidentEnvironment(Environment):
@@ -44,18 +33,31 @@ class CloudIncidentEnvironment(Environment):
         tools: CloudIncidentTools,
         user_tools: CloudIncidentUserTools,
     ):
+        # Load contract sync rules before super().__init__ which calls sync_tools()
+        with open(_CONTRACT_PATH) as f:
+            contract = GraphContractSpec.model_validate(yaml.safe_load(f))
+        self._sync_rules = contract.sync_rules
+        self._projection_fields = contract.projection_fields
         super().__init__(domain_name, policy, tools, user_tools)
         self.tools.bind_user_db(self.user_tools.db)
 
     def sync_tools(self):
-        """Mirror contract sync_rules between agent and user state.
-
-        Fires to fixed point — cascading rules may chain.
-        Matches graph_contract.yaml sync_rules exactly.
-        """
+        """Run contract sync rules against live state, then project view."""
         if not self.tools.db.incidents:
             return
 
+        run_contract_sync(
+            sync_rules=self._sync_rules,
+            projection_fields=self._projection_fields,
+            agent_accessor=ToolKitFieldAccessor(self.tools),
+            user_accessor=ToolKitFieldAccessor(self.user_tools),
+        )
+
+        # Adapter-specific: project agent state → user.view for observability
+        self._project_view()
+
+    def _project_view(self):
+        """Copy agent state into user-visible display fields."""
         incident = self.tools._get_incident()
         app = self.tools._get_app()
         db = self.tools._get_db()
@@ -66,59 +68,6 @@ class CloudIncidentEnvironment(Environment):
         dns = self.tools._get_dns()
         user = self.user_tools.db
 
-        # Run sync rules to fixed point (cascading may chain)
-        for _ in range(10):  # safety bound
-            changed = False
-
-            # sync_db_breaks_cache: DB unhealthy → cache becomes stale
-            if db.status != DbStatus.HEALTHY and cache.status == CacheStatus.HEALTHY:
-                cache.status = CacheStatus.STALE
-                changed = True
-
-            # sync_app_breaks_lb: App unhealthy → LB backend_unhealthy
-            if app.status != AppStatus.HEALTHY and lb.status == LbStatus.HEALTHY:
-                lb.status = LbStatus.BACKEND_UNHEALTHY
-                changed = True
-
-            # sync_canary_destabilizes_app: Canary + healthy app → high_latency (bounce trap)
-            if app.deploy_version.value == "canary" and app.status == AppStatus.HEALTHY:
-                app.status = AppStatus.HIGH_LATENCY
-                changed = True
-
-            # sync_dns_resolution_complete: propagating + flushed + user flushed → correct
-            if (
-                dns.resolution_state == DnsResolution.PROPAGATING
-                and dns.ttl_state == DnsTtlState.FLUSHED
-                and user.actions.dns_flushed_locally == DnsFlushedLocally.DONE
-            ):
-                dns.resolution_state = DnsResolution.CORRECT
-                changed = True
-
-            # sync_incident_resolved: all healthy + clean state + comms + smoke test → resolved
-            all_healthy = (
-                app.status == AppStatus.HEALTHY
-                and db.status == DbStatus.HEALTHY
-                and db.vacuum_state == VacuumState.CLEAN
-                and cache.status == CacheStatus.HEALTHY
-                and auth.status == AuthStatus.HEALTHY
-                and lb.status == LbStatus.HEALTHY
-                and queue.status == QueueStatus.HEALTHY
-                and queue.dlq_state.value != "has_messages"
-                and dns.resolution_state == DnsResolution.CORRECT
-            )
-            if (
-                all_healthy
-                and user.actions.smoke_test_state == SmokeTestState.PASSED
-                and incident.comms_state == CommsState.ALL_SENT
-                and incident.status != IncidentStatus.RESOLVED
-            ):
-                incident.status = IncidentStatus.RESOLVED
-                changed = True
-
-            if not changed:
-                break
-
-        # --- Projection sync: agent -> user.view ---
         user.view.display_incident_status = incident.status.value
         user.view.display_severity = incident.severity.value
         user.view.display_root_cause = incident.root_cause.value
